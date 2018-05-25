@@ -6,15 +6,13 @@ using UnityEngine;
 namespace BeatSaberMultiplayer {
     [Serializable]
     public class Config {
-        
-            [SerializeField]
-            public string _ip;
-            [SerializeField]
-            public int _port;
-        
+        [SerializeField] private string _ip;
+        [SerializeField] private int _port;
+
         private static Config _instance;
-        
-        private static FileInfo FileLocation { get; } = new FileInfo($"./Config/{Assembly.GetExecutingAssembly().GetName().Name}.json");
+
+        private static FileInfo FileLocation { get; } =
+            new FileInfo($"./Config/{Assembly.GetExecutingAssembly().GetName().Name}.json");
 
         public static Config Instance {
             get {
@@ -26,32 +24,35 @@ namespace BeatSaberMultiplayer {
                     _instance = JsonUtility.FromJson<Config>(FileLocation.FullName);
                     _instance.MarkClean();
                 }
-                catch(Exception ex) {
+                catch (Exception ex) {
                     Console.WriteLine($"Config doesn't exist @ {FileLocation.FullName}");
                     _instance = new Config();
                 }
+
                 return _instance;
             }
         }
-        
+
         private bool IsDirty { get; set; }
 
         /// <summary>
         /// Remember to Save after changing the value
         /// </summary>
         public string IP {
-            get { return _ip;}
-            set { _ip = value;
+            get { return _ip; }
+            set {
+                _ip = value;
                 MarkDirty();
             }
         }
-        
+
         /// <summary>
         /// Remember to Save after changing the value
         /// </summary>
         public int Port {
-            get { return _port;}
-            set { _port = value;
+            get { return _port; }
+            set {
+                _port = value;
                 MarkDirty();
             }
         }
@@ -71,6 +72,7 @@ namespace BeatSaberMultiplayer {
                     Console.WriteLine($"JSON: {Environment.NewLine}{json}");
                     f.Write(json);
                 }
+
                 MarkClean();
                 return true;
             }
@@ -83,7 +85,7 @@ namespace BeatSaberMultiplayer {
         void MarkDirty() {
             IsDirty = true;
         }
-        
+
         void MarkClean() {
             IsDirty = false;
         }
