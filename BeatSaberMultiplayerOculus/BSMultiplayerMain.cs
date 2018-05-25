@@ -60,11 +60,7 @@ namespace BeatSaberMultiplayer
                 _instance.OnLevelChange();
             }
 
-
-            
-
         }
-
 
         public bool ConnectToServer()
         {
@@ -75,7 +71,7 @@ namespace BeatSaberMultiplayer
                      return true;
                 }
                 
-                _connection = new TcpClient("87.103.199.211", 3700);
+                _connection = new TcpClient(Config.Instance.IP, Config.Instance.Port);
                 _connectionStream = _connection.GetStream();
                 return true;
                 

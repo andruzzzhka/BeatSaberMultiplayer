@@ -38,6 +38,7 @@ namespace BeatSaberMultiplayer
             Console.WriteLine("Loading scene " + level);
             if (level == 1)
             {
+                Config.Instance.Save();
                 BSMultiplayerUI.OnLoad();
                 BSMultiplayerMain.OnLoad(level);
             }
