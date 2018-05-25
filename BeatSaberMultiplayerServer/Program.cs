@@ -22,7 +22,7 @@ namespace BeatSaberMultiplayerServer
 
         public static ServerState serverState = ServerState.Lobby;
 
-        public static int[] availableSongsIDs = { 65, 45, 46, 31, 71, 197};
+        public static int[] availableSongsIDs = { 65, 45, 46, 31, 71, 197, 517, 584, 476};
         public static List<CustomSongInfo> availableSongs = new List<CustomSongInfo>();
 
         public static int currentSongIndex = -1;
@@ -156,7 +156,7 @@ namespace BeatSaberMultiplayerServer
             float lobbyTimer = 0;
             float sendTimer = 0;
 
-            int lobbyTime = 40;
+            int lobbyTime = 60;
 
             TimeSpan deltaTime;
 
@@ -376,7 +376,6 @@ namespace BeatSaberMultiplayerServer
                                             }
 
                                             playerScore = receivedPlayerInfo.playerScore;
-                                            Console.WriteLine("New " + playerName + "'s score: " + playerScore);
                                         }
 
                                     };break;
