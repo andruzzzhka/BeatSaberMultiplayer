@@ -21,7 +21,7 @@ namespace BeatSaberMultiplayer {
                 try {
                     FileLocation?.Directory?.Create();
                     Console.WriteLine($"attempting to load JSON @ {FileLocation}");
-                    _instance = JsonUtility.FromJson<Config>(FileLocation.FullName);
+                    _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
                     _instance.MarkClean();
                 }
                 catch (Exception ex) {
@@ -57,7 +57,7 @@ namespace BeatSaberMultiplayer {
             }
         }
 
-        public Config() {
+        Config() {
             _ip = "87.103.199.211";
             _port = 3700;
             MarkDirty();
