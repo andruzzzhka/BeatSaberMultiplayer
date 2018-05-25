@@ -72,7 +72,7 @@ namespace BeatSaberMultiplayer
                      return true;
                 }
                 
-                _connection = new TcpClient("127.0.0.1", 3700);
+                _connection = new TcpClient(Config.Instance.IP, Config.Instance.Port);
                 _connectionStream = _connection.GetStream();
                 return true;
                 

@@ -55,7 +55,9 @@
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" />
+    <Reference Include="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
@@ -94,6 +96,7 @@
     <Compile Include="BSMPJsonObjects.cs" />
     <Compile Include="BSMultiplayerMain.cs" />
     <Compile Include="BSMultiplayerUI.cs" />
+    <Compile Include="Config.cs" />
     <Compile Include="HTML5Decode.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Checksum\Adler32.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Checksum\BZip2Crc.cs" />
@@ -148,6 +151,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "BeatSaberMultiplayerSteam.dll" "C:\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins"</PostBuildEvent>
+    <PostBuildEvent>xcopy /y $(TargetDir)BeatSaberMultiplayer.dll  "C:\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins"</PostBuildEvent>
   </PropertyGroup>
 </Project>
