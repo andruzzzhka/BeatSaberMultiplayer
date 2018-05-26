@@ -8,6 +8,8 @@ namespace ServerCommons.Data {
         public ConnectionType ConnectionType { get; set; }
         private string _name;
         [JsonProperty]
+        public int ID { get; set; }
+        [JsonProperty]
         public string IPv4 { get; set; }
         [JsonProperty]
         public int Port { get; set; }

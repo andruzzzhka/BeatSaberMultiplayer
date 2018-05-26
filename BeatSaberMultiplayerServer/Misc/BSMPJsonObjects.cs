@@ -8,7 +8,7 @@ using System.Text;
 
 namespace BeatSaberMultiplayerServer
 {
-    class PlayerInfo
+    internal class PlayerInfo
     {
         public string playerName;
         public string playerId;

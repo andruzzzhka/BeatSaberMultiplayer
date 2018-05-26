@@ -47,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client.cs" />
     <Compile Include="Misc\BSMPJsonObjects.cs" />
     <Compile Include="Misc\HTML5Decode.cs" />
     <Compile Include="Misc\Settings.cs" />

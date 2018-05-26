@@ -74,7 +74,7 @@ namespace ServerHub.Handlers {
         void BeginListening() {
             while (Listen) {
                 var packet = ListenForPackets(out Data client);
-                PacketHandler(packet, client);
+                PacketHandler(packet, ref client);
 
                 Thread.Sleep(16);
             }
@@ -98,7 +98,8 @@ namespace ServerHub.Handlers {
             data = new Data {TcpClient = client};
             
             if (packet is ServerDataPacket) {
-                data = new Data(ConnectedClients.Count) {TcpClient = client};
+                var sPacket = (ServerDataPacket) packet;
+                data = new Data(ConnectedClients.Count == 0 ? 0 : ConnectedClients.Last().ID+1) {TcpClient = client, IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port};
                 ConnectedClients.Add(data);
                 Logger.Instance.Log($"Server @ {data.IPv4} added to collection");
             }
@@ -106,7 +107,7 @@ namespace ServerHub.Handlers {
             return packet;
         }
 
-        void PacketHandler(IDataPacket dataPacket, Data data) {
+        void PacketHandler(IDataPacket dataPacket, ref Data data) {
             switch (dataPacket.ConnectionType) {
                 case ConnectionType.Client:
                     Logger.Instance.Log("ConnectionType is [Client]");
@@ -118,12 +119,17 @@ namespace ServerHub.Handlers {
                     Logger.Instance.Log("ConnectionType is [Server]");
                     var serverData = (ServerDataPacket)dataPacket;
                     if (serverData.RemoveFromCollection) {
-                        ConnectedClients.Remove(data);
+                        var temp = data;
+                        Logger.Instance.Log($"Server {temp.ID} @ {serverData.IPv4} Removed from collection");
+                        ConnectedClients.Remove(ConnectedClients.First(o => o.ID == temp.ID));
                         break;
                     }
                     data.IPv4 = serverData.IPv4;
                     data.Name = serverData.Name;
                     data.Port = serverData.Port;
+                    serverData.ID = data.ID;
+                    var bytes = serverData.ToBytes();
+                    data.TcpClient.GetStream().Write(bytes, 0, bytes.Length);
                     break;
                 case ConnectionType.Hub:
                     Logger.Instance.Log("ConnectionType is [Hub]");

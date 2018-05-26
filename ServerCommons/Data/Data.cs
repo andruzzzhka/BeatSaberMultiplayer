@@ -14,6 +14,11 @@ namespace ServerCommons.Data {
         public int Port { get; set; }
 
         public Data() {
+            ID = 0;
+            TcpClient = null;
+            Name = "";
+            IPv4 = "";
+            Port = 0;
         }
 
         public Data(int id) {
