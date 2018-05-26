@@ -6,6 +6,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using ServerHub.Misc;
+using ServerCommons.Data;
+using ServerCommons.Misc;
+using Settings = ServerHub.Misc.Settings;
 
 namespace ServerHub.Handlers {
     public class ServerListener {
@@ -31,7 +34,7 @@ namespace ServerHub.Handlers {
                 Port = 0;
             }
         }
-        
+
         public ServerListener() {
             ClientWatcher = new Thread(WatchClients) {
                 IsBackground = true
@@ -86,21 +89,38 @@ namespace ServerHub.Handlers {
 
         void BeginListening() {
             while (Listen) {
-                Logger.Instance.Log("Waiting for a connection");
-                var client = new ClientData(ConnectedClients.Count) {TcpClient = Listener.AcceptTcpClient()};
-                ConnectedClients.Add(client);
-                Logger.Instance.Log("Connected");
-                byte[] bytes = new byte[DataPacket.MAX_BYTE_LENGTH];
-                DataPacket packet = null;
-                if (client.TcpClient.GetStream().Read(bytes, 0, bytes.Length) != 0) {
-                    packet = DataPacket.ToPacket(bytes);
-                }
-                
-                client.IPv4 = packet?.IPv4;
-                client.Name = packet?.Name;
-                if (packet?.Port != null) client.Port = packet.Port;
+                var packet = ListenForPackets(out ClientData client);
+                PacketHandler(packet, client);
 
                 Thread.Sleep(16);
+            }
+        }
+
+        DataPacket ListenForPackets(out ClientData clientData) {
+            Logger.Instance.Log("Waiting for a connection");
+            clientData = new ClientData(ConnectedClients.Count) {TcpClient = Listener.AcceptTcpClient()};
+            ConnectedClients.Add(clientData);
+            Logger.Instance.Log("Connected");
+            byte[] bytes = new byte[DataPacket.MAX_BYTE_LENGTH];
+            DataPacket packet = null;
+            if (clientData.TcpClient.GetStream().Read(bytes, 0, bytes.Length) != 0) {
+                packet = DataPacket.ToPacket(bytes);
+            }
+
+            return packet;
+        }
+
+        void PacketHandler(DataPacket packet, ClientData client) {
+            switch (packet.ConnectionType) {
+                case ConnectionType.Client:
+                    break;
+                case ConnectionType.Server:
+                    client.IPv4 = packet.IPv4;
+                    client.Name = packet.Name;
+                    client.Port = packet.Port;
+                    break;
+                case ConnectionType.Hub:
+                    break;
             }
         }
 

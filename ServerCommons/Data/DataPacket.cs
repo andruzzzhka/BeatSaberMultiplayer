@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 namespace ServerCommons.Data {
     [JsonObject(MemberSerialization.OptIn)]
     public class DataPacket {
+        public ConnectionType ConnectionType { get; set; }
         private string _name;
         [JsonProperty]
         public string IPv4 { get; set; }

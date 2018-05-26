@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using ServerCommons.Misc.ServerHub.Misc;
 
 namespace ServerCommons.Misc {
     public class Logger {

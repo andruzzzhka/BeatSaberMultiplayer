@@ -1,10 +1,10 @@
-﻿namespace ServerCommons.Misc {
-    using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
 using Newtonsoft.Json;
 
-namespace ServerHub.Misc {
+namespace ServerCommons.Misc {
+    
     [JsonObject(MemberSerialization.OptIn)]
     public class Settings {
         
@@ -39,5 +39,4 @@ namespace ServerHub.Misc {
             Logger = new LoggerSettings();
         }
     }
-}
 }

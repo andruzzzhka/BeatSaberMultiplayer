@@ -70,6 +70,7 @@ namespace BeatSaberMultiplayerServer {
 
             DataPacket packet = new DataPacket();
 
+            packet.ConnectionType = ConnectionType.Server;
             packet.IPv4 = Settings.Instance.Server.IP;
             packet.Port = Settings.Instance.Server.Port;
             packet.Name = Settings.Instance.Server.ServerName;
