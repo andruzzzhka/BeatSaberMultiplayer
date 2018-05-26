@@ -1,8 +1,7 @@
 ﻿using System.Text;
-using BeatSaberMultiplayerServer.Misc;
 using Newtonsoft.Json;
 
-namespace BeatSaberMultiplayerServer {
+namespace BeatSaberMultiplayerServer.Misc {
     [JsonObject(MemberSerialization.OptIn)]
     public class DataPacket {
         private string _name;
@@ -10,7 +9,7 @@ namespace BeatSaberMultiplayerServer {
         public string IPv4 { get; set; }
         [JsonProperty]
         public int Port { get; set; }
-        public const int MAX_BYTE_LENGTH = 255;
+        public const int MAX_BYTE_LENGTH = 232;
 
         [JsonProperty]
         public string Name {

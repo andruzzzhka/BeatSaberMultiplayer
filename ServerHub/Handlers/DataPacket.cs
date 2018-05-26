@@ -11,7 +11,7 @@ namespace ServerHub.Handlers {
         public string IPv4 { get; set; }
         [JsonProperty]
         public int Port { get; set; }
-        public const int MAX_BYTE_LENGTH = 255;
+        public const int MAX_BYTE_LENGTH = 232;
 
         [JsonProperty]
         public string Name {
