@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using Newtonsoft.Json;
 
@@ -8,15 +9,34 @@ namespace BeatSaberMultiplayerServer.Misc {
     public class Settings {
 
         [JsonObject(MemberSerialization.OptIn)]
-        public class IPSettings {
+        public class ServerSettings {
+            private string _ip;
             private int _port;
             private string _serverName;
-
             private string _serverHubIP;
             private int _serverHubPort;
+            [JsonProperty]
+            private string SongDirectory;
+
+            private DirectoryInfo _availableSongs;
+            private DirectoryInfo _downloads;
+            private DirectoryInfo _downloaded;
 
             private Action MarkDirty { get; }
 
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string IP
+            {
+                get {
+                    if (_ip != null) return _ip;
+                    _ip = GetPublicIPv4();
+                    return _ip;
+                }
+            }
+            
             /// <summary>
             /// Remember to Save after changing the value
             /// </summary>
@@ -72,14 +92,49 @@ namespace BeatSaberMultiplayerServer.Misc {
                     MarkDirty();
                 }
             }
+            
+            string GetPublicIPv4()
+            {
+                using (var client = new WebClient())
+                {
+                    return client.DownloadString("https://api.ipify.org");
+                }
+            }
 
-            public IPSettings(Action markDirty) {
+            private DirectoryInfo AvailableSongs {
+                get {
+                    if (_availableSongs != null) return _availableSongs;
+                    _availableSongs = new DirectoryInfo(SongDirectory);
+                    _availableSongs.Create();
+                    return _availableSongs;
+                }
+            }
+            
+            public DirectoryInfo Downloads {
+                get {
+                    if (_downloads != null) return _downloads;
+                    _downloads = new DirectoryInfo(Path.Combine(AvailableSongs.FullName, "Downloads"));
+                    _downloads.Create();
+                    return _downloads;
+                }
+            }
+            
+            public DirectoryInfo Downloaded {
+                get {
+                    if (_downloaded != null) return _downloaded;
+                    _downloaded = new DirectoryInfo(Path.Combine(AvailableSongs.FullName, "Downloaded"));
+                    _downloaded.Create();
+                    return _downloaded;
+                }
+            }
+
+            public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
                 _serverName = "New Server";
-
                 _serverHubIP = "127.0.0.1";
                 _serverHubPort = 3701;
+                SongDirectory = "AvailableSongs/";
             }
         }
         [JsonObject(MemberSerialization.OptIn)]
@@ -129,7 +184,7 @@ namespace BeatSaberMultiplayerServer.Misc {
         }
 
         [JsonProperty]
-        public IPSettings IP { get; }
+        public ServerSettings Server { get; }
         [JsonProperty]
         public LoggerSettings Logger { get; }
         [JsonProperty]
@@ -160,7 +215,7 @@ namespace BeatSaberMultiplayerServer.Misc {
         private bool IsDirty { get; set; }
 
         Settings() {
-            IP = new IPSettings(MarkDirty);
+            Server = new ServerSettings(MarkDirty);
             Logger = new LoggerSettings(MarkDirty);
             AvailableSongs = new AvailableSongsSettings(MarkDirty);
             MarkDirty();

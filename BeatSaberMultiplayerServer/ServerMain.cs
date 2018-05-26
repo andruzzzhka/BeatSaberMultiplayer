@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using BeatSaberMultiplayerServer.Misc;
 
 namespace BeatSaberMultiplayerServer {
     class ServerMain {
@@ -24,8 +25,8 @@ namespace BeatSaberMultiplayerServer {
         private static int lastSelectedSong = -1;
 
         public static TimeSpan playTime = new TimeSpan();
-
-        private static string IP { get; set; }
+        
+        private static TcpClient _serverHubClient;
 
         static void Main(string[] args) => new ServerMain().Start(args);
 
@@ -50,13 +51,39 @@ namespace BeatSaberMultiplayerServer {
 
             Thread _serverStateThread = new Thread(ServerStateControllerThread);
             _serverStateThread.Start();
+            
+            try
+            {
+                ConnectToServerHub(Settings.Instance.Server.ServerHubIP, Settings.Instance.Server.ServerHubPort);
+            }catch(Exception e)
+            {
+                Logger.Instance.Error($"Can't connect to ServerHub! Exception: {e.Message}");
+            }
+        }
+        
+        public void ConnectToServerHub(string serverHubIP, int serverHubPort)
+        {
+            _serverHubClient = new TcpClient(serverHubIP, serverHubPort);
+
+            DataPacket packet = new DataPacket();
+
+            packet.IPv4 = Settings.Instance.Server.IP;
+            packet.Port = Settings.Instance.Server.Port;
+            packet.Name = Settings.Instance.Server.ServerName;
+
+            byte[] packetBytes = packet.ToBytes();
+
+            _serverHubClient.GetStream().Write(packetBytes, 0, packetBytes.Length);
+
+            //client.Close();
+
         }
 
         private static void DownloadSongs() {
 
             Settings.Instance.Server.Downloaded.GetDirectories().AsParallel().ForAll(dir => dir.Delete(true));
 
-            Settings.Instance.Server.Songs.AsParallel().ForAll(id => {
+            Settings.Instance.AvailableSongs.Songs.AsParallel().ForAll(id => {
                 var zipPath = Path.Combine(Settings.Instance.Server.Downloads.FullName, $"{id}.zip");
                 Thread.Sleep(25);
                 using (var client = new WebClient()) {

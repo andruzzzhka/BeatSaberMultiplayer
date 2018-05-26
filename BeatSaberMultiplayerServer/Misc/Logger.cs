@@ -75,29 +75,27 @@ namespace BeatSaberMultiplayerServer.Misc {
 
         void QueueWatcher() {
             LogFile.Create().Close();
-            using (var f = LogFile.AppendText()) {
-                f.AutoFlush = true;
-                while (IsThreadRunning) {
-                    try
-                    {
-                        if (!LogQueue.Any()) Thread.Sleep(250);
-                    }catch(Exception e)
-                    {
 
-                    }
-                    LogHandler.IsBackground = false;
-                    while (LogQueue.Any()) {
+            while (IsThreadRunning) {
+                if (LogQueue.Count <= 0) {
+                    Thread.Sleep(250);
+                    continue;
+                }
+
+                LogHandler.IsBackground = false;
+                using (var f = LogFile.AppendText()) {
+                    f.AutoFlush = true;
+                    while (LogQueue.Count > 0) {
                         var o = LogQueue.Dequeue();
                         if (o.Message == OldLogMessage.Message) return;
                         OldLogMessage = o;
                         f.WriteLine(o.Message);
-                        #if DEBUG
                         Console.ForegroundColor = o.GetColour();
                         Console.WriteLine(o.Message);
                         Console.ResetColor();
-                        #endif
                     }
                 }
+
                 LogHandler.IsBackground = true;
             }
 

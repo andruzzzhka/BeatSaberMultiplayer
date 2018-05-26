@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -42,7 +43,7 @@ namespace BeatSaberMultiplayerServer
 
         public ServerCommand(ServerCommandType _type, int _timer = 0, string[] _songs = null, string _selectedLevelID = null, int _difficulty = 0, string[] _playerInfos = null, double _selectedSongDuration = 0, double _selectedSongPlayTime = 0)
         {
-            version = ServerMain.version;
+            version = Assembly.GetEntryAssembly().GetName().Version.ToString();
             commandType = _type;
             lobbyTimer = _timer;
             songsToDownload = _songs;
