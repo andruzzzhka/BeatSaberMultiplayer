@@ -34,6 +34,7 @@ namespace BeatSaberMultiplayer
                 _leaderboardTableView.transform.SetParent(rectTransform, false);
 
                 Mask viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<Mask>().First(), _leaderboardTableView.transform, false);
+                viewportMask.transform.DetachChildren();
 
                 _leaderboardTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 
