@@ -30,6 +30,9 @@ namespace ServerHub {
                 IsBackground = true
             };
             listenerThread.Start();
+            while (true) {
+                Console.Read();
+            }
         }
 
         string GetPublicIPv4() {
