@@ -84,7 +84,7 @@ namespace ServerHub.Handlers {
             BeginListening();
         }
 
-        void BeginListening() { //TODO: Client sending data to main server. Use DataPacket class
+        void BeginListening() {
             while (Listen) {
                 Logger.Instance.Log("Waiting for a connection");
                 var client = new ClientData(ConnectedClients.Count) {TcpClient = Listener.AcceptTcpClient()};
