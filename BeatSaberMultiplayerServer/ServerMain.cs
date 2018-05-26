@@ -68,7 +68,7 @@ namespace BeatSaberMultiplayerServer {
         {
             _serverHubClient = new TcpClient(serverHubIP, serverHubPort);
 
-            DataPacket packet = new DataPacket();
+            ServerDataPacket packet = new ServerDataPacket();
 
             packet.ConnectionType = ConnectionType.Server;
             packet.IPv4 = Settings.Instance.Server.IP;

@@ -16,24 +16,8 @@ namespace ServerHub.Handlers {
 
         private bool Listen { get; set; }
 
-        private List<ClientData> ConnectedClients { get; set; } = new List<ClientData>();
+        private List<Data> ConnectedClients { get; set; } = new List<Data>();
         private Thread ClientWatcher { get; set; }
-
-        class ClientData {
-            public int ID { get; }
-            public TcpClient TcpClient { get; set; }
-            public string Name { get; set; }
-            public string IPv4 { get; set; }
-            public int Port { get; set; }
-
-            public ClientData(int id) {
-                ID = id;
-                TcpClient = null;
-                Name = "";
-                IPv4 = "";
-                Port = 0;
-            }
-        }
 
         public ServerListener() {
             ClientWatcher = new Thread(WatchClients) {
@@ -43,7 +27,7 @@ namespace ServerHub.Handlers {
 
         private void WatchClients() {
             while (Listen) {
-                Thread.Sleep(new TimeSpan(0, 1, 0)); //check the servers every 1 minutes
+                Thread.Sleep(new TimeSpan(0, 1, 0)); //check the servers every 1 minute
                 ConnectedClients.AsParallel().ForAll(o => {
                     try {
                         if (o.TcpClient?.Client != null && o.TcpClient.Client.Connected) {
@@ -89,39 +73,67 @@ namespace ServerHub.Handlers {
 
         void BeginListening() {
             while (Listen) {
-                var packet = ListenForPackets(out ClientData client);
+                var packet = ListenForPackets(out Data client);
                 PacketHandler(packet, client);
 
                 Thread.Sleep(16);
             }
         }
 
-        DataPacket ListenForPackets(out ClientData clientData) {
+        /// <summary>
+        /// Returns the Packet of data sent by a TcpClient
+        /// </summary>
+        /// <param name="serverData">Returns the ServerData object if the packet was a ServerDataPacket</param>
+        /// <returns>The Packet sent</returns>
+        IDataPacket ListenForPackets(out Data data) {
             Logger.Instance.Log("Waiting for a connection");
-            clientData = new ClientData(ConnectedClients.Count) {TcpClient = Listener.AcceptTcpClient()};
-            ConnectedClients.Add(clientData);
+            var client = Listener.AcceptTcpClient();
             Logger.Instance.Log("Connected");
-            byte[] bytes = new byte[DataPacket.MAX_BYTE_LENGTH];
-            DataPacket packet = null;
-            if (clientData.TcpClient.GetStream().Read(bytes, 0, bytes.Length) != 0) {
-                packet = DataPacket.ToPacket(bytes);
+            byte[] bytes = new byte[Packet.MAX_BYTE_LENGTH];
+            IDataPacket packet = null;
+            if (client.GetStream().Read(bytes, 0, bytes.Length) != 0) {
+                packet = Packet.ToPacket(bytes);
+            }
+
+            data = new Data {TcpClient = client};
+            
+            if (packet is ServerDataPacket) {
+                data = new Data(ConnectedClients.Count) {TcpClient = client};
+                ConnectedClients.Add(data);
+                Logger.Instance.Log($"Server @ {data.IPv4} added to collection");
             }
 
             return packet;
         }
 
-        void PacketHandler(DataPacket packet, ClientData client) {
-            switch (packet.ConnectionType) {
+        void PacketHandler(IDataPacket dataPacket, Data data) {
+            switch (dataPacket.ConnectionType) {
                 case ConnectionType.Client:
+                    Logger.Instance.Log("ConnectionType is [Client]");
+                    var clientData = (ClientDataPacket)dataPacket;
+                    clientData.Servers = GetServers(clientData.Offset);
+                    data.TcpClient.GetStream().Write(clientData.ToBytes(), 0, Packet.MAX_BYTE_LENGTH);
                     break;
                 case ConnectionType.Server:
-                    client.IPv4 = packet.IPv4;
-                    client.Name = packet.Name;
-                    client.Port = packet.Port;
+                    Logger.Instance.Log("ConnectionType is [Server]");
+                    var serverData = (ServerDataPacket)dataPacket;
+                    if (serverData.RemoveFromCollection) {
+                        ConnectedClients.Remove(data);
+                        break;
+                    }
+                    data.IPv4 = serverData.IPv4;
+                    data.Name = serverData.Name;
+                    data.Port = serverData.Port;
                     break;
                 case ConnectionType.Hub:
+                    Logger.Instance.Log("ConnectionType is [Hub]");
                     break;
             }
+        }
+
+        List<Data> GetServers(int Offset, int count=10) {
+            var index = (count - 1) * Offset;
+            return ConnectedClients.GetRange(index, count + index >= ConnectedClients.Count ? Math.Clamp(ConnectedClients.Count - index, 0, 10) : count + index);
         }
 
         public void Stop() {
