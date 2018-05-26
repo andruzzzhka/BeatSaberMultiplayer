@@ -88,9 +88,9 @@ namespace BeatSaberMultiplayerServer.Misc {
                     while (LogQueue.Count > 0) {
                         var o = LogQueue.Dequeue();
                         if (o.Message == OldLogMessage.Message) return;
+                        Console.ForegroundColor = o.GetColour();
                         OldLogMessage = o;
                         f.WriteLine(o.Message);
-                        Console.ForegroundColor = o.GetColour();
                         Console.WriteLine(o.Message);
                         Console.ResetColor();
                     }
