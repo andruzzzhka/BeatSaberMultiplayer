@@ -257,6 +257,11 @@ namespace BeatSaberMultiplayerServer {
                 }
             }
 
+            if (difficulty == 0 && _song.difficultyLevels.Length > 0)
+            {
+                difficulty = (int)Enum.Parse(typeof(Difficulty), _song.difficultyLevels[0].difficulty);
+            }
+
             return difficulty;
         }
 
