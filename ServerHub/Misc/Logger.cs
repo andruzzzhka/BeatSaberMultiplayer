@@ -78,7 +78,10 @@ namespace ServerHub.Misc {
             using (var f = LogFile.AppendText()) {
                 f.AutoFlush = true;
                 while (IsThreadRunning) {
-                    if (!LogQueue.Any()) Thread.Sleep(100);
+                    if (!LogQueue.Any()) {
+                        Thread.Sleep(250);
+                        continue;
+                    }
                     LogHandler.IsBackground = false;
                     while (LogQueue.Any()) {
                         var o = LogQueue.Dequeue();

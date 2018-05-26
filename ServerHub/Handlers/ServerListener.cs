@@ -16,7 +16,7 @@ namespace ServerHub.Handlers {
         private List<ClientData> ConnectedClients { get; set; } = new List<ClientData>();
         private Thread ClientWatcher { get; set; }
 
-        struct ClientData {
+        class ClientData {
             public int ID { get; }
             public TcpClient TcpClient { get; set; }
             public string Name { get; set; }
@@ -40,6 +40,7 @@ namespace ServerHub.Handlers {
 
         private void WatchClients() {
             while (Listen) {
+                Thread.Sleep(new TimeSpan(0, 10, 0)); //check the servers every 10 minutes
                 ConnectedClients.AsParallel().ForAll(o => {
                     try {
                         if (o.TcpClient?.Client != null && o.TcpClient.Client.Connected) {

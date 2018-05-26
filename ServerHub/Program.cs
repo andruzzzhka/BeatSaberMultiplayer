@@ -21,6 +21,7 @@ namespace ServerHub {
         void Start(string[] args) {
             onClose+=OnClose;
             IP = GetPublicIPv4();
+            
             Logger.Instance.Log($"Current IP: {IP}");
 
             listenerThread = new Thread(() => Listener.Start()) {
