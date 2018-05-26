@@ -17,11 +17,13 @@ namespace ServerHub {
         private Thread listenerThread { get; set; }
 
         private static EventHandler onClose { get; set; }
-        
-        void Start(string[] args) {
+
+        Program() {
             onClose+=OnClose;
             IP = GetPublicIPv4();
-            
+        }
+        
+        void Start(string[] args) {
             Logger.Instance.Log($"Current IP: {IP}");
 
             listenerThread = new Thread(() => Listener.Start()) {

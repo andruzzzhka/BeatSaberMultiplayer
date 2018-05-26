@@ -8,7 +8,7 @@ namespace ServerHub.Misc {
     public class Settings {
 
         [JsonObject(MemberSerialization.OptIn)]
-        public class IPSettings {
+        public class ServerSettings {
             private int _port;
 
             private Action MarkDirty { get; }
@@ -25,7 +25,7 @@ namespace ServerHub.Misc {
                 }
             }
 
-            public IPSettings(Action markDirty) {
+            public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3701;
             }
@@ -107,7 +107,7 @@ namespace ServerHub.Misc {
         }
 
         [JsonProperty]
-        public IPSettings IP { get; }
+        public ServerSettings Server { get; }
         [JsonProperty]
         public LoggerSettings Logger { get; }
         [JsonProperty]
@@ -138,7 +138,7 @@ namespace ServerHub.Misc {
         private bool IsDirty { get; set; }
 
         Settings() {
-            IP = new IPSettings(MarkDirty);
+            Server = new ServerSettings(MarkDirty);
             Logger = new LoggerSettings(MarkDirty);
             Database = new DatabaseSettings(MarkDirty);
             MarkDirty();
