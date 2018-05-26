@@ -50,6 +50,9 @@
   <ItemGroup>
     <Compile Include="BSMPJsonObjects.cs" />
     <Compile Include="HTML5Decode.cs" />
+    <Compile Include="Misc\Extensions.cs" />
+    <Compile Include="Misc\Logger.cs" />
+    <Compile Include="Misc\Settings.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SimpleJSON.cs" />

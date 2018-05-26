@@ -61,11 +61,13 @@ namespace BeatSaberMultiplayer
     [Serializable]
     class ClientCommand
     {
+        public string version = "0.1";
         public ClientCommandType commandType;
         public string playerInfo;
 
         public ClientCommand(ClientCommandType _type, string _playerInfo = null)
         {
+            version = BSMultiplayerMain.version;
             commandType = _type;
             playerInfo = _playerInfo;
         }

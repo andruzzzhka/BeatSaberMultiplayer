@@ -136,6 +136,7 @@
     <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipInputStream.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipNameTransform.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipOutputStream.cs" />
+    <Compile Include="MultiplayerLeaderboardViewController.cs" />
     <Compile Include="MultiplayerLobbyViewController.cs" />
     <Compile Include="PlayerInfoDisplay.cs" />
     <Compile Include="Plugin.cs" />
