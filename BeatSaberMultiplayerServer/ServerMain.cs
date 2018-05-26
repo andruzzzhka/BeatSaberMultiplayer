@@ -65,7 +65,9 @@ namespace BeatSaberMultiplayerServer {
             {
                 Logger.Instance.Error($"Can't connect to ServerHub! Exception: {e.Message}");
             }
-        }
+            
+            ShutdownEventCatcher.Shutdown += ServerShutdown;
+        }        
 
         public void ConnectToServerHub(string serverHubIP, int serverHubPort)
         {
@@ -91,8 +93,6 @@ namespace BeatSaberMultiplayerServer {
 
             Logger.Instance.Log($"The ID of this server is {ID}");
             
-            //client.Close();
-
         }
 
         private static void DownloadSongs() {
@@ -304,5 +304,29 @@ namespace BeatSaberMultiplayerServer {
         static void ClientThread(Object stateInfo) {
             clients.Add(new Client((TcpClient) stateInfo));
         }
+        
+        private void ServerShutdown(ShutdownEventArgs args)
+        {
+            Logger.Instance.Log("Shutting down server...");
+            if(_serverHubClient != null && _serverHubClient.Connected)
+            {
+                ServerDataPacket packet = new ServerDataPacket
+                {
+                    ConnectionType = ConnectionType.Server,
+                    IPv4 = Settings.Instance.Server.IP,
+                    Port = Settings.Instance.Server.Port,
+                    Name = Settings.Instance.Server.ServerName,
+                    RemoveFromCollection = true
+                };
+
+                byte[] packetBytes = packet.ToBytes();
+
+                _serverHubClient.GetStream().Write(packetBytes, 0, packetBytes.Length);
+                Logger.Instance.Log("Removed this server from ServerHub");
+
+                _serverHubClient.Close();
+            }
+        }
+
     }
 }
