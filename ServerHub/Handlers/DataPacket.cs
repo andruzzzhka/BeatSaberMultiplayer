@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
+using ServerHub.Misc;
 
 namespace ServerHub.Handlers {
     [JsonObject(MemberSerialization.OptIn)]
@@ -10,7 +11,7 @@ namespace ServerHub.Handlers {
         public string IPv4 { get; set; }
         [JsonProperty]
         public int Port { get; set; }
-        public const int MAX_BYTE_LENGTH = 255;
+        public const int MAX_BYTE_LENGTH = 232;
 
         [JsonProperty]
         public string Name {
@@ -28,7 +29,16 @@ namespace ServerHub.Handlers {
         }
 
         public static DataPacket ToPacket(byte[] bytes) {
-            return JsonConvert.DeserializeObject<DataPacket>(Encoding.Unicode.GetString(bytes));
+            string s = "[";
+            foreach (var b in bytes) {
+                s += $"{((int) b).ToString()}, ";
+            }
+            s= s.TrimEnd(", ".ToCharArray()) + "]";
+            
+            Logger.Instance.Log($"Given Bytes: {s}");
+            var b2s = Encoding.Unicode.GetString(bytes);
+            Logger.Instance.Log($"Bytes to String: {b2s}");
+            return JsonConvert.DeserializeObject<DataPacket>(b2s);
         }
 
         //private const char Special = '�';

@@ -17,17 +17,26 @@ namespace ServerHub {
         private Thread listenerThread { get; set; }
 
         private static EventHandler onClose { get; set; }
-        
-        void Start(string[] args) {
+
+        Program() {
             onClose+=OnClose;
             IP = GetPublicIPv4();
-            
+        }
+        
+        void Start(string[] args) {
             Logger.Instance.Log($"Current IP: {IP}");
-
+            
+            /*var packet = new DataPacket {IPv4 = "123.123.123.123", Port=12345, Name = ""};
+            while (packet.Name.Length < 50) packet.Name += "A";
+            Logger.Instance.Log($"Max Byte Length: {packet.ToBytes().Length}");
+*/
             listenerThread = new Thread(() => Listener.Start()) {
                 IsBackground = true
             };
             listenerThread.Start();
+            while (true) {
+                Console.Read();
+            }
         }
 
         string GetPublicIPv4() {

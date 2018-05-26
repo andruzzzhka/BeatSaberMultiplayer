@@ -9,7 +9,7 @@ using ServerHub.Misc;
 
 namespace ServerHub.Handlers {
     public class ServerListener {
-        private TcpListener Listener { get; set; } = new TcpListener(IPAddress.Any, Settings.Instance.IP.Port);
+        private TcpListener Listener { get; set; } = new TcpListener(IPAddress.Any, Settings.Instance.Server.Port);
 
         private bool Listen { get; set; }
 
