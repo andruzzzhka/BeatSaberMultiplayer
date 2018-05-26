@@ -36,6 +36,8 @@ namespace BeatSaberMultiplayerServer
 
         public static TimeSpan playTime = new TimeSpan();
 
+        private static TcpClient _serverHubClient;
+
         static void Main(string[] args)
         {
             Logger.Instance.Log("Beat Saber Multiplayer Server v"+version);
@@ -59,7 +61,7 @@ namespace BeatSaberMultiplayerServer
             }
 
             Logger.Instance.Log("Starting server...");
-            _listener = new TcpListener(IPAddress.Any, +_settings.IP.Port);
+            _listener = new TcpListener(IPAddress.Any, _settings.IP.Port);
 
             _listener.Start();
 
@@ -70,6 +72,32 @@ namespace BeatSaberMultiplayerServer
 
             Thread _serverStateThread = new Thread(ServerStateControllerThread);
             _serverStateThread.Start();
+
+            try
+            {
+                ConnectToServerHub(_settings.IP.ServerHubIP, _settings.IP.ServerHubPort);
+            }catch(Exception e)
+            {
+                Logger.Instance.Error("Can't connect to ServerHub! Exception: "+e);
+            }
+
+        }
+
+        static public void ConnectToServerHub(string serverHubIP, int serverHubPort)
+        {
+            _serverHubClient = new TcpClient(serverHubIP, serverHubPort);
+
+            DataPacket packet = new DataPacket();
+
+            packet.IPv4 = IP;
+            packet.Port = _settings.IP.Port;
+            packet.Name = _settings.IP.ServerName;
+
+            byte[] packetBytes = packet.ToBytes();
+
+            _serverHubClient.GetStream().Write(packetBytes, 0, packetBytes.Length);
+
+            //client.Close();
 
         }
 

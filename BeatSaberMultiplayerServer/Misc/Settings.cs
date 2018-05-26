@@ -10,17 +10,65 @@ namespace BeatSaberMultiplayerServer.Misc {
         [JsonObject(MemberSerialization.OptIn)]
         public class IPSettings {
             private int _port;
+            private string _serverName;
+
+            private string _serverHubIP;
+            private int _serverHubPort;
 
             private Action MarkDirty { get; }
-        
+
             /// <summary>
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
-            public int Port {
+            public int Port
+            {
                 get => _port;
-                set {
+                set
+                {
                     _port = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string ServerName
+            {
+                get => _serverName;
+                set
+                {
+                    _serverName = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string ServerHubIP
+            {
+                get => _serverHubIP;
+                set
+                {
+                    _serverHubIP = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public int ServerHubPort
+            {
+                get => _serverHubPort;
+                set
+                {
+                    _serverHubPort = value;
                     MarkDirty();
                 }
             }
@@ -28,6 +76,10 @@ namespace BeatSaberMultiplayerServer.Misc {
             public IPSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
+                _serverName = "New Server";
+
+                _serverHubIP = "127.0.0.1";
+                _serverHubPort = 3701;
             }
         }
         [JsonObject(MemberSerialization.OptIn)]

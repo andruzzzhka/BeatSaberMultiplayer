@@ -78,7 +78,13 @@ namespace BeatSaberMultiplayerServer.Misc {
             using (var f = LogFile.AppendText()) {
                 f.AutoFlush = true;
                 while (IsThreadRunning) {
-                    if (!LogQueue.Any()) Thread.Sleep(250);
+                    try
+                    {
+                        if (!LogQueue.Any()) Thread.Sleep(250);
+                    }catch(Exception e)
+                    {
+
+                    }
                     LogHandler.IsBackground = false;
                     while (LogQueue.Any()) {
                         var o = LogQueue.Dequeue();

@@ -73,7 +73,7 @@ namespace BeatSaberMultiplayerServer
 
     }
 
-    public enum ClientState { Disconnected, Connected, Playing, UpdateRequired};
+    public enum ClientState { Disconnected, Connected, Playing, UpdateRequired, MasterServer};
 
     enum Difficulty { Easy, Normal, Hard, Expert, ExpertPlus };
 
