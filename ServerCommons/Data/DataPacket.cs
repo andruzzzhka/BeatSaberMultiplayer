@@ -9,7 +9,7 @@ namespace ServerCommons.Data {
         public string IPv4 { get; set; }
         [JsonProperty]
         public int Port { get; set; }
-        public const int MAX_BYTE_LENGTH = 232;
+        public const int MAX_BYTE_LENGTH = 256;
 
         [JsonProperty]
         public string Name {

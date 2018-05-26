@@ -13,6 +13,7 @@ using System.Threading;
 using BeatSaberMultiplayerServer.Misc;
 using ServerCommons.Data;
 using ServerCommons.Misc;
+using Settings = BeatSaberMultiplayerServer.Misc.Settings;
 
 namespace BeatSaberMultiplayerServer {
     class ServerMain {
@@ -97,8 +98,6 @@ namespace BeatSaberMultiplayerServer {
                     }
                 }
 
-                string downloadedSongPath = "";
-
                 ZipArchive zip = null;
                 try {
                     zip = ZipFile.OpenRead(zipPath);
@@ -112,8 +111,6 @@ namespace BeatSaberMultiplayerServer {
                     zip?.ExtractToDirectory(Settings.Instance.Server.Downloaded.FullName);
                     try {
                         zip?.Dispose();
-                        //File.Delete(zipPath);
-                        //Logger.Instance.Log($"Deleted Zip [{id}]");
                     }
                     catch (IOException ex) {
                         Logger.Instance.Exception($"Failed to remove Zip [{id}]");
@@ -123,8 +120,6 @@ namespace BeatSaberMultiplayerServer {
                     Logger.Instance.Exception($"Folder [{songName}] exists. Continuing.");
                     try {
                         zip.Dispose();
-                        //File.Delete(zipPath);
-                        //Logger.Instance.Log($"Deleted Zip [{id}]");
                     }
                     catch (IOException) {
                         Logger.Instance.Exception($"Failed to remove Zip [{id}]");
@@ -158,7 +153,7 @@ namespace BeatSaberMultiplayerServer {
             float lobbyTimer = 0;
             float sendTimer = 0;
 
-            int lobbyTime = 60;
+            int lobbyTime = Settings.Instance.Server.LobbyTime;
 
             TimeSpan deltaTime;
 
@@ -263,6 +258,11 @@ namespace BeatSaberMultiplayerServer {
                     (int) Enum.Parse(typeof(Difficulty), diff.difficulty) >= difficulty) {
                     difficulty = (int) Enum.Parse(typeof(Difficulty), diff.difficulty);
                 }
+            }
+
+            if (difficulty == 0 && _song.difficultyLevels.Length > 0)
+            {
+                difficulty = (int)Enum.Parse(typeof(Difficulty), _song.difficultyLevels[0].difficulty);
             }
 
             return difficulty;

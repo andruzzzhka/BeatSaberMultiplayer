@@ -15,6 +15,9 @@ namespace BeatSaberMultiplayerServer.Misc {
             private string _serverName;
             private string _serverHubIP;
             private int _serverHubPort;
+
+            private int _lobbyTime;
+
             [JsonProperty]
             private string SongDirectory;
 
@@ -92,7 +95,18 @@ namespace BeatSaberMultiplayerServer.Misc {
                     MarkDirty();
                 }
             }
-            
+
+            [JsonProperty]
+            public int LobbyTime
+            {
+                get => _lobbyTime;
+                set
+                {
+                    _lobbyTime = value;
+                    MarkDirty();
+                }
+            }
+
             string GetPublicIPv4()
             {
                 using (var client = new WebClient())
@@ -134,6 +148,7 @@ namespace BeatSaberMultiplayerServer.Misc {
                 _serverName = "New Server";
                 _serverHubIP = "127.0.0.1";
                 _serverHubPort = 3701;
+                _lobbyTime = 60;
                 SongDirectory = "AvailableSongs/";
             }
         }

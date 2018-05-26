@@ -6,8 +6,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using ServerHub.Misc;
-using ServerCommons.Data;
-using ServerCommons.Misc;
 
 namespace ServerHub.Handlers {
     public class ServerListener {
@@ -42,7 +40,7 @@ namespace ServerHub.Handlers {
 
         private void WatchClients() {
             while (Listen) {
-                Thread.Sleep(new TimeSpan(0, 10, 0)); //check the servers every 10 minutes
+                Thread.Sleep(new TimeSpan(0, 1, 0)); //check the servers every 1 minutes
                 ConnectedClients.AsParallel().ForAll(o => {
                     try {
                         if (o.TcpClient?.Client != null && o.TcpClient.Client.Connected) {
@@ -86,16 +84,18 @@ namespace ServerHub.Handlers {
             BeginListening();
         }
 
-        void BeginListening() { //TODO: Client sending data to main server. Use DataPacket class
+        void BeginListening() {
             while (Listen) {
                 Logger.Instance.Log("Waiting for a connection");
                 var client = new ClientData(ConnectedClients.Count) {TcpClient = Listener.AcceptTcpClient()};
                 ConnectedClients.Add(client);
                 Logger.Instance.Log("Connected");
                 byte[] bytes = new byte[DataPacket.MAX_BYTE_LENGTH];
-                client.TcpClient.GetStream().Read(bytes, 0, bytes.Length);
-                var packet = DataPacket.ToPacket(bytes);
-
+                DataPacket packet = null;
+                if (client.TcpClient.GetStream().Read(bytes, 0, bytes.Length) != 0) {
+                    packet = DataPacket.ToPacket(bytes);
+                }
+                
                 client.IPv4 = packet?.IPv4;
                 client.Name = packet?.Name;
                 if (packet?.Port != null) client.Port = packet.Port;
