@@ -14,12 +14,16 @@ namespace BeatSaberMultiplayer
 {
     class BSMultiplayerMain : MonoBehaviour
     {
+
+
         BSMultiplayerUI ui;
 
         private TcpClient _connection;
         private NetworkStream _connectionStream;
 
+        public static string version;
         public static BSMultiplayerMain _instance;
+
         public MainGameSceneSetupData _mainGameSceneSetupData;
         GameplayManager _gameManager;
 
@@ -43,9 +47,10 @@ namespace BeatSaberMultiplayer
         int localPlayerIndex = -1;
         public List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
 
-        public static void OnLoad(int level)
+        public static void OnLoad(int level, string pluginVersion)
         {
             _loadedlevel = level;
+            version = pluginVersion;
 
             if (_instance == null)
             {
@@ -176,6 +181,10 @@ namespace BeatSaberMultiplayer
                             _playerInfos.Add(player);
                         }
 
+                        foreach(PlayerInfoDisplay display in scoreDisplays)
+                        {
+                            display.UpdatePlayerInfo(null, 0);
+                        }
 
                         lastLocalPlayerIndex = localPlayerIndex;
                         localPlayerIndex = FindIndexInList(playerInfo);
@@ -214,7 +223,6 @@ namespace BeatSaberMultiplayer
 
                         }
 
-                        Console.WriteLine(lastLocalPlayerIndex + " " + localPlayerIndex);
                         if (lastLocalPlayerIndex != 0 && localPlayerIndex == 0)
                         {
                             TextMeshPro player1stPlaceText = ui.CreateWorldText(transform, "You are number one!");
@@ -262,9 +270,26 @@ namespace BeatSaberMultiplayer
 
         public IEnumerator ReceiveFromServerCoroutine()
         {
+            if (_connection == null || !_connection.Connected)
+            {
+                yield break;
+            }
+
             if (_connection.Available == 0)
             {
-                yield return new WaitUntil(delegate() { return _connection.Available > 0; });
+                yield return new WaitUntil(delegate() 
+                {
+                    if (_connection == null || !_connection.Connected)
+                    {
+                        return true;
+                    }
+                    return _connection.Available > 0;
+                });
+            }
+
+            if (_connection == null || !_connection.Connected)
+            {
+                yield break;
             }
 
             NetworkStream stream = _connection.GetStream();
@@ -284,7 +309,7 @@ namespace BeatSaberMultiplayer
 
         public string[] ReceiveFromServer()
         {
-            if (_connection.Available == 0)
+            if (_connection == null || _connection.Available == 0 || !_connection.Connected)
             {
                 return null;
             }

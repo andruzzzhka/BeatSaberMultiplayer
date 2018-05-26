@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace ServerHub.Misc {
+namespace BeatSaberMultiplayerServer.Misc {
     public class Logger {
         private static Logger _instance;
 
@@ -78,7 +78,13 @@ namespace ServerHub.Misc {
             using (var f = LogFile.AppendText()) {
                 f.AutoFlush = true;
                 while (IsThreadRunning) {
-                    if (!LogQueue.Any()) Thread.Sleep(100);
+                    try
+                    {
+                        if (!LogQueue.Any()) Thread.Sleep(250);
+                    }catch(Exception e)
+                    {
+
+                    }
                     LogHandler.IsBackground = false;
                     while (LogQueue.Any()) {
                         var o = LogQueue.Dequeue();

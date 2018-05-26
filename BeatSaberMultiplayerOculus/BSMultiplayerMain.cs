@@ -20,7 +20,9 @@ namespace BeatSaberMultiplayer
         private TcpClient _connection;
         private NetworkStream _connectionStream;
 
+        public static string version;
         public static BSMultiplayerMain _instance;
+
         public MainGameSceneSetupData _mainGameSceneSetupData;
         GameplayManager _gameManager;
 
@@ -43,12 +45,14 @@ namespace BeatSaberMultiplayer
         int lastLocalPlayerIndex = -1;
         int localPlayerIndex = -1;
         public List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
+
         private ulong playerID;
         private string playerName;
 
-        public static void OnLoad(int level)
+        public static void OnLoad(int level, string pluginVersion)
         {
             _loadedlevel = level;
+            version = pluginVersion;
 
             if (_instance == null)
             {
@@ -59,6 +63,9 @@ namespace BeatSaberMultiplayer
             {
                 _instance.OnLevelChange();
             }
+
+
+
 
         }
 
@@ -100,7 +107,15 @@ namespace BeatSaberMultiplayer
 
         public void OnLevelChange()
         {
-            if(_loadedlevel > 2 && _connection.Connected)
+            if (playerID == 0 || playerInfo == null)
+            {
+                Users.GetLoggedInUser().OnComplete((Message<User> msg) =>
+                {
+                    playerID = msg.Data.ID;
+                    playerName = msg.Data.OculusID;
+                });
+            }
+            if (_loadedlevel > 2 && _connection.Connected)
             {
                 StartCoroutine(WaitForControllers());
 
@@ -174,7 +189,11 @@ namespace BeatSaberMultiplayer
                             PlayerInfo player = JsonUtility.FromJson<PlayerInfo>(playerStr);
                             _playerInfos.Add(player);
                         }
-
+                        
+                        foreach (PlayerInfoDisplay display in scoreDisplays)
+                        {
+                            display.UpdatePlayerInfo(null, 0);
+                        }
 
                         lastLocalPlayerIndex = localPlayerIndex;
                         localPlayerIndex = FindIndexInList(playerInfo);
@@ -212,8 +231,7 @@ namespace BeatSaberMultiplayer
                             }
 
                         }
-
-                        Console.WriteLine(lastLocalPlayerIndex + " " + localPlayerIndex);
+                        
                         if (lastLocalPlayerIndex != 0 && localPlayerIndex == 0)
                         {
                             TextMeshPro player1stPlaceText = ui.CreateWorldText(transform, "You are number one!");
@@ -247,10 +265,14 @@ namespace BeatSaberMultiplayer
 
             ui = BSMultiplayerUI._instance;
 
-            Users.GetLoggedInUser().OnComplete((Message<User> msg) => {
-                playerID =  msg.Data.ID;
-                playerName =  msg.Data.OculusID;
-            });
+            if (playerID == 0 || playerInfo == null)
+            {
+                Users.GetLoggedInUser().OnComplete((Message<User> msg) =>
+                {
+                    playerID = msg.Data.ID;
+                    playerName = msg.Data.OculusID;
+                });
+            }
         }
 
         IEnumerator WaitForGameData()
@@ -266,9 +288,26 @@ namespace BeatSaberMultiplayer
 
         public IEnumerator ReceiveFromServerCoroutine()
         {
+            if (_connection == null || !_connection.Connected)
+            {
+                yield break;
+            }
+
             if (_connection.Available == 0)
             {
-                yield return new WaitUntil(delegate() { return _connection.Available > 0; });
+                yield return new WaitUntil(delegate ()
+                {
+                    if (_connection == null || !_connection.Connected)
+                    {
+                        return true;
+                    }
+                    return _connection.Available > 0;
+                });
+            }
+
+            if (_connection == null || !_connection.Connected)
+            {
+                yield break;
             }
 
             NetworkStream stream = _connection.GetStream();

@@ -71,6 +71,8 @@ namespace ServerHub.Handlers {
                         o.TcpClient?.Close();
                     }
                 });
+
+                Thread.Sleep(16);
             }
         }
 
@@ -96,6 +98,8 @@ namespace ServerHub.Handlers {
                 client.IPv4 = packet?.IPv4;
                 client.Name = packet?.Name;
                 if (packet?.Port != null) client.Port = packet.Port;
+
+                Thread.Sleep(16);
             }
         }
 

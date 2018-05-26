@@ -42,6 +42,7 @@ namespace BeatSaberMultiplayerServer
 
         public ServerCommand(ServerCommandType _type, int _timer = 0, string[] _songs = null, string _selectedLevelID = null, int _difficulty = 0, string[] _playerInfos = null, double _selectedSongDuration = 0, double _selectedSongPlayTime = 0)
         {
+            version = ServerMain.version;
             commandType = _type;
             lobbyTimer = _timer;
             songsToDownload = _songs;
@@ -59,16 +60,20 @@ namespace BeatSaberMultiplayerServer
     [Serializable]
     class ClientCommand
     {
+        public string version = "0.1";
         public ClientCommandType commandType;
         public string playerInfo;
 
         public ClientCommand(ClientCommandType _type, string _playerInfo = null)
         {
+            
             commandType = _type;
             playerInfo = _playerInfo;
         }
 
     }
+
+    public enum ClientState { Disconnected, Connected, Playing, UpdateRequired, MasterServer};
 
     enum Difficulty { Easy, Normal, Hard, Expert, ExpertPlus };
 

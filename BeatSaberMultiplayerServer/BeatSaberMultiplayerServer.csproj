@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=0.86.0.518, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net35\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -39,23 +42,21 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BSMPJsonObjects.cs" />
-    <Compile Include="DataPacket.cs" />
-    <Compile Include="Extensions.cs" />
-    <Compile Include="HTML5Decode.cs" />
-    <Compile Include="Logger.cs" />
-    <Compile Include="ServerMain.cs" />
+    <Compile Include="Misc\BSMPJsonObjects.cs" />
+    <Compile Include="Misc\DataPacket.cs" />
+    <Compile Include="Misc\HTML5Decode.cs" />
+    <Compile Include="Misc\Extensions.cs" />
+    <Compile Include="Misc\Logger.cs" />
+    <Compile Include="Misc\Settings.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Settings.cs" />
-    <Compile Include="SimpleJSON.cs" />
+    <Compile Include="Misc\SimpleJSON.cs" />
     <Compile Include="SongLoader.cs" />
   </ItemGroup>
   <ItemGroup>

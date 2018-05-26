@@ -3,31 +3,83 @@ using System.IO;
 using System.Reflection;
 using Newtonsoft.Json;
 
-namespace ServerHub.Misc {
+namespace BeatSaberMultiplayerServer.Misc {
     [JsonObject(MemberSerialization.OptIn)]
     public class Settings {
 
         [JsonObject(MemberSerialization.OptIn)]
         public class IPSettings {
             private int _port;
+            private string _serverName;
+
+            private string _serverHubIP;
+            private int _serverHubPort;
 
             private Action MarkDirty { get; }
-        
+
             /// <summary>
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
-            public int Port {
+            public int Port
+            {
                 get => _port;
-                set {
+                set
+                {
                     _port = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string ServerName
+            {
+                get => _serverName;
+                set
+                {
+                    _serverName = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string ServerHubIP
+            {
+                get => _serverHubIP;
+                set
+                {
+                    _serverHubIP = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public int ServerHubPort
+            {
+                get => _serverHubPort;
+                set
+                {
+                    _serverHubPort = value;
                     MarkDirty();
                 }
             }
 
             public IPSettings(Action markDirty) {
                 MarkDirty = markDirty;
-                _port = 3701;
+                _port = 3700;
+                _serverName = "New Server";
+
+                _serverHubIP = "127.0.0.1";
+                _serverHubPort = 3701;
             }
         }
         [JsonObject(MemberSerialization.OptIn)]
@@ -55,54 +107,24 @@ namespace ServerHub.Misc {
         }
         
         [JsonObject(MemberSerialization.OptIn)]
-        public class DatabaseSettings {
-            private string _username;
-            private string _password;
-            private string _databaseName;
+        public class AvailableSongsSettings {
+            private int[] _songs;
 
             private Action MarkDirty { get; }
         
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
-            public string Username {
-                get => _username;
-                set {
-                    _username = value;
-                    MarkDirty();
-                }
-            }
-            
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
-            [JsonProperty]
-            public string Password {
-                get => _password;
-                set {
-                    _password = value;
-                    MarkDirty();
-                }
-            }
-            
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
-            [JsonProperty]
-            public string DatabaseName {
-                get => _databaseName;
-                set {
-                    _databaseName = value;
+            public int[] Songs {
+                get => _songs;
+                set
+                {
+                    _songs = value;
                     MarkDirty();
                 }
             }
 
-            public DatabaseSettings(Action markDirty) {
+            public AvailableSongsSettings(Action markDirty) {
                 MarkDirty = markDirty;
-                _username = "username";
-                _password = "password";
-                _databaseName = "database";
+                _songs = new int[] { 65};
             }
         }
 
@@ -111,7 +133,7 @@ namespace ServerHub.Misc {
         [JsonProperty]
         public LoggerSettings Logger { get; }
         [JsonProperty]
-        public DatabaseSettings Database { get; }
+        public AvailableSongsSettings AvailableSongs { get; }
 
         private static Settings _instance;
 
@@ -140,7 +162,7 @@ namespace ServerHub.Misc {
         Settings() {
             IP = new IPSettings(MarkDirty);
             Logger = new LoggerSettings(MarkDirty);
-            Database = new DatabaseSettings(MarkDirty);
+            AvailableSongs = new AvailableSongsSettings(MarkDirty);
             MarkDirty();
         }
 
