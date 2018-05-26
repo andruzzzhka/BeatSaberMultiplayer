@@ -1,0 +1,14 @@
+1 - Client connects to server
+2 - Server processes client and waits for data in
+3 - Client sends IP, PORT & Name 
+4 - Server processes this data and attaches an id, adding it to an array
+
+5 - Server pings client <------------------------¬
+|                                                |
+|                                                |
+v                                                |
+6 - Client Responds to ping if connected         |
+|                                                |
+|                                                |
+v                                                |
+7 - Server removes client from list if no response

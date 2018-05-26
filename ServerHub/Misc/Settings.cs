@@ -9,7 +9,6 @@ namespace ServerHub.Misc {
 
         [JsonObject(MemberSerialization.OptIn)]
         public class IPSettings {
-            [JsonProperty]
             private int _port;
 
             private Action MarkDirty { get; }
@@ -17,6 +16,7 @@ namespace ServerHub.Misc {
             /// <summary>
             /// Remember to Save after changing the value
             /// </summary>
+            [JsonProperty]
             public int Port {
                 get => _port;
                 set {
@@ -32,7 +32,6 @@ namespace ServerHub.Misc {
         }
         [JsonObject(MemberSerialization.OptIn)]
         public class LoggerSettings {
-            [JsonProperty]
             private string _logsDir;
 
             private Action MarkDirty { get; }
@@ -40,6 +39,7 @@ namespace ServerHub.Misc {
             /// <summary>
             /// Remember to Save after changing the value
             /// </summary>
+            [JsonProperty]
             public string LogsDir {
                 get => _logsDir;
                 set {
@@ -53,29 +53,82 @@ namespace ServerHub.Misc {
                 _logsDir = "Logs/";
             }
         }
+        
+        [JsonObject(MemberSerialization.OptIn)]
+        public class DatabaseSettings {
+            private string _username;
+            private string _password;
+            private string _databaseName;
 
-        public IPSettings SettingsIP => _ip;
-        public LoggerSettings SettingsLogger => _logger;
+            private Action MarkDirty { get; }
+        
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string Username {
+                get => _username;
+                set {
+                    _username = value;
+                    MarkDirty();
+                }
+            }
+            
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string Password {
+                get => _password;
+                set {
+                    _password = value;
+                    MarkDirty();
+                }
+            }
+            
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string DatabaseName {
+                get => _databaseName;
+                set {
+                    _databaseName = value;
+                    MarkDirty();
+                }
+            }
+
+            public DatabaseSettings(Action markDirty) {
+                MarkDirty = markDirty;
+                _username = "username";
+                _password = "password";
+                _databaseName = "database";
+            }
+        }
+
+        [JsonProperty]
+        public IPSettings IP { get; }
+        [JsonProperty]
+        public LoggerSettings Logger { get; }
+        [JsonProperty]
+        public DatabaseSettings Database { get; }
 
         private static Settings _instance;
-        [JsonProperty]
-        private readonly IPSettings _ip;
-        [JsonProperty]
-        private readonly LoggerSettings _logger;
 
-        private static FileInfo FileLocation { get; } = new FileInfo("./Settings.json");
+        private static FileInfo FileLocation { get; } = new FileInfo(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Settings.json"));
 
         public static Settings Instance {
             get {
                 if (_instance != null) return _instance;
                 try {
                     FileLocation?.Directory?.Create();
-                    _instance = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(FileLocation.FullName));
-                    _instance.MarkClean();
+                    _instance = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(FileLocation?.FullName));
+                    _instance.MarkDirty();
                 }
                 catch (Exception ex) {
                     _instance = new Settings();
                     _instance.Save();
+                    Misc.Logger.Instance.Exception(ex.Message);
                 }
 
                 return _instance;
@@ -85,8 +138,9 @@ namespace ServerHub.Misc {
         private bool IsDirty { get; set; }
 
         Settings() {
-            _ip = new IPSettings(MarkDirty);
-            _logger = new LoggerSettings(MarkDirty);
+            IP = new IPSettings(MarkDirty);
+            Logger = new LoggerSettings(MarkDirty);
+            Database = new DatabaseSettings(MarkDirty);
             MarkDirty();
         }
 
@@ -95,7 +149,7 @@ namespace ServerHub.Misc {
             try {
                 using (var f = new StreamWriter(FileLocation.FullName)) {
                     var json = JsonConvert.SerializeObject(this, Formatting.Indented);
-                    Logger.Instance.Log(json);
+                    //Misc.Logger.Instance.Log(json);
                     f.Write(json);
                 }
 

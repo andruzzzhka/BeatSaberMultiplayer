@@ -51,22 +51,22 @@ namespace ServerHub.Misc {
 
         #region Log Functions
 
-        public void Log(string msg) {
+        public void Log(object msg) {
             if (!LogHandler.IsAlive) throw new Exception("Logger is Closed!");
             LogQueue.Enqueue(new LogMessage($"[LOG @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Info));
         }
 
-        public void Error(string msg) {
+        public void Error(object msg) {
             if (!LogHandler.IsAlive) throw new Exception("Logger is Closed!");
             LogQueue.Enqueue(new LogMessage($"[ERROR @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Error));
         }
 
-        public void Exception(string msg) {
+        public void Exception(object msg) {
             if (!LogHandler.IsAlive) throw new Exception("Logger is Closed!");
             LogQueue.Enqueue(new LogMessage($"[EXCEPTION @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Exception));
         }
 
-        public void Warning(string msg) {
+        public void Warning(object msg) {
             if (!LogHandler.IsAlive) throw new Exception("Logger is Closed!");
             LogQueue.Enqueue(new LogMessage($"[WARNING @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Warning));
         }
@@ -85,8 +85,11 @@ namespace ServerHub.Misc {
                         if (o.Message == OldLogMessage.Message) return;
                         OldLogMessage = o;
                         f.WriteLine(o.Message);
+                        #if DEBUG
                         Console.ForegroundColor = o.GetColour();
                         Console.WriteLine(o.Message);
+                        Console.ResetColor();
+                        #endif
                     }
                 }
                 LogHandler.IsBackground = true;
@@ -96,7 +99,7 @@ namespace ServerHub.Misc {
         }
 
         FileInfo GetPath() {
-            var logsDir = new DirectoryInfo($"./{Settings.Instance.SettingsLogger.LogsDir}/{DateTime.Now:dd-MM-yy}");
+            var logsDir = new DirectoryInfo($"./{Settings.Instance.Logger.LogsDir}/{DateTime.Now:dd-MM-yy}");
             logsDir.Create();
             return new FileInfo($"{logsDir.FullName}/{logsDir.GetFiles().Length}.txt");
         }

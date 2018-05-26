@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
+using System.Threading;
+using ServerHub.Handlers;
 using ServerHub.Misc;
 
 namespace ServerHub {
@@ -10,12 +13,20 @@ namespace ServerHub {
         static void Main(string[] args) => new Program().Start(args);
 
         private ServerListener Listener { get; set; } = new ServerListener();
+
+        private Thread listenerThread { get; set; }
+
+        private static EventHandler onClose { get; set; }
         
         void Start(string[] args) {
+            onClose+=OnClose;
             IP = GetPublicIPv4();
             Logger.Instance.Log($"Current IP: {IP}");
-            Listener.Start();
-            Listener.Stop();
+
+            listenerThread = new Thread(() => Listener.Start()) {
+                IsBackground = true
+            };
+            listenerThread.Start();
         }
 
         string GetPublicIPv4() {
@@ -23,5 +34,40 @@ namespace ServerHub {
                 return client.DownloadString("https://api.ipify.org");
             }
         }
+        
+        private bool OnClose(CtrlType sig)
+        {
+            switch (sig)
+            {
+                case CtrlType.CTRL_C_EVENT:
+                    break;
+                case CtrlType.CTRL_LOGOFF_EVENT:
+                    break;
+                case CtrlType.CTRL_SHUTDOWN_EVENT:
+                    break;
+                case CtrlType.CTRL_CLOSE_EVENT:
+                    Listener.Stop();
+                    listenerThread.Join();
+                    return true;
+            }
+
+            return false;
+        }
+        
+        #region Console Close Event
+        [DllImport("Kernel32")]
+        private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
+
+        private delegate bool EventHandler(CtrlType sig);
+
+        enum CtrlType
+        {
+            CTRL_C_EVENT = 0,
+            CTRL_BREAK_EVENT = 1,
+            CTRL_CLOSE_EVENT = 2,
+            CTRL_LOGOFF_EVENT = 5,
+            CTRL_SHUTDOWN_EVENT = 6
+        }
+        #endregion
     }
 }
