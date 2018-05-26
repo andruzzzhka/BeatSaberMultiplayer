@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Newtonsoft.Json;
 
-namespace BeatSaberMultiplayerServer.Misc {
+namespace ServerCommons.Data {
     [JsonObject(MemberSerialization.OptIn)]
     public class DataPacket {
         private string _name;

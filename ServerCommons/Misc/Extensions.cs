@@ -1,7 +1,7 @@
-﻿using System.Collections;
-using ServerHub.Misc;
+﻿// ReSharper disable once CheckNamespace
 
-// ReSharper disable once CheckNamespace
+using ServerCommons.Misc;
+
 namespace System.Linq {
     public static class Extensions {
         public static ConsoleColor GetColour(this Logger.LogMessage message) {

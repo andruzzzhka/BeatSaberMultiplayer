@@ -6,6 +6,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using ServerHub.Misc;
+using ServerCommons.Data;
+using ServerCommons.Misc;
 
 namespace ServerHub.Handlers {
     public class ServerListener {
@@ -91,10 +93,8 @@ namespace ServerHub.Handlers {
                 ConnectedClients.Add(client);
                 Logger.Instance.Log("Connected");
                 byte[] bytes = new byte[DataPacket.MAX_BYTE_LENGTH];
-                DataPacket packet = null;
-                while (client.TcpClient.GetStream().Read(bytes, 0, bytes.Length) != 0) {
-                    packet = DataPacket.ToPacket(bytes);
-                }
+                client.TcpClient.GetStream().Read(bytes, 0, bytes.Length);
+                var packet = DataPacket.ToPacket(bytes);
 
                 client.IPv4 = packet?.IPv4;
                 client.Name = packet?.Name;

@@ -4,7 +4,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using ServerHub.Handlers;
-using ServerHub.Misc;
+using ServerCommons.Misc;
 
 namespace ServerHub {
     class Program {

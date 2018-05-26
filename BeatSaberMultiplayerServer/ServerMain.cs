@@ -11,6 +11,8 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using BeatSaberMultiplayerServer.Misc;
+using ServerCommons.Data;
+using ServerCommons.Misc;
 
 namespace BeatSaberMultiplayerServer {
     class ServerMain {

@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using ServerCommons.Misc.ServerHub.Misc;
 
-namespace BeatSaberMultiplayerServer.Misc {
+namespace ServerCommons.Misc {
     public class Logger {
         private static Logger _instance;
 

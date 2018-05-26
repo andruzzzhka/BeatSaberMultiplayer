@@ -26,4 +26,7 @@
   <ItemGroup>
     <Folder Include="Database" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ServerCommons\ServerCommons.csproj" />
+  </ItemGroup>
 </Project>

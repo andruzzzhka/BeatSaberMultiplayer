@@ -205,7 +205,7 @@ namespace BeatSaberMultiplayerServer.Misc {
                 catch (Exception ex) {
                     _instance = new Settings();
                     _instance.Save();
-                    Misc.Logger.Instance.Exception(ex.Message);
+                    ServerCommons.Misc.Logger.Instance.Exception(ex.Message);
                 }
 
                 return _instance;
