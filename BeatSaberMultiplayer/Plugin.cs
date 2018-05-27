@@ -11,7 +11,7 @@ namespace BeatSaberMultiplayer
     {
         public string Name => "Beat Saber Multiplayer";
 
-        public string Version => "0.3";
+        public string Version => "0.3.0.0";
 
         public void OnActiveSceneChanged(Scene prevScene, Scene nextScene)
         {

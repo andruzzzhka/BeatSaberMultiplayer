@@ -99,8 +99,14 @@ namespace BeatSaberMultiplayerServer {
                     case "clients":
                         foreach (var t in clients) {
                             var client = t.playerInfo;
-                            if (t.playerInfo == null) continue;
-                            s += $"{Environment.NewLine}[{client.playerId}] {client.playerName} @ {((IPEndPoint)t._client.Client.RemoteEndPoint).Address}";
+                            if (t.playerInfo == null)
+                            {
+                                s += $"{Environment.NewLine}[{t.state}] NOT AVAILABLE @ {((IPEndPoint)t._client.Client.RemoteEndPoint).Address}";
+                            }
+                            else
+                            {
+                                s += $"{Environment.NewLine}[{t.state}] {client.playerName} @ {((IPEndPoint)t._client.Client.RemoteEndPoint).Address}";
+                            }
                         }
 
                         if (s == String.Empty) s = " No Clients";
@@ -208,6 +214,8 @@ namespace BeatSaberMultiplayerServer {
             float lobbyTimer = 0;
             float sendTimer = 0;
 
+            float sendTime = 1f / 20;
+
             int lobbyTime = Settings.Instance.Server.LobbyTime;
 
             TimeSpan deltaTime;
@@ -268,7 +276,7 @@ namespace BeatSaberMultiplayerServer {
                         sendTimer += (float) deltaTime.TotalSeconds;
                         playTime += deltaTime;
 
-                        if (sendTimer >= 1f) {
+                        if (sendTimer >= sendTime) {
                             SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
                                 ServerCommandType.SetPlayerInfos,
                                 _playerInfos: (clients.Where(x => x.playerInfo != null)
@@ -286,7 +294,7 @@ namespace BeatSaberMultiplayerServer {
                             Logger.Instance.Log("Returning to lobby...");
                         }
 
-                        if (clients.Count == 0 && playTime.TotalSeconds > 5) {
+                        if (clients.Count(x => x.state == ClientState.Playing) == 0 && playTime.TotalSeconds > 5) {
                             playTime = new TimeSpan();
                             sendTimer = 0f;
                             serverState = ServerState.Lobby;
@@ -325,10 +333,9 @@ namespace BeatSaberMultiplayerServer {
 
         static void SendToAllClients(string message, bool retryOnError = false) {
             try {
-                for (int i = 0; i < clients.Count; i++) {
-                    if (clients[i] != null)
-                        clients[i].SendToClient(message);
-                }
+                clients.Where(x => x != null && (x.state == ClientState.Connected || x.state == ClientState.Playing)).AsParallel().ForAll(x => {
+                    x.SendToClient(message);
+                });
             }
             catch (Exception e) {
                 Logger.Instance.Exception("Can't send message to all clients! Exception: " + e);
