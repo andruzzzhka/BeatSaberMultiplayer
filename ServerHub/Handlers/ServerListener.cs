@@ -17,7 +17,7 @@ namespace ServerHub.Handlers {
 
         private bool Listen { get; set; }
 
-        private List<ClientObject> ConnectedClients { get; set; } = new List<ClientObject>();
+        public List<ClientObject> ConnectedClients { get; set; } = new List<ClientObject>();
         private Thread ClientWatcher { get; set; }
 
         public class ClientObject {
@@ -33,38 +33,7 @@ namespace ServerHub.Handlers {
 
         private void WatchClients() {
             while (Listen) {
-                Thread.Sleep(new TimeSpan(0, 1, 0)); //check the servers every 1 minute
-                ConnectedClients.AsParallel().ForAll(cO => {
-                    var o = cO.Data;
-                    try {
-                        if (o.TcpClient?.Client != null && o.TcpClient.Client.Connected) {
-                            /* pear to the documentation on Poll:
-                             * When passing SelectMode.SelectRead as a parameter to the Poll method it will return 
-                             * -either- true if Socket.Listen(Int32) has been called and a connection is pending;
-                             * -or- true if data is available for reading; 
-                             * -or- true if the connection has been closed, reset, or terminated; 
-                             * otherwise, returns false
-                             */
-
-                            // Detect if client disconnected
-                            if (o.TcpClient.Client.Poll(0, SelectMode.SelectRead)) {
-                                byte[] buff = new byte[1];
-                                if (o.TcpClient.Client.Receive(buff, SocketFlags.Peek) == 0) {
-                                    // Client disconnected
-                                    RemoveClient(cO);
-                                }
-                            }
-                        }
-                        else {
-                            RemoveClient(cO);
-                        }
-                    }
-                    catch {
-                        RemoveClient(cO);
-                    }
-                });
-
-                Thread.Sleep(16);
+                
             }
         }
 
@@ -76,7 +45,6 @@ namespace ServerHub.Handlers {
 
         public void Start() {
             Listen = true;
-            ClientWatcher.Start();
             Listener.Start();
             BeginListening();
         }
@@ -87,10 +55,14 @@ namespace ServerHub.Handlers {
                 var data = AcceptClient();
                 t = new Thread(o => {
                     var clientObject = new ClientObject {DataListener = t, Data = data};
-                    ConnectedClients.Add(clientObject);
                     while (t.IsAlive) {
+                        if(!clientObject.Data.TcpClient.Connected){RemoveClient(clientObject);
+                            break;
+                        }
                         PacketHandler(ListenForPackets(ref clientObject), ref clientObject);
                     }
+
+                    if (t.IsAlive) t.Join();
                 }){IsBackground = true};
                 t.Start();
             }
@@ -125,6 +97,7 @@ namespace ServerHub.Handlers {
                     if (sPacket.FirstConnect)
                     {
                         cO.Data = new Data(ConnectedClients.Count(x => x.Data.ID != -1) == 0 ? 0 : ConnectedClients.Last(x => x.Data.ID != -1).Data.ID + 1) { TcpClient = client, FirstConnect = sPacket.FirstConnect, IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port };
+                        ConnectedClients.Add(cO);
                         Logger.Instance.Log($"Server {cO.Data.ID} @ {cO.Data.IPv4}:{cO.Data.Port} added to collection");
                     }
                     else
@@ -151,19 +124,18 @@ namespace ServerHub.Handlers {
                 case ConnectionType.Client:
                     Logger.Instance.Log("ConnectionType is [Client]");
                     var clientData = (ClientDataPacket)dataPacket;
-                    Logger.Instance.Log(clientData.ToString());
                     clientData.Servers = GetServers(clientData.Offset);
-                    if (cO.Data.TcpClient != null & cO.Data.TcpClient.Connected)
+                    Logger.Instance.Log($"Packet JSON:{Environment.NewLine}{clientData}");
+                    if (cO.Data.TcpClient != null && cO.Data.TcpClient.Connected)
                     {
                         cO.Data.TcpClient.GetStream().Write(clientData.ToBytes(), 0, clientData.ToBytes().Length);
                         cO.Data.TcpClient.Close();
                     }
-                    ConnectedClients.Remove(cO);
                     break;
                 case ConnectionType.Server:
                     Logger.Instance.Log("ConnectionType is [Server]");
                     var serverData = (ServerDataPacket)dataPacket;
-                    Logger.Instance.Log(serverData.ToString());
+                    Logger.Instance.Log($"Packet JSON:{Environment.NewLine}{serverData}");
                     if (serverData.RemoveFromCollection) {
                         var temp = cO.Data;
                         Logger.Instance.Log($"Removing Server {serverData.ID} from Collection");
@@ -186,7 +158,7 @@ namespace ServerHub.Handlers {
 
         List<Data> GetServers(int Offset, int count=6) {
             var index = (count - 1) * Offset;
-            return ConnectedClients.Select(o => o.Data).Where(o => o.ID != -1).ToList().GetRange(index, ((count + index) >= ConnectedClients.Count(o => o.Data.ID != -1)) ? Math.Clamp(ConnectedClients.Count(o => o.Data.ID != -1) - index, 0, 6) : (count + index));
+            return ConnectedClients.Select(o => o.Data).Where(o => o.ID != -1).ToList().GetRange(index, count + index >= ConnectedClients.Count(o => o.Data.ID != -1) ? Math.Clamp(ConnectedClients.Count(o => o.Data.ID != -1) - index, 0, 6) : count + index);
         }
 
         public void Stop() {
