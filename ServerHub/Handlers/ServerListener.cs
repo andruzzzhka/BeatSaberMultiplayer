@@ -18,27 +18,14 @@ namespace ServerHub.Handlers {
         private bool Listen { get; set; }
 
         public List<ClientObject> ConnectedClients { get; set; } = new List<ClientObject>();
-        private Thread ClientWatcher { get; set; }
 
         public class ClientObject {
             public Thread DataListener { get; set; }
             public Data Data { get; set; }
         }
-        
-        public ServerListener() {
-            ClientWatcher = new Thread(WatchClients) {
-                IsBackground = true
-            };
-        }
-
-        private void WatchClients() {
-            while (Listen) {
-                
-            }
-        }
 
         public void RemoveClient(ClientObject cO) {
-            Logger.Instance.Log($"Server {cO.Data.ID} @ [{cO.Data.IPv4}:{cO.Data.Port}] Removed from collection");
+            if(cO.Data.ID!=-1) Logger.Instance.Log($"Server {cO.Data.ID} @ [{cO.Data.IPv4}:{cO.Data.Port}] Removed from collection");
             ConnectedClients.Remove(cO);
             cO.Data.TcpClient.Close();
         }
@@ -164,7 +151,6 @@ namespace ServerHub.Handlers {
         public void Stop() {
             Listen = false;
             Listener.Stop();
-            ClientWatcher.Join();
         }
     }
 }

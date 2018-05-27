@@ -80,6 +80,8 @@ namespace BeatSaberMultiplayerServer {
 
             ShutdownEventCatcher.Shutdown += OnServerShutdown;
 
+            Logger.Instance.Warning($"Use [Help] to display commands");
+            Logger.Instance.Warning($"Use [Quit] to exit");
             while (Thread.CurrentThread.IsAlive) {
                 var x = Console.ReadLine();
                 if (x == string.Empty) continue;
