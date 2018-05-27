@@ -19,15 +19,27 @@ namespace ServerHub.Handlers {
 
         public List<ClientObject> ConnectedClients { get; set; } = new List<ClientObject>();
 
+        private string TitleFormat = "ServerHub - {0} Servers Connected";
+        
         public class ClientObject {
             public Thread DataListener { get; set; }
             public Data Data { get; set; }
         }
 
+        public ServerListener() {
+            Console.Title = string.Format(TitleFormat, 0);
+        }
+
         public void RemoveClient(ClientObject cO) {
-            if(cO.Data.ID!=-1) Logger.Instance.Log($"Server {cO.Data.ID} @ [{cO.Data.IPv4}:{cO.Data.Port}] Removed from collection");
+            if(cO.Data.ID!=-1) Logger.Instance.Log($"Unregistered Server [{cO.Data.Name}] @ [{cO.Data.IPv4}:{cO.Data.Port}]");
             ConnectedClients.Remove(cO);
             cO.Data.TcpClient.Close();
+            Console.Title = string.Format(TitleFormat, ConnectedClients.Count(o => o.Data.ID != -1));
+        }
+        
+        public void AddClient(ClientObject cO) {
+            ConnectedClients.Add(cO);
+            Console.Title = string.Format(TitleFormat, ConnectedClients.Count(o => o.Data.ID != -1));
         }
 
         public void Start() {
@@ -58,7 +70,7 @@ namespace ServerHub.Handlers {
         Data AcceptClient() {
             Logger.Instance.Log("Waiting for a connection");
             var client = Listener.AcceptTcpClient();
-            Logger.Instance.Log("Connected");
+            //Logger.Instance.Log("Server Connected");
             return new Data {TcpClient = client};
         }
 
@@ -84,13 +96,15 @@ namespace ServerHub.Handlers {
                     if (sPacket.FirstConnect)
                     {
                         cO.Data = new Data(ConnectedClients.Count(x => x.Data.ID != -1) == 0 ? 0 : ConnectedClients.Last(x => x.Data.ID != -1).Data.ID + 1) { TcpClient = client, FirstConnect = sPacket.FirstConnect, IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port };
-                        ConnectedClients.Add(cO);
-                        Logger.Instance.Log($"Server {cO.Data.ID} @ {cO.Data.IPv4}:{cO.Data.Port} added to collection");
+
+                        AddClient(cO);
+                        Logger.Instance.Log($"Registered Server [{cO.Data.Name}] @ [{cO.Data.IPv4}:{cO.Data.Port}]");
+                        //Logger.Instance.Log($"Server {cO.Data.ID} @ {cO.Data.IPv4}:{cO.Data.Port} added to collection");
                     }
                     else
                     {
 
-                        Logger.Instance.Log("Server already in collection");
+                        //Logger.Instance.Log("Server already in collection");
                     }
                 }
 
@@ -109,10 +123,10 @@ namespace ServerHub.Handlers {
             }
             switch (dataPacket.ConnectionType) {
                 case ConnectionType.Client:
-                    Logger.Instance.Log("ConnectionType is [Client]");
+                    //Logger.Instance.Log("ConnectionType is [Client]");
                     var clientData = (ClientDataPacket)dataPacket;
                     clientData.Servers = GetServers(clientData.Offset);
-                    Logger.Instance.Log($"Packet JSON:{Environment.NewLine}{clientData}");
+                    //Logger.Instance.Log($"Packet JSON:{Environment.NewLine}{clientData}");
                     if (cO.Data.TcpClient != null && cO.Data.TcpClient.Connected)
                     {
                         cO.Data.TcpClient.GetStream().Write(clientData.ToBytes(), 0, clientData.ToBytes().Length);
@@ -120,14 +134,14 @@ namespace ServerHub.Handlers {
                     }
                     break;
                 case ConnectionType.Server:
-                    Logger.Instance.Log("ConnectionType is [Server]");
+                    //Logger.Instance.Log("ConnectionType is [Server]");
                     var serverData = (ServerDataPacket)dataPacket;
-                    Logger.Instance.Log($"Packet JSON:{Environment.NewLine}{serverData}");
+                    //Logger.Instance.Log($"Packet JSON:{Environment.NewLine}{serverData}");
                     if (serverData.RemoveFromCollection) {
                         var temp = cO.Data;
-                        Logger.Instance.Log($"Removing Server {serverData.ID} from Collection");
+                        //Logger.Instance.Log($"Removing Server {serverData.ID} from Collection");
                         RemoveClient(ConnectedClients.First(o => o.Data.ID == temp.ID));
-                        Logger.Instance.Log($"Joining Thread of Server {serverData.ID}");
+                        //Logger.Instance.Log($"Joining Thread of Server {serverData.ID}");
                         cO.DataListener.Join();
                         break;
                     }

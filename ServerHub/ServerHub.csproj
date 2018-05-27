@@ -30,4 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ServerCommons\ServerCommons.csproj" />
   </ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="if not exist $(SolutionDir)Output\$(ConfigurationName)\ mkdir $(SolutionDir)Output\$(ConfigurationName)\&#xD;&#xA;powershell Compress-Archive -Path '$(OutDir)*.dll' -DestinationPath '$(SolutionDir)Output\$(ConfigurationName)\ServerHub-Linux.zip' -Force&#xD;&#xA;powershell Compress-Archive -Path '$(OutDir)../net462/*.dll',  '$(OutDir)../net462/*.exe' -DestinationPath '$(SolutionDir)Output\$(ConfigurationName)\ServerHub-Windows.zip' -Force" />
+  </Target>
 </Project>

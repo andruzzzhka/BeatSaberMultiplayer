@@ -27,6 +27,8 @@ namespace BeatSaberMultiplayerServer {
         public static int currentSongIndex = -1;
         private static int lastSelectedSong = -1;
 
+        private static string TitleFormat = "{0} - {1} Clients Connected";
+        
         public static TimeSpan playTime = new TimeSpan();
         
         private static TcpClient _serverHubClient;
@@ -39,7 +41,8 @@ namespace BeatSaberMultiplayerServer {
         static void Main(string[] args) => new ServerMain().Start(args);
 
         public void Start(string[] args) {
-            Logger.Instance.Log($"Beat Saber Multiplayer Server v{Assembly.GetEntryAssembly().GetName().Version.ToString()}");
+            Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, 0);
+            Logger.Instance.Log($"Beat Saber Multiplayer Server v{Assembly.GetEntryAssembly().GetName().Version}");
 
             if (args.Length > 0)
             {
@@ -135,7 +138,7 @@ namespace BeatSaberMultiplayerServer {
 
             ID = packet.ID;
 
-            Logger.Instance.Log($"The ID of this server is {ID}");
+           // Logger.Instance.Log($"The ID of this server is {ID}");
             
         }
 
@@ -345,6 +348,7 @@ namespace BeatSaberMultiplayerServer {
 
         static void ClientThread(TcpClient client) {
             clients.Add(new Client(client));
+            Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, clients.Count);
         }
         
         private void OnServerShutdown(ShutdownEventArgs args)
