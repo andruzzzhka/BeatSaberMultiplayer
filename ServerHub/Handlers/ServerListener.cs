@@ -112,25 +112,34 @@ namespace ServerHub.Handlers {
             var client = cO.Data.TcpClient;
             byte[] bytes = new byte[Packet.MAX_BYTE_LENGTH];
             IDataPacket packet = null;
-            if (client.GetStream().Read(bytes, 0, bytes.Length) != 0) {
-                packet = Packet.ToPacket(bytes);
-            }
+            try
+            {
+                if (client.GetStream().Read(bytes, 0, bytes.Length) != 0)
+                {
+                    packet = Packet.ToPacket(bytes);
+                }
             
-            if (packet is ServerDataPacket) {
-                var sPacket = (ServerDataPacket) packet;
-                if (sPacket.FirstConnect)
-                {
-                    cO.Data = new Data(ConnectedClients.Count(x => x.Data.ID != -1) == 0 ? 0 : ConnectedClients.Last(x => x.Data.ID != -1).Data.ID + 1) { TcpClient = client, FirstConnect = sPacket.FirstConnect, IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port };
-                    Logger.Instance.Log($"Server {cO.Data.ID} @ {cO.Data.IPv4}:{cO.Data.Port} added to collection");
-                }
-                else
-                {
+            
+                if (packet is ServerDataPacket) {
+                    var sPacket = (ServerDataPacket) packet;
+                    if (sPacket.FirstConnect)
+                    {
+                        cO.Data = new Data(ConnectedClients.Count(x => x.Data.ID != -1) == 0 ? 0 : ConnectedClients.Last(x => x.Data.ID != -1).Data.ID + 1) { TcpClient = client, FirstConnect = sPacket.FirstConnect, IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port };
+                        Logger.Instance.Log($"Server {cO.Data.ID} @ {cO.Data.IPv4}:{cO.Data.Port} added to collection");
+                    }
+                    else
+                    {
 
-                    Logger.Instance.Log("Server already in collection");
+                        Logger.Instance.Log("Server already in collection");
+                    }
                 }
+
+                return packet;
             }
-
-            return packet;
+            catch (Exception e)
+            {
+                return null;
+            }
         }
 
         void PacketHandler(IDataPacket dataPacket, ref ClientObject cO) {
@@ -144,7 +153,12 @@ namespace ServerHub.Handlers {
                     var clientData = (ClientDataPacket)dataPacket;
                     Logger.Instance.Log(clientData.ToString());
                     clientData.Servers = GetServers(clientData.Offset);
-                    cO.Data.TcpClient.GetStream().Write(clientData.ToBytes(), 0, clientData.ToBytes().Length);
+                    if (cO.Data.TcpClient != null & cO.Data.TcpClient.Connected)
+                    {
+                        cO.Data.TcpClient.GetStream().Write(clientData.ToBytes(), 0, clientData.ToBytes().Length);
+                        cO.Data.TcpClient.Close();
+                    }
+                    ConnectedClients.Remove(cO);
                     break;
                 case ConnectionType.Server:
                     Logger.Instance.Log("ConnectionType is [Server]");
@@ -172,7 +186,7 @@ namespace ServerHub.Handlers {
 
         List<Data> GetServers(int Offset, int count=6) {
             var index = (count - 1) * Offset;
-            return ConnectedClients.Select(o => o.Data).Where(o => o.ID != -1).ToList().GetRange(index, ((count + index) >= ConnectedClients.Count(o => o.Data.ID != -1)) ? Math.Clamp(ConnectedClients.Count(o => o.Data.ID != -1) - index, 0, 10) : (count + index));
+            return ConnectedClients.Select(o => o.Data).Where(o => o.ID != -1).ToList().GetRange(index, ((count + index) >= ConnectedClients.Count(o => o.Data.ID != -1)) ? Math.Clamp(ConnectedClients.Count(o => o.Data.ID != -1) - index, 0, 6) : (count + index));
         }
 
         public void Stop() {

@@ -26,8 +26,7 @@ namespace BeatSaberMultiplayer
         public bool _loading { get { return isLoading; } set { isLoading = value; SetLoadingIndicator(isLoading); } }
         
         TcpClient _serverHubConnection;
-
-
+        
 
         protected override void DidActivate()
         {
@@ -39,6 +38,11 @@ namespace BeatSaberMultiplayer
 
                 _backButton.onClick.AddListener(delegate ()
                 {
+                    if(_serverHubConnection != null && _serverHubConnection.Connected)
+                    {
+                        _serverHubConnection.Close();
+                        _loading = false;
+                    }
                     DismissModalViewController(null, false);
 
                 });
@@ -93,27 +97,69 @@ namespace BeatSaberMultiplayer
 
             }
 
-            try
-            {
-                _serverHubConnection = new TcpClient(Config.Instance.ServerHubIP, Config.Instance.ServerHubPort);
-                ClientDataPacket packet = new ClientDataPacket() { ConnectionType = ConnectionType.Client, Offset = 0  };
+            _multiplayerServerList._currentPage = 0;
+            GetPage(_multiplayerServerList._currentPage);
 
-                _serverHubConnection.GetStream().Write(packet.ToBytes(), 0 ,packet.ToBytes().Length);
-                StartCoroutine(WaitForResponse());
-            }catch(Exception e)
-            {
-                _loading = false;
-                TextMeshProUGUI _errorText = ui.CreateText(rectTransform, "Can't connect to ServerHub!", new Vector2(0f, -48f));
-                _errorText.alignment = TextAlignmentOptions.Center;
-                Destroy(_errorText.gameObject, 4f);
-            }
 
         }
 
+        internal void GetPage(int currentPage)
+        {
+            if (!_loading)
+            {
+                Console.WriteLine($"Getting page {currentPage}");
+                try
+                {
+                    _loading = true;
+                    _multiplayerServerList._pageUpButton.interactable = false;
+                    _multiplayerServerList._pageDownButton.interactable = false;
+                    _serverHubConnection = new TcpClient(Config.Instance.ServerHubIP, Config.Instance.ServerHubPort);
+                    ClientDataPacket packet = new ClientDataPacket() { ConnectionType = ConnectionType.Client, Offset = _multiplayerServerList._currentPage };
+
+                    _serverHubConnection.GetStream().Write(packet.ToBytes(), 0, packet.ToBytes().Length);
+                    StartCoroutine(WaitForResponse());
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Exception: {e}");
+                    _loading = false;
+                    TextMeshProUGUI _errorText = ui.CreateText(rectTransform, "Can't connect to ServerHub!", new Vector2(0f, -48f));
+                    _errorText.alignment = TextAlignmentOptions.Center;
+                    Destroy(_errorText.gameObject, 4f);
+                }
+            }
+        }
+
+
+        IEnumerator WaitForDoneProcess(float timeout)
+        {
+            while (_serverHubConnection.Available <= 0)
+            {
+                yield return null;
+                timeout -= Time.deltaTime;
+                if (timeout <= 0f) break;
+            }
+        }
 
         IEnumerator WaitForResponse()
         {
-            yield return new WaitUntil(delegate() { return _serverHubConnection.Available > 0; });
+            yield return WaitForDoneProcess(5f);
+
+            if(_serverHubConnection.Available <= 0)
+            {
+                try
+                {
+                    TextMeshProUGUI _errorText = ui.CreateText(rectTransform, "Can't connect to ServerHub!", new Vector2(0f, -48f));
+                    _errorText.alignment = TextAlignmentOptions.Center;
+                    Destroy(_errorText.gameObject, 4f);
+                    _serverHubConnection.Close();
+                    _loading = false;
+                }catch(Exception e)
+                {
+                    Console.WriteLine($"ServerHub Exception: {e}");
+                }
+                yield break;
+            }
 
             byte[] bytes = new byte[Packet.MAX_BYTE_LENGTH];
             ClientDataPacket packet = null;

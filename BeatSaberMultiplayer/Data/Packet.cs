@@ -7,7 +7,7 @@ using UnityEngine;
 namespace BeatSaberMultiplayer.Data {
     [Serializable]
     public abstract class Packet {
-        public const int MAX_BYTE_LENGTH = 512;
+        public const int MAX_BYTE_LENGTH = 2048;
         
         public override string ToString() {
             return JsonUtility.ToJson(this,true);

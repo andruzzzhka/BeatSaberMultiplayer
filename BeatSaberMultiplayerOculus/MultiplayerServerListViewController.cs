@@ -14,10 +14,15 @@ namespace BeatSaberMultiplayer
         BSMultiplayerUI ui;
         MultiplayerServerHubViewController _parentMasterViewController;
 
+        public Button _pageUpButton;
+        public Button _pageDownButton;
+
         public TableView _serverTableView;
         SongListTableCell _serverTableCellInstance;
 
         List<Data.Data> availableServers = new List<Data.Data>();
+
+        public int _currentPage = 0;
 
         protected override void DidActivate()
         {
@@ -26,6 +31,50 @@ namespace BeatSaberMultiplayer
             _parentMasterViewController = transform.parent.GetComponent<MultiplayerServerHubViewController>();
 
             _serverTableCellInstance = Resources.FindObjectsOfTypeAll<SongListTableCell>().First(x => (x.name == "SongListTableCell"));
+
+            if (_pageUpButton == null)
+            {
+                _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
+                (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
+                (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
+                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -14f);
+                _pageUpButton.interactable = true;
+                _pageUpButton.onClick.AddListener(delegate ()
+                {
+
+                    if (_currentPage > 0)
+                    {
+                        if (!_parentMasterViewController._loading)
+                        {
+                            _currentPage -= 1;
+                            _parentMasterViewController.GetPage(_currentPage);
+                        }
+                    }
+
+
+                });
+                _pageUpButton.interactable = false;
+            }
+
+            if (_pageDownButton == null)
+            {
+                _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
+                (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
+                (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
+                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 8f);
+                _pageDownButton.interactable = true;
+                _pageDownButton.onClick.AddListener(delegate ()
+                {
+                    if (!_parentMasterViewController._loading)
+                    {
+                        _currentPage += 1;
+                        Console.WriteLine("Page down");
+                        _parentMasterViewController.GetPage(_currentPage);
+                    }
+
+                });
+                _pageDownButton.interactable = false;
+            }
 
             if (_serverTableView == null)
             {
@@ -46,14 +95,25 @@ namespace BeatSaberMultiplayer
 
                 _serverTableView.DidSelectRowEvent += ServerTableView_DidSelectRow;
 
+                _serverTableView.dataSource = this;
+
             }
+            else
+            {
+                _serverTableView.ReloadData();
+            }
+
+
 
         }
 
         public void SetServers(List<Data.Data> servers)
         {
             availableServers = servers;
-            if((object)_serverTableView.dataSource != this)
+
+            _pageDownButton.interactable = (servers.Count >= 6);
+            _pageUpButton.interactable = (_currentPage != 0);
+            if ((object)_serverTableView.dataSource != this)
             {
                 _serverTableView.dataSource = this;
             }
@@ -66,6 +126,7 @@ namespace BeatSaberMultiplayer
         private void ServerTableView_DidSelectRow(TableView sender, int row)
         {
             _parentMasterViewController.ConnectToServer(availableServers[row].IPv4, availableServers[row].Port);
+
         }
 
         public TableCell CellForRow(int row)
