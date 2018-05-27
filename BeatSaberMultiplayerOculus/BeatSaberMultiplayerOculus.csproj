@@ -157,7 +157,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if not exist $(SolutionDir)Output\$(ConfigurationName)\ mkdir $(SolutionDir)Output\$(ConfigurationName)\
-powershell Compress-Archive -Path '$(TargetDir)BeatSaberMultiplayer.dll' -DestinationPath '$(SolutionDir)Output\$(ConfigurationName)\BeatSaberMultiplayer-Oculus.zip' -Force</PostBuildEvent>
+    <PostBuildEvent>if not exist $(SolutionDir)Output\$(ConfigurationName)\ mkdir $(SolutionDir)Output\$(ConfigurationName)\&#xD;&#xA;powershell Compress-Archive -Path '$(TargetDir)BeatSaberMultiplayer.dll' -DestinationPath '$(SolutionDir)Output\$(ConfigurationName)\BeatSaberMultiplayer-Oculus.zip' -Force</PostBuildEvent>
   </PropertyGroup>
 </Project>
