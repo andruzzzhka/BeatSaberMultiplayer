@@ -29,3 +29,7 @@ Modify the `IP` & `Port` inside of the `BeatSaberMultiplayer.json` file to conne
 - Edit the `IP` value in`%BeatSaber%/Config/BeatSaberMultiplayer.json` to match the IPv4 of the computer running the server
 
 ![EditingIP](https://i.imgur.com/Qlwnyip.png)
+
+----
+# ServerHub
+![Flowchat](https://i.imgur.com/hCXfw1j.png)
