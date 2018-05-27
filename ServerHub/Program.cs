@@ -57,7 +57,7 @@ namespace ServerHub {
                     case "quit":
                         return;
                     case "clients":
-                        foreach (var t in Listener.ConnectedClients) {
+                        foreach (var t in Listener.ConnectedClients.Where(o => o.Data.ID!=-1)) {
                             var client = t.Data;
                             s += $"{Environment.NewLine}[{client.ID}] {client.Name} @ {client.IPv4}:{client.Port}";
                         }
