@@ -11,7 +11,7 @@ namespace ServerCommons.Misc {
         [JsonObject(MemberSerialization.OptIn)]
         public class LoggerSettings {
             [JsonProperty]
-            public string LogsDir;
+            public string LogsDir = "./Logs";
         }
 
         [JsonProperty]
@@ -28,7 +28,10 @@ namespace ServerCommons.Misc {
                     _instance = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(FileLocation?.FullName));
                 }
                 catch (Exception ex) {
-                    ServerCommons.Misc.Logger.Instance.Exception(ex.Message);
+                    _instance = new Settings();
+                    var dir = new DirectoryInfo(_instance.Logger.LogsDir);
+                    if (!dir.Exists) dir.Create();
+                    Misc.Logger.Instance.Exception(ex.Message);
                 }
 
                 return _instance;
