@@ -71,8 +71,7 @@ namespace BeatSaberMultiplayerServer {
             ServerStateThread = new Thread(ServerStateControllerThread){IsBackground = true};
             ServerStateThread.Start();
             
-            try
-            {
+            try {
                 ConnectToServerHub(Settings.Instance.Server.ServerHubIP, Settings.Instance.Server.ServerHubPort);
             }catch(Exception e)
             {
@@ -82,8 +81,32 @@ namespace BeatSaberMultiplayerServer {
             ShutdownEventCatcher.Shutdown += OnServerShutdown;
 
             while (Thread.CurrentThread.IsAlive) {
-                    var str = Console.ReadLine();
-                if (str?.ToLower() == "quit") break;
+                var x = Console.ReadLine();
+                if (x == string.Empty) continue;
+                var comParts = x?.Split(' ');
+                var comName = comParts[0];
+                var comArgs = comParts.Skip(1).ToArray();
+                string s = string.Empty;
+                switch (comName.ToLower()) {
+                    case "help":
+                        foreach (var com in new [] {"Help", "Quit", "Clients"}) {
+                            s += $"{Environment.NewLine}> {com}";
+                        }
+                        Logger.Instance.Log($"Commands:{s}");
+                        break;
+                    case "quit":
+                        return;
+                    case "clients":
+                        foreach (var t in clients) {
+                            var client = t.playerInfo;
+                            if (t.playerInfo == null) continue;
+                            s += $"{Environment.NewLine}[{client.playerId}] {client.playerName} @ {((IPEndPoint)t._client.Client.RemoteEndPoint).Address}";
+                        }
+
+                        if (s == String.Empty) s = " No Clients";
+                        Logger.Instance.Log($"Connected Clients:{s}");
+                        break;
+                }
             }
         }        
 
