@@ -16,13 +16,16 @@ namespace ServerHub {
 
         private Thread listenerThread { get; set; }
 
-        private static EventHandler onClose { get; set; }
-
         Program() {
-            onClose+=OnClose;
+            ShutdownEventCatcher.Shutdown += OnShutdown;
             IP = GetPublicIPv4();
         }
-        
+
+        private void OnShutdown(ShutdownEventArgs obj) {
+            Listener.Stop();
+            listenerThread.Join();
+        }
+
         void Start(string[] args) {
             Logger.Instance.Log($"Current IP: {IP}");
             
@@ -30,7 +33,7 @@ namespace ServerHub {
                 IsBackground = true
             };
             listenerThread.Start();
-            while (true) {
+            while (listenerThread.IsAlive) {
                 Console.Read();
             }
         }
@@ -40,40 +43,5 @@ namespace ServerHub {
                 return client.DownloadString("https://api.ipify.org");
             }
         }
-        
-        private bool OnClose(CtrlType sig)
-        {
-            switch (sig)
-            {
-                case CtrlType.CTRL_C_EVENT:
-                    break;
-                case CtrlType.CTRL_LOGOFF_EVENT:
-                    break;
-                case CtrlType.CTRL_SHUTDOWN_EVENT:
-                    break;
-                case CtrlType.CTRL_CLOSE_EVENT:
-                    Listener.Stop();
-                    listenerThread.Join();
-                    return true;
-            }
-
-            return false;
-        }
-        
-        #region Console Close Event
-        [DllImport("Kernel32")]
-        private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
-
-        private delegate bool EventHandler(CtrlType sig);
-
-        enum CtrlType
-        {
-            CTRL_C_EVENT = 0,
-            CTRL_BREAK_EVENT = 1,
-            CTRL_CLOSE_EVENT = 2,
-            CTRL_LOGOFF_EVENT = 5,
-            CTRL_SHUTDOWN_EVENT = 6
-        }
-        #endregion
     }
 }

@@ -22,9 +22,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="Logs\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Database" />
+    <None Update="run.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ServerCommons\ServerCommons.csproj" />

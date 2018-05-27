@@ -20,7 +20,7 @@ namespace BeatSaberMultiplayerServer {
         public Client(TcpClient client) {
             _client = client;
 
-            _clientLoopThread = new Thread(ClientLoop);
+            _clientLoopThread = new Thread(ClientLoop){IsBackground = true};
             _clientLoopThread.Start();
         }
 
@@ -29,7 +29,7 @@ namespace BeatSaberMultiplayerServer {
 
             Logger.Instance.Log("Client connected!");
 
-            while (true) {
+            while (_clientLoopThread.IsAlive) {
                 if (_client != null && _client.Connected) {
                     pingTimer++;
                     if (pingTimer > 180) {

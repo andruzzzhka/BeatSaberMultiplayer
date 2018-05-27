@@ -6,12 +6,10 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Mime;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using BeatSaberMultiplayerServer.Misc;
 using ServerCommons.Data;
 using ServerCommons.Misc;
 using Settings = BeatSaberMultiplayerServer.Misc.Settings;
@@ -34,9 +32,13 @@ namespace BeatSaberMultiplayerServer {
 
         public int ID { get; set; }
 
+        private Thread ListenerThread { get; set; }
+        private Thread ServerStateThread { get; set; }
+
         static void Main(string[] args) => new ServerMain().Start(args);
 
         public void Start(string[] args) {
+            ShutdownEventCatcher.Shutdown += OnServerShutdown;
             Logger.Instance.Log("Beat Saber Multiplayer Server v0.1");
 
             Logger.Instance.Log($"Hosting Server @ {Settings.Instance.Server.IP}");
@@ -52,11 +54,11 @@ namespace BeatSaberMultiplayerServer {
 
             Logger.Instance.Log("Waiting for clients...");
 
-            Thread _listenerThread = new Thread(AcceptClientThread);
-            _listenerThread.Start();
+            ListenerThread = new Thread(AcceptClientThread){IsBackground = true};
+            ListenerThread.Start();
 
-            Thread _serverStateThread = new Thread(ServerStateControllerThread);
-            _serverStateThread.Start();
+            ServerStateThread = new Thread(ServerStateControllerThread){IsBackground = true};
+            ServerStateThread.Start();
             
             try
             {
@@ -65,8 +67,11 @@ namespace BeatSaberMultiplayerServer {
             {
                 Logger.Instance.Error($"Can't connect to ServerHub! Exception: {e.Message}");
             }
-            
-            ShutdownEventCatcher.Shutdown += ServerShutdown;
+
+            while (Thread.CurrentThread.IsAlive) {
+                    var str = Console.ReadLine();
+                if (str?.ToLower() == "quit") break;
+            }
         }        
 
         public void ConnectToServerHub(string serverHubIP, int serverHubPort)
@@ -132,7 +137,7 @@ namespace BeatSaberMultiplayerServer {
                 catch (IOException ex) {
                     Logger.Instance.Exception($"Folder [{songName}] exists. Continuing.");
                     try {
-                        zip.Dispose();
+                        zip?.Dispose();
                     }
                     catch (IOException) {
                         Logger.Instance.Exception($"Failed to remove Zip [{id}]");
@@ -157,7 +162,7 @@ namespace BeatSaberMultiplayerServer {
             Logger.Instance.Log("Done!");
         }
 
-        static void ServerStateControllerThread() {
+        void ServerStateControllerThread() {
             Stopwatch _timer = new Stopwatch();
             _timer.Start();
             int _timerSeconds = 0;
@@ -170,7 +175,7 @@ namespace BeatSaberMultiplayerServer {
 
             TimeSpan deltaTime;
 
-            while (true) {
+            while (ServerStateThread.IsAlive) {
                 deltaTime = (_timer.Elapsed - _lastTime);
 
                 _lastTime = _timer.Elapsed;
@@ -293,19 +298,17 @@ namespace BeatSaberMultiplayerServer {
             }
         }
 
-        static void AcceptClientThread() {
-            while (true) {
-                Thread _thread = new Thread(new ParameterizedThreadStart(ClientThread));
-
-                _thread.Start(_listener.AcceptTcpClient());
+        void AcceptClientThread() {
+            while (ListenerThread.IsAlive) {
+                ClientThread(_listener.AcceptTcpClient());
             }
         }
 
-        static void ClientThread(Object stateInfo) {
-            clients.Add(new Client((TcpClient) stateInfo));
+        static void ClientThread(TcpClient client) {
+            clients.Add(new Client(client));
         }
         
-        private void ServerShutdown(ShutdownEventArgs args)
+        private void OnServerShutdown(ShutdownEventArgs args)
         {
             Logger.Instance.Log("Shutting down server...");
             if(_serverHubClient != null && _serverHubClient.Connected)
@@ -319,14 +322,16 @@ namespace BeatSaberMultiplayerServer {
                     RemoveFromCollection = true
                 };
 
-                byte[] packetBytes = packet.ToBytes();
-
-                _serverHubClient.GetStream().Write(packetBytes, 0, packetBytes.Length);
+                _serverHubClient.GetStream().Write(packet.ToBytes(), 0, Packet.MAX_BYTE_LENGTH);
                 Logger.Instance.Log("Removed this server from ServerHub");
 
                 _serverHubClient.Close();
             }
+
+            _listener.Stop();
+            Console.Read();
         }
+        
 
     }
 }

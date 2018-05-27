@@ -44,24 +44,27 @@ namespace ServerHub.Handlers {
                                 byte[] buff = new byte[1];
                                 if (o.TcpClient.Client.Receive(buff, SocketFlags.Peek) == 0) {
                                     // Client disconnected
-                                    ConnectedClients.Remove(o);
-                                    o.TcpClient.Close();
+                                    RemoveClient(o);
                                 }
                             }
                         }
                         else {
-                            ConnectedClients.Remove(o);
-                            o.TcpClient?.Close();
+                            RemoveClient(o);
                         }
                     }
                     catch {
-                        ConnectedClients.Remove(o);
-                        o.TcpClient?.Close();
+                        RemoveClient(o);
                     }
                 });
 
                 Thread.Sleep(16);
             }
+        }
+
+        public void RemoveClient(Data data) {
+            Logger.Instance.Log($"Server {data.ID} @ [{data.IPv4}:{data.Port}] Removed from collection");
+            ConnectedClients.Remove(data);
+            data.TcpClient.Close();
         }
 
         public void Start() {
@@ -112,16 +115,17 @@ namespace ServerHub.Handlers {
                 case ConnectionType.Client:
                     Logger.Instance.Log("ConnectionType is [Client]");
                     var clientData = (ClientDataPacket)dataPacket;
+                    Logger.Instance.Log(clientData.ToString());
                     clientData.Servers = GetServers(clientData.Offset);
                     data.TcpClient.GetStream().Write(clientData.ToBytes(), 0, Packet.MAX_BYTE_LENGTH);
                     break;
                 case ConnectionType.Server:
                     Logger.Instance.Log("ConnectionType is [Server]");
                     var serverData = (ServerDataPacket)dataPacket;
+                    Logger.Instance.Log(serverData.ToString());
                     if (serverData.RemoveFromCollection) {
                         var temp = data;
-                        Logger.Instance.Log($"Server {temp.ID} @ {serverData.IPv4} Removed from collection");
-                        ConnectedClients.Remove(ConnectedClients.First(o => o.ID == temp.ID));
+                        RemoveClient(ConnectedClients.First(o => o.ID == temp.ID));
                         break;
                     }
                     data.IPv4 = serverData.IPv4;
