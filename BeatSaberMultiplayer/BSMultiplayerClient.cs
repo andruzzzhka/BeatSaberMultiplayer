@@ -33,7 +33,7 @@ namespace BeatSaberMultiplayer
 
         List<PlayerInfoDisplay> scoreDisplays = new List<PlayerInfoDisplay>();
 
-        float _sendRate = 1f;
+        float _sendRate = 1f/20;
         float _sendTimer = 0;
 
         static int _loadedlevel;
@@ -178,11 +178,6 @@ namespace BeatSaberMultiplayer
                             _playerInfos.Add(player);
                         }
 
-                        foreach(PlayerInfoDisplay display in scoreDisplays)
-                        {
-                            display.UpdatePlayerInfo(null, 0);
-                        }
-
                         lastLocalPlayerIndex = localPlayerIndex;
                         localPlayerIndex = FindIndexInList(playerInfo);
 
@@ -191,6 +186,10 @@ namespace BeatSaberMultiplayer
                             for (int i = 0; i < _playerInfos.Count; i++)
                             {
                                 scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos[i]));
+                            }
+                            for (int i = _playerInfos.Count; i < scoreDisplays.Count; i++)
+                            {
+                                scoreDisplays[i].UpdatePlayerInfo(null, 0);
                             }
                         }
                         else

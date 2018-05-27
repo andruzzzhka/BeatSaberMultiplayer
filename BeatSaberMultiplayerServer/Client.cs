@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using Newtonsoft.Json;
@@ -14,6 +15,8 @@ namespace BeatSaberMultiplayerServer {
         int playerScore;
         string playerId;
         string playerName;
+
+        public ClientState state = ClientState.Disconnected;
 
         Thread _clientLoopThread;
 
@@ -38,17 +41,30 @@ namespace BeatSaberMultiplayerServer {
                     }
 
                     string[] commands = ReceiveFromClient(true);
-
+                    
                     if (commands != null) {
                         foreach (string data in commands) {
                             ClientCommand command = JsonConvert.DeserializeObject<ClientCommand>(data);
+
+                            if(command.version != Assembly.GetEntryAssembly().GetName().Version.ToString())
+                            {
+                                state = ClientState.UpdateRequired;
+                                SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.UpdateRequired)));
+                                return;
+                            }
+
+                            if(state != ClientState.Playing && state != ClientState.Connected)
+                            {
+                                state = ClientState.Connected;
+                            }
+
                             switch (command.commandType) {
                                 case ClientCommandType.SetPlayerInfo: {
                                     PlayerInfo receivedPlayerInfo =
                                         JsonConvert.DeserializeObject<PlayerInfo>(command.playerInfo);
-
                                     if (receivedPlayerInfo != null) {
-                                        if (playerId == null) {
+                                            state = ClientState.Playing;
+                                            if (playerId == null) {
                                             playerId = receivedPlayerInfo.playerId;
                                             if (!ServerMain.clients.Contains(this)) {
                                                 ServerMain.clients.Add(this);
@@ -107,7 +123,7 @@ namespace BeatSaberMultiplayerServer {
                         _client.Close();
                         _client = null;
                     }
-
+                    state = ClientState.Disconnected;
                     Logger.Instance.Log("Client disconnected!");
                     return;
                 }
