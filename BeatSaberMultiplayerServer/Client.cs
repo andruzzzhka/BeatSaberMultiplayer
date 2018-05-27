@@ -8,7 +8,7 @@ using ServerCommons.Misc;
 
 namespace BeatSaberMultiplayerServer {
     internal class Client {
-        TcpClient _client;
+        public TcpClient _client;
         public PlayerInfo playerInfo;
 
         int playerScore;
