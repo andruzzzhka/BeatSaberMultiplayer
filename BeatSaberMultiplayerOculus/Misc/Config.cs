@@ -1,18 +1,20 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using SimpleJSON;
 using UnityEngine;
+using JSON = WyrmTale.JSON;
 
 namespace BeatSaberMultiplayer {
     [Serializable]
     public class Config {
-        [SerializeField] private string _ip;
-        [SerializeField] private int _port;
-
+        
+        [SerializeField] private string _serverHubIP;
+        [SerializeField] private int _serverHubPort;
+        
         private static Config _instance;
-
-        private static FileInfo FileLocation { get; } =
-            new FileInfo($"./Config/{Assembly.GetExecutingAssembly().GetName().Name}.json");
+        
+        private static FileInfo FileLocation { get; } = new FileInfo($"./Config/{Assembly.GetExecutingAssembly().GetName().Name}.json");
 
         public static Config Instance {
             get {
@@ -20,46 +22,45 @@ namespace BeatSaberMultiplayer {
                 if (_instance != null) return _instance;
                 try {
                     FileLocation?.Directory?.Create();
-                    Console.WriteLine($"attempting to load JSON @ {FileLocation}");
+                    Console.WriteLine($"attempting to load JSON @ {FileLocation.FullName}");
                     _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
                     _instance.MarkClean();
                 }
-                catch (Exception ex) {
+                catch(Exception ex) {
                     Console.WriteLine($"Config doesn't exist @ {FileLocation.FullName}");
                     _instance = new Config();
                 }
-
                 return _instance;
             }
         }
-
+        
         private bool IsDirty { get; set; }
 
         /// <summary>
         /// Remember to Save after changing the value
         /// </summary>
-        public string IP {
-            get { return _ip; }
+        public string ServerHubIP {
+            get { return _serverHubIP; }
             set {
-                _ip = value;
+                _serverHubIP = value;
                 MarkDirty();
             }
         }
-
+        
         /// <summary>
         /// Remember to Save after changing the value
         /// </summary>
-        public int Port {
-            get { return _port; }
+        public int ServerHubPort {
+            get { return _serverHubPort; }
             set {
-                _port = value;
+                _serverHubPort = value;
                 MarkDirty();
             }
         }
-
+        
         Config() {
-            _ip = "87.103.199.211";
-            _port = 3700;
+            _serverHubIP = "127.0.0.1";
+            _serverHubPort = 3700;
             MarkDirty();
         }
 
@@ -72,7 +73,6 @@ namespace BeatSaberMultiplayer {
                     Console.WriteLine($"JSON: {Environment.NewLine}{json}");
                     f.Write(json);
                 }
-
                 MarkClean();
                 return true;
             }
@@ -85,7 +85,7 @@ namespace BeatSaberMultiplayer {
         void MarkDirty() {
             IsDirty = true;
         }
-
+        
         void MarkClean() {
             IsDirty = false;
         }

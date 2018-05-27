@@ -91,13 +91,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Base64Sprites.cs" />
-    <Compile Include="BeatSaverAPIResult.cs" />
-    <Compile Include="BSMPJsonObjects.cs" />
-    <Compile Include="BSMultiplayerMain.cs" />
+    <Compile Include="Data\ClientDataPacket.cs" />
+    <Compile Include="Data\ConnectionType.cs" />
+    <Compile Include="Data\Data.cs" />
+    <Compile Include="Data\Packet.cs" />
+    <Compile Include="Misc\Base64Sprites.cs" />
+    <Compile Include="Data\BeatSaverAPIResult.cs" />
+    <Compile Include="Data\BSMPJsonObjects.cs" />
+    <Compile Include="BSMultiplayerClient.cs" />
     <Compile Include="BSMultiplayerUI.cs" />
-    <Compile Include="Config.cs" />
-    <Compile Include="HTML5Decode.cs" />
+    <Compile Include="Misc\Config.cs" />
+    <Compile Include="Misc\HTML5Decode.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Checksum\Adler32.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Checksum\BZip2Crc.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Checksum\Crc32.cs" />
@@ -138,11 +142,13 @@
     <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipOutputStream.cs" />
     <Compile Include="MultiplayerLeaderboardViewController.cs" />
     <Compile Include="MultiplayerLobbyViewController.cs" />
+    <Compile Include="MultiplayerServerHubViewController.cs" />
+    <Compile Include="MultiplayerServerListViewController.cs" />
     <Compile Include="PlayerInfoDisplay.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ReflectionUtil.cs" />
-    <Compile Include="SimpleJSON.cs" />
+    <Compile Include="Misc\ReflectionUtil.cs" />
+    <Compile Include="Misc\SimpleJSON.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ICSharpCode.SharpZipLib\ICSharpCode.SharpZipLib.csproj" />

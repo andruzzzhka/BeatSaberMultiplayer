@@ -13,7 +13,7 @@ using VRUI;
 
 namespace BeatSaberMultiplayer
 {
-    class BSMultiplayerMain : MonoBehaviour
+    class BSMultiplayerClient : MonoBehaviour
     {
         BSMultiplayerUI ui;
 
@@ -21,7 +21,7 @@ namespace BeatSaberMultiplayer
         private NetworkStream _connectionStream;
 
         public static string version;
-        public static BSMultiplayerMain _instance;
+        public static BSMultiplayerClient _instance;
 
         public MainGameSceneSetupData _mainGameSceneSetupData;
         GameplayManager _gameManager;
@@ -56,7 +56,7 @@ namespace BeatSaberMultiplayer
 
             if (_instance == null)
             {
-                new GameObject("BeatSaberMultiplayer").AddComponent<BSMultiplayerMain>();
+                new GameObject("BeatSaberMultiplayerClient").AddComponent<BSMultiplayerClient>();
                 return;
             }
             else
@@ -65,11 +65,11 @@ namespace BeatSaberMultiplayer
             }
 
 
-
+            
 
         }
 
-        public bool ConnectToServer()
+        public bool ConnectToServer(string serverIP, int serverPort)
         {
             try
             {
@@ -78,7 +78,7 @@ namespace BeatSaberMultiplayer
                      return true;
                 }
                 
-                _connection = new TcpClient(Config.Instance.IP, Config.Instance.Port);
+                _connection = new TcpClient(serverIP, serverPort);
                 _connectionStream = _connection.GetStream();
                 return true;
                 
@@ -115,6 +115,7 @@ namespace BeatSaberMultiplayer
                     playerName = msg.Data.OculusID;
                 });
             }
+
             if (_loadedlevel > 2 && _connection.Connected)
             {
                 StartCoroutine(WaitForControllers());
@@ -124,7 +125,7 @@ namespace BeatSaberMultiplayer
                 try
                 {
 
-                   
+
                     playerInfo = new PlayerInfo(playerName, playerID.ToString());
 
                     SendPlayerInfo();
@@ -189,8 +190,8 @@ namespace BeatSaberMultiplayer
                             PlayerInfo player = JsonUtility.FromJson<PlayerInfo>(playerStr);
                             _playerInfos.Add(player);
                         }
-                        
-                        foreach (PlayerInfoDisplay display in scoreDisplays)
+
+                        foreach(PlayerInfoDisplay display in scoreDisplays)
                         {
                             display.UpdatePlayerInfo(null, 0);
                         }
@@ -231,7 +232,7 @@ namespace BeatSaberMultiplayer
                             }
 
                         }
-                        
+
                         if (lastLocalPlayerIndex != 0 && localPlayerIndex == 0)
                         {
                             TextMeshPro player1stPlaceText = ui.CreateWorldText(transform, "You are number one!");
@@ -295,7 +296,7 @@ namespace BeatSaberMultiplayer
 
             if (_connection.Available == 0)
             {
-                yield return new WaitUntil(delegate ()
+                yield return new WaitUntil(delegate() 
                 {
                     if (_connection == null || !_connection.Connected)
                     {
@@ -327,7 +328,7 @@ namespace BeatSaberMultiplayer
 
         public string[] ReceiveFromServer()
         {
-            if (_connection.Available == 0)
+            if (_connection == null || _connection.Available == 0 || !_connection.Connected)
             {
                 return null;
             }

@@ -15,7 +15,7 @@ namespace BeatSaberMultiplayer
 
         public  RectTransform _mainMenuRectTransform;
         private MainMenuViewController _mainMenuViewController;
-        private MultiplayerLobbyViewController _multiplayerLobbyViewController;
+        private MultiplayerServerHubViewController _multiplayerServerHubViewController;
 
         private Button _buttonInstance;
         private Button _backButtonInstance;
@@ -95,13 +95,13 @@ namespace BeatSaberMultiplayer
                     try
                     {
 
-                        if (_multiplayerLobbyViewController == null)
+                        if (_multiplayerServerHubViewController == null)
                         {
-                            _multiplayerLobbyViewController = CreateViewController<MultiplayerLobbyViewController>();
+                            _multiplayerServerHubViewController = CreateViewController<MultiplayerServerHubViewController>();
 
 
                         }
-                        _mainMenuViewController.PresentModalViewController(_multiplayerLobbyViewController, null, false);
+                        _mainMenuViewController.PresentModalViewController(_multiplayerServerHubViewController, null, false);
 
                     }
                     catch (Exception e)

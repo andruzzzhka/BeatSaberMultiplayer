@@ -67,7 +67,7 @@ namespace BeatSaberMultiplayer
 
         public ClientCommand(ClientCommandType _type, string _playerInfo = null)
         {
-            version = BSMultiplayerMain.version;
+            version = BSMultiplayerClient.version;
             commandType = _type;
             playerInfo = _playerInfo;
         }

@@ -39,7 +39,7 @@ namespace BeatSaberMultiplayerServer {
         static void Main(string[] args) => new ServerMain().Start(args);
 
         public void Start(string[] args) {
-            Logger.Instance.Log("Beat Saber Multiplayer Server v0.1");
+            Logger.Instance.Log($"Beat Saber Multiplayer Server v{Assembly.GetEntryAssembly().GetName().Version.ToString()}");
 
             if (args.Length > 0)
             {

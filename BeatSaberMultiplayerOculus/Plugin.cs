@@ -11,7 +11,7 @@ namespace BeatSaberMultiplayer
     {
         public string Name => "Beat Saber Multiplayer";
 
-        public string Version => "0.2";
+        public string Version => "0.3";
 
         public void OnActiveSceneChanged(Scene prevScene, Scene nextScene)
         {
@@ -36,15 +36,14 @@ namespace BeatSaberMultiplayer
         public void OnLevelWasLoaded(int level)
         {
             Console.WriteLine("Loading scene " + level);
-            if (level == 1)
-            {
+            if (level == 1) {
                 Config.Instance.Save();
                 BSMultiplayerUI.OnLoad();
-                BSMultiplayerMain.OnLoad(level, Version);
+                BSMultiplayerClient.OnLoad(level, Version);
             }
             else if (level > 1)
             {
-                BSMultiplayerMain.OnLoad(level, Version);
+                BSMultiplayerClient.OnLoad(level, Version);
             }
         }
 

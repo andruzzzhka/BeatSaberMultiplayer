@@ -12,17 +12,15 @@ using VRUI;
 
 namespace BeatSaberMultiplayer
 {
-    class BSMultiplayerMain : MonoBehaviour
+    class BSMultiplayerClient : MonoBehaviour
     {
-
-
         BSMultiplayerUI ui;
 
         private TcpClient _connection;
         private NetworkStream _connectionStream;
 
         public static string version;
-        public static BSMultiplayerMain _instance;
+        public static BSMultiplayerClient _instance;
 
         public MainGameSceneSetupData _mainGameSceneSetupData;
         GameplayManager _gameManager;
@@ -54,7 +52,7 @@ namespace BeatSaberMultiplayer
 
             if (_instance == null)
             {
-                new GameObject("BeatSaberMultiplayer").AddComponent<BSMultiplayerMain>();
+                new GameObject("BeatSaberMultiplayerClient").AddComponent<BSMultiplayerClient>();
                 return;
             }
             else
@@ -67,8 +65,7 @@ namespace BeatSaberMultiplayer
 
         }
 
-
-        public bool ConnectToServer()
+        public bool ConnectToServer(string serverIP, int serverPort)
         {
             try
             {
@@ -77,7 +74,7 @@ namespace BeatSaberMultiplayer
                      return true;
                 }
                 
-                _connection = new TcpClient(Config.Instance.IP, Config.Instance.Port);
+                _connection = new TcpClient(serverIP, serverPort);
                 _connectionStream = _connection.GetStream();
                 return true;
                 

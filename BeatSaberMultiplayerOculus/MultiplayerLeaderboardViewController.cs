@@ -36,7 +36,6 @@ namespace BeatSaberMultiplayer
                 Mask viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<Mask>().First(), _leaderboardTableView.transform, false);
                 viewportMask.transform.DetachChildren();
 
-
                 _leaderboardTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 
                 (_leaderboardTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0.5f);
@@ -48,7 +47,7 @@ namespace BeatSaberMultiplayer
             }
 
         }
-
+        
         public void SetLeaderboard(PlayerInfo[] _playerInfos)
         {
             playerInfos = _playerInfos;
@@ -68,7 +67,7 @@ namespace BeatSaberMultiplayer
 
             cell.playerName = playerInfos[row].playerName;
             cell.score = playerInfos[row].playerScore;
-            cell.rank = row+1;
+            cell.rank = row + 1;
             cell.showFullCombo = false;
 
             return cell;

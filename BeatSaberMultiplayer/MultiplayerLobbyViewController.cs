@@ -17,6 +17,9 @@ namespace BeatSaberMultiplayer
 {
     class MultiplayerLobbyViewController : VRUINavigationController
     {
+        public string selectedServerIP;
+        public int selectedServerPort;
+
         BSMultiplayerUI ui;
 
         Button _backButton;
@@ -64,8 +67,8 @@ namespace BeatSaberMultiplayer
 
                 _backButton.onClick.AddListener(delegate ()
                 {
-                    BSMultiplayerMain._instance.DataReceived -= DataReceived;
-                    BSMultiplayerMain._instance.DisconnectFromServer();
+                    BSMultiplayerClient._instance.DataReceived -= DataReceived;
+                    BSMultiplayerClient._instance.DisconnectFromServer();
                     _songPreviewPlayer.CrossfadeToDefault();
                     DismissModalViewController(null, false);
                     
@@ -138,13 +141,14 @@ namespace BeatSaberMultiplayer
 
             }
 
-            if (BSMultiplayerMain._instance.ConnectToServer())
+            Console.WriteLine($"Connecting to {selectedServerIP}:{selectedServerPort}");
+            if (BSMultiplayerClient._instance.ConnectToServer(selectedServerIP,selectedServerPort))
             {
 
-                BSMultiplayerMain._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetServerState)));
-                BSMultiplayerMain._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetAvailableSongs)));
-                StartCoroutine(BSMultiplayerMain._instance.ReceiveFromServerCoroutine());
-                BSMultiplayerMain._instance.DataReceived += DataReceived;
+                BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetServerState)));
+                BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetAvailableSongs)));
+                StartCoroutine(BSMultiplayerClient._instance.ReceiveFromServerCoroutine());
+                BSMultiplayerClient._instance.DataReceived += DataReceived;
             }
             else
             {
@@ -186,8 +190,8 @@ namespace BeatSaberMultiplayer
                                 case ServerCommandType.UpdateRequired:
                                     {
 
-                                        _selectText.text = "Plugin version mismatch:\nServer: "+command.version+"\nClient: "+BSMultiplayerMain.version;
-                                        BSMultiplayerMain._instance.DisconnectFromServer();
+                                        _selectText.text = "Plugin version mismatch:\nServer: "+command.version+"\nClient: "+BSMultiplayerClient.version;
+                                        BSMultiplayerClient._instance.DisconnectFromServer();
                                         _loading = false;
 
                                     };break;
@@ -272,15 +276,15 @@ namespace BeatSaberMultiplayer
                                     {
                                         Console.WriteLine("Starting selected song! Song: " + _selectedSong.songName + ", Diff: " + ((LevelStaticData.Difficulty)_selectedSongDifficulty).ToString());
 
-                                        BSMultiplayerMain._instance.DataReceived -= DataReceived;
+                                        BSMultiplayerClient._instance.DataReceived -= DataReceived;
                                         GameplayOptions gameplayOptions = new GameplayOptions();
                                         gameplayOptions.noEnergy = true;
                                         gameplayOptions.mirror = false;
 
-                                        if (BSMultiplayerMain._instance._mainGameSceneSetupData != null)
+                                        if (BSMultiplayerClient._instance._mainGameSceneSetupData != null)
                                         {
-                                            BSMultiplayerMain._instance._mainGameSceneSetupData.SetData(_selectedSong.levelId, (LevelStaticData.Difficulty)_selectedSongDifficulty, null, null, 0f, gameplayOptions, GameplayMode.SoloStandard, null);
-                                            BSMultiplayerMain._instance._mainGameSceneSetupData.TransitionToScene(0.7f);
+                                            BSMultiplayerClient._instance._mainGameSceneSetupData.SetData(_selectedSong.levelId, (LevelStaticData.Difficulty)_selectedSongDifficulty, null, null, 0f, gameplayOptions, GameplayMode.SoloStandard, null);
+                                            BSMultiplayerClient._instance._mainGameSceneSetupData.TransitionToScene(0.7f);
                                             _selectedSong = null;
                                             return;
                                         }
@@ -294,7 +298,7 @@ namespace BeatSaberMultiplayer
                                         if (!AllSongsDownloaded(command.songsToDownload))
                                         {
                                             StartCoroutine(DownloadSongs(command.songsToDownload));
-                                            BSMultiplayerMain._instance.DisconnectFromServer();
+                                            BSMultiplayerClient._instance.DisconnectFromServer();
                                         }
                                     };break;
                                 case ServerCommandType.SetPlayerInfos: {
@@ -336,7 +340,7 @@ namespace BeatSaberMultiplayer
             }
                 
 
-            StartCoroutine(BSMultiplayerMain._instance.ReceiveFromServerCoroutine());
+            StartCoroutine(BSMultiplayerClient._instance.ReceiveFromServerCoroutine());
         }
 
         void PlayPreview(LevelStaticData _songData)
@@ -465,11 +469,11 @@ namespace BeatSaberMultiplayer
                 SongLoader.Instance.RefreshSongs();
             }
 
-            if (BSMultiplayerMain._instance.ConnectToServer())
+            if (BSMultiplayerClient._instance.ConnectToServer(selectedServerIP,selectedServerPort))
             {
 
-                BSMultiplayerMain._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetServerState)));
-                StartCoroutine(BSMultiplayerMain._instance.ReceiveFromServerCoroutine());
+                BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetServerState)));
+                StartCoroutine(BSMultiplayerClient._instance.ReceiveFromServerCoroutine());
             }
             else
             {

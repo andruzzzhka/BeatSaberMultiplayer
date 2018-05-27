@@ -134,6 +134,10 @@ namespace ServerHub.Handlers {
         }
 
         void PacketHandler(IDataPacket dataPacket, ref ClientObject cO) {
+            if(dataPacket == null)
+            {
+                return;
+            }
             switch (dataPacket.ConnectionType) {
                 case ConnectionType.Client:
                     Logger.Instance.Log("ConnectionType is [Client]");
@@ -166,9 +170,9 @@ namespace ServerHub.Handlers {
             }
         }
 
-        List<Data> GetServers(int Offset, int count=10) {
+        List<Data> GetServers(int Offset, int count=6) {
             var index = (count - 1) * Offset;
-            return ConnectedClients.Select(o => o.Data).Where(o => o.ID != -1).ToList().GetRange(index, count + index >= ConnectedClients.Count ? Math.Clamp(ConnectedClients.Count - index, 0, 10) : count + index);
+            return ConnectedClients.Select(o => o.Data).Where(o => o.ID != -1).ToList().GetRange(index, ((count + index) >= ConnectedClients.Count(o => o.Data.ID != -1)) ? Math.Clamp(ConnectedClients.Count(o => o.Data.ID != -1) - index, 0, 10) : (count + index));
         }
 
         public void Stop() {

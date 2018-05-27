@@ -9,8 +9,8 @@ namespace BeatSaberMultiplayer {
     [Serializable]
     public class Config {
         
-        [SerializeField] private string _ip;
-        [SerializeField] private int _port;
+        [SerializeField] private string _serverHubIP;
+        [SerializeField] private int _serverHubPort;
         
         private static Config _instance;
         
@@ -39,9 +39,10 @@ namespace BeatSaberMultiplayer {
         /// <summary>
         /// Remember to Save after changing the value
         /// </summary>
-        public string IP {
-            get { return _ip;}
-            set { _ip = value;
+        public string ServerHubIP {
+            get { return _serverHubIP; }
+            set {
+                _serverHubIP = value;
                 MarkDirty();
             }
         }
@@ -49,16 +50,17 @@ namespace BeatSaberMultiplayer {
         /// <summary>
         /// Remember to Save after changing the value
         /// </summary>
-        public int Port {
-            get { return _port;}
-            set { _port = value;
+        public int ServerHubPort {
+            get { return _serverHubPort; }
+            set {
+                _serverHubPort = value;
                 MarkDirty();
             }
         }
         
         Config() {
-            _ip = "87.103.199.211";
-            _port = 3700;
+            _serverHubIP = "127.0.0.1";
+            _serverHubPort = 3700;
             MarkDirty();
         }
 
