@@ -6,7 +6,7 @@ using ServerCommons.Misc;
 
 namespace ServerCommons.Data {
     public abstract class Packet {
-        public const int MAX_BYTE_LENGTH = 320;
+        public const int MAX_BYTE_LENGTH = 512;
         
         public override string ToString() {
             return JsonConvert.SerializeObject(this, Formatting.Indented);

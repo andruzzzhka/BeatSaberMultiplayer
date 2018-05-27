@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace ServerCommons.Misc
+namespace BeatSaberMultiplayerServer.Misc
 {
     ///<summary>
     /// Provides all c# console application shutdown scenarios in a single handler

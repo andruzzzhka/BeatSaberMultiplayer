@@ -6,13 +6,14 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using System.Net.Mime;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
+using BeatSaberMultiplayerServer.Misc;
 using ServerCommons.Data;
 using ServerCommons.Misc;
 using Settings = BeatSaberMultiplayerServer.Misc.Settings;
+using Math = ServerCommons.Misc.Math;
 
 namespace BeatSaberMultiplayerServer {
     class ServerMain {
@@ -80,6 +81,7 @@ namespace BeatSaberMultiplayerServer {
 
             ServerDataPacket packet = new ServerDataPacket {
                 ConnectionType = ConnectionType.Server,
+                FirstConnect = true,
                 IPv4 = Settings.Instance.Server.IP,
                 Port = Settings.Instance.Server.Port,
                 Name = Settings.Instance.Server.ServerName
@@ -189,7 +191,7 @@ namespace BeatSaberMultiplayerServer {
                         }
 
                         if ((int) Math.Ceiling(lobbyTimer) > _timerSeconds && _timerSeconds > -1) {
-                            _timerSeconds = (int) Math.Ceiling(lobbyTimer);
+                            _timerSeconds = Math.Ceiling(lobbyTimer);
                             SendToAllClients(JsonConvert.SerializeObject(
                                 new ServerCommand(ServerCommandType.SetLobbyTimer,
                                     Math.Max(lobbyTime - _timerSeconds, 0))));
@@ -316,20 +318,20 @@ namespace BeatSaberMultiplayerServer {
                 ServerDataPacket packet = new ServerDataPacket
                 {
                     ConnectionType = ConnectionType.Server,
+                    ID = ID,
                     IPv4 = Settings.Instance.Server.IP,
                     Port = Settings.Instance.Server.Port,
                     Name = Settings.Instance.Server.ServerName,
                     RemoveFromCollection = true
                 };
 
-                _serverHubClient.GetStream().Write(packet.ToBytes(), 0, Packet.MAX_BYTE_LENGTH);
+                _serverHubClient.GetStream().Write(packet.ToBytes(), 0, packet.ToBytes().Length);
                 Logger.Instance.Log("Removed this server from ServerHub");
 
                 _serverHubClient.Close();
             }
 
             _listener.Stop();
-            Console.Read();
         }
         
 

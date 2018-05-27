@@ -6,6 +6,7 @@ namespace ServerCommons.Data {
     public class Data {
         public TcpClient TcpClient { get; set; }
         public int ID { get; }
+        public bool FirstConnect { get; set; }
         [JsonProperty]
         public string Name { get; set; }
         [JsonProperty]
@@ -14,7 +15,7 @@ namespace ServerCommons.Data {
         public int Port { get; set; }
 
         public Data() {
-            ID = 0;
+            ID = -1;
             TcpClient = null;
             Name = "";
             IPv4 = "";

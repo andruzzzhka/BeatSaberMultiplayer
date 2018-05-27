@@ -7,8 +7,11 @@ namespace ServerCommons.Data {
         [JsonProperty]
         public ConnectionType ConnectionType { get; set; }
         private string _name;
+
         [JsonProperty]
-        public int ID { get; set; }
+        public int ID { get; set; } = -1;
+        [JsonProperty]
+        public bool FirstConnect { get; set; }
         [JsonProperty]
         public string IPv4 { get; set; }
         [JsonProperty]

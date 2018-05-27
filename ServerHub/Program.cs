@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
+using BeatSaberMultiplayerServer.Misc;
 using ServerHub.Handlers;
 using ServerCommons.Misc;
 

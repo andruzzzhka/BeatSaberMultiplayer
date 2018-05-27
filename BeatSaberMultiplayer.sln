@@ -5,13 +5,13 @@ VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeatSaberMultiplayerSteam", "BeatSaberMultiplayer\BeatSaberMultiplayerSteam.csproj", "{19E76954-2EBA-4761-8AD4-1425CC29EC0E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeatSaberMultiplayerServer", "BeatSaberMultiplayerServer\BeatSaberMultiplayerServer.csproj", "{7832C979-B719-4067-B319-DD1AD4FA3B28}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeatSaberMultiplayerOculus", "BeatSaberMultiplayerOculus\BeatSaberMultiplayerOculus.csproj", "{04E212DA-1286-4C93-8179-A6E9780EAC5A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerHub", "ServerHub\ServerHub.csproj", "{5EB8EED4-4FC1-4ABD-B9E9-0EDB0CAEB7A1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerCommons", "ServerCommons\ServerCommons.csproj", "{FA63F45C-8836-43AC-B6E1-F8498972EC94}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeatSaberMultiplayerServer", "BeatSaberMultiplayerServer\BeatSaberMultiplayerServer.csproj", "{0E5C1C4D-FE51-4DA7-B1CE-E0C4B6C086A8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,6 @@ Global
 		{19E76954-2EBA-4761-8AD4-1425CC29EC0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19E76954-2EBA-4761-8AD4-1425CC29EC0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19E76954-2EBA-4761-8AD4-1425CC29EC0E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7832C979-B719-4067-B319-DD1AD4FA3B28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7832C979-B719-4067-B319-DD1AD4FA3B28}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7832C979-B719-4067-B319-DD1AD4FA3B28}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7832C979-B719-4067-B319-DD1AD4FA3B28}.Release|Any CPU.Build.0 = Release|Any CPU
 		{04E212DA-1286-4C93-8179-A6E9780EAC5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{04E212DA-1286-4C93-8179-A6E9780EAC5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04E212DA-1286-4C93-8179-A6E9780EAC5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -39,6 +35,10 @@ Global
 		{FA63F45C-8836-43AC-B6E1-F8498972EC94}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA63F45C-8836-43AC-B6E1-F8498972EC94}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA63F45C-8836-43AC-B6E1-F8498972EC94}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E5C1C4D-FE51-4DA7-B1CE-E0C4B6C086A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E5C1C4D-FE51-4DA7-B1CE-E0C4B6C086A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E5C1C4D-FE51-4DA7-B1CE-E0C4B6C086A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E5C1C4D-FE51-4DA7-B1CE-E0C4B6C086A8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
