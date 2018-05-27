@@ -26,6 +26,13 @@ namespace ServerCommons.Misc {
                 if (_instance != null) return _instance;
                 try {
                     _instance = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(FileLocation?.FullName));
+                    if(_instance == null)
+                    {
+                        _instance = new Settings();
+                        var dir = new DirectoryInfo(_instance.Logger.LogsDir);
+                        if (!dir.Exists) dir.Create();
+                        Misc.Logger.Instance.Error("Settings instance is null!");
+                    }
                 }
                 catch (Exception ex) {
                     _instance = new Settings();

@@ -39,10 +39,20 @@ namespace BeatSaberMultiplayerServer {
         static void Main(string[] args) => new ServerMain().Start(args);
 
         public void Start(string[] args) {
-            ShutdownEventCatcher.Shutdown += OnServerShutdown;
             Logger.Instance.Log("Beat Saber Multiplayer Server v0.1");
 
-            Logger.Instance.Log($"Hosting Server @ {Settings.Instance.Server.IP}");
+            if (args.Length > 0)
+            {
+                try
+                {
+                    Settings.Instance.Server.Port = int.Parse(args[0]);
+                }catch(Exception e)
+                {
+                    Logger.Instance.Exception($"Can't parse argumnets! Exception: {e}");
+                }
+            }
+
+            Logger.Instance.Log($"Hosting Server @ {Settings.Instance.Server.IP}:{Settings.Instance.Server.Port}");
 
             Logger.Instance.Log("Downloading songs from BeatSaver...");
             DownloadSongs();
@@ -68,6 +78,8 @@ namespace BeatSaberMultiplayerServer {
             {
                 Logger.Instance.Error($"Can't connect to ServerHub! Exception: {e.Message}");
             }
+
+            ShutdownEventCatcher.Shutdown += OnServerShutdown;
 
             while (Thread.CurrentThread.IsAlive) {
                     var str = Console.ReadLine();
@@ -319,6 +331,7 @@ namespace BeatSaberMultiplayerServer {
                 {
                     ConnectionType = ConnectionType.Server,
                     ID = ID,
+                    FirstConnect = false,
                     IPv4 = Settings.Instance.Server.IP,
                     Port = Settings.Instance.Server.Port,
                     Name = Settings.Instance.Server.ServerName,
@@ -330,6 +343,8 @@ namespace BeatSaberMultiplayerServer {
 
                 _serverHubClient.Close();
             }
+
+            clients.AsParallel().ForAll(x => x.DestroyClient());
 
             _listener.Stop();
         }

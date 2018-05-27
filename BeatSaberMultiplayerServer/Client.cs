@@ -169,7 +169,7 @@ namespace BeatSaberMultiplayerServer {
         }
 
 
-        void DestroyClient() {
+        public void DestroyClient() {
             if (_client != null) {
                 ServerMain.clients.Remove(this);
                 _client.Close();

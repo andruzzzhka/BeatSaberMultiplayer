@@ -20,7 +20,7 @@ namespace ServerHub.Handlers {
         private List<ClientObject> ConnectedClients { get; set; } = new List<ClientObject>();
         private Thread ClientWatcher { get; set; }
 
-        public struct ClientObject {
+        public class ClientObject {
             public Thread DataListener { get; set; }
             public Data Data { get; set; }
         }
@@ -118,8 +118,16 @@ namespace ServerHub.Handlers {
             
             if (packet is ServerDataPacket) {
                 var sPacket = (ServerDataPacket) packet;
-                cO.Data = new Data(ConnectedClients.Count == 0 ? 0 : ConnectedClients.Last().Data.ID+1) {TcpClient = client, FirstConnect = sPacket.FirstConnect,IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port};
-                Logger.Instance.Log($"Server @ {cO.Data.IPv4} added to collection");
+                if (sPacket.FirstConnect)
+                {
+                    cO.Data = new Data(ConnectedClients.Count(x => x.Data.ID != -1) == 0 ? 0 : ConnectedClients.Last(x => x.Data.ID != -1).Data.ID + 1) { TcpClient = client, FirstConnect = sPacket.FirstConnect, IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port };
+                    Logger.Instance.Log($"Server {cO.Data.ID} @ {cO.Data.IPv4}:{cO.Data.Port} added to collection");
+                }
+                else
+                {
+
+                    Logger.Instance.Log("Server already in collection");
+                }
             }
 
             return packet;
