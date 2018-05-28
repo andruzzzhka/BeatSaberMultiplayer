@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace BeatSaberMultiplayer
 {
@@ -9,19 +10,30 @@ namespace BeatSaberMultiplayer
     class PlayerInfo
     {
         public string playerName;
-        public string playerId;
+        public ulong playerId;
         public int playerScore;
-        public int playerCombo;
-        public int playerMaxCombo;
 
+        public string playerAvatar;
 
-        public PlayerInfo(string _name, string _id)
+        [NonSerialized]
+        public Vector3 rightHandPos;
+        [NonSerialized]
+        public Vector3 leftHandPos;
+        [NonSerialized]
+        public Vector3 headPos;
+        [NonSerialized]
+        public Quaternion rightHandRot;
+        [NonSerialized]
+        public Quaternion leftHandRot;
+        [NonSerialized]
+        public Quaternion headRot;
+
+        public PlayerInfo(string _name, ulong _id, string _avatar = null)
         {
             playerName = _name;
             playerId = _id;
-            playerMaxCombo = 0;
-            playerCombo = 0;
             playerScore = 0;
+            playerAvatar = _avatar;
         }
     }
 

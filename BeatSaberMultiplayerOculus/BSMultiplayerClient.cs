@@ -1,5 +1,4 @@
-﻿using Oculus.Platform;
-using Oculus.Platform.Models;
+﻿using BeatSaberMultiplayer.Misc;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,6 +8,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.XR;
 using VRUI;
 
 namespace BeatSaberMultiplayer
@@ -29,6 +29,7 @@ namespace BeatSaberMultiplayer
         ScoreController _scoreController;
 
         PlayerInfo playerInfo;
+        string lastPlayerInfo;
 
         GameObject scoreScreen;
 
@@ -46,8 +47,7 @@ namespace BeatSaberMultiplayer
         int localPlayerIndex = -1;
         public List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
 
-        private ulong playerID;
-        private string playerName;
+        public event Action<List<PlayerInfo>> PlayerInfosReceived;
 
         public static void OnLoad(int level, string pluginVersion)
         {
@@ -107,14 +107,7 @@ namespace BeatSaberMultiplayer
 
         public void OnLevelChange()
         {
-            if (playerID == 0 || playerInfo == null)
-            {
-                Users.GetLoggedInUser().OnComplete((Message<User> msg) =>
-                {
-                    playerID = msg.Data.ID;
-                    playerName = msg.Data.OculusID;
-                });
-            }
+            GetUserInfo.UpdateUserInfo();
 
             if (_loadedlevel > 2 && _connection.Connected)
             {
@@ -125,10 +118,10 @@ namespace BeatSaberMultiplayer
                 try
                 {
 
+                   
+                    playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
 
-                    playerInfo = new PlayerInfo(playerName, playerID.ToString());
-
-                    SendPlayerInfo();
+                    SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(playerInfo))));
 
                     DataReceived += ReceivedFromServer;
                     StartCoroutine(ReceiveFromServerCoroutine());
@@ -188,6 +181,18 @@ namespace BeatSaberMultiplayer
                         foreach (string playerStr in command.playerInfos)
                         {
                             PlayerInfo player = JsonUtility.FromJson<PlayerInfo>(playerStr);
+                            if (!String.IsNullOrEmpty(player.playerAvatar))
+                            {
+                                byte[] avatar = Convert.FromBase64String(player.playerAvatar);
+
+                                player.rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
+                                player.leftHandPos = Serialization.ToVector3(avatar.Skip(12).Take(12).ToArray());
+                                player.headPos = Serialization.ToVector3(avatar.Skip(24).Take(12).ToArray());
+
+                                player.rightHandRot = Serialization.ToQuaternion(avatar.Skip(36).Take(16).ToArray());
+                                player.leftHandRot = Serialization.ToQuaternion(avatar.Skip(52).Take(16).ToArray());
+                                player.headRot = Serialization.ToQuaternion(avatar.Skip(68).Take(16).ToArray());
+                            }
                             _playerInfos.Add(player);
                         }
 
@@ -239,6 +244,13 @@ namespace BeatSaberMultiplayer
                             player1stPlaceText.fontSize = 10f;
                             Destroy(player1stPlaceText.gameObject,2f);
                         }
+
+
+                        if (PlayerInfosReceived != null)
+                        {
+                            PlayerInfosReceived.Invoke(_playerInfos);
+                        }
+
                     }
                 }
                 catch (Exception e)
@@ -265,14 +277,7 @@ namespace BeatSaberMultiplayer
 
             ui = BSMultiplayerUI._instance;
 
-            if (playerID == 0 || playerInfo == null)
-            {
-                Users.GetLoggedInUser().OnComplete((Message<User> msg) =>
-                {
-                    playerID = msg.Data.ID;
-                    playerName = msg.Data.OculusID;
-                });
-            }
+            GetUserInfo.UpdateUserInfo();
         }
 
         IEnumerator WaitForGameData()
@@ -318,7 +323,7 @@ namespace BeatSaberMultiplayer
 
             length = stream.Read(buffer, 0, buffer.Length);
 
-            recievedJson = Encoding.Unicode.GetString(buffer);
+            recievedJson = Encoding.UTF8.GetString(buffer);
 
             string[] strBuffer = recievedJson.Trim('\0').Replace("}{", "}#{").Split('#');
 
@@ -340,19 +345,13 @@ namespace BeatSaberMultiplayer
 
             length = stream.Read(buffer, 0, buffer.Length);
 
-            receivedJson = Encoding.Unicode.GetString(buffer);
+            receivedJson = Encoding.UTF8.GetString(buffer);
 
             string[] strBuffer = receivedJson.Trim('\0').Replace("}{", "}#{").Split('#');
 
 
             return strBuffer;
 
-        }
-
-        bool SendPlayerInfo()
-        {
-
-            return SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(playerInfo))));
         }
 
         public bool SendString(string send)
@@ -363,9 +362,8 @@ namespace BeatSaberMultiplayer
             }
             try
             {
-                byte[] buffer = Encoding.Unicode.GetBytes(send);
+                byte[] buffer = Encoding.UTF8.GetBytes(send);
                 _connectionStream.Write(buffer,0,buffer.Length);
-                //Console.WriteLine("Sending: "+send);
                 return true;
             }catch(Exception e)
             {
@@ -383,7 +381,24 @@ namespace BeatSaberMultiplayer
                 if (_sendTimer > _sendRate)
                 {
                     _sendTimer = 0;
-                    SendPlayerInfo();
+                    playerInfo.playerAvatar = Convert.ToBase64String(
+                        Serialization.Combine(
+                            Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.RightHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.LeftHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.Head)),
+                            Serialization.ToBytes(InputTracking.GetLocalRotation(XRNode.RightHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalRotation(XRNode.LeftHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalRotation(XRNode.Head))
+                       ));
+
+                    string playerInfoString = JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(playerInfo)));
+
+                    if (playerInfoString != lastPlayerInfo)
+                    {
+                        SendString(playerInfoString);
+                        lastPlayerInfo = playerInfoString;
+                    }
+                    
                 }
             }
         }
@@ -427,20 +442,8 @@ namespace BeatSaberMultiplayer
             if (_scoreController != null)
             {
                 _scoreController.scoreDidChangeEvent += ScoreChanged;
-                _scoreController.comboDidChangeEvent += ComboChanged;
             }
-
-
             
-        }
-
-        private void ComboChanged(int combo)
-        {
-            playerInfo.playerCombo = combo;
-            if(combo > playerInfo.playerMaxCombo)
-            {
-                playerInfo.playerMaxCombo = combo;
-            }
         }
 
         private void ScoreChanged(int score)

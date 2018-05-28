@@ -14,17 +14,17 @@ namespace BeatSaberMultiplayer.Data {
         }
 
         public static ClientDataPacket ToClientDataPacket(byte[] bytes) {
-            var b2s = Encoding.Unicode.GetString(bytes).Trim('\0');
-            Console.WriteLine($"TO CLIENT DATA PACKET: {b2s}");
+            var b2s = Encoding.UTF8.GetString(bytes).Trim('\0');
             var obj = JSON.Parse(b2s);
+            Console.WriteLine($"TO CLIENT DATA PACKET: {Environment.NewLine}{obj.ToString(4)}");
             if ((ConnectionType)Enum.Parse(typeof(ConnectionType), obj["ConnectionType"].Value) == ConnectionType.Client)
             {
                 List<Data> dataList = new List<Data>();
                 foreach(JSONNode node in obj["Servers"].Children)
                 {
-                    dataList.Add(new Data() { Name = node["Name"], IPv4 = node["IPv4"], Port = node["Port"] });
+                    dataList.Add(new Data { Name = node["Name"], IPv4 = node["IPv4"], Port = node["Port"] });
                 }
-                return new ClientDataPacket() { ConnectionType = ConnectionType.Client, Offset = obj["Offset"].AsInt, Servers = dataList };
+                return new ClientDataPacket { ConnectionType = ConnectionType.Client, Offset = obj["Offset"].AsInt, Servers = dataList };
             }
             Console.WriteLine("Can't parse ClientDataPacket!");
             return null;            
@@ -32,7 +32,7 @@ namespace BeatSaberMultiplayer.Data {
         
         public byte[] ToBytes() {
             Console.WriteLine("Packet: "+ToString());
-            return new UnicodeEncoding().GetBytes(ToString());
+            return new UTF8Encoding().GetBytes(ToString());
         }
     }
 }

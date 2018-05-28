@@ -13,7 +13,7 @@ namespace ServerCommons.Data {
         }
 
         public static IDataPacket ToPacket(byte[] bytes) {
-            var b2s = Encoding.Unicode.GetString(bytes).Trim('\0');
+            var b2s = Encoding.UTF8.GetString(bytes).Trim('\0');
             //Logger.Instance.Warning($"TO PACKET: {b2s}");
             var obj = JObject.Parse(b2s);
             switch (Enum.Parse(typeof(ConnectionType), obj["ConnectionType"].Value<string>())) {
@@ -29,7 +29,7 @@ namespace ServerCommons.Data {
         }
         
         public byte[] ToBytes() {
-            return new UnicodeEncoding().GetBytes(ToString());
+            return new UTF8Encoding().GetBytes(ToString());
         }
     }
 }

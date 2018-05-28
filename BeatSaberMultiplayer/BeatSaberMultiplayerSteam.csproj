@@ -16,7 +16,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\Debug\Plugins\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -24,7 +24,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>bin\Release\Plugins\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -55,8 +55,8 @@
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
@@ -86,6 +86,10 @@
     <Reference Include="UnityEngine.UnityWebRequestWWWModule">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.VRModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.VRModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.WebModule">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.WebModule.dll</HintPath>
     </Reference>
@@ -101,6 +105,7 @@
     <Compile Include="BSMultiplayerClient.cs" />
     <Compile Include="BSMultiplayerUI.cs" />
     <Compile Include="Misc\Config.cs" />
+    <Compile Include="Misc\GetUserInfo.cs" />
     <Compile Include="Misc\HTML5Decode.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Checksum\Adler32.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Checksum\BZip2Crc.cs" />
@@ -140,6 +145,7 @@
     <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipInputStream.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipNameTransform.cs" />
     <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipOutputStream.cs" />
+    <Compile Include="Misc\Serialization.cs" />
     <Compile Include="MultiplayerLeaderboardViewController.cs" />
     <Compile Include="MultiplayerLobbyViewController.cs" />
     <Compile Include="MultiplayerServerHubViewController.cs" />
@@ -158,6 +164,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /y $(TargetDir)BeatSaberMultiplayer.dll  "C:\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins"&#xD;&#xA;if not exist $(SolutionDir)Output\$(ConfigurationName)\ mkdir $(SolutionDir)Output\$(ConfigurationName)\&#xD;&#xA;powershell Compress-Archive -Path '$(TargetDir)BeatSaberMultiplayer.dll' -DestinationPath '$(SolutionDir)Output\$(ConfigurationName)\BeatSaberMultiplayer-Steam.zip' -Force</PostBuildEvent>
+    <PostBuildEvent>xcopy /y $(TargetDir)BeatSaberMultiplayer.dll  "C:\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins"
+if not exist $(SolutionDir)Output\$(ConfigurationName)\ mkdir $(SolutionDir)Output\$(ConfigurationName)\
+if not exist Plugins\ mkdir Plugins\
+xcopy /y $(TargetDir)BeatSaberMultiplayer.dll  "Plugins\"
+powershell Compress-Archive -Path '$(TargetDir)Plugins\' -DestinationPath '$(SolutionDir)Output\$(ConfigurationName)\BeatSaberMultiplayer-Steam.zip' -Force</PostBuildEvent>
   </PropertyGroup>
 </Project>
