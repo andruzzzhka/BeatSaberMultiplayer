@@ -116,11 +116,10 @@ namespace BeatSaberMultiplayerServer
                                         }
                                         else
                                         {
-                                            Logger.Instance.Log(ServerMain.playTime);
                                             SendToClient(JsonConvert.SerializeObject(new ServerCommand(
                                                 ServerCommandType.SetServerState,
-                                                _selectedSongDuration: ServerMain
-                                                    .availableSongs[ServerMain.currentSongIndex].duration.TotalSeconds,
+                                                _selectedLevelID: ServerMain.availableSongs[ServerMain.currentSongIndex].levelId,
+                                                _selectedSongDuration: ServerMain.availableSongs[ServerMain.currentSongIndex].duration.TotalSeconds,
                                                 _selectedSongPlayTime: ServerMain.playTime.TotalSeconds)));
                                         }
                                     }
