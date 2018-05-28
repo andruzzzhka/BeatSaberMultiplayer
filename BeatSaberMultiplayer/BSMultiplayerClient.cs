@@ -1,4 +1,4 @@
-﻿using Steamworks;
+﻿using BeatSaberMultiplayer.Misc;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,6 +8,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.XR;
 using VRUI;
 
 namespace BeatSaberMultiplayer
@@ -24,10 +25,11 @@ namespace BeatSaberMultiplayer
 
         public MainGameSceneSetupData _mainGameSceneSetupData;
         GameplayManager _gameManager;
-
+        VRCenterAdjust _roomAdjust;
         ScoreController _scoreController;
 
-        PlayerInfo playerInfo;
+        public PlayerInfo localPlayerInfo;
+        string lastPlayerInfo;
 
         GameObject scoreScreen;
 
@@ -44,6 +46,13 @@ namespace BeatSaberMultiplayer
         int lastLocalPlayerIndex = -1;
         int localPlayerIndex = -1;
         public List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
+
+        List<AvatarController> _avatars = new List<AvatarController>();
+
+        public event Action<List<PlayerInfo>> PlayerInfosReceived;
+
+        public Vector3 roomPositionOffset = Vector3.zero;
+        public Quaternion roomRotationOffset = Quaternion.identity;
 
         public static void OnLoad(int level, string pluginVersion)
         {
@@ -103,7 +112,9 @@ namespace BeatSaberMultiplayer
 
         public void OnLevelChange()
         {
-            if(_loadedlevel > 2 && _connection.Connected)
+            GetUserInfo.UpdateUserInfo();
+
+            if (_loadedlevel > 2 && _connection.Connected)
             {
                 StartCoroutine(WaitForControllers());
 
@@ -113,9 +124,9 @@ namespace BeatSaberMultiplayer
                 {
 
                    
-                    playerInfo = new PlayerInfo(SteamFriends.GetPersonaName(), SteamUser.GetSteamID().ToString());
+                    localPlayerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
 
-                    SendPlayerInfo();
+                    SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(localPlayerInfo))));
 
                     DataReceived += ReceivedFromServer;
                     StartCoroutine(ReceiveFromServerCoroutine());
@@ -175,17 +186,65 @@ namespace BeatSaberMultiplayer
                         foreach (string playerStr in command.playerInfos)
                         {
                             PlayerInfo player = JsonUtility.FromJson<PlayerInfo>(playerStr);
+                            if (!String.IsNullOrEmpty(player.playerAvatar))
+                            {
+                                byte[] avatar = Convert.FromBase64String(player.playerAvatar);
+
+                                player.rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
+                                player.leftHandPos = Serialization.ToVector3(avatar.Skip(12).Take(12).ToArray());
+                                player.headPos = Serialization.ToVector3(avatar.Skip(24).Take(12).ToArray());
+
+                                player.rightHandRot = Serialization.ToQuaternion(avatar.Skip(36).Take(16).ToArray());
+                                player.leftHandRot = Serialization.ToQuaternion(avatar.Skip(52).Take(16).ToArray());
+                                player.headRot = Serialization.ToQuaternion(avatar.Skip(68).Take(16).ToArray());
+                                
+                            }
                             _playerInfos.Add(player);
                         }
 
                         lastLocalPlayerIndex = localPlayerIndex;
-                        localPlayerIndex = FindIndexInList(playerInfo);
+                        localPlayerIndex = FindIndexInList(_playerInfos,localPlayerInfo);
+
+                        try
+                        {
+                            if (_avatars.Count > _playerInfos.Count)
+                            {
+                                List<AvatarController> avatarsToRemove = new List<AvatarController>();
+                                for (int i = _playerInfos.Count; i < _avatars.Count; i++)
+                                {
+                                    avatarsToRemove.Add(_avatars[i]);
+                                }
+                                foreach (AvatarController avatar in avatarsToRemove)
+                                {
+                                    _avatars.Remove(avatar);
+                                    Destroy(avatar.gameObject);
+                                }
+
+                            }
+                            else if (_avatars.Count < _playerInfos.Count)
+                            {
+                                for (int i = 0; i < (_playerInfos.Count - _avatars.Count); i++)
+                                {
+                                    _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
+
+                                }
+                            }
+
+                            List<PlayerInfo> _playerInfosByID = _playerInfos.OrderBy(x => x.playerId).ToList();
+                            for (int i = 0; i < _playerInfos.Count; i++)
+                            {
+                                _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - FindIndexInList(_playerInfosByID, localPlayerInfo)) * 3f);
+                            }
+                        }catch(Exception e)
+                        {
+                            Console.WriteLine($"AVATARS EXCEPTION: {e}");
+                        }
 
                         if (_playerInfos.Count <= 5)
                         {
                             for (int i = 0; i < _playerInfos.Count; i++)
                             {
-                                scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos[i]));
+                                scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos, _playerInfos[i]));
                             }
                             for (int i = _playerInfos.Count; i < scoreDisplays.Count; i++)
                             {
@@ -200,20 +259,20 @@ namespace BeatSaberMultiplayer
                             {
                                 for (int i = 0; i < 5; i++)
                                 {
-                                    scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos[i]));
+                                    scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos, _playerInfos[i]));
                                 }
                             }else if(localPlayerIndex > _playerInfos.Count - 3)
                             {
                                 for (int i = _playerInfos.Count - 5; i < _playerInfos.Count; i++)
                                 {
-                                    scoreDisplays[i-(_playerInfos.Count - 5)].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos[i]));
+                                    scoreDisplays[i-(_playerInfos.Count - 5)].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos, _playerInfos[i]));
                                 }
                             }
                             else
                             {
                                 for (int i = localPlayerIndex - 2; i < localPlayerIndex + 3; i++)
                                 {
-                                    scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos[i]));
+                                    scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos, _playerInfos[i]));
                                 }
                             }
 
@@ -226,6 +285,13 @@ namespace BeatSaberMultiplayer
                             player1stPlaceText.fontSize = 10f;
                             Destroy(player1stPlaceText.gameObject,2f);
                         }
+
+
+                        if (PlayerInfosReceived != null)
+                        {
+                            PlayerInfosReceived.Invoke(_playerInfos);
+                        }
+
                     }
                 }
                 catch (Exception e)
@@ -237,9 +303,9 @@ namespace BeatSaberMultiplayer
             StartCoroutine(ReceiveFromServerCoroutine());
         }
 
-        private int FindIndexInList(PlayerInfo _player)
+        private int FindIndexInList(List<PlayerInfo> list,PlayerInfo _player)
         {
-            return _playerInfos.FindIndex(x => (x.playerId == _player.playerId) && (x.playerName == _player.playerName));
+            return list.FindIndex(x => (x.playerId == _player.playerId) && (x.playerName == _player.playerName));
         }
 
         private void Awake()
@@ -251,6 +317,8 @@ namespace BeatSaberMultiplayer
             StartCoroutine(WaitForGameData());
 
             ui = BSMultiplayerUI._instance;
+
+            GetUserInfo.UpdateUserInfo();
         }
 
         IEnumerator WaitForGameData()
@@ -296,7 +364,7 @@ namespace BeatSaberMultiplayer
 
             length = stream.Read(buffer, 0, buffer.Length);
 
-            recievedJson = Encoding.Unicode.GetString(buffer);
+            recievedJson = Encoding.UTF8.GetString(buffer);
 
             string[] strBuffer = recievedJson.Trim('\0').Replace("}{", "}#{").Split('#');
 
@@ -318,19 +386,13 @@ namespace BeatSaberMultiplayer
 
             length = stream.Read(buffer, 0, buffer.Length);
 
-            receivedJson = Encoding.Unicode.GetString(buffer);
+            receivedJson = Encoding.UTF8.GetString(buffer);
 
             string[] strBuffer = receivedJson.Trim('\0').Replace("}{", "}#{").Split('#');
 
 
             return strBuffer;
 
-        }
-
-        bool SendPlayerInfo()
-        {
-
-            return SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(playerInfo))));
         }
 
         public bool SendString(string send)
@@ -341,9 +403,8 @@ namespace BeatSaberMultiplayer
             }
             try
             {
-                byte[] buffer = Encoding.Unicode.GetBytes(send);
+                byte[] buffer = Encoding.UTF8.GetBytes(send);
                 _connectionStream.Write(buffer,0,buffer.Length);
-                //Console.WriteLine("Sending: "+send);
                 return true;
             }catch(Exception e)
             {
@@ -361,7 +422,24 @@ namespace BeatSaberMultiplayer
                 if (_sendTimer > _sendRate)
                 {
                     _sendTimer = 0;
-                    SendPlayerInfo();
+                    localPlayerInfo.playerAvatar = Convert.ToBase64String(
+                        Serialization.Combine(
+                            Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.RightHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.LeftHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.Head)),
+                            Serialization.ToBytes(InputTracking.GetLocalRotation(XRNode.RightHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalRotation(XRNode.LeftHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalRotation(XRNode.Head))
+                       ));
+
+                    string playerInfoString = JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(localPlayerInfo)));
+
+                    if (playerInfoString != lastPlayerInfo)
+                    {
+                        SendString(playerInfoString);
+                        lastPlayerInfo = playerInfoString;
+                    }
+                    
                 }
             }
         }
@@ -405,25 +483,23 @@ namespace BeatSaberMultiplayer
             if (_scoreController != null)
             {
                 _scoreController.scoreDidChangeEvent += ScoreChanged;
-                _scoreController.comboDidChangeEvent += ComboChanged;
             }
 
+            Console.WriteLine("Found score controller");
 
-            
-        }
+            _roomAdjust = FindObjectOfType<VRCenterAdjust>();
 
-        private void ComboChanged(int combo)
-        {
-            playerInfo.playerCombo = combo;
-            if(combo > playerInfo.playerMaxCombo)
+            if(_roomAdjust != null)
             {
-                playerInfo.playerMaxCombo = combo;
+                roomPositionOffset = _roomAdjust.transform.position;
+                roomRotationOffset = _roomAdjust.transform.rotation;
             }
+            
         }
 
         private void ScoreChanged(int score)
         {
-            playerInfo.playerScore = score;
+            localPlayerInfo.playerScore = score;
         }
     }
 }

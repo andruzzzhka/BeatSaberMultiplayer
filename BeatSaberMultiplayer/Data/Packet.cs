@@ -14,7 +14,7 @@ namespace BeatSaberMultiplayer.Data {
         }
 
         public static ClientDataPacket ToClientDataPacket(byte[] bytes) {
-            var b2s = Encoding.Unicode.GetString(bytes).Trim('\0');
+            var b2s = Encoding.UTF8.GetString(bytes).Trim('\0');
             var obj = JSON.Parse(b2s);
             Console.WriteLine($"TO CLIENT DATA PACKET: {Environment.NewLine}{obj.ToString(4)}");
             if ((ConnectionType)Enum.Parse(typeof(ConnectionType), obj["ConnectionType"].Value) == ConnectionType.Client)
@@ -32,7 +32,7 @@ namespace BeatSaberMultiplayer.Data {
         
         public byte[] ToBytes() {
             Console.WriteLine("Packet: "+ToString());
-            return new UnicodeEncoding().GetBytes(ToString());
+            return new UTF8Encoding().GetBytes(ToString());
         }
     }
 }

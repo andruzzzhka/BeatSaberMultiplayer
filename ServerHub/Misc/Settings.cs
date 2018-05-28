@@ -27,7 +27,7 @@ namespace ServerHub.Misc {
 
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
-                _port = 3701;
+                _port = 3700;
             }
         }
         [JsonObject(MemberSerialization.OptIn)]

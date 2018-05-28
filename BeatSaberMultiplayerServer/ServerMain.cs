@@ -286,7 +286,9 @@ namespace BeatSaberMultiplayerServer {
                                 ServerCommandType.SetPlayerInfos,
                                 _playerInfos: (clients.Where(x => x.playerInfo != null)
                                     .OrderByDescending(x => x.playerInfo.playerScore)
-                                    .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray())));
+                                    .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray(),
+                                    _selectedSongDuration: availableSongs[currentSongIndex].duration.TotalSeconds,
+                                    _selectedSongPlayTime: playTime.TotalSeconds)));
                             sendTimer = 0f;
                         }
 

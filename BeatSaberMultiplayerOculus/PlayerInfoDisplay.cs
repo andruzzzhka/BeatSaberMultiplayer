@@ -21,7 +21,7 @@ namespace BeatSaberMultiplayer
 
         void Update()
         {
-            progress += Time.deltaTime;
+            progress += Time.deltaTime * 20;
             playerScoreText.text = Mathf.Lerp(previousScore, currentScore, Mathf.Clamp01(progress)).ToString("#");
         }
 

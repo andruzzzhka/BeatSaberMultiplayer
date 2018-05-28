@@ -8,19 +8,22 @@ using System.Text;
 
 namespace BeatSaberMultiplayerServer
 {
-    internal class PlayerInfo
+    [Serializable]
+    class PlayerInfo
     {
         public string playerName;
-        public string playerId;
+        public ulong playerId;
         public int playerScore;
-        public int playerCombo;
-        public int playerMaxCombo;
 
+        public string playerAvatar;
+        
 
-        public PlayerInfo(string _name, string _id)
+        public PlayerInfo(string _name, ulong _id, string _avatar = null)
         {
             playerName = _name;
             playerId = _id;
+            playerScore = 0;
+            playerAvatar = _avatar;
         }
     }
 
