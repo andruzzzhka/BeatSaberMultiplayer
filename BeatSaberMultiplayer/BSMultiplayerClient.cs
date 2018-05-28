@@ -1,5 +1,4 @@
 ﻿using BeatSaberMultiplayer.Misc;
-using Steamworks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,10 +25,10 @@ namespace BeatSaberMultiplayer
 
         public MainGameSceneSetupData _mainGameSceneSetupData;
         GameplayManager _gameManager;
-
+        VRCenterAdjust _roomAdjust;
         ScoreController _scoreController;
 
-        PlayerInfo playerInfo;
+        public PlayerInfo localPlayerInfo;
         string lastPlayerInfo;
 
         GameObject scoreScreen;
@@ -48,7 +47,12 @@ namespace BeatSaberMultiplayer
         int localPlayerIndex = -1;
         public List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
 
+        List<AvatarController> _avatars = new List<AvatarController>();
+
         public event Action<List<PlayerInfo>> PlayerInfosReceived;
+
+        public Vector3 roomPositionOffset = Vector3.zero;
+        public Quaternion roomRotationOffset = Quaternion.identity;
 
         public static void OnLoad(int level, string pluginVersion)
         {
@@ -120,9 +124,9 @@ namespace BeatSaberMultiplayer
                 {
 
                    
-                    playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
+                    localPlayerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
 
-                    SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(playerInfo))));
+                    SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(localPlayerInfo))));
 
                     DataReceived += ReceivedFromServer;
                     StartCoroutine(ReceiveFromServerCoroutine());
@@ -193,18 +197,54 @@ namespace BeatSaberMultiplayer
                                 player.rightHandRot = Serialization.ToQuaternion(avatar.Skip(36).Take(16).ToArray());
                                 player.leftHandRot = Serialization.ToQuaternion(avatar.Skip(52).Take(16).ToArray());
                                 player.headRot = Serialization.ToQuaternion(avatar.Skip(68).Take(16).ToArray());
+                                
                             }
                             _playerInfos.Add(player);
                         }
 
                         lastLocalPlayerIndex = localPlayerIndex;
-                        localPlayerIndex = FindIndexInList(playerInfo);
+                        localPlayerIndex = FindIndexInList(_playerInfos,localPlayerInfo);
+
+                        try
+                        {
+                            if (_avatars.Count > _playerInfos.Count)
+                            {
+                                List<AvatarController> avatarsToRemove = new List<AvatarController>();
+                                for (int i = _playerInfos.Count; i < _avatars.Count; i++)
+                                {
+                                    avatarsToRemove.Add(_avatars[i]);
+                                }
+                                foreach (AvatarController avatar in avatarsToRemove)
+                                {
+                                    _avatars.Remove(avatar);
+                                    Destroy(avatar.gameObject);
+                                }
+
+                            }
+                            else if (_avatars.Count < _playerInfos.Count)
+                            {
+                                for (int i = 0; i < (_playerInfos.Count - _avatars.Count); i++)
+                                {
+                                    _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
+
+                                }
+                            }
+
+                            List<PlayerInfo> _playerInfosByID = _playerInfos.OrderBy(x => x.playerId).ToList();
+                            for (int i = 0; i < _playerInfos.Count; i++)
+                            {
+                                _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - FindIndexInList(_playerInfosByID, localPlayerInfo)) * 3f);
+                            }
+                        }catch(Exception e)
+                        {
+                            Console.WriteLine($"AVATARS EXCEPTION: {e}");
+                        }
 
                         if (_playerInfos.Count <= 5)
                         {
                             for (int i = 0; i < _playerInfos.Count; i++)
                             {
-                                scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos[i]));
+                                scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos, _playerInfos[i]));
                             }
                             for (int i = _playerInfos.Count; i < scoreDisplays.Count; i++)
                             {
@@ -219,20 +259,20 @@ namespace BeatSaberMultiplayer
                             {
                                 for (int i = 0; i < 5; i++)
                                 {
-                                    scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos[i]));
+                                    scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos, _playerInfos[i]));
                                 }
                             }else if(localPlayerIndex > _playerInfos.Count - 3)
                             {
                                 for (int i = _playerInfos.Count - 5; i < _playerInfos.Count; i++)
                                 {
-                                    scoreDisplays[i-(_playerInfos.Count - 5)].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos[i]));
+                                    scoreDisplays[i-(_playerInfos.Count - 5)].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos, _playerInfos[i]));
                                 }
                             }
                             else
                             {
                                 for (int i = localPlayerIndex - 2; i < localPlayerIndex + 3; i++)
                                 {
-                                    scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos[i]));
+                                    scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(_playerInfos[i], FindIndexInList(_playerInfos, _playerInfos[i]));
                                 }
                             }
 
@@ -263,9 +303,9 @@ namespace BeatSaberMultiplayer
             StartCoroutine(ReceiveFromServerCoroutine());
         }
 
-        private int FindIndexInList(PlayerInfo _player)
+        private int FindIndexInList(List<PlayerInfo> list,PlayerInfo _player)
         {
-            return _playerInfos.FindIndex(x => (x.playerId == _player.playerId) && (x.playerName == _player.playerName));
+            return list.FindIndex(x => (x.playerId == _player.playerId) && (x.playerName == _player.playerName));
         }
 
         private void Awake()
@@ -382,7 +422,7 @@ namespace BeatSaberMultiplayer
                 if (_sendTimer > _sendRate)
                 {
                     _sendTimer = 0;
-                    playerInfo.playerAvatar = Convert.ToBase64String(
+                    localPlayerInfo.playerAvatar = Convert.ToBase64String(
                         Serialization.Combine(
                             Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.RightHand)),
                             Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.LeftHand)),
@@ -392,7 +432,7 @@ namespace BeatSaberMultiplayer
                             Serialization.ToBytes(InputTracking.GetLocalRotation(XRNode.Head))
                        ));
 
-                    string playerInfoString = JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(playerInfo)));
+                    string playerInfoString = JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(localPlayerInfo)));
 
                     if (playerInfoString != lastPlayerInfo)
                     {
@@ -444,12 +484,22 @@ namespace BeatSaberMultiplayer
             {
                 _scoreController.scoreDidChangeEvent += ScoreChanged;
             }
+
+            Console.WriteLine("Found score controller");
+
+            _roomAdjust = FindObjectOfType<VRCenterAdjust>();
+
+            if(_roomAdjust != null)
+            {
+                roomPositionOffset = _roomAdjust.transform.position;
+                roomRotationOffset = _roomAdjust.transform.rotation;
+            }
             
         }
 
         private void ScoreChanged(int score)
         {
-            playerInfo.playerScore = score;
+            localPlayerInfo.playerScore = score;
         }
     }
 }
