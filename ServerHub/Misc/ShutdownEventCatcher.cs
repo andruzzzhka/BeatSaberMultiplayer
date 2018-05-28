@@ -18,17 +18,21 @@ namespace BeatSaberMultiplayerServer.Misc
                 Shutdown(args);
         }
 
+        #if (NET462 && !NETCOREAPP2_0)
         [DllImport("Kernel32")]
         private static extern bool SetConsoleCtrlHandler(Kernel32ShutdownHandler handler, bool add);
 
         private delegate bool Kernel32ShutdownHandler(ShutdownReason reason);
-
+        #endif
+    
         /// <summary>
         /// Constructor attaches the shutdown event handlers immediately
         /// </summary>
         static ShutdownEventCatcher()
         {
+    #if (NET462 && !NETCOREAPP2_0)
             SetConsoleCtrlHandler(new Kernel32ShutdownHandler(Kernel32_ProcessShuttingDown), true);
+    #endif
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
