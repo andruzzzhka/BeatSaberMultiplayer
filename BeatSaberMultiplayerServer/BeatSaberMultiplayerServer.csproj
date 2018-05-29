@@ -27,7 +27,4 @@
     <None Remove="published\**" />
     <None Remove="Properties\PublishProfiles\**" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties" />
-  </ItemGroup>
 </Project>

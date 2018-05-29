@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // Общие сведения об этой сборке предоставляются следующим набором
 // набора атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // связанные со сборкой.
-[assembly: AssemblyTitle("BeatSaberMultiplayer")]
+[assembly: AssemblyTitle("BeatSaberMultiplayerServer")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("BeatSaberMultiplayer")]
+[assembly: AssemblyProduct("BeatSaberMultiplayerServer")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // Следующий GUID служит для идентификации библиотеки типов, если этот проект будет видимым для COM
-[assembly: Guid("19e76954-2eba-4761-8ad4-1425cc29ec0e")]
+[assembly: Guid("8e3a3b4e-963d-4e3c-9407-1b43c4122dcb")]
 
 // Сведения о версии сборки состоят из следующих четырех значений:
 //
