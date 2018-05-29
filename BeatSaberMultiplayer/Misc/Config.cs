@@ -59,7 +59,7 @@ namespace BeatSaberMultiplayer {
         }
         
         Config() {
-            _serverHubIP = "127.0.0.1";
+            _serverHubIP = "beatsaber.jaddie.co.uk";
             _serverHubPort = 3700;
             MarkDirty();
         }
