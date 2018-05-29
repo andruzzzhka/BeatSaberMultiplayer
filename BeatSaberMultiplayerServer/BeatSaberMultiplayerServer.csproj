@@ -15,4 +15,19 @@
     <Reference Include="System.IO.Compression" Condition="'$(TargetFramework)' == 'net462'" />
     <Reference Include="System.IO.Compression.FileSystem" Condition="'$(TargetFramework)' == 'net462'" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="published\**" />
+    <Compile Remove="Properties\PublishProfiles\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Remove="published\**" />
+    <EmbeddedResource Remove="Properties\PublishProfiles\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="published\**" />
+    <None Remove="Properties\PublishProfiles\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties" />
+  </ItemGroup>
 </Project>

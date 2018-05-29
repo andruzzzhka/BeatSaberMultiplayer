@@ -19,15 +19,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Logs\**" />
+    <Compile Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Remove="Logs\**" />
+    <EmbeddedResource Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Logs\**" />
     <None Update="run.bat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ServerCommons\ServerCommons.csproj" />
