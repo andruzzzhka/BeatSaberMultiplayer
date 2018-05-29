@@ -146,7 +146,7 @@ namespace BeatSaberMultiplayerServer.Misc {
                 MarkDirty = markDirty;
                 _port = 3700;
                 _serverName = "New Server";
-                _serverHubIP = "127.0.0.1";
+                _serverHubIP = "beatsaber.jaddie.co.uk";
                 _serverHubPort = 3701;
                 _lobbyTime = 60;
                 SongDirectory = "AvailableSongs/";
