@@ -234,7 +234,7 @@ namespace BeatSaberMultiplayer
                             List<PlayerInfo> _playerInfosByID = _playerInfos.OrderBy(x => x.playerId).ToList();
                             for (int i = 0; i < _playerInfos.Count; i++)
                             {
-                                _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - FindIndexInList(_playerInfosByID, localPlayerInfo)) * 3f);
+                                _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - FindIndexInList(_playerInfosByID, localPlayerInfo)) * 3f, localPlayerInfo.Equals(_playerInfosByID[i]));
                             }
                         }catch(Exception e)
                         {

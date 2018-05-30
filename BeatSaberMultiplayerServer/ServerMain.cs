@@ -228,7 +228,9 @@ namespace BeatSaberMultiplayerServer {
 
                 switch (serverState) {
                     case ServerState.Lobby: {
-                        lobbyTimer += (float) deltaTime.TotalSeconds;
+
+                            sendTimer += (float)deltaTime.TotalSeconds;
+                            lobbyTimer += (float) deltaTime.TotalSeconds;
 
                         if (clients.Count == 0) {
                             lobbyTimer = 0;
@@ -241,8 +243,18 @@ namespace BeatSaberMultiplayerServer {
                                     Math.Max(lobbyTime - _timerSeconds, 0))));
                         }
 
+                            if (sendTimer >= sendTime)
+                            {
+                                SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                    ServerCommandType.SetPlayerInfos,
+                                    _playerInfos: (clients.Where(x => x.playerInfo != null)
+                                        .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray()
+                                    )));
+                                sendTimer = 0f;
+                            }
 
-                        if (lobbyTimer >= lobbyTime / 2 && currentSongIndex == -1) {
+
+                            if (lobbyTimer >= lobbyTime / 2 && currentSongIndex == -1) {
                             currentSongIndex = lastSelectedSong;
                             currentSongIndex++;
                             if (currentSongIndex >= availableSongs.Count) {

@@ -1,4 +1,5 @@
-﻿using ICSharpCode.SharpZipLib.Zip;
+﻿using BeatSaberMultiplayer.Misc;
+using ICSharpCode.SharpZipLib.Zip;
 using SimpleJSON;
 using SongLoaderPlugin;
 using System;
@@ -11,6 +12,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
+using UnityEngine.XR;
 using VRUI;
 
 namespace BeatSaberMultiplayer
@@ -43,13 +45,24 @@ namespace BeatSaberMultiplayer
 
         SongPreviewPlayer _songPreviewPlayer;
 
+        ServerState _serverState = ServerState.Playing;
         
+        float _sendRate = 1f / 20;
+        float _sendTimer = 0;
+
+        public PlayerInfo localPlayerInfo;
+        string lastPlayerInfo;
+
+        public List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
+        List<AvatarController> _avatars = new List<AvatarController>();
+
         protected override void DidActivate()
         {
             
 
             ui = BSMultiplayerUI._instance;
             _songLoader = FindObjectOfType<SongLoader>();
+            localPlayerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
 
             if (_songPreviewPlayer == null)
             {
@@ -73,9 +86,13 @@ namespace BeatSaberMultiplayer
                     try
                     {
                         transform.parent.GetComponent<MultiplayerServerHubViewController>().UpdatePage();
-                    }catch(Exception e)
+                    } catch (Exception e)
                     {
                         Console.WriteLine($"ServerHub exception: {e}");
+                    }
+                    foreach (AvatarController avatar in _avatars)
+                    {
+                        Destroy(avatar.gameObject);
                     }
                     DismissModalViewController(null, false);
                     
@@ -309,28 +326,98 @@ namespace BeatSaberMultiplayer
                                     };break;
                                 case ServerCommandType.SetPlayerInfos: {
 
-                                        if(_multiplayerLeaderboard != null)
+                                        if (command.serverState == ServerState.Playing)
+                                        {
+                                            if (_multiplayerLeaderboard != null)
+                                            {
+
+                                                TimeSpan timeRemaining = TimeSpan.FromSeconds(command.selectedSongDuration - command.selectedSongPlayTime);
+
+                                                _timerText.text = timeRemaining.Minutes.ToString("00") + ":" + timeRemaining.Seconds.ToString("00");
+                                                try
+                                                {
+                                                    _multiplayerLeaderboard.SetLeaderboard(command.playerInfos.Select(x => JsonUtility.FromJson<PlayerInfo>(x)).ToArray());
+
+
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    Console.WriteLine("Leaderboard exception: " + e);
+                                                }
+                                            }
+                                        }
+                                        else
                                         {
 
-                                            TimeSpan timeRemaining = TimeSpan.FromSeconds(command.selectedSongDuration - command.selectedSongPlayTime);
 
-                                            _timerText.text = timeRemaining.Minutes.ToString("00") + ":" + timeRemaining.Seconds.ToString("00");
+
+
+
+                                            _playerInfos.Clear();
+                                            foreach (string playerStr in command.playerInfos)
+                                            {
+                                                PlayerInfo player = JsonUtility.FromJson<PlayerInfo>(playerStr);
+                                                if (!String.IsNullOrEmpty(player.playerAvatar))
+                                                {
+                                                    byte[] avatar = Convert.FromBase64String(player.playerAvatar);
+
+                                                    player.rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
+                                                    player.leftHandPos = Serialization.ToVector3(avatar.Skip(12).Take(12).ToArray());
+                                                    player.headPos = Serialization.ToVector3(avatar.Skip(24).Take(12).ToArray());
+
+                                                    player.rightHandRot = Serialization.ToQuaternion(avatar.Skip(36).Take(16).ToArray());
+                                                    player.leftHandRot = Serialization.ToQuaternion(avatar.Skip(52).Take(16).ToArray());
+                                                    player.headRot = Serialization.ToQuaternion(avatar.Skip(68).Take(16).ToArray());
+
+                                                }
+                                                _playerInfos.Add(player);
+                                            }
+
                                             try
                                             {
-                                                _multiplayerLeaderboard.SetLeaderboard(command.playerInfos.Select(x => JsonUtility.FromJson<PlayerInfo>(x)).ToArray());
+                                                if (_avatars.Count > _playerInfos.Count)
+                                                {
+                                                    List<AvatarController> avatarsToRemove = new List<AvatarController>();
+                                                    for (int i = _playerInfos.Count; i < _avatars.Count; i++)
+                                                    {
+                                                        avatarsToRemove.Add(_avatars[i]);
+                                                    }
+                                                    foreach (AvatarController avatar in avatarsToRemove)
+                                                    {
+                                                        _avatars.Remove(avatar);
+                                                        Destroy(avatar.gameObject);
+                                                    }
 
+                                                }
+                                                else if (_avatars.Count < _playerInfos.Count)
+                                                {
+                                                    for (int i = 0; i < (_playerInfos.Count - _avatars.Count); i++)
+                                                    {
+                                                        _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
+
+                                                    }
+                                                }
                                                 
+                                                for (int i = 0; i < _playerInfos.Count; i++)
+                                                {
+                                                    _avatars[i].SetPlayerInfo(_playerInfos[i], 0f, localPlayerInfo.Equals(_playerInfos[i]));
+                                                }
                                             }
-                                            catch(Exception e)
+                                            catch (Exception e)
                                             {
-                                                Console.WriteLine("Leaderboard exception: "+e);
+                                                Console.WriteLine($"AVATARS EXCEPTION: {e}");
                                             }
+
+
+
+
                                         }
 
                                     };break;
 
 
                             }
+                            _serverState = command.serverState;
                         }
                         else
                         {
@@ -448,8 +535,6 @@ namespace BeatSaberMultiplayer
             }
         }
 
-
-
         IEnumerator DownloadSongs(string[] _levelIds)
         {
             _timerText.text = "";
@@ -509,7 +594,35 @@ namespace BeatSaberMultiplayer
         }
 
 
+        void Update()
+        {
+            if (_serverState == ServerState.Lobby)
+            {
+                _sendTimer += Time.deltaTime;
+                if (_sendTimer > _sendRate)
+                {
+                    _sendTimer = 0;
+                    localPlayerInfo.playerAvatar = Convert.ToBase64String(
+                        Serialization.Combine(
+                            Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.RightHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.LeftHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalPosition(XRNode.Head)),
+                            Serialization.ToBytes(InputTracking.GetLocalRotation(XRNode.RightHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalRotation(XRNode.LeftHand)),
+                            Serialization.ToBytes(InputTracking.GetLocalRotation(XRNode.Head))
+                       ));
 
+                    string playerInfoString = JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(localPlayerInfo)));
+
+                    if (playerInfoString != lastPlayerInfo)
+                    {
+                        BSMultiplayerClient._instance.SendString(playerInfoString);
+                        lastPlayerInfo = playerInfoString;
+                    }
+
+                }
+            }
+        }
 
         void SetLoadingIndicator(bool loading)
         {

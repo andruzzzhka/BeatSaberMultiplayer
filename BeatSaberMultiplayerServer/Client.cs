@@ -77,7 +77,10 @@ namespace BeatSaberMultiplayerServer
                                                 JsonConvert.DeserializeObject<PlayerInfo>(command.playerInfo);
                                             if (receivedPlayerInfo != null)
                                             {
-                                                state = ClientState.Playing;
+                                                if (ServerMain.serverState == ServerState.Playing)
+                                                {
+                                                    state = ClientState.Playing;
+                                                }
                                                 if (playerId == 0)
                                                 {
                                                     playerId = receivedPlayerInfo.playerId;
@@ -92,8 +95,6 @@ namespace BeatSaberMultiplayerServer
                                                     return;
                                                 }
 
-                                                playerInfo = receivedPlayerInfo;
-
                                                 if (playerName == null)
                                                 {
                                                     playerName = receivedPlayerInfo.playerName;
@@ -104,6 +105,8 @@ namespace BeatSaberMultiplayerServer
                                                 }
 
                                                 playerScore = receivedPlayerInfo.playerScore;
+                                                
+                                                playerInfo = receivedPlayerInfo;
                                             }
                                         }
                                         ;

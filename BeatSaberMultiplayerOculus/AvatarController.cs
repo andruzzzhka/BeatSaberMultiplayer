@@ -51,7 +51,7 @@ namespace BeatSaberMultiplayer
                 head = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 Destroy(head.GetComponent<BoxCollider>());
                 head.transform.SetParent(transform);
-                head.transform.localScale = new Vector3(0.33f, 0.33f, 0.33f);
+                head.transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
             }
 
             if (leftHand == null)
@@ -59,7 +59,7 @@ namespace BeatSaberMultiplayer
                 leftHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 Destroy(leftHand.GetComponent<BoxCollider>());
                 leftHand.transform.SetParent(transform);
-                leftHand.transform.localScale = new Vector3(0.1f, 0.1f, 0.33f);
+                leftHand.transform.localScale = new Vector3(0.075f, 0.075f, 0.25f);
             }
 
             if (rightHand == null)
@@ -67,7 +67,7 @@ namespace BeatSaberMultiplayer
                 rightHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 Destroy(rightHand.GetComponent<BoxCollider>());
                 rightHand.transform.SetParent(transform);
-                rightHand.transform.localScale = new Vector3(0.1f, 0.1f, 0.33f);
+                rightHand.transform.localScale = new Vector3(0.075f, 0.075f, 0.25f);
             }
 
             if(playerNameText == null)
@@ -101,7 +101,7 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SetPlayerInfo(PlayerInfo _playerInfo,float offset)
+        public void SetPlayerInfo(PlayerInfo _playerInfo,float offset, bool isLocal)
         {
             if (_playerInfo == null) return;
             if(head == null || leftHand == null || rightHand == null || playerNameText == null)
@@ -111,7 +111,7 @@ namespace BeatSaberMultiplayer
 
             playerInfo = _playerInfo;
 
-            if (playerInfo.playerId == BSMultiplayerClient._instance.localPlayerInfo.playerId && playerInfo.playerName == BSMultiplayerClient._instance.localPlayerInfo.playerName)
+            if (isLocal)
             {
                 head.SetActive(false);
                 leftHand.SetActive(false);

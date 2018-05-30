@@ -35,6 +35,18 @@ namespace BeatSaberMultiplayer
             playerScore = 0;
             playerAvatar = _avatar;
         }
+
+        public override bool Equals(object obj)
+        {
+            if(obj is PlayerInfo)
+            {
+                return (playerId == (obj as PlayerInfo).playerId) && (playerName == (obj as PlayerInfo).playerName);
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     enum ServerState { Lobby, Playing };
