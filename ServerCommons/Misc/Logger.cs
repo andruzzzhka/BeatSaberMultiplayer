@@ -8,6 +8,8 @@ namespace ServerCommons.Misc {
     public class Logger {
         private static Logger _instance;
 
+        public CancellationTokenSource TokenSource { get; set; }
+        
         public static Logger Instance {
             get {
                 if (_instance != null) return _instance;
@@ -33,55 +35,45 @@ namespace ServerCommons.Misc {
             }
         }
 
-        private Thread LogHandler { get; set; }
         private Queue<LogMessage> LogQueue { get; set; } = new Queue<LogMessage>();
         private FileInfo LogFile { get; }
-        private bool IsThreadRunning { get; set; }
         private LogMessage OldLogMessage { get; set; }
 
         Logger() {
             LogFile = GetPath();
-            LogHandler = new Thread(QueueWatcher) {
-                IsBackground = true
-            };
-            IsThreadRunning = true;
-            LogHandler.Start();
+            CancellationTokenSource TokenSource = new CancellationTokenSource();
+            ThreadPool.QueueUserWorkItem(new WaitCallback(QueueWatcher), TokenSource);
         }
 
         #region Log Functions
 
         public void Log(object msg) {
-            if (!LogHandler.IsAlive) throw new Exception("Logger is Closed!");
             LogQueue.Enqueue(new LogMessage($"[LOG @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Info));
         }
 
         public void Error(object msg) {
-            if (!LogHandler.IsAlive) throw new Exception("Logger is Closed!");
             LogQueue.Enqueue(new LogMessage($"[ERROR @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Error));
         }
 
         public void Exception(object msg) {
-            if (!LogHandler.IsAlive) throw new Exception("Logger is Closed!");
             LogQueue.Enqueue(new LogMessage($"[EXCEPTION @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Exception));
         }
 
         public void Warning(object msg) {
-            if (!LogHandler.IsAlive) throw new Exception("Logger is Closed!");
             LogQueue.Enqueue(new LogMessage($"[WARNING @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Warning));
         }
 
         #endregion
 
-        void QueueWatcher() {
+        void QueueWatcher(object state) {
+            CancellationTokenSource tokenSource = (CancellationTokenSource)state;
             LogFile.Create().Close();
 
-            while (IsThreadRunning) {
+            while (!tokenSource.IsCancellationRequested) {
                 if (LogQueue.Count <= 0) {
                     Thread.Sleep(250);
                     continue;
                 }
-
-                LogHandler.IsBackground = false;
                 using (var f = LogFile.AppendText()) {
                     f.AutoFlush = true;
                     while (LogQueue.Count > 0) {
@@ -94,11 +86,7 @@ namespace ServerCommons.Misc {
                         Console.ResetColor();
                     }
                 }
-
-                LogHandler.IsBackground = true;
             }
-
-            LogHandler.Join();
         }
 
         FileInfo GetPath() {
@@ -108,7 +96,7 @@ namespace ServerCommons.Misc {
         }
 
         public void Stop() {
-            IsThreadRunning = false;
+            TokenSource.Cancel();
             _instance = null;
         }
     }
