@@ -56,8 +56,8 @@ namespace ServerHub.Handlers {
                     var data = AcceptClient();
                     CancellationTokenSource cts = new CancellationTokenSource();
                     ThreadPool.QueueUserWorkItem(new WaitCallback(obj => {
-                        CancellationToken token = (CancellationToken)obj;
-                            var clientObject = new ClientObject {CancellationTokenSource = cts, Data = data};
+                        CancellationTokenSource token = (CancellationTokenSource)obj;
+                            var clientObject = new ClientObject {CancellationTokenSource = token, Data = data};
                             while (!token.IsCancellationRequested) {
                                 if (!clientObject.Data.TcpClient.Connected) {
                                     RemoveClient(clientObject);
