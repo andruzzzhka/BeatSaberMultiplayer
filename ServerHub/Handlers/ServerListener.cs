@@ -20,7 +20,7 @@ namespace ServerHub.Handlers {
         private string TitleFormat = "ServerHub - {0} Servers Connected";
         
         public class ClientObject {
-            public Thread DataListener { get; set; }
+            public CancellationTokenSource CancellationTokenSource { get; set; }
             public Data Data { get; set; }
         }
 
@@ -32,6 +32,10 @@ namespace ServerHub.Handlers {
             if(cO.Data.ID!=-1) Logger.Instance.Log($"Unregistered Server [{cO.Data.Name}] @ [{cO.Data.IPv4}:{cO.Data.Port}]");
             ConnectedClients.Remove(cO);
             cO.Data.TcpClient.Close();
+            cO.CancellationTokenSource.Cancel();
+            Thread.Sleep(2500);
+            cO.CancellationTokenSource.Dispose();
+
             Console.Title = string.Format(TitleFormat, ConnectedClients.Count(o => o.Data.ID != -1));
         }
         
@@ -50,20 +54,19 @@ namespace ServerHub.Handlers {
                 Thread t = null;
                 while (Listen) {
                     var data = AcceptClient();
-                    t = new Thread(o => {
-                        var clientObject = new ClientObject {DataListener = t, Data = data};
-                        while (t.IsAlive) {
-                            if (!clientObject.Data.TcpClient.Connected) {
-                                RemoveClient(clientObject);
-                                break;
+                    CancellationTokenSource cts = new CancellationTokenSource();
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(obj => {
+                        CancellationToken token = (CancellationToken)obj;
+                            var clientObject = new ClientObject {CancellationTokenSource = cts, Data = data};
+                            while (!token.IsCancellationRequested) {
+                                if (!clientObject.Data.TcpClient.Connected) {
+                                    RemoveClient(clientObject);
+                                    break;
+                                }
+
+                                PacketHandler(ListenForPackets(ref clientObject), ref clientObject);
                             }
-
-                            PacketHandler(ListenForPackets(ref clientObject), ref clientObject);
-                        }
-
-                        if (t.IsAlive) t.Abort();
-                    }) {IsBackground = true};
-                    t.Start();
+                        }), cts);
                 }
         }
 
@@ -131,6 +134,8 @@ namespace ServerHub.Handlers {
                     {
                         cO.Data.TcpClient.GetStream().Write(clientData.ToBytes(), 0, clientData.ToBytes().Length);
                         cO.Data.TcpClient.Close();
+                        Thread.Sleep(2500);
+                        cO.CancellationTokenSource.Dispose();
                     }
                     break;
                 case ConnectionType.Server:
@@ -142,7 +147,7 @@ namespace ServerHub.Handlers {
                         //Logger.Instance.Log($"Removing Server {serverData.ID} from Collection");
                         RemoveClient(ConnectedClients.First(o => o.Data.ID == temp.ID));
                         //Logger.Instance.Log($"Joining Thread of Server {serverData.ID}");
-                        cO.DataListener.Abort();
+                        cO.CancellationTokenSource.Cancel();
                         break;
                     }
                     cO.Data.IPv4 = serverData.IPv4;

@@ -28,7 +28,7 @@ namespace ServerHub {
 
         private void OnShutdown(ShutdownEventArgs obj) {
             Listener.Stop();
-            listenerThread.Abort();
+            //listenerThread.Abort();
         }
 
         void Start(string[] args) {
