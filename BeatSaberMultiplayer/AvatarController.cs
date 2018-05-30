@@ -95,61 +95,76 @@ namespace BeatSaberMultiplayer
                 head.transform.localRotation = Quaternion.Lerp(lastHeadRot, targetHeadRot, interpolationProgress);
                 leftHand.transform.localRotation = Quaternion.Lerp(lastLeftHandRot, targetLeftHandRot, interpolationProgress);
                 rightHand.transform.localRotation = Quaternion.Lerp(lastRightHandRot, targetRightHandRot, interpolationProgress);
-                
-                playerNameText.rectTransform.LookAt(InputTracking.GetLocalPosition(XRNode.Head));
-                playerNameText.rectTransform.Rotate(0f, 90f+playerNameText.rectTransform.rotation.eulerAngles.y, 0f);
+
+                playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InputTracking.GetLocalPosition(XRNode.Head));
             }
         }
 
         public void SetPlayerInfo(PlayerInfo _playerInfo,float offset, bool isLocal)
         {
-            if (_playerInfo == null) return;
-            if(head == null || leftHand == null || rightHand == null || playerNameText == null)
+            if (_playerInfo == null)
             {
-                CreateGameObjects();
+                Destroy(gameObject);
+                return;
             }
-
-            playerInfo = _playerInfo;
-
-            if (isLocal)
+            try
             {
-                head.SetActive(false);
-                leftHand.SetActive(false);
-                rightHand.SetActive(false);
-                playerNameText.gameObject.SetActive(false);
-            }
-            else
+                if (head == null || leftHand == null || rightHand == null || playerNameText == null)
+                {
+                    CreateGameObjects();
+                }
+
+                playerInfo = _playerInfo;
+
+                if (isLocal)
+                {
+                    head.SetActive(false);
+                    leftHand.SetActive(false);
+                    rightHand.SetActive(false);
+                    playerNameText.gameObject.SetActive(false);
+                }
+                else
+                {
+                    head.SetActive(true);
+                    leftHand.SetActive(true);
+                    rightHand.SetActive(true);
+                    playerNameText.gameObject.SetActive(true);
+
+                    try
+                    {
+                        transform.position = new Vector3(offset, 0f, 0f);// + BSMultiplayerClient._instance.roomPositionOffset;
+                    }catch(Exception e)
+                    {
+                        Console.WriteLine($"Can't set transform position: {e}");
+                    }
+
+                }
+
+                interpolationProgress = 0f;
+
+                lastHeadPos = targetHeadPos;
+                targetHeadPos = _playerInfo.headPos;
+
+                lastRightHandPos = targetRightHandPos;
+                targetRightHandPos = _playerInfo.rightHandPos;
+
+                lastLeftHandPos = targetLeftHandPos;
+                targetLeftHandPos = _playerInfo.leftHandPos;
+
+                lastHeadRot = targetHeadRot;
+                targetHeadRot = _playerInfo.headRot;
+
+                lastRightHandRot = targetRightHandRot;
+                targetRightHandRot = _playerInfo.rightHandRot;
+
+                lastLeftHandRot = targetLeftHandRot;
+                targetLeftHandRot = _playerInfo.leftHandRot;
+
+                playerNameText.text = playerInfo.playerName;
+            }catch(Exception e)
             {
-                head.SetActive(true);
-                leftHand.SetActive(true);
-                rightHand.SetActive(true);
-                playerNameText.gameObject.SetActive(true);
-
-                transform.position = new Vector3(offset, 0f, 0f) + BSMultiplayerClient._instance.roomPositionOffset;
-                
+                Console.WriteLine($"AVATAR EXCEPTION: {_playerInfo.playerName}: {e}");
             }
-
-            interpolationProgress = 0f;
-
-            lastHeadPos = targetHeadPos;
-            targetHeadPos = _playerInfo.headPos;
-
-            lastRightHandPos = targetRightHandPos;
-            targetRightHandPos = _playerInfo.rightHandPos;
-
-            lastLeftHandPos = targetLeftHandPos;
-            targetLeftHandPos = _playerInfo.leftHandPos;
-
-            lastHeadRot = targetHeadRot;
-            targetHeadRot = _playerInfo.headRot;
-
-            lastRightHandRot = targetRightHandRot;
-            targetRightHandRot = _playerInfo.rightHandRot;
-
-            lastLeftHandRot = targetLeftHandRot;
-            targetLeftHandRot = _playerInfo.leftHandRot;
-
-            playerNameText.text = playerInfo.playerName;
         }
 
 

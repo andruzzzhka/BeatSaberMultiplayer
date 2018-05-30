@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
@@ -21,6 +22,8 @@ namespace BeatSaberMultiplayerServer
         public ClientState state = ClientState.Disconnected;
 
         Thread _clientLoopThread;
+
+        public Queue<string> sendQueue = new Queue<string>();
 
         public Client(TcpClient client)
         {
@@ -49,7 +52,7 @@ namespace BeatSaberMultiplayerServer
                             pingTimer = 0;
                         }
 
-                        string[] commands = ReceiveFromClient(true);
+                        string[] commands = ReceiveFromClient();
 
                         if (commands != null)
                         {
@@ -105,7 +108,7 @@ namespace BeatSaberMultiplayerServer
                                                 }
 
                                                 playerScore = receivedPlayerInfo.playerScore;
-                                                
+
                                                 playerInfo = receivedPlayerInfo;
                                             }
                                         }
@@ -141,6 +144,11 @@ namespace BeatSaberMultiplayerServer
                                 }
                             }
                         }
+                        while (sendQueue.Count != 0)
+                        {
+                            SendToClient(sendQueue.Dequeue());
+                        }
+
                     }
                     else
                     {
@@ -159,11 +167,11 @@ namespace BeatSaberMultiplayerServer
                     Logger.Instance.Warning($"CLIENT EXCEPTION: {e}");
                 }
 
-                Thread.Sleep(16);
+                Thread.Sleep(8);
             }
         }
 
-        public string[] ReceiveFromClient(bool waitIfNoData = true)
+        public string[] ReceiveFromClient(bool waitIfNoData = false)
         {
             if (_client.Available == 0)
             {
@@ -171,7 +179,7 @@ namespace BeatSaberMultiplayerServer
                 {
                     while (_client.Available == 0 && _client.Connected)
                     {
-                        Thread.Sleep(16);
+                        Thread.Sleep(8);
                     }
                 }
                 else

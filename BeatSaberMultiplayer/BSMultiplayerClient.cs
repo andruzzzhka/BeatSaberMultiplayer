@@ -20,6 +20,9 @@ namespace BeatSaberMultiplayer
         private TcpClient _connection;
         private NetworkStream _connectionStream;
 
+        public string lastServerIP;
+        public int lastServerPort;
+
         public static string version;
         public static BSMultiplayerClient _instance;
 
@@ -85,6 +88,10 @@ namespace BeatSaberMultiplayer
                 
                 _connection = new TcpClient(serverIP, serverPort);
                 _connectionStream = _connection.GetStream();
+
+                lastServerIP = serverIP;
+                lastServerPort = serverPort;
+
                 return true;
                 
             }catch(Exception e)
@@ -165,8 +172,8 @@ namespace BeatSaberMultiplayer
                 }
                 else if (_loadedlevel <= 1)
                 {
-                    //DataReceived -= ReceivedFromServer;
-                    //DisconnectFromServer();
+                    DataReceived -= ReceivedFromServer;
+                    DisconnectFromServer();
                     StartCoroutine(WaitForResults());
                 }
             }
@@ -329,8 +336,14 @@ namespace BeatSaberMultiplayer
             yield return new WaitUntil(delegate() { return Resources.FindObjectsOfTypeAll<MainGameSceneSetupData>().Count() > 0; });
             
             _mainGameSceneSetupData = Resources.FindObjectsOfTypeAll<MainGameSceneSetupData>().First();
-            
-            
+
+            _roomAdjust = FindObjectOfType<VRCenterAdjust>();
+
+            if (_roomAdjust != null)
+            {
+                roomPositionOffset = _roomAdjust.transform.position;
+                roomRotationOffset = _roomAdjust.transform.rotation;
+            }
         }
 
         IEnumerator WaitForResults()
@@ -355,6 +368,8 @@ namespace BeatSaberMultiplayer
 
                     hub.doNotUpdate = true;
                     FindObjectOfType<MainMenuViewController>().PresentModalViewController(hub, null, true);
+                    lobby.selectedServerIP = lastServerIP;
+                    lobby.selectedServerPort = lastServerPort;
                     hub.PresentModalViewController(lobby, null, true);
                 }
                 catch(Exception e)

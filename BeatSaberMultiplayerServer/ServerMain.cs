@@ -1,4 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using BeatSaberMultiplayerServer.Misc;
+using Newtonsoft.Json;
+using ServerCommons.Data;
+using ServerCommons.Misc;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,14 +12,13 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
-using BeatSaberMultiplayerServer.Misc;
-using ServerCommons.Data;
-using ServerCommons.Misc;
-using Settings = BeatSaberMultiplayerServer.Misc.Settings;
 using Math = ServerCommons.Misc.Math;
+using Settings = BeatSaberMultiplayerServer.Misc.Settings;
 
-namespace BeatSaberMultiplayerServer {
-    class ServerMain {
+namespace BeatSaberMultiplayerServer
+{
+    class ServerMain
+    {
         static TcpListener _listener;
 
         public static List<Client> clients = new List<Client>();
@@ -36,19 +38,23 @@ namespace BeatSaberMultiplayerServer {
         public int ID { get; set; }
 
         private Thread ListenerThread { get; set; }
-        private Thread ServerStateThread { get; set; }
+        private Thread ServerLoopThread { get; set; }
 
         static void Main(string[] args) => new ServerMain().Start(args);
 
-        public void Start(string[] args) {
+        public void Start(string[] args)
+        {
             Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, 0);
             Logger.Instance.Log($"Beat Saber Multiplayer Server v{Assembly.GetEntryAssembly().GetName().Version}");
 
-            if (args.Length > 0) {
-                try {
+            if (args.Length > 0)
+            {
+                try
+                {
                     Settings.Instance.Server.Port = int.Parse(args[0]);
                 }
-                catch (Exception e) {
+                catch (Exception e)
+                {
                     Logger.Instance.Exception($"Can't parse argumnets! Exception: {e}");
                 }
             }
@@ -66,16 +72,18 @@ namespace BeatSaberMultiplayerServer {
 
             Logger.Instance.Log("Waiting for clients...");
 
-            ListenerThread = new Thread(AcceptClientThread) {IsBackground = true};
+            ListenerThread = new Thread(AcceptClientThread) { IsBackground = true };
             ListenerThread.Start();
 
-            ServerStateThread = new Thread(ServerStateControllerThread) {IsBackground = true};
-            ServerStateThread.Start();
+            ServerLoopThread = new Thread(ServerLoop) { IsBackground = true };
+            ServerLoopThread.Start();
 
-            try {
+            try
+            {
                 ConnectToServerHub(Settings.Instance.Server.ServerHubIP, Settings.Instance.Server.ServerHubPort);
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 Logger.Instance.Error($"Can't connect to ServerHub! Exception: {e.Message}");
             }
 
@@ -83,16 +91,19 @@ namespace BeatSaberMultiplayerServer {
 
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
-            while (Thread.CurrentThread.IsAlive) {
+            while (Thread.CurrentThread.IsAlive)
+            {
                 var x = Console.ReadLine();
                 if (x == string.Empty) continue;
                 var comParts = x?.Split(' ');
                 var comName = comParts[0];
                 var comArgs = comParts.Skip(1).ToArray();
                 string s = string.Empty;
-                switch (comName.ToLower()) {
+                switch (comName.ToLower())
+                {
                     case "help":
-                        foreach (var com in new[] {"Help", "Quit", "Clients"}) {
+                        foreach (var com in new[] { "Help", "Quit", "Clients" })
+                        {
                             s += $"{Environment.NewLine}> {com}";
                         }
 
@@ -101,15 +112,18 @@ namespace BeatSaberMultiplayerServer {
                     case "quit":
                         return;
                     case "clients":
-                        foreach (var t in clients) {
+                        foreach (var t in clients)
+                        {
                             var client = t.playerInfo;
-                            if (t.playerInfo == null) {
+                            if (t.playerInfo == null)
+                            {
                                 s +=
-                                    $"{Environment.NewLine}[{t.state}] NOT AVAILABLE @ {((IPEndPoint) t._client.Client.RemoteEndPoint).Address}";
+                                    $"{Environment.NewLine}[{t.state}] NOT AVAILABLE @ {((IPEndPoint)t._client.Client.RemoteEndPoint).Address}";
                             }
-                            else {
+                            else
+                            {
                                 s +=
-                                    $"{Environment.NewLine}[{t.state}] {client.playerName} @ {((IPEndPoint) t._client.Client.RemoteEndPoint).Address}";
+                                    $"{Environment.NewLine}[{t.state}] {client.playerName} @ {((IPEndPoint)t._client.Client.RemoteEndPoint).Address}";
                             }
                         }
 
@@ -120,10 +134,12 @@ namespace BeatSaberMultiplayerServer {
             }
         }
 
-        public void ConnectToServerHub(string serverHubIP, int serverHubPort) {
+        public void ConnectToServerHub(string serverHubIP, int serverHubPort)
+        {
             _serverHubClient = new TcpClient(serverHubIP, serverHubPort);
 
-            ServerDataPacket packet = new ServerDataPacket {
+            ServerDataPacket packet = new ServerDataPacket
+            {
                 ConnectionType = ConnectionType.Server,
                 FirstConnect = true,
                 IPv4 = Settings.Instance.Server.IP,
@@ -136,8 +152,9 @@ namespace BeatSaberMultiplayerServer {
             _serverHubClient.GetStream().Write(packetBytes, 0, packetBytes.Length);
 
             byte[] bytes = new byte[Packet.MAX_BYTE_LENGTH];
-            if (_serverHubClient.GetStream().Read(bytes, 0, bytes.Length) != 0) {
-                packet = (ServerDataPacket) Packet.ToPacket(bytes);
+            if (_serverHubClient.GetStream().Read(bytes, 0, bytes.Length) != 0)
+            {
+                packet = (ServerDataPacket)Packet.ToPacket(bytes);
             }
 
             ID = packet.ID;
@@ -145,45 +162,57 @@ namespace BeatSaberMultiplayerServer {
             // Logger.Instance.Log($"The ID of this server is {ID}");
         }
 
-        private static void DownloadSongs() {
+        private static void DownloadSongs()
+        {
             Settings.Instance.Server.Downloaded.GetDirectories().AsParallel().ForAll(dir => dir.Delete(true));
 
-            Settings.Instance.AvailableSongs.Songs.ToList().ForEach(id => {
+            Settings.Instance.AvailableSongs.Songs.ToList().ForEach(id =>
+            {
                 var zipPath = Path.Combine(Settings.Instance.Server.Downloads.FullName, $"{id}.zip");
                 Thread.Sleep(25);
-                using (var client = new WebClient()) {
+                using (var client = new WebClient())
+                {
                     client.Headers.Add("user-agent",
                         $"BeatSaverMultiplayerServer-{Assembly.GetEntryAssembly().GetName().Version}");
-                    if (Settings.Instance.Server.Downloads.GetFiles().All(o => o.Name != $"{id}.zip")) {
+                    if (Settings.Instance.Server.Downloads.GetFiles().All(o => o.Name != $"{id}.zip"))
+                    {
                         Logger.Instance.Log($"Downloading {id}.zip");
                         client.DownloadFile($"https://beatsaver.com/dl.php?id={id}", zipPath);
                     }
                 }
 
                 ZipArchive zip = null;
-                try {
+                try
+                {
                     zip = ZipFile.OpenRead(zipPath);
                 }
-                catch (Exception ex) {
+                catch (Exception ex)
+                {
                     Logger.Instance.Exception(ex.Message);
                 }
 
                 var songName = zip?.Entries[0].FullName.Split('/')[0];
-                try {
+                try
+                {
                     zip?.ExtractToDirectory(Settings.Instance.Server.Downloaded.FullName);
-                    try {
+                    try
+                    {
                         zip?.Dispose();
                     }
-                    catch (IOException ex) {
+                    catch (IOException ex)
+                    {
                         Logger.Instance.Exception($"Failed to remove Zip [{id}]");
                     }
                 }
-                catch (IOException ex) {
+                catch (IOException ex)
+                {
                     Logger.Instance.Exception($"Folder [{songName}] exists. Continuing.");
-                    try {
+                    try
+                    {
                         zip?.Dispose();
                     }
-                    catch (IOException) {
+                    catch (IOException)
+                    {
                         Logger.Instance.Exception($"Failed to remove Zip [{id}]");
                     }
                 }
@@ -193,20 +222,23 @@ namespace BeatSaberMultiplayerServer {
 
             List<CustomSongInfo> _songs = SongLoader.RetrieveAllSongs();
 
-            _songs.ForEach(song => {
-                    Logger.Instance.Log($"Processing {song.songName} {song.songSubName}");
-                    using (NVorbis.VorbisReader vorbis =
-                        new NVorbis.VorbisReader($"{song.path}/{song.difficultyLevels[0].audioPath}")) {
-                        song.duration = vorbis.TotalTime;
-                    }
+            _songs.AsParallel().ForAll(song =>
+            {
+                Logger.Instance.Log($"Processing {song.songName} {song.songSubName}");
+                using (NVorbis.VorbisReader vorbis =
+                    new NVorbis.VorbisReader($"{song.path}/{song.difficultyLevels[0].audioPath}"))
+                {
+                    song.duration = vorbis.TotalTime;
+                }
 
-                    availableSongs.Add(song);
+                availableSongs.Add(song);
             });
 
             Logger.Instance.Log("Done!");
         }
 
-        void ServerStateControllerThread() {
+        void ServerLoop()
+        {
             Stopwatch _timer = new Stopwatch();
             _timer.Start();
             int _timerSeconds = 0;
@@ -221,27 +253,32 @@ namespace BeatSaberMultiplayerServer {
 
             TimeSpan deltaTime;
 
-            while (ServerStateThread.IsAlive) {
+            while (ServerLoopThread.IsAlive)
+            {
                 deltaTime = (_timer.Elapsed - _lastTime);
 
                 _lastTime = _timer.Elapsed;
 
-                switch (serverState) {
-                    case ServerState.Lobby: {
+                switch (serverState)
+                {
+                    case ServerState.Lobby:
+                        {
 
                             sendTimer += (float)deltaTime.TotalSeconds;
-                            lobbyTimer += (float) deltaTime.TotalSeconds;
+                            lobbyTimer += (float)deltaTime.TotalSeconds;
 
-                        if (clients.Count == 0) {
-                            lobbyTimer = 0;
-                        }
+                            if (clients.Count == 0)
+                            {
+                                lobbyTimer = 0;
+                            }
 
-                        if (Math.Ceiling(lobbyTimer) > _timerSeconds && _timerSeconds > -1) {
-                            _timerSeconds = Math.Ceiling(lobbyTimer);
-                            SendToAllClients(JsonConvert.SerializeObject(
-                                new ServerCommand(ServerCommandType.SetLobbyTimer,
-                                    Math.Max(lobbyTime - _timerSeconds, 0))));
-                        }
+                            if (Math.Ceiling(lobbyTimer) > _timerSeconds && _timerSeconds > -1)
+                            {
+                                _timerSeconds = Math.Ceiling(lobbyTimer);
+                                SendToAllClients(JsonConvert.SerializeObject(
+                                    new ServerCommand(ServerCommandType.SetLobbyTimer,
+                                        Math.Max(lobbyTime - _timerSeconds, 0))));
+                            }
 
                             if (sendTimer >= sendTime)
                             {
@@ -254,71 +291,78 @@ namespace BeatSaberMultiplayerServer {
                             }
 
 
-                            if (lobbyTimer >= lobbyTime / 2 && currentSongIndex == -1) {
-                            currentSongIndex = lastSelectedSong;
-                            currentSongIndex++;
-                            if (currentSongIndex >= availableSongs.Count) {
-                                currentSongIndex = 0;
+                            if (lobbyTimer >= lobbyTime / 2 && currentSongIndex == -1)
+                            {
+                                currentSongIndex = lastSelectedSong;
+                                currentSongIndex++;
+                                if (currentSongIndex >= availableSongs.Count)
+                                {
+                                    currentSongIndex = 0;
+                                }
+
+                                SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                    ServerCommandType.SetSelectedSong,
+                                    _selectedLevelID: availableSongs[currentSongIndex].levelId,
+                                    _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))));
                             }
 
-                            SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
-                                ServerCommandType.SetSelectedSong,
-                                _selectedLevelID: availableSongs[currentSongIndex].levelId,
-                                _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))));
-                        }
+                            if (lobbyTimer >= lobbyTime)
+                            {
+                                SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                    ServerCommandType.SetSelectedSong,
+                                    _selectedLevelID: availableSongs[currentSongIndex].levelId,
+                                    _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))));
+                                SendToAllClients(
+                                    JsonConvert.SerializeObject(
+                                        new ServerCommand(ServerCommandType.StartSelectedSongLevel)));
 
-                        if (lobbyTimer >= lobbyTime) {
-                            SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
-                                ServerCommandType.SetSelectedSong,
-                                _selectedLevelID: availableSongs[currentSongIndex].levelId,
-                                _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))));
-                            SendToAllClients(
-                                JsonConvert.SerializeObject(
-                                    new ServerCommand(ServerCommandType.StartSelectedSongLevel)));
-
-                            serverState = ServerState.Playing;
-                            Logger.Instance.Log("Starting song " + availableSongs[currentSongIndex].songName + " " +
-                                                availableSongs[currentSongIndex].songSubName + "...");
-                            _timerSeconds = 0;
-                            lobbyTimer = 0;
+                                serverState = ServerState.Playing;
+                                Logger.Instance.Log("Starting song " + availableSongs[currentSongIndex].songName + " " +
+                                                    availableSongs[currentSongIndex].songSubName + "...");
+                                _timerSeconds = 0;
+                                lobbyTimer = 0;
+                            }
                         }
-                    }
                         ;
                         break;
-                    case ServerState.Playing: {
-                        sendTimer += (float) deltaTime.TotalSeconds;
-                        playTime += deltaTime;
+                    case ServerState.Playing:
+                        {
+                            sendTimer += (float)deltaTime.TotalSeconds;
+                            playTime += deltaTime;
 
-                        if (sendTimer >= sendTime) {
-                            SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
-                                ServerCommandType.SetPlayerInfos,
-                                _playerInfos: (clients.Where(x => x.playerInfo != null)
-                                    .OrderByDescending(x => x.playerInfo.playerScore)
-                                    .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray(),
-                                _selectedSongDuration: availableSongs[currentSongIndex].duration.TotalSeconds,
-                                _selectedSongPlayTime: playTime.TotalSeconds)));
-                            sendTimer = 0f;
+                            if (sendTimer >= sendTime)
+                            {
+                                SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                    ServerCommandType.SetPlayerInfos,
+                                    _playerInfos: (clients.Where(x => x.playerInfo != null)
+                                        .OrderByDescending(x => x.playerInfo.playerScore)
+                                        .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray(),
+                                    _selectedSongDuration: availableSongs[currentSongIndex].duration.TotalSeconds,
+                                    _selectedSongPlayTime: playTime.TotalSeconds)));
+                                sendTimer = 0f;
+                            }
+
+                            if (playTime.TotalSeconds >= availableSongs[currentSongIndex].duration.TotalSeconds + 2.5f)
+                            {
+                                playTime = new TimeSpan();
+                                sendTimer = 0f;
+                                serverState = ServerState.Lobby;
+                                lastSelectedSong = currentSongIndex;
+                                currentSongIndex = -1;
+                                Logger.Instance.Log("Returning to lobby...");
+                            }
+
+                            if (clients.Count(x => x.state == ClientState.Playing) == 0 && playTime.TotalSeconds > 5)
+                            {
+                                playTime = new TimeSpan();
+                                sendTimer = 0f;
+                                serverState = ServerState.Lobby;
+                                lastSelectedSong = currentSongIndex;
+                                currentSongIndex = -1;
+
+                                Logger.Instance.Log("Returning to lobby(NO PLAYERS)...");
+                            }
                         }
-
-                        if (playTime.TotalSeconds >= availableSongs[currentSongIndex].duration.TotalSeconds + 5f) {
-                            playTime = new TimeSpan();
-                            sendTimer = 0f;
-                            serverState = ServerState.Lobby;
-                            lastSelectedSong = currentSongIndex;
-                            currentSongIndex = -1;
-                            Logger.Instance.Log("Returning to lobby...");
-                        }
-
-                        if (clients.Count(x => x.state == ClientState.Playing) == 0 && playTime.TotalSeconds > 5) {
-                            playTime = new TimeSpan();
-                            sendTimer = 0f;
-                            serverState = ServerState.Lobby;
-                            lastSelectedSong = currentSongIndex;
-                            currentSongIndex = -1;
-
-                            Logger.Instance.Log("Returning to lobby(NO PLAYERS)...");
-                        }
-                    }
                         ;
                         break;
                 }
@@ -328,48 +372,61 @@ namespace BeatSaberMultiplayerServer {
             }
         }
 
-        static int GetPreferredDifficulty(CustomSongInfo _song) {
+        static int GetPreferredDifficulty(CustomSongInfo _song)
+        {
             int difficulty = 0;
 
-            foreach (CustomSongInfo.DifficultyLevel diff in _song.difficultyLevels) {
-                if ((int) Enum.Parse(typeof(Difficulty), diff.difficulty) <= 3 &&
-                    (int) Enum.Parse(typeof(Difficulty), diff.difficulty) >= difficulty) {
-                    difficulty = (int) Enum.Parse(typeof(Difficulty), diff.difficulty);
+            foreach (CustomSongInfo.DifficultyLevel diff in _song.difficultyLevels)
+            {
+                if ((int)Enum.Parse(typeof(Difficulty), diff.difficulty) <= 3 &&
+                    (int)Enum.Parse(typeof(Difficulty), diff.difficulty) >= difficulty)
+                {
+                    difficulty = (int)Enum.Parse(typeof(Difficulty), diff.difficulty);
                 }
             }
 
-            if (difficulty == 0 && _song.difficultyLevels.Length > 0) {
-                difficulty = (int) Enum.Parse(typeof(Difficulty), _song.difficultyLevels[0].difficulty);
+            if (difficulty == 0 && _song.difficultyLevels.Length > 0)
+            {
+                difficulty = (int)Enum.Parse(typeof(Difficulty), _song.difficultyLevels[0].difficulty);
             }
 
             return difficulty;
         }
 
-        static void SendToAllClients(string message, bool retryOnError = false) {
-            try {
+        static void SendToAllClients(string message, bool retryOnError = false)
+        {
+            try
+            {
                 clients.Where(x => x != null && (x.state == ClientState.Connected || x.state == ClientState.Playing))
-                    .AsParallel().ForAll(x => { x.SendToClient(message); });
+                    .AsParallel().ForAll(x => { x.sendQueue.Enqueue(message); });
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 Logger.Instance.Exception("Can't send message to all clients! Exception: " + e);
             }
         }
 
-        void AcceptClientThread() {
-            while (ListenerThread.IsAlive) {
+        void AcceptClientThread()
+        {
+            while (ListenerThread.IsAlive)
+            {
                 ClientThread(_listener.AcceptTcpClient());
             }
         }
 
-        static void ClientThread(TcpClient client) {
+        static void ClientThread(TcpClient client)
+        {
             clients.Add(new Client(client));
             Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, clients.Count);
         }
 
-        private void OnServerShutdown(ShutdownEventArgs args) {
+        private void OnServerShutdown(ShutdownEventArgs args)
+        {
             Logger.Instance.Log("Shutting down server...");
-            if (_serverHubClient != null && _serverHubClient.Connected) {
-                ServerDataPacket packet = new ServerDataPacket {
+            if (_serverHubClient != null && _serverHubClient.Connected)
+            {
+                ServerDataPacket packet = new ServerDataPacket
+                {
                     ConnectionType = ConnectionType.Server,
                     ID = ID,
                     FirstConnect = false,
