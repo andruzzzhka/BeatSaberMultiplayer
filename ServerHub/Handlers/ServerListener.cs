@@ -33,9 +33,7 @@ namespace ServerHub.Handlers {
             ConnectedClients.Remove(cO);
             cO.Data.TcpClient.Close();
             cO.CancellationTokenSource.Cancel();
-            Thread.Sleep(2500);
-            cO.CancellationTokenSource.Dispose();
-
+            
             Console.Title = string.Format(TitleFormat, ConnectedClients.Count(o => o.Data.ID != -1));
         }
         
@@ -66,6 +64,7 @@ namespace ServerHub.Handlers {
 
                                 PacketHandler(ListenForPackets(ref clientObject), ref clientObject);
                             }
+                        cts.Dispose();
                         }), cts);
                 }
         }
@@ -134,8 +133,7 @@ namespace ServerHub.Handlers {
                     {
                         cO.Data.TcpClient.GetStream().Write(clientData.ToBytes(), 0, clientData.ToBytes().Length);
                         cO.Data.TcpClient.Close();
-                        Thread.Sleep(2500);
-                        cO.CancellationTokenSource.Dispose();
+                        cO.CancellationTokenSource.Cancel();
                     }
                     break;
                 case ConnectionType.Server:
