@@ -14,6 +14,8 @@ namespace BeatSaberMultiplayer
 {
     class MultiplayerServerHubViewController : VRUINavigationController
     {
+        public bool doNotUpdate;
+
         BSMultiplayerUI ui;
 
         Button _backButton;
@@ -97,10 +99,24 @@ namespace BeatSaberMultiplayer
 
             }
 
+
             _multiplayerServerList._currentPage = 0;
+            if (!doNotUpdate)
+            {
+                GetPage(_multiplayerServerList._currentPage);
+            }
+            else
+            {
+                doNotUpdate = false;
+            }
+
+
+        }
+
+        public void UpdatePage()
+        {
+            _loading = false;
             GetPage(_multiplayerServerList._currentPage);
-
-
         }
 
         internal void GetPage(int currentPage)
@@ -118,6 +134,7 @@ namespace BeatSaberMultiplayer
 
                     _serverHubConnection.GetStream().Write(packet.ToBytes(), 0, packet.ToBytes().Length);
                     StartCoroutine(WaitForResponse());
+                    Console.WriteLine("Waiting for response...");
                 }
                 catch (Exception e)
                 {

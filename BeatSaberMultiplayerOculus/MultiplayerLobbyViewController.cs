@@ -70,6 +70,13 @@ namespace BeatSaberMultiplayer
                     BSMultiplayerClient._instance.DataReceived -= DataReceived;
                     BSMultiplayerClient._instance.DisconnectFromServer();
                     _songPreviewPlayer.CrossfadeToDefault();
+                    try
+                    {
+                        transform.parent.GetComponent<MultiplayerServerHubViewController>().UpdatePage();
+                    }catch(Exception e)
+                    {
+                        Console.WriteLine($"ServerHub exception: {e}");
+                    }
                     DismissModalViewController(null, false);
                     
                 });
@@ -144,7 +151,6 @@ namespace BeatSaberMultiplayer
             Console.WriteLine($"Connecting to {selectedServerIP}:{selectedServerPort}");
             if (BSMultiplayerClient._instance.ConnectToServer(selectedServerIP,selectedServerPort))
             {
-
                 BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetServerState)));
                 BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetAvailableSongs)));
                 StartCoroutine(BSMultiplayerClient._instance.ReceiveFromServerCoroutine());

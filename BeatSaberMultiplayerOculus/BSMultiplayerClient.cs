@@ -114,59 +114,60 @@ namespace BeatSaberMultiplayer
         {
             GetUserInfo.UpdateUserInfo();
 
-            if (_loadedlevel > 2 && _connection.Connected)
+            if (_connection.Connected)
             {
-                StartCoroutine(WaitForControllers());
-
-                
-
-                try
+                if (_loadedlevel > 2)
                 {
+                    StartCoroutine(WaitForControllers());
 
-                   
-                    localPlayerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
 
-                    SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(localPlayerInfo))));
-
-                    DataReceived += ReceivedFromServer;
-                    StartCoroutine(ReceiveFromServerCoroutine());
 
                     try
                     {
-                        scoreScreen = new GameObject("ScoreScreen");
-                        scoreScreen.transform.position = new Vector3(0f, 4f, 12f);
-                        scoreScreen.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
 
-                        scoreDisplays.Clear();
 
-                        for (int i = 0; i < 5; i++)
+                        localPlayerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
+
+                        SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(localPlayerInfo))));
+
+                        DataReceived += ReceivedFromServer;
+                        StartCoroutine(ReceiveFromServerCoroutine());
+
+                        try
                         {
-                            PlayerInfoDisplay buffer = new GameObject("ScoreDisplay").AddComponent<PlayerInfoDisplay>();
-                            buffer.transform.SetParent(scoreScreen.transform);
-                            buffer.transform.localPosition = new Vector3(0f,2.5f-i,0);
-                            
-                            scoreDisplays.Add(buffer);
+                            scoreScreen = new GameObject("ScoreScreen");
+                            scoreScreen.transform.position = new Vector3(0f, 4f, 12f);
+                            scoreScreen.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+
+                            scoreDisplays.Clear();
+
+                            for (int i = 0; i < 5; i++)
+                            {
+                                PlayerInfoDisplay buffer = new GameObject("ScoreDisplay").AddComponent<PlayerInfoDisplay>();
+                                buffer.transform.SetParent(scoreScreen.transform);
+                                buffer.transform.localPosition = new Vector3(0f, 2.5f - i, 0);
+
+                                scoreDisplays.Add(buffer);
+                            }
+
+
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("SCREEN EXCEPTION: " + e);
                         }
 
-
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
-                        Console.WriteLine("SCREEN EXCEPTION: "+e);
+                        Console.WriteLine("Can't connect to the server! Exception: " + e);
                     }
-                   
                 }
-                catch (Exception e)
+                else if (_loadedlevel <= 1)
                 {
-                    Console.WriteLine("Can't connect to the server! Exception: " + e);
-                }
-            }
-            else
-            {
-                if(_loadedlevel <= 1)
-                {
-                    DataReceived -= ReceivedFromServer;
-                    DisconnectFromServer();
+                    //DataReceived -= ReceivedFromServer;
+                    //DisconnectFromServer();
+                    StartCoroutine(WaitForResults());
                 }
             }
 
@@ -332,6 +333,38 @@ namespace BeatSaberMultiplayer
             
         }
 
+        IEnumerator WaitForResults()
+        {
+            yield return new WaitUntil(delegate () { return Resources.FindObjectsOfTypeAll<ResultsViewController>().Count() > 0; });
+
+            ResultsViewController results = Resources.FindObjectsOfTypeAll<ResultsViewController>().First();
+
+            results.GetComponentsInChildren<Button>().First(x => x.name == "RestartButton").interactable = false;
+
+
+            results.resultsViewControllerDidPressContinueButtonEvent += delegate(ResultsViewController viewController) {
+
+                try
+                {
+                    MultiplayerServerHubViewController hub = ui.CreateViewController<MultiplayerServerHubViewController>();
+                    MultiplayerLobbyViewController lobby = ui.CreateViewController<MultiplayerLobbyViewController>();
+
+                    viewController.DismissModalViewController(null, true);
+                    FindObjectOfType<SongSelectionMasterViewController>().DismissModalViewController(null, true);
+                    FindObjectOfType<SoloModeSelectionViewController>().DismissModalViewController(null, true);
+
+                    hub.doNotUpdate = true;
+                    FindObjectOfType<MainMenuViewController>().PresentModalViewController(hub, null, true);
+                    hub.PresentModalViewController(lobby, null, true);
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine($"RESULTS EXCEPTION: {e}");
+                }
+
+            };
+        }
+
         public IEnumerator ReceiveFromServerCoroutine()
         {
             if (_connection == null || !_connection.Connected)
@@ -358,15 +391,32 @@ namespace BeatSaberMultiplayer
 
             NetworkStream stream = _connection.GetStream();
 
-            string recievedJson;
+            string receivedJson;
             byte[] buffer = new byte[_connection.ReceiveBufferSize];
             int length;
 
             length = stream.Read(buffer, 0, buffer.Length);
 
-            recievedJson = Encoding.UTF8.GetString(buffer);
+            receivedJson = Encoding.UTF8.GetString(buffer).Trim('\0');
 
-            string[] strBuffer = recievedJson.Trim('\0').Replace("}{", "}#{").Split('#');
+            while (!receivedJson.EndsWith("}"))
+            {
+                Console.WriteLine("Received message is splitted, waiting for another part...");
+                float timeout = 0f;
+                string[] receivedPart = new string[0];
+                yield return new WaitUntil(delegate ()
+                {
+                    timeout += Time.deltaTime;
+                    receivedPart = ReceiveFromServer();
+                    Console.WriteLine(timeout);
+                    return (receivedPart != null && receivedPart.Length > 0) || (timeout > 2f);
+                });
+
+                receivedJson += string.Join("", receivedPart);
+                Console.WriteLine("Received another part");
+            }
+
+            string[] strBuffer = receivedJson.Replace("}{", "}#{").Split('#');
 
             DataReceived.Invoke(strBuffer);
         }

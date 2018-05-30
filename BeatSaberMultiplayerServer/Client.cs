@@ -38,116 +38,122 @@ namespace BeatSaberMultiplayerServer
 
             while (_clientLoopThread.IsAlive)
             {
-                if (_client != null && _client.Connected)
+                try
                 {
-                    pingTimer++;
-                    if (pingTimer > 180)
+                    if (_client != null && _client.Connected)
                     {
-                        SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.Ping)));
-                        pingTimer = 0;
-                    }
-
-                    string[] commands = ReceiveFromClient(true);
-
-                    if (commands != null)
-                    {
-                        foreach (string data in commands)
+                        pingTimer++;
+                        if (pingTimer > 180)
                         {
-                            ClientCommand command = JsonConvert.DeserializeObject<ClientCommand>(data);
+                            SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.Ping)));
+                            pingTimer = 0;
+                        }
 
-                            if (command.version != Assembly.GetEntryAssembly().GetName().Version.ToString())
-                            {
-                                state = ClientState.UpdateRequired;
-                                SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.UpdateRequired)));
-                                return;
-                            }
+                        string[] commands = ReceiveFromClient(true);
 
-                            if (state != ClientState.Playing && state != ClientState.Connected)
+                        if (commands != null)
+                        {
+                            foreach (string data in commands)
                             {
-                                state = ClientState.Connected;
-                            }
+                                ClientCommand command = JsonConvert.DeserializeObject<ClientCommand>(data);
 
-                            switch (command.commandType)
-                            {
-                                case ClientCommandType.SetPlayerInfo:
-                                    {
-                                        PlayerInfo receivedPlayerInfo =
-                                            JsonConvert.DeserializeObject<PlayerInfo>(command.playerInfo);
-                                        if (receivedPlayerInfo != null)
+                                if (command.version != Assembly.GetEntryAssembly().GetName().Version.ToString())
+                                {
+                                    state = ClientState.UpdateRequired;
+                                    SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.UpdateRequired)));
+                                    return;
+                                }
+
+                                if (state != ClientState.Playing && state != ClientState.Connected)
+                                {
+                                    state = ClientState.Connected;
+                                }
+
+                                switch (command.commandType)
+                                {
+                                    case ClientCommandType.SetPlayerInfo:
                                         {
-                                            state = ClientState.Playing;
-                                            if (playerId == 0)
+                                            PlayerInfo receivedPlayerInfo =
+                                                JsonConvert.DeserializeObject<PlayerInfo>(command.playerInfo);
+                                            if (receivedPlayerInfo != null)
                                             {
-                                                playerId = receivedPlayerInfo.playerId;
-                                                if (!ServerMain.clients.Contains(this))
+                                                state = ClientState.Playing;
+                                                if (playerId == 0)
                                                 {
-                                                    ServerMain.clients.Add(this);
-                                                    Logger.Instance.Log("New player: " + receivedPlayerInfo.playerName);
+                                                    playerId = receivedPlayerInfo.playerId;
+                                                    if (!ServerMain.clients.Contains(this))
+                                                    {
+                                                        ServerMain.clients.Add(this);
+                                                        Logger.Instance.Log("New player: " + receivedPlayerInfo.playerName);
+                                                    }
                                                 }
-                                            }
-                                            else if (playerId != receivedPlayerInfo.playerId)
-                                            {
-                                                return;
-                                            }
+                                                else if (playerId != receivedPlayerInfo.playerId)
+                                                {
+                                                    return;
+                                                }
 
-                                            playerInfo = receivedPlayerInfo;
+                                                playerInfo = receivedPlayerInfo;
 
-                                            if (playerName == null)
-                                            {
-                                                playerName = receivedPlayerInfo.playerName;
-                                            }
-                                            else if (playerName != receivedPlayerInfo.playerName)
-                                            {
-                                                return;
-                                            }
+                                                if (playerName == null)
+                                                {
+                                                    playerName = receivedPlayerInfo.playerName;
+                                                }
+                                                else if (playerName != receivedPlayerInfo.playerName)
+                                                {
+                                                    return;
+                                                }
 
-                                            playerScore = receivedPlayerInfo.playerScore;
+                                                playerScore = receivedPlayerInfo.playerScore;
+                                            }
                                         }
-                                    }
-                                    ;
-                                    break;
-                                case ClientCommandType.GetServerState:
-                                    {
-                                        if (ServerMain.serverState != ServerState.Playing)
+                                        ;
+                                        break;
+                                    case ClientCommandType.GetServerState:
                                         {
-                                            SendToClient(
-                                                JsonConvert.SerializeObject(
-                                                    new ServerCommand(ServerCommandType.SetServerState)));
+                                            if (ServerMain.serverState != ServerState.Playing)
+                                            {
+                                                SendToClient(
+                                                    JsonConvert.SerializeObject(
+                                                        new ServerCommand(ServerCommandType.SetServerState)));
+                                            }
+                                            else
+                                            {
+                                                SendToClient(JsonConvert.SerializeObject(new ServerCommand(
+                                                    ServerCommandType.SetServerState,
+                                                    _selectedLevelID: ServerMain.availableSongs[ServerMain.currentSongIndex].levelId,
+                                                    _selectedSongDuration: ServerMain.availableSongs[ServerMain.currentSongIndex].duration.TotalSeconds,
+                                                    _selectedSongPlayTime: ServerMain.playTime.TotalSeconds)));
+                                            }
                                         }
-                                        else
+                                        ;
+                                        break;
+                                    case ClientCommandType.GetAvailableSongs:
                                         {
                                             SendToClient(JsonConvert.SerializeObject(new ServerCommand(
-                                                ServerCommandType.SetServerState,
-                                                _selectedLevelID: ServerMain.availableSongs[ServerMain.currentSongIndex].levelId,
-                                                _selectedSongDuration: ServerMain.availableSongs[ServerMain.currentSongIndex].duration.TotalSeconds,
-                                                _selectedSongPlayTime: ServerMain.playTime.TotalSeconds)));
+                                                ServerCommandType.DownloadSongs,
+                                                _songs: ServerMain.availableSongs.Select(x => x.levelId).ToArray())));
                                         }
-                                    }
-                                    ;
-                                    break;
-                                case ClientCommandType.GetAvailableSongs:
-                                    {
-                                        SendToClient(JsonConvert.SerializeObject(new ServerCommand(
-                                            ServerCommandType.DownloadSongs,
-                                            _songs: ServerMain.availableSongs.Select(x => x.levelId).ToArray())));
-                                    }
-                                    ;
-                                    break;
+                                        ;
+                                        break;
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    ServerMain.clients.Remove(this);
-                    if (_client != null)
+                    else
                     {
-                        _client.Close();
-                        _client = null;
+                        ServerMain.clients.Remove(this);
+                        if (_client != null)
+                        {
+                            _client.Close();
+                            _client = null;
+                        }
+                        state = ClientState.Disconnected;
+                        Logger.Instance.Log("Client disconnected!");
+                        return;
                     }
-                    state = ClientState.Disconnected;
-                    Logger.Instance.Log("Client disconnected!");
-                    return;
+                }catch(Exception e)
+                {
+                    Logger.Instance.Warning($"CLIENT EXCEPTION: {e}");
                 }
 
                 Thread.Sleep(16);
@@ -186,8 +192,14 @@ namespace BeatSaberMultiplayerServer
             length = stream.Read(buffer, 0, buffer.Length);
 
             receivedJson = Encoding.UTF8.GetString(buffer).Trim('\0');
+            
+            while (!receivedJson.EndsWith("}"))
+            {
+                Logger.Instance.Log("Received message is splitted, waiting for another part...");
+                receivedJson += string.Join("", ReceiveFromClient(true));
+            }
 
-            string[] strBuffer = receivedJson.Trim('\0').Replace("}{", "}#{").Split('#');
+            string[] strBuffer = receivedJson.Replace("}{", "}#{").Split('#');
 
             //Console.WriteLine("Received from client: " + receivedJson);
 

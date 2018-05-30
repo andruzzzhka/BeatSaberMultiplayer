@@ -234,7 +234,7 @@ namespace BeatSaberMultiplayerServer {
                             lobbyTimer = 0;
                         }
 
-                        if ((int) Math.Ceiling(lobbyTimer) > _timerSeconds && _timerSeconds > -1) {
+                        if (Math.Ceiling(lobbyTimer) > _timerSeconds && _timerSeconds > -1) {
                             _timerSeconds = Math.Ceiling(lobbyTimer);
                             SendToAllClients(JsonConvert.SerializeObject(
                                 new ServerCommand(ServerCommandType.SetLobbyTimer,
