@@ -47,22 +47,24 @@ namespace ServerHub.Handlers {
         }
 
         void BeginListening() {
-            Thread t = null;
-            while (Listen) {
-                var data = AcceptClient();
-                t = new Thread(o => {
-                    var clientObject = new ClientObject {DataListener = t, Data = data};
-                    while (t.IsAlive) {
-                        if(!clientObject.Data.TcpClient.Connected){RemoveClient(clientObject);
-                            break;
-                        }
-                        PacketHandler(ListenForPackets(ref clientObject), ref clientObject);
-                    }
+                Thread t = null;
+                while (Listen) {
+                    var data = AcceptClient();
+                    t = new Thread(o => {
+                        var clientObject = new ClientObject {DataListener = t, Data = data};
+                        while (t.IsAlive) {
+                            if (!clientObject.Data.TcpClient.Connected) {
+                                RemoveClient(clientObject);
+                                break;
+                            }
 
-                    if (t.IsAlive) t.Join();
-                }){IsBackground = true};
-                t.Start();
-            }
+                            PacketHandler(ListenForPackets(ref clientObject), ref clientObject);
+                        }
+
+                        if (t.IsAlive) t.Abort();
+                    }) {IsBackground = true};
+                    t.Start();
+                }
         }
 
         Data AcceptClient() {
@@ -140,7 +142,7 @@ namespace ServerHub.Handlers {
                         //Logger.Instance.Log($"Removing Server {serverData.ID} from Collection");
                         RemoveClient(ConnectedClients.First(o => o.Data.ID == temp.ID));
                         //Logger.Instance.Log($"Joining Thread of Server {serverData.ID}");
-                        cO.DataListener.Join();
+                        cO.DataListener.Abort();
                         break;
                     }
                     cO.Data.IPv4 = serverData.IPv4;
