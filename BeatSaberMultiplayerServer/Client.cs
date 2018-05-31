@@ -177,9 +177,14 @@ namespace BeatSaberMultiplayerServer
             {
                 if (waitIfNoData)
                 {
-                    while (_client.Available == 0 && _client.Connected)
-                    {
-                        Thread.Sleep(8);
+                    try {
+                        while (_client.Available == 0 && _client.Connected) {
+                            Thread.Sleep(8);
+                        }
+                    }
+                    catch (SocketException ex) {
+                        Logger.Instance.Exception(ex.Message);
+                        return null;
                     }
                 }
                 else
