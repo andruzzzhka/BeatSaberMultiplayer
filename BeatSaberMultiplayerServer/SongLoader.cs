@@ -18,8 +18,7 @@
         public static List<CustomSongInfo> RetrieveAllSongs() =>
             SongFolderPaths
                 .Where(songFolderPath => GetSongInfoFilePaths(songFolderPath).Length > 0)
-                .Select(songFolderPath => GetSongInfoFilePaths(songFolderPath))
-                .SelectMany(songInfoFilePaths => songInfoFilePaths)
+                .SelectMany(songFolderPath => GetSongInfoFilePaths(songFolderPath))
                 .Select(songInfoFilePath => GetCustomSongInfo(GetSongInfoDirectoryName(songInfoFilePath)))
                 .ToList();
 
