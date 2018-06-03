@@ -1,82 +1,71 @@
-﻿using Newtonsoft.Json;
-using SimpleJSON;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-
-namespace BeatSaberMultiplayerServer
+﻿namespace BeatSaberMultiplayerServer
 {
+    using Newtonsoft.Json;
+    using SimpleJSON;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using static BeatSaberMultiplayerServer.CustomSongInfo;
+
     class SongLoader
     {
+        private static List<string> SongFolderPaths =>
+            Directory
+                .GetDirectories(Environment.CurrentDirectory.Replace('\\', '/') + "/AvailableSongs")
+                .ToList();
 
-        public static List<CustomSongInfo> RetrieveAllSongs()
-        {
-            var customSongInfos = new List<CustomSongInfo>();
-            var path = Environment.CurrentDirectory;
-            path = path.Replace('\\', '/');
+        public static List<CustomSongInfo> RetrieveAllSongs() =>
+            SongFolderPaths
+                .Where(songFolderPath => GetSongInfoFilePaths(songFolderPath).Length > 0)
+                .SelectMany(songFolderPath => GetSongInfoFilePaths(songFolderPath))
+                .Select(songInfoFilePath => GetCustomSongInfo(GetSongInfoDirectoryName(songInfoFilePath)))
+                .ToList();
 
-            var currentHashes = new List<string>();
+        private static string[] GetSongInfoFilePaths(string songFolderPath) =>
+            Directory.GetFiles(songFolderPath, "info.json", SearchOption.AllDirectories);
 
-            var songFolders = Directory.GetDirectories(path + "/AvailableSongs").ToList();
+        private static string GetSongInfoText(string songPath) =>
+            File.ReadAllText(songPath + "/info.json");
 
-            foreach (var song in songFolders)
-            {
-                var results = Directory.GetFiles(song, "info.json", SearchOption.AllDirectories);
-                if (results.Length == 0)
-                {
-                    continue;
-                }
-
-                foreach (var result in results)
-                {
-                    var songPath = Path.GetDirectoryName(result).Replace('\\', '/');
-                    var customSongInfo = GetCustomSongInfo(songPath);
-                    if (customSongInfo == null) continue;
-                    customSongInfos.Add(customSongInfo);
-                }
-            }
-
-            return customSongInfos;
-        }
+        private static string GetSongInfoDirectoryName(string songFolderPath) =>
+            Path.GetDirectoryName(songFolderPath).Replace('\\', '/');
 
         private static CustomSongInfo GetCustomSongInfo(string songPath)
         {
-            var infoText = File.ReadAllText(songPath + "/info.json");
-            CustomSongInfo songInfo;
             try
             {
-                songInfo = JsonConvert.DeserializeObject<CustomSongInfo>(infoText);
+                var customSongInfo = JsonConvert.DeserializeObject<CustomSongInfo>(GetSongInfoText(songPath));
+                customSongInfo.path = songPath;
+                customSongInfo.difficultyLevels = GetDifficultyLevels(GetSongInfoText(songPath));
+                customSongInfo.levelId = customSongInfo.GetIdentifier();
+
+                return customSongInfo;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Console.WriteLine("Error parsing song: " + songPath);
                 return null;
             }
+        }
 
-            songInfo.path = songPath;
-
+        private static DifficultyLevel[] GetDifficultyLevels(string songInfoText)
+        {
             //Here comes SimpleJSON to the rescue when JSONUtility can't handle an array.
-            var diffLevels = new List<CustomSongInfo.DifficultyLevel>();
-            var n = JSON.Parse(infoText);
-            var diffs = n["difficultyLevels"];
-            for (int i = 0; i < diffs.AsArray.Count; i++)
+            var difficultyLevels = new List<DifficultyLevel>();
+
+            foreach(var difficultyLevel in JSON.Parse(songInfoText)["difficultyLevels"].AsArray)
             {
-                n = diffs[i];
-                diffLevels.Add(new CustomSongInfo.DifficultyLevel()
+                difficultyLevels.Add(new DifficultyLevel()
                 {
-                    difficulty = n["difficulty"],
-                    difficultyRank = n["difficultyRank"].AsInt,
-                    audioPath = n["audioPath"],
-                    jsonPath = n["jsonPath"]
+                    difficulty = difficultyLevel.Value["difficulty"],
+                    difficultyRank = difficultyLevel.Value["difficultyRank"].AsInt,
+                    audioPath = difficultyLevel.Value["audioPath"],
+                    jsonPath = difficultyLevel.Value["jsonPath"]
                 });
             }
 
-            songInfo.difficultyLevels = diffLevels.ToArray();
-            songInfo.levelId = songInfo.GetIdentifier();
-
-            return songInfo;
+            return difficultyLevels.ToArray();
         }
     }
 }
