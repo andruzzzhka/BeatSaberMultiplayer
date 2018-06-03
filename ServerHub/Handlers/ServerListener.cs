@@ -161,8 +161,12 @@ namespace ServerHub.Handlers {
         }
 
         List<Data> GetServers(int Offset, int count=6) {
-            var index = (count - 1) * Offset;
-            return ConnectedClients.Select(o => o.Data).Where(o => o.ID != -1).ToList().GetRange(index, count + index >= ConnectedClients.Count(o => o.Data.ID != -1) ? Math.Clamp(ConnectedClients.Count(o => o.Data.ID != -1) - index, 0, 6) : count + index);
+            var index = count * Offset;
+            var connectedClients = ConnectedClients
+                .Where(cc => cc.Data.ID != -1)
+                .Select(cc => cc.Data);
+
+            return connectedClients.Skip(index).Take(count).ToList();
         }
 
         public void Stop() {
