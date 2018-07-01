@@ -224,15 +224,24 @@ namespace BeatSaberMultiplayerServer
 
             _songs.AsParallel().ForAll(song =>
             {
-                Logger.Instance.Log($"Processing {song.songName} {song.songSubName}");
-                using (NVorbis.VorbisReader vorbis =
-                    new NVorbis.VorbisReader($"{song.path}/{song.difficultyLevels[0].audioPath}"))
+                try
                 {
-                    song.duration = vorbis.TotalTime;
-                }
+                    Logger.Instance.Log($"Processing {song.songName} {song.songSubName}");
 
-                availableSongs.Add(song);
-            });
+                    using (NVorbis.VorbisReader vorbis =
+                        new NVorbis.VorbisReader($"{song.path}/{song.difficultyLevels[0].audioPath}"))
+                    {
+                        song.duration = vorbis.TotalTime;
+                    }
+
+                    availableSongs.Add(song);
+                }
+                catch(AggregateException e)
+                {
+                    Logger.Instance.Error(e.Message);
+                    Logger.Instance.Warning("One common cause of this is incorrect case sensitivity in the song's json file in comparison to its actual song name.");
+                }
+             });
 
             Logger.Instance.Log("Done!");
         }
