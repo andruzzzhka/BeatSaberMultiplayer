@@ -434,6 +434,21 @@ namespace BeatSaberMultiplayerServer
             }
         }
 
+        static void SendToAllClients(string message, WebSocketServer wss, bool retryOnError = false)
+        {
+            try
+            {
+                clients.Where(x => x != null && (x.state == ClientState.Connected || x.state == ClientState.Playing))
+                    .AsParallel().ForAll(x => { x.sendQueue.Enqueue(message); });
+
+                wss.WebSocketServices["/"].Sessions.Broadcast(message);
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.Exception("Can't send message to all clients! Exception: " + e);
+            }
+        }
+
         void AcceptClientThread()
         {
             while (ListenerThread.IsAlive)
