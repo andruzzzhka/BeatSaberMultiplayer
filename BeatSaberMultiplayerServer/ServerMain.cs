@@ -366,7 +366,7 @@ namespace BeatSaberMultiplayerServer
                                         .OrderByDescending(x => x.playerInfo.playerScore)
                                         .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray(),
                                     _selectedSongDuration: availableSongs[currentSongIndex].duration.TotalSeconds,
-                                    _selectedSongPlayTime: playTime.TotalSeconds)));
+                                    _selectedSongPlayTime: playTime.TotalSeconds)), wss);
                                 sendTimer = 0f;
                             }
 
