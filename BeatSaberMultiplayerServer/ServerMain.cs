@@ -14,9 +14,21 @@ using System.Reflection;
 using System.Threading;
 using Math = ServerCommons.Misc.Math;
 using Settings = BeatSaberMultiplayerServer.Misc.Settings;
+using Logger = ServerCommons.Misc.Logger;
+using WebSocketSharp;
+using WebSocketSharp.Server;
 
 namespace BeatSaberMultiplayerServer
 {
+    public class Broadcast : WebSocketBehavior
+    {
+        protected override void OnOpen()
+        {
+            base.OnOpen();
+            Logger.Instance.Log("WebSocket Client Connected!");
+        }
+    }
+
     class ServerMain
     {
         static TcpListener _listener;
@@ -40,12 +52,19 @@ namespace BeatSaberMultiplayerServer
         private Thread ListenerThread { get; set; }
         private Thread ServerLoopThread { get; set; }
 
+        public WebSocketServer wss;
+
         static void Main(string[] args) => new ServerMain().Start(args);
 
         public void Start(string[] args)
         {
             Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, 0);
             Logger.Instance.Log($"Beat Saber Multiplayer Server v{Assembly.GetEntryAssembly().GetName().Version}");
+
+            // WEBSOCKET CODE
+            wss = new WebSocketServer(1337);
+            wss.AddWebSocketService<Broadcast>("/");
+            wss.Start();
 
             if (args.Length > 0)
             {
