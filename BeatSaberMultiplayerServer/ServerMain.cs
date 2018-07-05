@@ -443,8 +443,11 @@ namespace BeatSaberMultiplayerServer
             {
                 clients.Where(x => x != null && (x.state == ClientState.Connected || x.state == ClientState.Playing))
                     .AsParallel().ForAll(x => { x.sendQueue.Enqueue(message); });
-
-                wss.WebSocketServices["/"].Sessions.Broadcast(message);
+                
+                if (wss != null)
+                {
+                    wss.WebSocketServices["/"].Sessions.Broadcast(message);
+                }
             }
             catch (Exception e)
             {
