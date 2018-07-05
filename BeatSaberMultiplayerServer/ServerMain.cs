@@ -14,9 +14,21 @@ using System.Reflection;
 using System.Threading;
 using Math = ServerCommons.Misc.Math;
 using Settings = BeatSaberMultiplayerServer.Misc.Settings;
+using Logger = ServerCommons.Misc.Logger;
+using WebSocketSharp;
+using WebSocketSharp.Server;
 
 namespace BeatSaberMultiplayerServer
 {
+    public class Broadcast : WebSocketBehavior
+    {
+        protected override void OnOpen()
+        {
+            base.OnOpen();
+            Logger.Instance.Log("WebSocket Client Connected!");
+        }
+    }
+
     class ServerMain
     {
         static TcpListener _listener;
@@ -39,6 +51,8 @@ namespace BeatSaberMultiplayerServer
 
         private Thread ListenerThread { get; set; }
         private Thread ServerLoopThread { get; set; }
+
+        public WebSocketServer wss;
 
         static void Main(string[] args) => new ServerMain().Start(args);
 
@@ -77,6 +91,14 @@ namespace BeatSaberMultiplayerServer
 
             ServerLoopThread = new Thread(ServerLoop) { IsBackground = true };
             ServerLoopThread.Start();
+
+            if (Settings.Instance.Server.WSEnabled)
+            {
+                Logger.Instance.Log($"WebSocket Server started @ {Settings.Instance.Server.IP}:{Settings.Instance.Server.WSPort}");
+                wss = new WebSocketServer(Settings.Instance.Server.WSPort);
+                wss.AddWebSocketService<Broadcast>("/");
+                wss.Start();
+            }
 
             try
             {
@@ -347,7 +369,7 @@ namespace BeatSaberMultiplayerServer
                                         .OrderByDescending(x => x.playerInfo.playerScore)
                                         .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray(),
                                     _selectedSongDuration: availableSongs[currentSongIndex].duration.TotalSeconds,
-                                    _selectedSongPlayTime: playTime.TotalSeconds)));
+                                    _selectedSongPlayTime: playTime.TotalSeconds)), wss);
                                 sendTimer = 0f;
                             }
 
@@ -408,6 +430,24 @@ namespace BeatSaberMultiplayerServer
             {
                 clients.Where(x => x != null && (x.state == ClientState.Connected || x.state == ClientState.Playing))
                     .AsParallel().ForAll(x => { x.sendQueue.Enqueue(message); });
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.Exception("Can't send message to all clients! Exception: " + e);
+            }
+        }
+
+        static void SendToAllClients(string message, WebSocketServer wss, bool retryOnError = false)
+        {
+            try
+            {
+                clients.Where(x => x != null && (x.state == ClientState.Connected || x.state == ClientState.Playing))
+                    .AsParallel().ForAll(x => { x.sendQueue.Enqueue(message); });
+                
+                if (wss != null)
+                {
+                    wss.WebSocketServices["/"].Sessions.Broadcast(message);
+                }
             }
             catch (Exception e)
             {

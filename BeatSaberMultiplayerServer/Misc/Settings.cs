@@ -12,6 +12,8 @@ namespace BeatSaberMultiplayerServer.Misc {
         public class ServerSettings {
             private string _ip;
             private int _port;
+            private int _wsport;
+            private bool _wsenabled;
             private string _serverName;
             private string _serverHubIP;
             private int _serverHubPort;
@@ -50,6 +52,34 @@ namespace BeatSaberMultiplayerServer.Misc {
                 set
                 {
                     _port = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public int WSPort
+            {
+                get => _wsport;
+                set
+                {
+                    _wsport = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool WSEnabled
+            {
+                get => _wsenabled;
+                set
+                {
+                    _wsenabled = value;
                     MarkDirty();
                 }
             }
@@ -145,6 +175,8 @@ namespace BeatSaberMultiplayerServer.Misc {
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3701;
+                _wsport = 3702;
+                _wsenabled = false;
                 _serverName = "New Server";
                 _serverHubIP = "beatsaber.jaddie.co.uk";
                 _serverHubPort = 3700;
