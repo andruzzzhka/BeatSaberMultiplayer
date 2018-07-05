@@ -297,8 +297,17 @@ namespace BeatSaberMultiplayer
                                     }; break;
                                 case ServerCommandType.StartSelectedSongLevel:
                                     {
-                                        Console.WriteLine("Starting selected song! Song: " + _selectedSong.songName + ", Diff: " + ((LevelStaticData.Difficulty)_selectedSongDifficulty).ToString());
+                                        Console.WriteLine("Removing avatars from lobby");
 
+                                        foreach (AvatarController avatar in _avatars)
+                                        {
+                                            Destroy(avatar.gameObject);
+                                        }
+
+                                        _avatars.Clear();
+
+                                        Console.WriteLine("Starting selected song! Song: " + _selectedSong.songName + ", Diff: " + ((LevelStaticData.Difficulty)_selectedSongDifficulty).ToString());
+                                        
                                         BSMultiplayerClient._instance.DataReceived -= DataReceived;
                                         GameplayOptions gameplayOptions = new GameplayOptions();
                                         gameplayOptions.noEnergy = true;
@@ -348,69 +357,63 @@ namespace BeatSaberMultiplayer
                                         }
                                         else
                                         {
-
-
-
-
-
-                                            _playerInfos.Clear();
-                                            foreach (string playerStr in command.playerInfos)
+                                            if (Config.Instance.ShowAvatarsInLobby)
                                             {
-                                                PlayerInfo player = JsonUtility.FromJson<PlayerInfo>(playerStr);
-                                                if (!String.IsNullOrEmpty(player.playerAvatar))
+                                                _playerInfos.Clear();
+                                                foreach (string playerStr in command.playerInfos)
                                                 {
-                                                    byte[] avatar = Convert.FromBase64String(player.playerAvatar);
-
-                                                    player.rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
-                                                    player.leftHandPos = Serialization.ToVector3(avatar.Skip(12).Take(12).ToArray());
-                                                    player.headPos = Serialization.ToVector3(avatar.Skip(24).Take(12).ToArray());
-
-                                                    player.rightHandRot = Serialization.ToQuaternion(avatar.Skip(36).Take(16).ToArray());
-                                                    player.leftHandRot = Serialization.ToQuaternion(avatar.Skip(52).Take(16).ToArray());
-                                                    player.headRot = Serialization.ToQuaternion(avatar.Skip(68).Take(16).ToArray());
-
-                                                }
-                                                _playerInfos.Add(player);
-                                            }
-
-                                            try
-                                            {
-                                                if (_avatars.Count > _playerInfos.Count)
-                                                {
-                                                    List<AvatarController> avatarsToRemove = new List<AvatarController>();
-                                                    for (int i = _playerInfos.Count; i < _avatars.Count; i++)
+                                                    PlayerInfo player = JsonUtility.FromJson<PlayerInfo>(playerStr);
+                                                    if (!String.IsNullOrEmpty(player.playerAvatar))
                                                     {
-                                                        avatarsToRemove.Add(_avatars[i]);
-                                                    }
-                                                    foreach (AvatarController avatar in avatarsToRemove)
-                                                    {
-                                                        _avatars.Remove(avatar);
-                                                        Destroy(avatar.gameObject);
-                                                    }
+                                                        byte[] avatar = Convert.FromBase64String(player.playerAvatar);
 
-                                                }
-                                                else if (_avatars.Count < _playerInfos.Count)
-                                                {
-                                                    for (int i = 0; i < (_playerInfos.Count - _avatars.Count); i++)
-                                                    {
-                                                        _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
+                                                        player.rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
+                                                        player.leftHandPos = Serialization.ToVector3(avatar.Skip(12).Take(12).ToArray());
+                                                        player.headPos = Serialization.ToVector3(avatar.Skip(24).Take(12).ToArray());
+
+                                                        player.rightHandRot = Serialization.ToQuaternion(avatar.Skip(36).Take(16).ToArray());
+                                                        player.leftHandRot = Serialization.ToQuaternion(avatar.Skip(52).Take(16).ToArray());
+                                                        player.headRot = Serialization.ToQuaternion(avatar.Skip(68).Take(16).ToArray());
 
                                                     }
+                                                    _playerInfos.Add(player);
                                                 }
-                                                
-                                                for (int i = 0; i < _playerInfos.Count; i++)
+
+                                                try
                                                 {
-                                                    _avatars[i].SetPlayerInfo(_playerInfos[i], 0f, localPlayerInfo.Equals(_playerInfos[i]));
+                                                    if (_avatars.Count > _playerInfos.Count)
+                                                    {
+                                                        List<AvatarController> avatarsToRemove = new List<AvatarController>();
+                                                        for (int i = _playerInfos.Count; i < _avatars.Count; i++)
+                                                        {
+                                                            avatarsToRemove.Add(_avatars[i]);
+                                                        }
+                                                        foreach (AvatarController avatar in avatarsToRemove)
+                                                        {
+                                                            _avatars.Remove(avatar);
+                                                            Destroy(avatar.gameObject);
+                                                        }
+
+                                                    }
+                                                    else if (_avatars.Count < _playerInfos.Count)
+                                                    {
+                                                        for (int i = 0; i < (_playerInfos.Count - _avatars.Count); i++)
+                                                        {
+                                                            _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
+
+                                                        }
+                                                    }
+
+                                                    for (int i = 0; i < _playerInfos.Count; i++)
+                                                    {
+                                                        _avatars[i].SetPlayerInfo(_playerInfos[i], 0f, localPlayerInfo.Equals(_playerInfos[i]));
+                                                    }
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    Console.WriteLine($"AVATARS EXCEPTION: {e}");
                                                 }
                                             }
-                                            catch (Exception e)
-                                            {
-                                                Console.WriteLine($"AVATARS EXCEPTION: {e}");
-                                            }
-
-
-
-
                                         }
 
                                     };break;

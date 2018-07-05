@@ -44,9 +44,7 @@ namespace BeatSaberMultiplayer
         static int _loadedlevel;
 
         public event Action<string[]> DataReceived;
-
-
-        int lastLocalPlayerIndex = -1;
+        
         int localPlayerIndex = -1;
         public List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
 
@@ -71,10 +69,6 @@ namespace BeatSaberMultiplayer
             {
                 _instance.OnLevelChange();
             }
-
-
-            
-
         }
 
         public bool ConnectToServer(string serverIP, int serverPort)
@@ -131,14 +125,9 @@ namespace BeatSaberMultiplayer
 
                     try
                     {
-
-
                         localPlayerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
 
                         SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.SetPlayerInfo, JsonUtility.ToJson(localPlayerInfo))));
-
-                        DataReceived += ReceivedFromServer;
-                        StartCoroutine(ReceiveFromServerCoroutine());
 
                         try
                         {
@@ -150,7 +139,7 @@ namespace BeatSaberMultiplayer
 
                             for (int i = 0; i < 5; i++)
                             {
-                                PlayerInfoDisplay buffer = new GameObject("ScoreDisplay").AddComponent<PlayerInfoDisplay>();
+                                PlayerInfoDisplay buffer = new GameObject("ScoreDisplay " + i).AddComponent<PlayerInfoDisplay>();
                                 buffer.transform.SetParent(scoreScreen.transform);
                                 buffer.transform.localPosition = new Vector3(0f, 2.5f - i, 0);
 
@@ -163,6 +152,11 @@ namespace BeatSaberMultiplayer
                         {
                             Console.WriteLine("SCREEN EXCEPTION: " + e);
                         }
+
+                        DataReceived += ReceivedFromServer;
+                        StartCoroutine(ReceiveFromServerCoroutine());
+
+                        
 
                     }
                     catch (Exception e)
@@ -194,7 +188,7 @@ namespace BeatSaberMultiplayer
                         foreach (string playerStr in command.playerInfos)
                         {
                             PlayerInfo player = JsonUtility.FromJson<PlayerInfo>(playerStr);
-                            if (!String.IsNullOrEmpty(player.playerAvatar))
+                            if (!String.IsNullOrEmpty(player.playerAvatar) && Config.Instance.ShowAvatarsInGame)
                             {
                                 byte[] avatar = Convert.FromBase64String(player.playerAvatar);
 
@@ -209,44 +203,54 @@ namespace BeatSaberMultiplayer
                             }
                             _playerInfos.Add(player);
                         }
-
-                        lastLocalPlayerIndex = localPlayerIndex;
+                        
                         localPlayerIndex = FindIndexInList(_playerInfos,localPlayerInfo);
 
-                        try
+                        if (Config.Instance.ShowAvatarsInGame)
                         {
-                            if (_avatars.Count > _playerInfos.Count)
+                            try
                             {
-                                List<AvatarController> avatarsToRemove = new List<AvatarController>();
-                                for (int i = _playerInfos.Count; i < _avatars.Count; i++)
+                                if (_avatars.Count > _playerInfos.Count)
                                 {
-                                    avatarsToRemove.Add(_avatars[i]);
-                                }
-                                foreach (AvatarController avatar in avatarsToRemove)
-                                {
-                                    _avatars.Remove(avatar);
-                                    Destroy(avatar.gameObject);
-                                }
+                                    List<AvatarController> avatarsToRemove = new List<AvatarController>();
+                                    for (int i = _playerInfos.Count; i < _avatars.Count; i++)
+                                    {
+                                        avatarsToRemove.Add(_avatars[i]);
+                                    }
+                                    foreach (AvatarController avatar in avatarsToRemove)
+                                    {
 
-                            }
-                            else if (_avatars.Count < _playerInfos.Count)
-                            {
-                                for (int i = 0; i < (_playerInfos.Count - _avatars.Count); i++)
-                                {
-                                    _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
+                                        Console.WriteLine("Removing avatar");
+                                        _avatars.Remove(avatar);
+                                        Destroy(avatar.gameObject);
+                                    }
 
                                 }
-                            }
+                                else if (_avatars.Count < _playerInfos.Count)
+                                {
+                                    for (int i = 0; i < (_playerInfos.Count - _avatars.Count); i++)
+                                    {
+                                        Console.WriteLine("Creating avatar "+_playerInfos.Count);
+                                        _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
 
-                            List<PlayerInfo> _playerInfosByID = _playerInfos.OrderBy(x => x.playerId).ToList();
-                            for (int i = 0; i < _playerInfos.Count; i++)
-                            {
-                                _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - FindIndexInList(_playerInfosByID, localPlayerInfo)) * 3f, localPlayerInfo.Equals(_playerInfosByID[i]));
+                                    }
+                                }
+
+                                List<PlayerInfo> _playerInfosByID = _playerInfos.OrderBy(x => x.playerId).ToList();
+                                for (int i = 0; i < _playerInfos.Count; i++)
+                                {
+                                    _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - FindIndexInList(_playerInfosByID, localPlayerInfo)) * 3f, localPlayerInfo.Equals(_playerInfosByID[i]));
+                                }
                             }
-                        }catch(Exception e)
-                        {
-                            Console.WriteLine($"AVATARS EXCEPTION: {e}");
+                            catch (Exception e)
+                            {
+                                Console.WriteLine($"AVATARS EXCEPTION: {e}");
+                            }
                         }
+
+                        if (scoreDisplays.Count != 5) {
+                            Console.WriteLine("Displays "+ scoreDisplays);
+                            }
 
                         if (_playerInfos.Count <= 5)
                         {
@@ -285,15 +289,6 @@ namespace BeatSaberMultiplayer
                             }
 
                         }
-
-                        if (lastLocalPlayerIndex != 0 && localPlayerIndex == 0)
-                        {
-                            TextMeshPro player1stPlaceText = ui.CreateWorldText(transform, "You are number one!");
-                            player1stPlaceText.transform.position = new Vector3(0f, 1f, 12f);
-                            player1stPlaceText.fontSize = 10f;
-                            Destroy(player1stPlaceText.gameObject,2f);
-                        }
-
 
                         if (PlayerInfosReceived != null)
                         {

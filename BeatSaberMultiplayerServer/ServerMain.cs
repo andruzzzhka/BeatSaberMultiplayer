@@ -180,8 +180,6 @@ namespace BeatSaberMultiplayerServer
             }
 
             ID = packet.ID;
-
-            // Logger.Instance.Log($"The ID of this server is {ID}");
         }
 
         private static void DownloadSongs()

@@ -11,6 +11,7 @@ namespace BeatSaberMultiplayerServer.Misc
     ///</summary>
     public static class ShutdownEventCatcher
     {
+
         public static event Action<ShutdownEventArgs> Shutdown;
         static void RaiseShutdownEvent(ShutdownEventArgs args)
         {
@@ -23,16 +24,22 @@ namespace BeatSaberMultiplayerServer.Misc
         private static extern bool SetConsoleCtrlHandler(Kernel32ShutdownHandler handler, bool add);
 
         private delegate bool Kernel32ShutdownHandler(ShutdownReason reason);
-        #endif
-    
+        
+        private static Kernel32ShutdownHandler kernel32Handler;
+
+#endif
+
         /// <summary>
         /// Constructor attaches the shutdown event handlers immediately
         /// </summary>
         static ShutdownEventCatcher()
         {
+
 #if (!NETCOREAPP2_0)
-            SetConsoleCtrlHandler(new Kernel32ShutdownHandler(Kernel32_ProcessShuttingDown), true);
-    #endif
+            kernel32Handler = new Kernel32ShutdownHandler(Kernel32_ProcessShuttingDown);
+
+            SetConsoleCtrlHandler(kernel32Handler, true);
+#endif
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }

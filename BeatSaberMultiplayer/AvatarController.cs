@@ -1,4 +1,6 @@
-﻿using System;
+﻿using CustomAvatar;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,9 +14,8 @@ namespace BeatSaberMultiplayer
     {
         PlayerInfo playerInfo;
 
-        GameObject head;
-        GameObject leftHand;
-        GameObject rightHand;
+        AvatarScript avatar;
+        AvatarBodyManager bodyManager;
 
         TextMeshPro playerNameText;
 
@@ -40,47 +41,55 @@ namespace BeatSaberMultiplayer
 
         public AvatarController()
         {
-
             CreateGameObjects();
         }
 
         void CreateGameObjects()
         {
-            if (head == null)
+
+            if (avatar == null)
             {
-                head = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                Destroy(head.GetComponent<BoxCollider>());
-                head.transform.SetParent(transform);
-                head.transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
+                Console.WriteLine("Spawning avatar");
+                avatar = AvatarScript.SpawnAvatar(".\\CustomAvatars\\TemplateFullBody.avatar", true);
+                
+                StartCoroutine(WaitForAvatar());
+            }            
+        }
+
+        private IEnumerator WaitForAvatar()
+        {
+            yield return new WaitUntil(delegate () { return avatar.getInstance() != null; });
+
+            AvatarLoaded();
+        }
+
+        private void AvatarLoaded()
+        {
+            if (bodyManager == null)
+            {
+                bodyManager = avatar.GetBodyManager();
             }
 
-            if (leftHand == null)
+            if (ReflectionUtil.GetPrivateField<GameObject>(avatar, "fpsAvatarInstance") != null)
             {
-                leftHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                Destroy(leftHand.GetComponent<BoxCollider>());
-                leftHand.transform.SetParent(transform);
-                leftHand.transform.localScale = new Vector3(0.075f, 0.075f, 0.25f);
+                Destroy(ReflectionUtil.GetPrivateField<GameObject>(avatar, "fpsAvatarInstance"));
+                Console.WriteLine("Destroyed fps avatar instance");
             }
 
-            if (rightHand == null)
+            if (playerNameText == null)
             {
-                rightHand = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                Destroy(rightHand.GetComponent<BoxCollider>());
-                rightHand.transform.SetParent(transform);
-                rightHand.transform.localScale = new Vector3(0.075f, 0.075f, 0.25f);
-            }
-
-            if(playerNameText == null)
-            {
-                playerNameText = BSMultiplayerUI._instance.CreateWorldText(head.transform,"");
-                playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 1f, 0f);
+                playerNameText = BSMultiplayerUI._instance.CreateWorldText(bodyManager.GetHeadTransform(), "INVALID");
+                playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 0.25f, 0f);
                 playerNameText.alignment = TextAlignmentOptions.Center;
+                playerNameText.fontSize = 2.5f;
             }
+
+            Console.WriteLine("Avatar loaded");
         }
 
         void Update()
         {
-            if (head != null && leftHand != null && rightHand != null && playerNameText != null)
+            if (playerNameText != null)
             {
                 interpolationProgress += Time.deltaTime * 20;
                 if (interpolationProgress > 1f)
@@ -88,20 +97,24 @@ namespace BeatSaberMultiplayer
                     interpolationProgress = 1f;
                 }
 
-                head.transform.localPosition = Vector3.Lerp(lastHeadPos, targetHeadPos, interpolationProgress);
-                leftHand.transform.localPosition = Vector3.Lerp(lastLeftHandPos, targetLeftHandPos, interpolationProgress);
-                rightHand.transform.localPosition = Vector3.Lerp(lastRightHandPos, targetRightHandPos, interpolationProgress);
-
-                head.transform.localRotation = Quaternion.Lerp(lastHeadRot, targetHeadRot, interpolationProgress);
-                leftHand.transform.localRotation = Quaternion.Lerp(lastLeftHandRot, targetLeftHandRot, interpolationProgress);
-                rightHand.transform.localRotation = Quaternion.Lerp(lastRightHandRot, targetRightHandRot, interpolationProgress);
-
+                bodyManager.SetHeadPosRot(Vector3.Lerp(lastHeadPos, targetHeadPos, interpolationProgress), Quaternion.Lerp(lastHeadRot, targetHeadRot, interpolationProgress));
+                bodyManager.SetLeftHandPosRot(Vector3.Lerp(lastLeftHandPos, targetLeftHandPos, interpolationProgress), Quaternion.Lerp(lastLeftHandRot, targetLeftHandRot, interpolationProgress));
+                bodyManager.SetRightHandPosRot(Vector3.Lerp(lastRightHandPos, targetRightHandPos, interpolationProgress), Quaternion.Lerp(lastRightHandRot, targetRightHandRot, interpolationProgress));
+                
                 playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InputTracking.GetLocalPosition(XRNode.Head));
             }
         }
 
-        public void SetPlayerInfo(PlayerInfo _playerInfo,float offset, bool isLocal)
+        void OnDestroy()
         {
+            Destroy(avatar.getInstance());
+            Destroy(avatar.gameObject);
+        }
+
+        public void SetPlayerInfo(PlayerInfo _playerInfo, float offset, bool isLocal)
+        {
+            
+
             if (_playerInfo == null)
             {
                 Destroy(gameObject);
@@ -109,47 +122,35 @@ namespace BeatSaberMultiplayer
             }
             try
             {
-                if (head == null || leftHand == null || rightHand == null || playerNameText == null)
-                {
-                    CreateGameObjects();
-                }
 
                 playerInfo = _playerInfo;
 
+                if(playerNameText == null || avatar == null || bodyManager == null)
+                {
+                    return;
+                }
+
                 if (isLocal)
                 {
-                    head.SetActive(false);
-                    leftHand.SetActive(false);
-                    rightHand.SetActive(false);
                     playerNameText.gameObject.SetActive(false);
+                    avatar.HideFromView(true);
                 }
                 else
                 {
-                    head.SetActive(true);
-                    leftHand.SetActive(true);
-                    rightHand.SetActive(true);
                     playerNameText.gameObject.SetActive(true);
-
-                    try
-                    {
-                        transform.position = new Vector3(offset, 0f, 0f);// + BSMultiplayerClient._instance.roomPositionOffset;
-                    }catch(Exception e)
-                    {
-                        Console.WriteLine($"Can't set transform position: {e}");
-                    }
-
+                    avatar.HideFromView(false);
                 }
 
                 interpolationProgress = 0f;
 
                 lastHeadPos = targetHeadPos;
-                targetHeadPos = _playerInfo.headPos;
+                targetHeadPos = _playerInfo.headPos + (new Vector3(offset, 0f, 0f) + BSMultiplayerClient._instance.roomPositionOffset);
 
                 lastRightHandPos = targetRightHandPos;
-                targetRightHandPos = _playerInfo.rightHandPos;
+                targetRightHandPos = _playerInfo.rightHandPos + (new Vector3(offset, 0f, 0f) + BSMultiplayerClient._instance.roomPositionOffset);
 
                 lastLeftHandPos = targetLeftHandPos;
-                targetLeftHandPos = _playerInfo.leftHandPos;
+                targetLeftHandPos = _playerInfo.leftHandPos + (new Vector3(offset, 0f, 0f) + BSMultiplayerClient._instance.roomPositionOffset);
 
                 lastHeadRot = targetHeadRot;
                 targetHeadRot = _playerInfo.headRot;
@@ -159,9 +160,11 @@ namespace BeatSaberMultiplayer
 
                 lastLeftHandRot = targetLeftHandRot;
                 targetLeftHandRot = _playerInfo.leftHandRot;
-
+                
                 playerNameText.text = playerInfo.playerName;
-            }catch(Exception e)
+                
+            }
+            catch(Exception e)
             {
                 Console.WriteLine($"AVATAR EXCEPTION: {_playerInfo.playerName}: {e}");
             }
