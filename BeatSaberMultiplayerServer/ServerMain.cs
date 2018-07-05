@@ -61,11 +61,6 @@ namespace BeatSaberMultiplayerServer
             Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, 0);
             Logger.Instance.Log($"Beat Saber Multiplayer Server v{Assembly.GetEntryAssembly().GetName().Version}");
 
-            // WEBSOCKET CODE
-            wss = new WebSocketServer(1337);
-            wss.AddWebSocketService<Broadcast>("/");
-            wss.Start();
-
             if (args.Length > 0)
             {
                 try
@@ -96,6 +91,14 @@ namespace BeatSaberMultiplayerServer
 
             ServerLoopThread = new Thread(ServerLoop) { IsBackground = true };
             ServerLoopThread.Start();
+
+            if (Settings.Instance.Server.WSEnabled)
+            {
+                Logger.Instance.Log($"WebSocket Server started @ {Settings.Instance.Server.IP}:{Settings.Instance.Server.WSPort}");
+                wss = new WebSocketServer(Settings.Instance.Server.WSPort);
+                wss.AddWebSocketService<Broadcast>("/");
+                wss.Start();
+            }
 
             try
             {
