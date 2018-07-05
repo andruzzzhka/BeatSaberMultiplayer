@@ -407,7 +407,7 @@ namespace BeatSaberMultiplayerServer
 
             foreach (CustomSongInfo.DifficultyLevel diff in _song.difficultyLevels)
             {
-                if ((int)Enum.Parse(typeof(Difficulty), diff.difficulty) <= 3 &&
+                if ((int)Enum.Parse(typeof(Difficulty), diff.difficulty) <= (int)Settings.Instance.Server.PreferredDifficulty &&
                     (int)Enum.Parse(typeof(Difficulty), diff.difficulty) >= difficulty)
                 {
                     difficulty = (int)Enum.Parse(typeof(Difficulty), diff.difficulty);

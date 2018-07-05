@@ -42,6 +42,9 @@
     <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\Libs\Oculus\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
+    <Reference Include="CustomAvatar">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\CustomAvatar.dll</HintPath>
+    </Reference>
     <Reference Include="IllusionPlugin">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\IllusionPlugin.dll</HintPath>
     </Reference>

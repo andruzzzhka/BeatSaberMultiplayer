@@ -12,13 +12,18 @@ namespace BeatSaberMultiplayerServer.Misc {
         public class ServerSettings {
             private string _ip;
             private int _port;
+
             private int _wsport;
             private bool _wsenabled;
+
             private string _serverName;
+
             private string _serverHubIP;
             private int _serverHubPort;
 
             private int _lobbyTime;
+
+            private Difficulty _preferredDifficulty;
 
             [JsonProperty]
             private string SongDirectory;
@@ -137,6 +142,17 @@ namespace BeatSaberMultiplayerServer.Misc {
                 }
             }
 
+            [JsonProperty]
+            public Difficulty PreferredDifficulty
+            {
+                get => _preferredDifficulty;
+                set
+                {
+                    _preferredDifficulty = value;
+                    MarkDirty();
+                }
+            }
+
             string GetPublicIPv4()
             {
                 using (var client = new WebClient())
@@ -181,6 +197,7 @@ namespace BeatSaberMultiplayerServer.Misc {
                 _serverHubIP = "beatsaber.jaddie.co.uk";
                 _serverHubPort = 3700;
                 _lobbyTime = 60;
+                _preferredDifficulty = Difficulty.Expert;
                 SongDirectory = "AvailableSongs/";
             }
         }

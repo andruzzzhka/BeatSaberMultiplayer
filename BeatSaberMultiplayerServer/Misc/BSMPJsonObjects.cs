@@ -79,7 +79,7 @@ namespace BeatSaberMultiplayerServer
 
     public enum ClientState { Disconnected, Connected, Playing, UpdateRequired};
 
-    enum Difficulty { Easy, Normal, Hard, Expert, ExpertPlus };
+    public enum Difficulty { Easy, Normal, Hard, Expert, ExpertPlus };
 
     [Serializable]
     public class CustomSongInfo

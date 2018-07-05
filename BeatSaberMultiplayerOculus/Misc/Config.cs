@@ -11,23 +11,24 @@ namespace BeatSaberMultiplayer {
         
         [SerializeField] private string _serverHubIP;
         [SerializeField] private int _serverHubPort;
-        
+        [SerializeField] private bool _showAvatarsInGame;
+        [SerializeField] private bool _showAvatarsInLobby;
+
         private static Config _instance;
         
         private static FileInfo FileLocation { get; } = new FileInfo($"./Config/{Assembly.GetExecutingAssembly().GetName().Name}.json");
 
         public static Config Instance {
             get {
-                Console.WriteLine("Retrieving Config Instance");
                 if (_instance != null) return _instance;
                 try {
                     FileLocation?.Directory?.Create();
-                    Console.WriteLine($"attempting to load JSON @ {FileLocation.FullName}");
+                    Console.WriteLine($"Attempting to load JSON @ {FileLocation.FullName}");
                     _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
                     _instance.MarkClean();
                 }
-                catch(Exception ex) {
-                    Console.WriteLine($"Config doesn't exist @ {FileLocation.FullName}");
+                catch(Exception e) {
+                    Console.WriteLine($"Can't load config @ {FileLocation.FullName}");
                     _instance = new Config();
                 }
                 return _instance;
@@ -46,21 +47,42 @@ namespace BeatSaberMultiplayer {
                 MarkDirty();
             }
         }
-        
-        /// <summary>
-        /// Remember to Save after changing the value
-        /// </summary>
-        public int ServerHubPort {
+
+        public int ServerHubPort
+        {
             get { return _serverHubPort; }
-            set {
+            set
+            {
                 _serverHubPort = value;
                 MarkDirty();
             }
         }
-        
+
+        public bool ShowAvatarsInGame
+        {
+            get { return _showAvatarsInGame; }
+            set
+            {
+                _showAvatarsInGame = value;
+                MarkDirty();
+            }
+        }
+
+        public bool ShowAvatarsInLobby
+        {
+            get { return _showAvatarsInLobby; }
+            set
+            {
+                _showAvatarsInLobby = value;
+                MarkDirty();
+            }
+        }
+
         Config() {
             _serverHubIP = "beatsaber.jaddie.co.uk";
             _serverHubPort = 3700;
+            _showAvatarsInGame = false;
+            _showAvatarsInLobby = true;
             MarkDirty();
         }
 
@@ -70,7 +92,6 @@ namespace BeatSaberMultiplayer {
                 using (var f = new StreamWriter(FileLocation.FullName)) {
                     Console.WriteLine($"Writing to File @ {FileLocation.FullName}");
                     var json = JsonUtility.ToJson(this, true);
-                    Console.WriteLine($"JSON: {Environment.NewLine}{json}");
                     f.Write(json);
                 }
                 MarkClean();

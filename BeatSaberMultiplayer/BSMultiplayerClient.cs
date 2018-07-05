@@ -153,6 +153,25 @@ namespace BeatSaberMultiplayer
                             Console.WriteLine("SCREEN EXCEPTION: " + e);
                         }
 
+                        try
+                        {
+                            if(_avatars.Count != 0)
+                            {
+                                foreach(AvatarController avatar in _avatars)
+                                {
+                                    if (avatar != null)
+                                    {
+                                        Destroy(avatar);
+                                    }
+                                }
+                                _avatars.Clear();
+                            }
+
+                        }catch(Exception e)
+                        {
+                            Console.WriteLine("AVATARS EXCEPTION: " + e);
+                        }
+
                         DataReceived += ReceivedFromServer;
                         StartCoroutine(ReceiveFromServerCoroutine());
 
@@ -219,8 +238,6 @@ namespace BeatSaberMultiplayer
                                     }
                                     foreach (AvatarController avatar in avatarsToRemove)
                                     {
-
-                                        Console.WriteLine("Removing avatar");
                                         _avatars.Remove(avatar);
                                         Destroy(avatar.gameObject);
                                     }
@@ -230,7 +247,6 @@ namespace BeatSaberMultiplayer
                                 {
                                     for (int i = 0; i < (_playerInfos.Count - _avatars.Count); i++)
                                     {
-                                        Console.WriteLine("Creating avatar "+_playerInfos.Count);
                                         _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
 
                                     }
@@ -247,10 +263,7 @@ namespace BeatSaberMultiplayer
                                 Console.WriteLine($"AVATARS EXCEPTION: {e}");
                             }
                         }
-
-                        if (scoreDisplays.Count != 5) {
-                            Console.WriteLine("Displays "+ scoreDisplays);
-                            }
+                        
 
                         if (_playerInfos.Count <= 5)
                         {
