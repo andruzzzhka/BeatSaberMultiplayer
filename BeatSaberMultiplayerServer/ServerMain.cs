@@ -332,7 +332,7 @@ namespace BeatSaberMultiplayerServer
                                 SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
                                     ServerCommandType.SetSelectedSong,
                                     _selectedLevelID: availableSongs[currentSongIndex].levelId,
-                                    _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))));
+                                    _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
                             }
 
                             if (lobbyTimer >= lobbyTime)
@@ -340,10 +340,10 @@ namespace BeatSaberMultiplayerServer
                                 SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
                                     ServerCommandType.SetSelectedSong,
                                     _selectedLevelID: availableSongs[currentSongIndex].levelId,
-                                    _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))));
+                                    _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
                                 SendToAllClients(
                                     JsonConvert.SerializeObject(
-                                        new ServerCommand(ServerCommandType.StartSelectedSongLevel)));
+                                        new ServerCommand(ServerCommandType.StartSelectedSongLevel)), wss);
 
                                 serverState = ServerState.Playing;
                                 Logger.Instance.Log("Starting song " + availableSongs[currentSongIndex].songName + " " +
@@ -389,7 +389,7 @@ namespace BeatSaberMultiplayerServer
                                 lastSelectedSong = currentSongIndex;
                                 currentSongIndex = -1;
 
-                                Logger.Instance.Log("Returning to lobby(NO PLAYERS)...");
+                                Logger.Instance.Log("Returning to lobby (NO PLAYERS)...");
                             }
                         }
                         ;
