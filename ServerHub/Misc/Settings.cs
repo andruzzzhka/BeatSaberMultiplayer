@@ -53,65 +53,11 @@ namespace ServerHub.Misc {
                 _logsDir = "Logs/";
             }
         }
-        
-        [JsonObject(MemberSerialization.OptIn)]
-        public class DatabaseSettings {
-            private string _username;
-            private string _password;
-            private string _databaseName;
-
-            private Action MarkDirty { get; }
-        
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
-            [JsonProperty]
-            public string Username {
-                get => _username;
-                set {
-                    _username = value;
-                    MarkDirty();
-                }
-            }
-            
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
-            [JsonProperty]
-            public string Password {
-                get => _password;
-                set {
-                    _password = value;
-                    MarkDirty();
-                }
-            }
-            
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
-            [JsonProperty]
-            public string DatabaseName {
-                get => _databaseName;
-                set {
-                    _databaseName = value;
-                    MarkDirty();
-                }
-            }
-
-            public DatabaseSettings(Action markDirty) {
-                MarkDirty = markDirty;
-                _username = "username";
-                _password = "password";
-                _databaseName = "database";
-            }
-        }
 
         [JsonProperty]
         public ServerSettings Server { get; }
         [JsonProperty]
         public LoggerSettings Logger { get; }
-        [JsonProperty]
-        public DatabaseSettings Database { get; }
 
         private static Settings _instance;
 
@@ -140,7 +86,6 @@ namespace ServerHub.Misc {
         Settings() {
             Server = new ServerSettings(MarkDirty);
             Logger = new LoggerSettings(MarkDirty);
-            Database = new DatabaseSettings(MarkDirty);
             MarkDirty();
         }
 
@@ -149,14 +94,13 @@ namespace ServerHub.Misc {
             try {
                 using (var f = new StreamWriter(FileLocation.FullName)) {
                     var json = JsonConvert.SerializeObject(this, Formatting.Indented);
-                    //Misc.Logger.Instance.Log(json);
                     f.Write(json);
                 }
 
                 MarkClean();
                 return true;
             }
-            catch (IOException ex) {
+            catch (IOException) {
                 return false;
             }
         }

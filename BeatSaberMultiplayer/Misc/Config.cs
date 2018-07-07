@@ -79,7 +79,7 @@ namespace BeatSaberMultiplayer {
         }
 
         Config() {
-            _serverHubIP = "beatsaber.jaddie.co.uk";
+            _serverHubIP = "assistant.moe";
             _serverHubPort = 3700;
             _showAvatarsInGame = false;
             _showAvatarsInLobby = true;

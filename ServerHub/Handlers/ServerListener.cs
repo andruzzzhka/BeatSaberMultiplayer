@@ -72,7 +72,6 @@ namespace ServerHub.Handlers {
         Data AcceptClient() {
             Logger.Instance.Log("Waiting for a connection");
             var client = Listener.AcceptTcpClient();
-            //Logger.Instance.Log("Server Connected");
             return new Data {TcpClient = client};
         }
 
@@ -97,16 +96,21 @@ namespace ServerHub.Handlers {
                     var sPacket = (ServerDataPacket) packet;
                     if (sPacket.FirstConnect)
                     {
-                        cO.Data = new Data(ConnectedClients.Count(x => x.Data.ID != -1) == 0 ? 0 : ConnectedClients.Last(x => x.Data.ID != -1).Data.ID + 1) { TcpClient = client, FirstConnect = sPacket.FirstConnect, IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port };
+                        int duplicates = ConnectedClients.Count(x => (x.Data.Name == sPacket.Name) && (x.Data.Port == sPacket.Port) && (x.Data.IPv4 == sPacket.IPv4));
+                        if (duplicates > 0)
+                        {
+                            ConnectedClients.Where(x => (x.Data.Name == sPacket.Name) && (x.Data.Port == sPacket.Port) && (x.Data.IPv4 == sPacket.IPv4)).AsParallel().ForAll(x => RemoveClient(x));
+                            Logger.Instance.Log($"Removed {duplicates} duplicate{(duplicates > 1?"s":"")}");
+                        }
 
+                        cO.Data = new Data(ConnectedClients.Count(x => x.Data.ID != -1) == 0 ? 0 : ConnectedClients.Last(x => x.Data.ID != -1).Data.ID + 1) { TcpClient = client, FirstConnect = sPacket.FirstConnect, IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port };
                         AddClient(cO);
+
                         Logger.Instance.Log($"Registered Server [{cO.Data.Name}] @ [{cO.Data.IPv4}:{cO.Data.Port}]");
-                        //Logger.Instance.Log($"Server {cO.Data.ID} @ {cO.Data.IPv4}:{cO.Data.Port} added to collection");
                     }
                     else
                     {
-
-                        //Logger.Instance.Log("Server already in collection");
+                        
                     }
                 }
 
@@ -125,10 +129,8 @@ namespace ServerHub.Handlers {
             }
             switch (dataPacket.ConnectionType) {
                 case ConnectionType.Client:
-                    //Logger.Instance.Log("ConnectionType is [Client]");
                     var clientData = (ClientDataPacket)dataPacket;
                     clientData.Servers = GetServers(clientData.Offset);
-                    //Logger.Instance.Log($"Packet JSON:{Environment.NewLine}{clientData}");
                     if (cO.Data.TcpClient != null && cO.Data.TcpClient.Connected)
                     {
                         cO.Data.TcpClient.GetStream().Write(clientData.ToBytes(), 0, clientData.ToBytes().Length);
@@ -137,14 +139,10 @@ namespace ServerHub.Handlers {
                     }
                     break;
                 case ConnectionType.Server:
-                    //Logger.Instance.Log("ConnectionType is [Server]");
                     var serverData = (ServerDataPacket)dataPacket;
-                    //Logger.Instance.Log($"Packet JSON:{Environment.NewLine}{serverData}");
                     if (serverData.RemoveFromCollection) {
                         var temp = cO.Data;
-                        //Logger.Instance.Log($"Removing Server {serverData.ID} from Collection");
                         RemoveClient(ConnectedClients.First(o => o.Data.ID == temp.ID));
-                        //Logger.Instance.Log($"Joining Thread of Server {serverData.ID}");
                         cO.CancellationTokenSource.Cancel();
                         break;
                     }
