@@ -49,7 +49,6 @@ namespace ServerHub.Handlers {
         }
 
         void BeginListening() {
-                Thread t = null;
                 while (Listen) {
                     var data = AcceptClient();
                     CancellationTokenSource cts = new CancellationTokenSource();
@@ -116,7 +115,7 @@ namespace ServerHub.Handlers {
 
                 return packet;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return null;
             }

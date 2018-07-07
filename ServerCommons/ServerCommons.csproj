@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.0;net462</TargetFrameworks>
-    <Version>0.4.1.0</Version>
-    <AssemblyVersion>0.4.2.0</AssemblyVersion>
+    <Version>0.4.3.0</Version>
+    <AssemblyVersion>0.4.3.0</AssemblyVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />

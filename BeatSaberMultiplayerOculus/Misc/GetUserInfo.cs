@@ -1,5 +1,4 @@
-﻿using Oculus.Platform;
-using Oculus.Platform.Models;
+﻿using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,11 +20,8 @@ namespace BeatSaberMultiplayer.Misc
         {
             if (userID == 0 || userName == null)
             {
-                Users.GetLoggedInUser().OnComplete((Message<User> msg) =>
-                {
-                    userID = msg.Data.ID;
-                    userName = msg.Data.OculusID;
-                });
+                userName = SteamFriends.GetPersonaName();
+                userID = SteamUser.GetSteamID().m_SteamID;
             }
         }
 

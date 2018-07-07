@@ -255,7 +255,7 @@ namespace BeatSaberMultiplayerServer
             {
                 _client.GetStream().Write(buffer, 0, buffer.Length);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return false;
             }

@@ -27,7 +27,7 @@ namespace BeatSaberMultiplayer {
                     _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
                     _instance.MarkClean();
                 }
-                catch(Exception e) {
+                catch(Exception) {
                     Console.WriteLine($"Can't load config @ {FileLocation.FullName}");
                     _instance = new Config();
                 }
