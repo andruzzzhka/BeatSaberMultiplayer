@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
@@ -12,12 +13,13 @@ namespace BeatSaberMultiplayerServer
 {
     internal class Client
     {
+        public string clientIP;
         public TcpClient _client;
-        public PlayerInfo playerInfo;
 
-        int playerScore;
-        ulong playerId;
-        string playerName;
+        public PlayerInfo playerInfo;
+        public int playerScore;
+        public ulong playerId;
+        public string playerName;
 
         public ClientState state = ClientState.Disconnected;
 
@@ -45,6 +47,8 @@ namespace BeatSaberMultiplayerServer
                 {
                     if (_client != null && _client.Connected)
                     {
+                        clientIP = ((IPEndPoint)_client.Client.RemoteEndPoint).Address.ToString();
+
                         pingTimer++;
                         if (pingTimer > 180)
                         {
@@ -110,6 +114,18 @@ namespace BeatSaberMultiplayerServer
                                                 playerScore = receivedPlayerInfo.playerScore;
 
                                                 playerInfo = receivedPlayerInfo;
+
+                                                if (Misc.Settings.Instance.Access.Blacklist.Contains(receivedPlayerInfo.playerId.ToString()) || Misc.Settings.Instance.Access.Blacklist.Contains(clientIP))
+                                                {
+                                                    KickClient();
+                                                    return;
+                                                }
+
+                                                if (Misc.Settings.Instance.Access.WhitelistEnabled && !Misc.Settings.Instance.Access.Whitelist.Contains(receivedPlayerInfo.playerId.ToString()) && !Misc.Settings.Instance.Access.Whitelist.Contains(clientIP))
+                                                {
+                                                    KickClient();
+                                                    return;
+                                                }
                                             }
                                         }
                                         ;
@@ -171,6 +187,13 @@ namespace BeatSaberMultiplayerServer
             }
         }
 
+        public void KickClient()
+        {
+            SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.Kicked)));
+            DestroyClient();
+            Logger.Instance.Log($"Kicked player \"{playerName}\" : {playerId}");
+        }
+
         public string[] ReceiveFromClient(bool waitIfNoData = false)
         {
             if (_client.Available == 0)
@@ -217,8 +240,6 @@ namespace BeatSaberMultiplayerServer
 
             string[] strBuffer = receivedJson.Replace("}{", "}#{").Split('#');
 
-            //Console.WriteLine("Received from client: " + receivedJson);
-
             return strBuffer;
         }
 
@@ -228,8 +249,6 @@ namespace BeatSaberMultiplayerServer
             {
                 return false;
             }
-
-            //Console.WriteLine("Sending to client: "+message);
 
             byte[] buffer = Encoding.UTF8.GetBytes(message);
             try

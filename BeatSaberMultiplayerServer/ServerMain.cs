@@ -138,7 +138,7 @@ namespace BeatSaberMultiplayerServer
                 switch (comName.ToLower())
                 {
                     case "help":
-                        foreach (var com in new[] { "Help", "Quit", "Clients" })
+                        foreach (var com in new[] { "help", "quit", "clients", "blacklist [add/remove] [playerID/IP]", "whitelist [enable/disable/add/remove] [playerID/IP]" })
                         {
                             s += $"{Environment.NewLine}> {com}";
                         }
@@ -166,7 +166,118 @@ namespace BeatSaberMultiplayerServer
                         if (s == String.Empty) s = " No Clients";
                         Logger.Instance.Log($"Connected Clients:{s}");
                         break;
+                    case "blacklist":
+                        {
+                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
+                            {
+                                switch (comArgs[0])
+                                {
+                                    case "add":
+                                        {
+                                            clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
+                                            Settings.Instance.Access.Blacklist.Add(comArgs[1]);
+                                            Logger.Instance.Log($"Successfully banned {comArgs[1]}");
+                                            Settings.Instance.Save();
+                                        }
+                                        break;
+                                    case "remove":
+                                        {
+                                            if (Settings.Instance.Access.Blacklist.Remove(comArgs[1]))
+                                            {
+                                                Logger.Instance.Log($"Successfully unbanned {comArgs[1]}");
+                                                Settings.Instance.Save();
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Warning($"{comArgs[1]} is not banned");
+                                            }
+                                        }
+                                        break;
+                                    default:
+                                        {
+                                            Logger.Instance.Warning($"Command usage: blacklist [add/remove] [playerID/IP]");
+                                        }
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                Logger.Instance.Warning($"Command usage: blacklist [add/remove] [playerID/IP]");
+                            }
+                        }
+                        break;
+                    case "whitelist":
+                        {
+                            if (comArgs.Length >= 1)
+                            {
+                                switch (comArgs[0])
+                                {
+                                    case "enable":
+                                        {
+                                            Settings.Instance.Access.WhitelistEnabled = true;
+                                            Logger.Instance.Log($"Whitelist enabled");
+                                            Settings.Instance.Save();
+                                        }
+                                        break;
+                                    case "disable":
+                                        {
+                                            Settings.Instance.Access.WhitelistEnabled = false;
+                                            Logger.Instance.Log($"Whitelist disabled");
+                                            Settings.Instance.Save();
+                                        }
+                                        break;
+                                    case "add":
+                                        {
+                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
+                                            {
+                                                Settings.Instance.Access.Whitelist.Add(comArgs[1]);
+                                                Logger.Instance.Log($"Successfully whitelisted {comArgs[1]}");
+                                                Settings.Instance.Save();
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]");
+                                            }
+                                        }
+                                        break;
+                                    case "remove":
+                                        {
+                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
+                                            {
+                                                clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
+                                                if (Settings.Instance.Access.Whitelist.Remove(comArgs[1]))
+                                                {
+                                                    Logger.Instance.Log($"Successfully removed {comArgs[1]} from whitelist");
+                                                    Settings.Instance.Save();
+                                                }
+                                                else
+                                                {
+                                                    Logger.Instance.Warning($"{comArgs[1]} is not whitelisted");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]");
+                                            }
+                                        }
+                                        break;
+                                    default:
+                                        {
+                                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]");
+                                        }
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]");
+                            }
+
+
+                        }
+                        break;
                 }
+
             }
         }
         
@@ -464,7 +575,6 @@ namespace BeatSaberMultiplayerServer
             clients.AsParallel().ForAll(x => x.DestroyClient());
 
             _listener.Stop();
-            
         }
     }
 

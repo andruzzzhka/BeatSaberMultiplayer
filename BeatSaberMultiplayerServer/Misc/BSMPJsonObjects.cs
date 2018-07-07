@@ -29,7 +29,7 @@ namespace BeatSaberMultiplayerServer
 
     enum ServerState { Lobby, Playing };
 
-    enum ServerCommandType {SetServerState, SetLobbyTimer, DownloadSongs, StartSelectedSongLevel, SetPlayerInfos, SetSelectedSong, UpdateRequired, Ping };
+    enum ServerCommandType {SetServerState, SetLobbyTimer, DownloadSongs, StartSelectedSongLevel, SetPlayerInfos, SetSelectedSong, UpdateRequired, Ping, Kicked };
 
     class ServerCommand
     {

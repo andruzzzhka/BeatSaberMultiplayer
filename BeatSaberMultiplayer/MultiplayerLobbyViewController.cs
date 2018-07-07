@@ -417,6 +417,11 @@ namespace BeatSaberMultiplayer
                                         }
 
                                     };break;
+                                case ServerCommandType.Kicked: {
+                                        _selectText.text = "You were kicked";
+                                        BSMultiplayerClient._instance.DisconnectFromServer();
+                                        _loading = false;
+                                    }; break;
 
 
                             }

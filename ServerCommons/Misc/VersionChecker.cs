@@ -55,7 +55,7 @@ namespace ServerCommons.Misc
             }
             else
             {
-                Logger.Instance.Log($"You have the latest version of the {Assembly.GetEntryAssembly().GetName().Name}");
+                Logger.Instance.Log($"You have the latest version of {Assembly.GetEntryAssembly().GetName().Name}");
             }
         }
     }

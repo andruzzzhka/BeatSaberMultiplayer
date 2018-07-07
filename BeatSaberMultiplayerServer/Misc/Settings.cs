@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reflection;
@@ -230,7 +231,7 @@ namespace BeatSaberMultiplayerServer.Misc {
             private int[] _songs;
 
             private Action MarkDirty { get; }
-        
+
             [JsonProperty]
             public int[] Songs {
                 get => _songs;
@@ -247,12 +248,68 @@ namespace BeatSaberMultiplayerServer.Misc {
             }
         }
 
+        [JsonObject(MemberSerialization.OptIn)]
+        public class AccessSettings
+        {
+            private List<string> _blacklist;
+
+            private bool _whitelistEnabled;
+            
+            private List<string> _whitelist;
+            
+            private Action MarkDirty { get; }
+
+            [JsonProperty]
+            public List<string> Blacklist
+            {
+                get => _blacklist;
+                set
+                {
+                    _blacklist = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
+            public bool WhitelistEnabled
+            {
+                get => _whitelistEnabled;
+                set
+                {
+                    _whitelistEnabled = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
+            public List<string> Whitelist
+            {
+                get => _whitelist;
+                set
+                {
+                    _whitelist = value;
+                    MarkDirty();
+                }
+            }
+
+            public AccessSettings(Action markDirty)
+            {
+                MarkDirty = markDirty;
+                _blacklist = new List<string>();
+                _whitelistEnabled = false;
+                _whitelist = new List<string>();
+            }
+
+        }
+
         [JsonProperty]
         public ServerSettings Server { get; }
         [JsonProperty]
         public LoggerSettings Logger { get; }
         [JsonProperty]
         public AvailableSongsSettings AvailableSongs { get; }
+        [JsonProperty]
+        public AccessSettings Access { get; }
 
         private static Settings _instance;
 
@@ -282,6 +339,7 @@ namespace BeatSaberMultiplayerServer.Misc {
             Server = new ServerSettings(MarkDirty);
             Logger = new LoggerSettings(MarkDirty);
             AvailableSongs = new AvailableSongsSettings(MarkDirty);
+            Access = new AccessSettings(MarkDirty);
             MarkDirty();
         }
 
@@ -290,14 +348,13 @@ namespace BeatSaberMultiplayerServer.Misc {
             try {
                 using (var f = new StreamWriter(FileLocation.FullName)) {
                     var json = JsonConvert.SerializeObject(this, Formatting.Indented);
-                    //Misc.Logger.Instance.Log(json);
                     f.Write(json);
                 }
 
                 MarkClean();
                 return true;
             }
-            catch (IOException ex) {
+            catch (IOException) {
                 return false;
             }
         }
