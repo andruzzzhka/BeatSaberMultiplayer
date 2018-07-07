@@ -389,7 +389,7 @@ namespace BeatSaberMultiplayerServer
                                 lastSelectedSong = currentSongIndex;
                                 currentSongIndex = -1;
 
-                                Logger.Instance.Log("Returning to lobby(NO PLAYERS)...");
+                                Logger.Instance.Log("Returning to lobby (NO PLAYERS)...");
                             }
                         }
                         ;
