@@ -45,9 +45,7 @@ namespace BeatSaberMultiplayerServer
 
         public static TimeSpan playTime = new TimeSpan();
 
-        private static TcpClient _serverHubClient;
-
-        public int ID { get; set; }
+        static List<ServerHubClient> _serverHubClients = new List<ServerHubClient>();
 
         private Thread ListenerThread { get; set; }
         private Thread ServerLoopThread { get; set; }
@@ -101,15 +99,29 @@ namespace BeatSaberMultiplayerServer
                 wss.AddWebSocketService<Broadcast>("/");
                 wss.Start();
             }
+            
+            Dictionary<string, int> _serverHubs = new Dictionary<string, int>();
+                
+            for (int i = 0; i < Settings.Instance.Server.ServerHubIPs.Length; i++)
+            {
+                if(Settings.Instance.Server.ServerHubPorts.Length >= i)
+                {
+                    _serverHubs.Add(Settings.Instance.Server.ServerHubIPs[i], 3700);
+                }
+                else
+                {
+                    _serverHubs.Add(Settings.Instance.Server.ServerHubIPs[i], Settings.Instance.Server.ServerHubPorts[i]);
+                }
+            }
 
-            try
+            _serverHubs.AsParallel().ForAll(x =>
             {
-                ConnectToServerHub(Settings.Instance.Server.ServerHubIP, Settings.Instance.Server.ServerHubPort);
+                ServerHubClient client = new ServerHubClient();
+                _serverHubClients.Add(client);
+
+                client.Connect(x.Key, x.Value);
             }
-            catch (Exception e)
-            {
-                Logger.Instance.Error($"Can't connect to ServerHub! Exception: {e.Message}");
-            }
+            );
 
             ShutdownEventCatcher.Shutdown += OnServerShutdown;
 
@@ -157,33 +169,7 @@ namespace BeatSaberMultiplayerServer
                 }
             }
         }
-
-        public void ConnectToServerHub(string serverHubIP, int serverHubPort)
-        {
-            _serverHubClient = new TcpClient(serverHubIP, serverHubPort);
-
-            ServerDataPacket packet = new ServerDataPacket
-            {
-                ConnectionType = ConnectionType.Server,
-                FirstConnect = true,
-                IPv4 = Settings.Instance.Server.IP,
-                Port = Settings.Instance.Server.Port,
-                Name = Settings.Instance.Server.ServerName
-            };
-
-            byte[] packetBytes = packet.ToBytes();
-
-            _serverHubClient.GetStream().Write(packetBytes, 0, packetBytes.Length);
-
-            byte[] bytes = new byte[Packet.MAX_BYTE_LENGTH];
-            if (_serverHubClient.GetStream().Read(bytes, 0, bytes.Length) != 0)
-            {
-                packet = (ServerDataPacket)Packet.ToPacket(bytes);
-            }
-
-            ID = packet.ID;
-        }
-
+        
         private static void DownloadSongs()
         {
             Settings.Instance.Server.Downloaded.GetDirectories().AsParallel().ForAll(dir => dir.Delete(true));
@@ -221,12 +207,12 @@ namespace BeatSaberMultiplayerServer
                     {
                         zip?.Dispose();
                     }
-                    catch (IOException ex)
+                    catch (IOException)
                     {
                         Logger.Instance.Exception($"Failed to remove Zip [{id}]");
                     }
                 }
-                catch (IOException ex)
+                catch (IOException)
                 {
                     Logger.Instance.Exception($"Folder [{songName}] exists. Continuing.");
                     try
@@ -472,28 +458,94 @@ namespace BeatSaberMultiplayerServer
         private void OnServerShutdown(ShutdownEventArgs args)
         {
             Logger.Instance.Log("Shutting down server...");
-            if (_serverHubClient != null && _serverHubClient.Connected)
-            {
-                ServerDataPacket packet = new ServerDataPacket
-                {
-                    ConnectionType = ConnectionType.Server,
-                    ID = ID,
-                    FirstConnect = false,
-                    IPv4 = Settings.Instance.Server.IP,
-                    Port = Settings.Instance.Server.Port,
-                    Name = Settings.Instance.Server.ServerName,
-                    RemoveFromCollection = true
-                };
 
-                _serverHubClient.GetStream().Write(packet.ToBytes(), 0, packet.ToBytes().Length);
-                Logger.Instance.Log("Removed this server from ServerHub");
-
-                _serverHubClient.Close();
-            }
+            _serverHubClients.AsParallel().ForAll(x => x.Disconnect());
 
             clients.AsParallel().ForAll(x => x.DestroyClient());
 
             _listener.Stop();
+            
         }
+    }
+
+    class ServerHubClient
+    {
+        public string ip;
+        public int port;
+
+        TcpClient client;
+
+        public int ID;
+        
+        public void Connect(string serverHubIP, int serverHubPort)
+        {
+            ip = serverHubIP;
+            port = serverHubPort;
+
+            try
+            {
+                client = new TcpClient(ip, port);
+
+                ServerDataPacket packet = new ServerDataPacket
+                {
+                    ConnectionType = ConnectionType.Server,
+                    FirstConnect = true,
+                    IPv4 = Settings.Instance.Server.IP,
+                    Port = Settings.Instance.Server.Port,
+                    Name = Settings.Instance.Server.ServerName
+                };
+
+                byte[] packetBytes = packet.ToBytes();
+
+                client.GetStream().Write(packetBytes, 0, packetBytes.Length);
+
+                byte[] bytes = new byte[Packet.MAX_BYTE_LENGTH];
+                if (client.GetStream().Read(bytes, 0, bytes.Length) != 0)
+                {
+                    packet = (ServerDataPacket)Packet.ToPacket(bytes);
+                }
+
+                ID = packet.ID;
+
+
+                Logger.Instance.Log($"Connected to ServerHub @ {ip}");
+            }
+            catch(Exception e)
+            {
+                Logger.Instance.Warning($"Can't connect to ServerHub @ {ip}");
+                Logger.Instance.Warning($"Exception: {e.Message}");
+            }
+
+        }
+
+        public void Disconnect()
+        {
+            try
+            {
+                if (client != null && client.Connected)
+                {
+                    ServerDataPacket packet = new ServerDataPacket
+                    {
+                        ConnectionType = ConnectionType.Server,
+                        ID = ID,
+                        FirstConnect = false,
+                        IPv4 = Settings.Instance.Server.IP,
+                        Port = Settings.Instance.Server.Port,
+                        Name = Settings.Instance.Server.ServerName,
+                        RemoveFromCollection = true
+                    };
+
+                    client.GetStream().Write(packet.ToBytes(), 0, packet.ToBytes().Length);
+                    Logger.Instance.Log($"Removed this server from ServerHub @ {ip}");
+
+                    client.Close();
+                }
+            }catch(Exception e)
+            {
+                Logger.Instance.Warning($"Can't remove server from ServerHub @ {ip}");
+                Logger.Instance.Warning($"Exception: {e.Message}");
+            }
+        }
+
     }
 }

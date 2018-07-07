@@ -18,8 +18,8 @@ namespace BeatSaberMultiplayerServer.Misc {
 
             private string _serverName;
 
-            private string _serverHubIP;
-            private int _serverHubPort;
+            private string[] _serverHubIPs;
+            private int[] _serverHubPorts;
 
             private int _lobbyTime;
 
@@ -107,12 +107,12 @@ namespace BeatSaberMultiplayerServer.Misc {
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
-            public string ServerHubIP
+            public string[] ServerHubIPs
             {
-                get => _serverHubIP;
+                get => _serverHubIPs;
                 set
                 {
-                    _serverHubIP = value;
+                    _serverHubIPs = value;
                     MarkDirty();
                 }
             }
@@ -121,12 +121,12 @@ namespace BeatSaberMultiplayerServer.Misc {
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
-            public int ServerHubPort
+            public int[] ServerHubPorts
             {
-                get => _serverHubPort;
+                get => _serverHubPorts;
                 set
                 {
-                    _serverHubPort = value;
+                    _serverHubPorts = value;
                     MarkDirty();
                 }
             }
@@ -194,8 +194,8 @@ namespace BeatSaberMultiplayerServer.Misc {
                 _wsport = 3702;
                 _wsenabled = false;
                 _serverName = "New Server";
-                _serverHubIP = "beatsaber.jaddie.co.uk";
-                _serverHubPort = 3700;
+                _serverHubIPs = new string[] { "beatsaber.jaddie.co.uk", "assistant.moe" };
+                _serverHubPorts = new int[] { 3700, 3700 };
                 _lobbyTime = 60;
                 _preferredDifficulty = Difficulty.Expert;
                 SongDirectory = "AvailableSongs/";
