@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using BeatSaberMultiplayerServer.Misc;
@@ -28,11 +29,14 @@ namespace ServerHub {
 
         private void OnShutdown(ShutdownEventArgs obj) {
             Listener.Stop();
-            //listenerThread.Abort();
         }
 
         void Start(string[] args) {
-            Logger.Instance.Log($"Current IP: {IP}:{Settings.Instance.Server.Port}");
+            Logger.Instance.Log($"Beat Saber Multiplayer ServerHub v{Assembly.GetEntryAssembly().GetName().Version}");
+
+            VersionChecker.CheckForUpdates();
+
+            Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
             
             listenerThread = new Thread(() => Listener.Start()) {
                 IsBackground = true

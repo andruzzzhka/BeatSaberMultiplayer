@@ -61,6 +61,8 @@ namespace BeatSaberMultiplayerServer
             Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, 0);
             Logger.Instance.Log($"Beat Saber Multiplayer Server v{Assembly.GetEntryAssembly().GetName().Version}");
 
+            VersionChecker.CheckForUpdates();
+
             if (args.Length > 0)
             {
                 try
@@ -193,7 +195,7 @@ namespace BeatSaberMultiplayerServer
                 using (var client = new WebClient())
                 {
                     client.Headers.Add("user-agent",
-                        $"BeatSaverMultiplayerServer-{Assembly.GetEntryAssembly().GetName().Version}");
+                        $"BeatSaberMultiplayerServer-{Assembly.GetEntryAssembly().GetName().Version}");
                     if (Settings.Instance.Server.Downloads.GetFiles().All(o => o.Name != $"{id}.zip"))
                     {
                         Logger.Instance.Log($"Downloading {id}.zip");
