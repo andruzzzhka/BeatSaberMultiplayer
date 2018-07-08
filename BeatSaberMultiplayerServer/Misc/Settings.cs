@@ -228,9 +228,22 @@ namespace BeatSaberMultiplayerServer.Misc {
         
         [JsonObject(MemberSerialization.OptIn)]
         public class AvailableSongsSettings {
+
+            private bool _shuffle;
             private int[] _songs;
 
             private Action MarkDirty { get; }
+
+            [JsonProperty]
+            public bool Shuffle
+            {
+                get => _shuffle;
+                set
+                {
+                    _shuffle = value;
+                    MarkDirty();
+                }
+            }
 
             [JsonProperty]
             public int[] Songs {
@@ -244,6 +257,7 @@ namespace BeatSaberMultiplayerServer.Misc {
 
             public AvailableSongsSettings(Action markDirty) {
                 MarkDirty = markDirty;
+                _shuffle = false;
                 _songs = new int[] { 65};
             }
         }

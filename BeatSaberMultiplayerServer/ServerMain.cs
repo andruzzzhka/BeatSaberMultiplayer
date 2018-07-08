@@ -421,8 +421,17 @@ namespace BeatSaberMultiplayerServer
 
                             if (lobbyTimer >= lobbyTime / 2 && currentSongIndex == -1)
                             {
-                                currentSongIndex = lastSelectedSong;
-                                currentSongIndex++;
+                                if (Settings.Instance.AvailableSongs.Shuffle)
+                                {
+                                    Random rand = new Random();
+                                    currentSongIndex = rand.Next(availableSongs.Count);
+                                    if(currentSongIndex == lastSelectedSong) currentSongIndex = lastSelectedSong + 1;
+                                }
+                                else
+                                {
+                                    currentSongIndex = lastSelectedSong + 1;
+                                }
+
                                 if (currentSongIndex >= availableSongs.Count)
                                 {
                                     currentSongIndex = 0;
