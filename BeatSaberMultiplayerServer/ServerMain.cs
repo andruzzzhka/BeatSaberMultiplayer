@@ -31,6 +31,8 @@ namespace BeatSaberMultiplayerServer
 
     class ServerMain
     {
+        public static Version serverVersion = Assembly.GetEntryAssembly().GetName().Version;
+
         static TcpListener _listener;
 
         public static List<Client> clients = new List<Client>();
@@ -59,7 +61,7 @@ namespace BeatSaberMultiplayerServer
             AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
 
             Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, 0);
-            Logger.Instance.Log($"Beat Saber Multiplayer Server v{Assembly.GetEntryAssembly().GetName().Version}");
+            Logger.Instance.Log($"Beat Saber Multiplayer Server v{serverVersion}");
 
             VersionChecker.CheckForUpdates();
 

@@ -64,7 +64,9 @@ namespace BeatSaberMultiplayerServer
                             {
                                 ClientCommand command = JsonConvert.DeserializeObject<ClientCommand>(data);
 
-                                if (command.version != Assembly.GetEntryAssembly().GetName().Version.ToString())
+                                Version clientVersion = new Version(command.version);
+
+                                if (clientVersion.Major != ServerMain.serverVersion.Major || clientVersion.Minor != ServerMain.serverVersion.Minor || clientVersion.Build != ServerMain.serverVersion.Build)
                                 {
                                     state = ClientState.UpdateRequired;
                                     SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.UpdateRequired)));
