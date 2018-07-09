@@ -90,11 +90,10 @@ namespace BeatSaberMultiplayerServer
 
             Logger.Instance.Log("Waiting for clients...");
 
-            ListenerThread = new Thread(AcceptClientThread) { IsBackground = true };
-            ListenerThread.Start();
-
             ServerLoopThread = new Thread(ServerLoop) { IsBackground = true };
             ServerLoopThread.Start();
+            
+            AcceptClientThread();
 
             if (Settings.Instance.Server.WSEnabled)
             {
@@ -568,16 +567,11 @@ namespace BeatSaberMultiplayerServer
 
         async void AcceptClientThread()
         {
-            while (ListenerThread.IsAlive)
+            while (ServerLoopThread.IsAlive)
             {
                 TcpClient client = await _listener.AcceptTcpClientAsync();
-                ClientThread(client);
+                clients.Add(new Client(client));
             }
-        }
-
-        static void ClientThread(TcpClient client)
-        {
-            clients.Add(new Client(client));
         }
         
         private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
