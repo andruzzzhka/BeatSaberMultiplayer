@@ -56,6 +56,8 @@ namespace BeatSaberMultiplayerServer
 
         public void Start(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
+
             Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, 0);
             Logger.Instance.Log($"Beat Saber Multiplayer Server v{Assembly.GetEntryAssembly().GetName().Version}");
 
@@ -146,6 +148,7 @@ namespace BeatSaberMultiplayerServer
                         Logger.Instance.Log($"Commands:{s}");
                         break;
                     case "quit":
+                        Environment.Exit(0);
                         return;
                     case "clients":
                         foreach (var t in clients)
@@ -276,6 +279,8 @@ namespace BeatSaberMultiplayerServer
 
                         }
                         break;
+                    case "crash":
+                        throw new Exception("DebugException");
                 }
 
             }
@@ -459,8 +464,7 @@ namespace BeatSaberMultiplayerServer
                                 _timerSeconds = 0;
                                 lobbyTimer = 0;
                             }
-                        }
-                        ;
+                        };
                         break;
                     case ServerState.Playing:
                         {
@@ -499,13 +503,12 @@ namespace BeatSaberMultiplayerServer
 
                                 Logger.Instance.Log("Returning to lobby (NO PLAYERS)...");
                             }
-                        }
-                        ;
+                        };
                         break;
                 }
-
-
-                Thread.Sleep(2);
+                
+                Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, clients.Count);
+                Thread.Sleep(5);
             }
         }
 
@@ -561,18 +564,24 @@ namespace BeatSaberMultiplayerServer
             }
         }
 
-        void AcceptClientThread()
+        async void AcceptClientThread()
         {
             while (ListenerThread.IsAlive)
             {
-                ClientThread(_listener.AcceptTcpClient());
+                TcpClient client = await _listener.AcceptTcpClientAsync();
+                ClientThread(client);
             }
         }
 
         static void ClientThread(TcpClient client)
         {
             clients.Add(new Client(client));
-            Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, clients.Count);
+        }
+        
+        private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Logger.Instance.Exception(e.ExceptionObject.ToString());
+            Environment.FailFast("UnhadledException", e.ExceptionObject as Exception);
         }
 
         private void OnServerShutdown(ShutdownEventArgs args)
@@ -583,6 +592,7 @@ namespace BeatSaberMultiplayerServer
 
             clients.AsParallel().ForAll(x => x.DestroyClient());
 
+            _listener.Server.Shutdown(SocketShutdown.Both);
             _listener.Stop();
         }
     }

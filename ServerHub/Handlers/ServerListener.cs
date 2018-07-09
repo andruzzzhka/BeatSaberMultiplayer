@@ -8,6 +8,7 @@ using ServerCommons.Data;
 using ServerCommons.Misc;
 using Settings = ServerHub.Misc.Settings;
 using Math = ServerCommons.Misc.Math;
+using System.Threading.Tasks;
 
 namespace ServerHub.Handlers {
     public class ServerListener {
@@ -48,29 +49,45 @@ namespace ServerHub.Handlers {
             BeginListening();
         }
 
-        void BeginListening() {
-                while (Listen) {
-                    var data = AcceptClient();
-                    CancellationTokenSource cts = new CancellationTokenSource();
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(obj => {
-                        CancellationTokenSource token = (CancellationTokenSource)obj;
-                            var clientObject = new ClientObject {CancellationTokenSource = token, Data = data};
-                            while (!token.IsCancellationRequested) {
-                                if (!clientObject.Data.TcpClient.Connected) {
-                                    RemoveClient(clientObject);
-                                    break;
-                                }
+        async void BeginListening() {
+            while (Listen) {
+                Data data = await AcceptClient();
+                if (data.TcpClient == null) continue;
 
-                                PacketHandler(ListenForPackets(ref clientObject), ref clientObject);
-                            }
-                        cts.Dispose();
-                        }), cts);
-                }
+                CancellationTokenSource cts = new CancellationTokenSource();
+                ThreadPool.QueueUserWorkItem(new WaitCallback(obj => {
+                    CancellationTokenSource token = (CancellationTokenSource)obj;
+                    var clientObject = new ClientObject {CancellationTokenSource = token, Data = data};
+                    while (!token.IsCancellationRequested) {
+                        if (!clientObject.Data.TcpClient.Connected) {
+                            RemoveClient(clientObject);
+                            break;
+                        }
+                        try
+                        {
+                            PacketHandler(ListenForPackets(ref clientObject), ref clientObject);
+                        }catch(Exception)
+                        {
+                            Logger.Instance.Warning($"Lost connection to server @ {clientObject.Data.IPv4}:{clientObject.Data.Port}");
+                            cts.Cancel();
+                        }
+                    }
+                    cts.Dispose();
+                    }), cts);
+            }
         }
 
-        Data AcceptClient() {
+        async Task<Data> AcceptClient() {
             Logger.Instance.Log("Waiting for a connection");
-            var client = Listener.AcceptTcpClient();
+            TcpClient client;
+            try
+            {
+                client = await Listener.AcceptTcpClientAsync();
+            }
+            catch (Exception)
+            {
+                client = null;
+            }
             return new Data {TcpClient = client};
         }
 
@@ -167,7 +184,9 @@ namespace ServerHub.Handlers {
         }
 
         public void Stop() {
+            Logger.Instance.Log("Shutting down ServerHub");
             Listen = false;
+            Listener.Server.Shutdown(SocketShutdown.Both);
             Listener.Stop();
         }
     }

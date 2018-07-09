@@ -24,7 +24,14 @@ namespace ServerHub {
 
         Program() {
             ShutdownEventCatcher.Shutdown += OnShutdown;
+            AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
             IP = GetPublicIPv4();
+        }
+
+        private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Logger.Instance.Exception(e.ExceptionObject.ToString());
+            Environment.FailFast("UnhadledException", e.ExceptionObject as Exception);
         }
 
         private void OnShutdown(ShutdownEventArgs obj) {
@@ -59,6 +66,7 @@ namespace ServerHub {
                         Logger.Instance.Log($"Commands:{s}");
                         break;
                     case "quit":
+                        Environment.Exit(0);
                         return;
                     case "clients":
                         foreach (var t in Listener.ConnectedClients.Where(o => o.Data.ID!=-1)) {
@@ -67,6 +75,8 @@ namespace ServerHub {
                         }
                         Logger.Instance.Log($"Connected Clients:{s}");
                         break;
+                    case "crash":
+                        throw new Exception("DebugException");
                 }
             }
         }

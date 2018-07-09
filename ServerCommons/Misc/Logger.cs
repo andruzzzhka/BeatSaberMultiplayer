@@ -7,8 +7,6 @@ using System.Threading;
 namespace ServerCommons.Misc {
     public class Logger {
         private static Logger _instance;
-
-        public CancellationTokenSource TokenSource { get; set; }
         
         public static Logger Instance {
             get {
@@ -34,59 +32,45 @@ namespace ServerCommons.Misc {
                 Level = lvl;
             }
         }
-
-        private Queue<LogMessage> LogQueue { get; set; } = new Queue<LogMessage>();
+        
         private FileInfo LogFile { get; }
-        private LogMessage OldLogMessage { get; set; }
+
+        private StreamWriter LogWriter;
 
         Logger() {
             LogFile = GetPath();
-            CancellationTokenSource TokenSource = new CancellationTokenSource();
-            ThreadPool.QueueUserWorkItem(new WaitCallback(QueueWatcher), TokenSource);
+            LogFile.Create().Close();
+
+            LogWriter = LogFile.AppendText();
+            LogWriter.AutoFlush = true;
         }
 
         #region Log Functions
 
         public void Log(object msg) {
-            LogQueue.Enqueue(new LogMessage($"[LOG @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Info));
+            PrintLogMessage(new LogMessage($"[LOG @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Info));
         }
 
         public void Error(object msg) {
-            LogQueue.Enqueue(new LogMessage($"[ERROR @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Error));
+            PrintLogMessage(new LogMessage($"[ERROR @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Error));
         }
 
         public void Exception(object msg) {
-            LogQueue.Enqueue(new LogMessage($"[EXCEPTION @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Exception));
+            PrintLogMessage(new LogMessage($"[EXCEPTION @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Exception));
         }
 
         public void Warning(object msg) {
-            LogQueue.Enqueue(new LogMessage($"[WARNING @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Warning));
+            PrintLogMessage(new LogMessage($"[WARNING @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Warning));
         }
 
         #endregion
-
-        void QueueWatcher(object state) {
-            CancellationTokenSource tokenSource = (CancellationTokenSource)state;
-            LogFile.Create().Close();
-
-            while (!tokenSource.IsCancellationRequested) {
-                if (LogQueue.Count <= 0) {
-                    Thread.Sleep(250);
-                    continue;
-                }
-                using (var f = LogFile.AppendText()) {
-                    f.AutoFlush = true;
-                    while (LogQueue.Count > 0) {
-                        var o = LogQueue.Dequeue();
-                        if (o.Message == OldLogMessage.Message) return;
-                        Console.ForegroundColor = o.GetColour();
-                        OldLogMessage = o;
-                        f.WriteLine(o.Message);
-                        Console.WriteLine(o.Message);
-                        Console.ResetColor();
-                    }
-                }
-            }
+        
+        void PrintLogMessage(LogMessage msg)
+        {
+            Console.ForegroundColor = msg.GetColour();
+            LogWriter.WriteLine(msg.Message);
+            Console.WriteLine(msg.Message);
+            Console.ResetColor();
         }
 
         FileInfo GetPath() {
@@ -96,7 +80,6 @@ namespace ServerCommons.Misc {
         }
 
         public void Stop() {
-            TokenSource.Cancel();
             _instance = null;
         }
     }
