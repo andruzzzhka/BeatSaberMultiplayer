@@ -43,8 +43,9 @@ namespace BeatSaberMultiplayerServer
         public string[] playerInfos;
         public double selectedSongDuration;
         public double selectedSongPlayTime;
+        public string kickReason;
 
-        public ServerCommand(ServerCommandType _type, int _timer = 0, string[] _songs = null, string _selectedLevelID = null, int _difficulty = 0, string[] _playerInfos = null, double _selectedSongDuration = 0, double _selectedSongPlayTime = 0)
+        public ServerCommand(ServerCommandType _type, int _timer = 0, string[] _songs = null, string _selectedLevelID = null, int _difficulty = 0, string[] _playerInfos = null, double _selectedSongDuration = 0, double _selectedSongPlayTime = 0, string _kickReason = "")
         {
             version = Assembly.GetEntryAssembly().GetName().Version.ToString();
             commandType = _type;
@@ -56,6 +57,7 @@ namespace BeatSaberMultiplayerServer
             playerInfos = _playerInfos;
             selectedSongDuration = _selectedSongDuration;
             selectedSongPlayTime = _selectedSongPlayTime;
+            kickReason = _kickReason;
         }
     }
 

@@ -196,6 +196,13 @@ namespace BeatSaberMultiplayerServer
             Logger.Instance.Log($"Kicked player \"{playerName}\" : {playerId}");
         }
 
+        public void KickClient(string reason)
+        {
+            SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.Kicked, _kickReason: reason)));
+            DestroyClient();
+            Logger.Instance.Log($"Kicked player \"{playerName}\" : {playerId} with reason \"{reason}\"");
+        }
+
         public string[] ReceiveFromClient(bool waitIfNoData = false)
         {
             if (_client.Available == 0)
@@ -271,6 +278,7 @@ namespace BeatSaberMultiplayerServer
             if (_client != null)
             {
                 ServerMain.clients.Remove(this);
+                Thread.Sleep(150);
                 _client.Close();
             }
         }

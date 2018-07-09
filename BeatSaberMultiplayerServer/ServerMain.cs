@@ -393,122 +393,129 @@ namespace BeatSaberMultiplayerServer
 
                 _lastTime = _timer.Elapsed;
 
-                switch (serverState)
+                try
                 {
-                    case ServerState.Lobby:
-                        {
-
-                            sendTimer += (float)deltaTime.TotalSeconds;
-                            lobbyTimer += (float)deltaTime.TotalSeconds;
-
-                            if (clients.Count == 0)
+                    switch (serverState)
+                    {
+                        case ServerState.Lobby:
                             {
-                                lobbyTimer = 0;
-                            }
 
-                            if (Math.Ceiling(lobbyTimer) > _timerSeconds && _timerSeconds > -1)
-                            {
-                                _timerSeconds = Math.Ceiling(lobbyTimer);
-                                SendToAllClients(JsonConvert.SerializeObject(
-                                    new ServerCommand(ServerCommandType.SetLobbyTimer,
-                                        Math.Max(lobbyTime - _timerSeconds, 0))));
-                            }
+                                sendTimer += (float)deltaTime.TotalSeconds;
+                                lobbyTimer += (float)deltaTime.TotalSeconds;
 
-                            if (sendTimer >= sendTime)
-                            {
-                                SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
-                                    ServerCommandType.SetPlayerInfos,
-                                    _playerInfos: (clients.Where(x => x.playerInfo != null)
-                                        .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray()
-                                    )));
-                                sendTimer = 0f;
-                            }
-
-
-                            if (lobbyTimer >= lobbyTime / 2 && currentSongIndex == -1)
-                            {
-                                if (Settings.Instance.AvailableSongs.Shuffle)
+                                if (clients.Count == 0)
                                 {
-                                    Random rand = new Random();
-                                    currentSongIndex = rand.Next(availableSongs.Count);
-                                    if(currentSongIndex == lastSelectedSong) currentSongIndex = lastSelectedSong + 1;
-                                }
-                                else
-                                {
-                                    currentSongIndex = lastSelectedSong + 1;
+                                    lobbyTimer = 0;
                                 }
 
-                                if (currentSongIndex >= availableSongs.Count)
+                                if (Math.Ceiling(lobbyTimer) > _timerSeconds && _timerSeconds > -1)
                                 {
-                                    currentSongIndex = 0;
+                                    _timerSeconds = Math.Ceiling(lobbyTimer);
+                                    SendToAllClients(JsonConvert.SerializeObject(
+                                        new ServerCommand(ServerCommandType.SetLobbyTimer,
+                                            Math.Max(lobbyTime - _timerSeconds, 0))));
                                 }
 
-                                SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
-                                    ServerCommandType.SetSelectedSong,
-                                    _selectedLevelID: availableSongs[currentSongIndex].levelId,
-                                    _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
-                            }
+                                if (sendTimer >= sendTime)
+                                {
+                                    SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                        ServerCommandType.SetPlayerInfos,
+                                        _playerInfos: (clients.Where(x => x.playerInfo != null)
+                                            .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray()
+                                        )));
+                                    sendTimer = 0f;
+                                }
 
-                            if (lobbyTimer >= lobbyTime)
+
+                                if (lobbyTimer >= lobbyTime / 2 && currentSongIndex == -1)
+                                {
+                                    if (Settings.Instance.AvailableSongs.Shuffle)
+                                    {
+                                        Random rand = new Random();
+                                        currentSongIndex = rand.Next(availableSongs.Count);
+                                        if (currentSongIndex == lastSelectedSong) currentSongIndex = lastSelectedSong + 1;
+                                    }
+                                    else
+                                    {
+                                        currentSongIndex = lastSelectedSong + 1;
+                                    }
+
+                                    if (currentSongIndex >= availableSongs.Count)
+                                    {
+                                        currentSongIndex = 0;
+                                    }
+
+                                    SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                        ServerCommandType.SetSelectedSong,
+                                        _selectedLevelID: availableSongs[currentSongIndex].levelId,
+                                        _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
+                                }
+
+                                if (lobbyTimer >= lobbyTime)
+                                {
+                                    SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                        ServerCommandType.SetSelectedSong,
+                                        _selectedLevelID: availableSongs[currentSongIndex].levelId,
+                                        _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
+                                    SendToAllClients(
+                                        JsonConvert.SerializeObject(
+                                            new ServerCommand(ServerCommandType.StartSelectedSongLevel)), wss);
+
+                                    serverState = ServerState.Playing;
+                                    Logger.Instance.Log("Starting song " + availableSongs[currentSongIndex].songName + " " +
+                                                        availableSongs[currentSongIndex].songSubName + "...");
+                                    _timerSeconds = 0;
+                                    lobbyTimer = 0;
+                                }
+                            };
+                            break;
+                        case ServerState.Playing:
                             {
-                                SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
-                                    ServerCommandType.SetSelectedSong,
-                                    _selectedLevelID: availableSongs[currentSongIndex].levelId,
-                                    _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
-                                SendToAllClients(
-                                    JsonConvert.SerializeObject(
-                                        new ServerCommand(ServerCommandType.StartSelectedSongLevel)), wss);
+                                sendTimer += (float)deltaTime.TotalSeconds;
+                                playTime += deltaTime;
 
-                                serverState = ServerState.Playing;
-                                Logger.Instance.Log("Starting song " + availableSongs[currentSongIndex].songName + " " +
-                                                    availableSongs[currentSongIndex].songSubName + "...");
-                                _timerSeconds = 0;
-                                lobbyTimer = 0;
-                            }
-                        };
-                        break;
-                    case ServerState.Playing:
-                        {
-                            sendTimer += (float)deltaTime.TotalSeconds;
-                            playTime += deltaTime;
+                                if (sendTimer >= sendTime)
+                                {
+                                    SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                        ServerCommandType.SetPlayerInfos,
+                                        _playerInfos: (clients.Where(x => x.playerInfo != null)
+                                            .OrderByDescending(x => x.playerInfo.playerScore)
+                                            .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray(),
+                                        _selectedSongDuration: availableSongs[currentSongIndex].duration.TotalSeconds,
+                                        _selectedSongPlayTime: playTime.TotalSeconds)), wss);
+                                    sendTimer = 0f;
+                                }
 
-                            if (sendTimer >= sendTime)
-                            {
-                                SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
-                                    ServerCommandType.SetPlayerInfos,
-                                    _playerInfos: (clients.Where(x => x.playerInfo != null)
-                                        .OrderByDescending(x => x.playerInfo.playerScore)
-                                        .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray(),
-                                    _selectedSongDuration: availableSongs[currentSongIndex].duration.TotalSeconds,
-                                    _selectedSongPlayTime: playTime.TotalSeconds)), wss);
-                                sendTimer = 0f;
-                            }
+                                if (playTime.TotalSeconds >= availableSongs[currentSongIndex].duration.TotalSeconds + 2.5f)
+                                {
+                                    playTime = new TimeSpan();
+                                    sendTimer = 0f;
+                                    serverState = ServerState.Lobby;
+                                    lastSelectedSong = currentSongIndex;
+                                    currentSongIndex = -1;
+                                    Logger.Instance.Log("Returning to lobby...");
+                                }
 
-                            if (playTime.TotalSeconds >= availableSongs[currentSongIndex].duration.TotalSeconds + 2.5f)
-                            {
-                                playTime = new TimeSpan();
-                                sendTimer = 0f;
-                                serverState = ServerState.Lobby;
-                                lastSelectedSong = currentSongIndex;
-                                currentSongIndex = -1;
-                                Logger.Instance.Log("Returning to lobby...");
-                            }
 
-                            if (clients.Count(x => x.state == ClientState.Playing) == 0 && playTime.TotalSeconds > 5)
-                            {
-                                playTime = new TimeSpan();
-                                sendTimer = 0f;
-                                serverState = ServerState.Lobby;
-                                lastSelectedSong = currentSongIndex;
-                                currentSongIndex = -1;
+                                if (clients.Count(x => x.state == ClientState.Playing) == 0 && playTime.TotalSeconds > 5)
+                                {
+                                    playTime = new TimeSpan();
+                                    sendTimer = 0f;
+                                    serverState = ServerState.Lobby;
+                                    lastSelectedSong = currentSongIndex;
+                                    currentSongIndex = -1;
 
-                                Logger.Instance.Log("Returning to lobby (NO PLAYERS)...");
-                            }
-                        };
-                        break;
+                                    Logger.Instance.Log("Returning to lobby (NO PLAYERS)...");
+                                }
+                            };
+                            break;
+                    }
+
+                    Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, clients.Count);
+                }catch(Exception e)
+                {
+                    Logger.Instance.Error($"Server loop exception: {e}");
                 }
-                
-                Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, clients.Count);
                 Thread.Sleep(5);
             }
         }
@@ -586,7 +593,7 @@ namespace BeatSaberMultiplayerServer
 
             _serverHubClients.AsParallel().ForAll(x => x.Disconnect());
 
-            clients.AsParallel().ForAll(x => x.DestroyClient());
+            clients.AsParallel().ForAll(x => x.KickClient("Server closed"));
             
             _listener.Stop();
         }

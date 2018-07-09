@@ -39,6 +39,8 @@ namespace BeatSaberMultiplayer
 
         float interpolationProgress = 0f;
 
+        bool rendererEnabled = true;
+
         public AvatarController()
         {
             CreateGameObjects();
@@ -133,12 +135,20 @@ namespace BeatSaberMultiplayer
                 if (isLocal)
                 {
                     playerNameText.gameObject.SetActive(false);
-                    avatar.HideFromView(true);
+                    if (rendererEnabled)
+                    {
+                        SetRendererInChilds(avatar.getInstance().transform, false);
+                        rendererEnabled = false;
+                    }
                 }
                 else
                 {
                     playerNameText.gameObject.SetActive(true);
-                    avatar.HideFromView(false);
+                    if (!rendererEnabled)
+                    {
+                        SetRendererInChilds(avatar.getInstance().transform, true);
+                        rendererEnabled = true;
+                    }
                 }
 
                 interpolationProgress = 0f;
@@ -167,6 +177,15 @@ namespace BeatSaberMultiplayer
             catch(Exception e)
             {
                 Console.WriteLine($"AVATAR EXCEPTION: {_playerInfo.playerName}: {e}");
+            }
+        }
+
+        private void SetRendererInChilds(Transform origin, bool enabled)
+        {
+            Renderer[] rends = origin.gameObject.GetComponentsInChildren<Renderer>();
+            foreach(Renderer rend in rends)
+            {
+                rend.enabled = enabled;
             }
         }
 
