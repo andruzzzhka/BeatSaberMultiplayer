@@ -186,7 +186,6 @@ namespace ServerHub.Handlers {
         public void Stop() {
             Logger.Instance.Log("Shutting down ServerHub");
             Listen = false;
-            Listener.Server.Shutdown(SocketShutdown.Both);
             Listener.Stop();
         }
     }

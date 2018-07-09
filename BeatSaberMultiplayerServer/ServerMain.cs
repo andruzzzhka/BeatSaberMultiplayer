@@ -593,8 +593,7 @@ namespace BeatSaberMultiplayerServer
             _serverHubClients.AsParallel().ForAll(x => x.Disconnect());
 
             clients.AsParallel().ForAll(x => x.DestroyClient());
-
-            _listener.Server.Shutdown(SocketShutdown.Both);
+            
             _listener.Stop();
         }
     }
