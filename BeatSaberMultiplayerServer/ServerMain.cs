@@ -393,7 +393,7 @@ namespace BeatSaberMultiplayerServer
         {
             Settings.Instance.Server.Downloaded.GetDirectories().AsParallel().ForAll(dir => dir.Delete(true));
 
-            Settings.Instance.AvailableSongs.Songs.ToList().ForEach(id =>
+            Settings.Instance.AvailableSongs.Songs.ToList().AsParallel().ForAll(id =>
             {
                 DownloadSongByID(id);
             });

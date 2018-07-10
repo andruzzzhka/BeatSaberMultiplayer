@@ -217,7 +217,7 @@ namespace BeatSaberMultiplayer
                     try
                     {
 
-                        if (command != null)
+                        if (command != null && BSMultiplayerClient._instance.IsConnected())
                         {
                             _serverState = command.serverState;
                             switch (command.commandType)
@@ -553,7 +553,7 @@ namespace BeatSaberMultiplayer
 
         IEnumerator DownloadSongByLevelId(string levelId)
         {
-            Console.WriteLine("Donwloading "+ levelId.Substring(0, levelId.IndexOf('∎')));
+            Console.WriteLine("Downloading "+ levelId.Substring(0, levelId.IndexOf('∎')));
             
             _selectText.text = "Connecting to BeatSaver.com...";
 
@@ -613,7 +613,7 @@ namespace BeatSaberMultiplayer
                         FastZip zip = new FastZip();
 
                         Console.WriteLine("Extracting...");
-                        zip.ExtractZip(zipPath, customSongsPath, null);
+                        zip.ExtractZip(zipPath, $"{customSongsPath}{_tempSong.id}/", null);
 
                         File.Delete(zipPath);
                     }

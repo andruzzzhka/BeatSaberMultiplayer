@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -111,6 +112,17 @@ namespace BeatSaberMultiplayer
             }
         }
 
+        public bool IsConnected()
+        {
+            if(_connection != null)
+            {
+                return _connection.Connected;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         public void OnLevelChange()
         {
@@ -428,7 +440,7 @@ namespace BeatSaberMultiplayer
             length = stream.Read(buffer, 0, buffer.Length);
 
             receivedJson = Encoding.UTF8.GetString(buffer).Trim('\0');
-
+            
             while (!receivedJson.EndsWith("}"))
             {
                 Console.WriteLine("Received message is splitted, waiting for another part...");
@@ -446,7 +458,7 @@ namespace BeatSaberMultiplayer
                 Console.WriteLine("Received another part");
             }
 
-            string[] strBuffer = receivedJson.Replace("}{", "}#{").Split('#');
+            string[] strBuffer = receivedJson.Replace("}{", "}∥{").Split('∥');
 
             DataReceived.Invoke(strBuffer);
         }
