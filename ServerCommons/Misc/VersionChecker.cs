@@ -45,7 +45,7 @@ namespace ServerCommons.Misc
             assets.AddRange(latestRelease.assets.Select(x => x.name));
 
             bool newTag = (latestRelease.tag_name != Assembly.GetEntryAssembly().GetName().Version.ToString());
-            bool platformUpdated = newTag && assets.Contains(Assembly.GetEntryAssembly().GetName().Name);
+            bool platformUpdated = newTag && (assets.Count(x => x.Contains(Assembly.GetEntryAssembly().GetName().Name)) > 0);
 
             if (platformUpdated)
             {
