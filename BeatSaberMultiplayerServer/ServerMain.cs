@@ -37,7 +37,7 @@ namespace BeatSaberMultiplayerServer
 
         public static List<Client> clients = new List<Client>();
 
-        public static ServerState serverState = ServerState.Lobby;
+        public static ServerState serverState = ServerState.Voting;
         public static List<CustomSongInfo> availableSongs = new List<CustomSongInfo>();
 
         public static int currentSongIndex = -1;
@@ -141,7 +141,7 @@ namespace BeatSaberMultiplayerServer
                 switch (comName.ToLower())
                 {
                     case "help":
-                        foreach (var com in new[] { "help", "quit", "clients", "blacklist [add/remove] [playerID/IP]", "whitelist [enable/disable/add/remove] [playerID/IP]" })
+                        foreach (var com in new[] { "help", "quit", "clients", "blacklist [add/remove] [playerID/IP]", "whitelist [enable/disable/add/remove] [playerID/IP]", "songs [add/remove/list] [songID on BeatSaver]" })
                         {
                             s += $"{Environment.NewLine}> {com}";
                         }
@@ -178,10 +178,17 @@ namespace BeatSaberMultiplayerServer
                                 {
                                     case "add":
                                         {
-                                            clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
-                                            Settings.Instance.Access.Blacklist.Add(comArgs[1]);
-                                            Logger.Instance.Log($"Successfully banned {comArgs[1]}");
-                                            Settings.Instance.Save();
+                                            if (!Settings.Instance.Access.Blacklist.Contains(comArgs[1]))
+                                            {
+                                                clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
+                                                Settings.Instance.Access.Blacklist.Add(comArgs[1]);
+                                                Logger.Instance.Log($"Successfully banned {comArgs[1]}");
+                                                Settings.Instance.Save();
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Log($"{comArgs[1]} is already whitelisted");
+                                            }
                                         }
                                         break;
                                     case "remove":
@@ -234,9 +241,16 @@ namespace BeatSaberMultiplayerServer
                                         {
                                             if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
                                             {
-                                                Settings.Instance.Access.Whitelist.Add(comArgs[1]);
-                                                Logger.Instance.Log($"Successfully whitelisted {comArgs[1]}");
-                                                Settings.Instance.Save();
+                                                if (!Settings.Instance.Access.Whitelist.Contains(comArgs[1]))
+                                                {
+                                                    Settings.Instance.Access.Whitelist.Add(comArgs[1]);
+                                                    Settings.Instance.Save();
+                                                    Logger.Instance.Log($"Successfully whitelisted {comArgs[1]}");
+                                                }
+                                                else
+                                                {
+                                                    Logger.Instance.Log($"{comArgs[1]} is already whitelisted");
+                                                }
                                             }
                                             else
                                             {
@@ -280,6 +294,94 @@ namespace BeatSaberMultiplayerServer
 
                         }
                         break;
+                    case "songs": {
+                            if (comArgs.Length >= 1)
+                            {
+                                switch (comArgs[0])
+                                {
+                                    case "add":
+                                        {
+                                            int songId;
+                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty() && int.TryParse(comArgs[1], out songId))
+                                            {
+                                                if (!Settings.Instance.AvailableSongs.Songs.Contains(songId))
+                                                {
+                                                    List<int> songs = new List<int>(Settings.Instance.AvailableSongs.Songs);
+                                                    songs.Add(songId);
+                                                    Settings.Instance.AvailableSongs.Songs = songs.ToArray();
+                                                    Settings.Instance.Save();
+                                                    string path = DownloadSongByID(songId);
+
+                                                    ProcessSong(SongLoader.GetCustomSongInfo(path));
+
+                                                    Logger.Instance.Log($"Successfully added {comArgs[1]} to the song list");
+
+                                                    SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                                        ServerCommandType.DownloadSongs,
+                                                        _songs: availableSongs.Select(y => y.levelId).ToArray())), wss);
+                                                }
+                                                else
+                                                {
+                                                    Logger.Instance.Log($"{comArgs[1]} is already on the song list");
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]");
+                                            }
+                                        }
+                                        break;
+                                    case "remove":
+                                        {
+                                            int songId;
+                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty() && int.TryParse(comArgs[1], out songId))
+                                            {
+                                                clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
+
+                                                List<int> songs = new List<int>(Settings.Instance.AvailableSongs.Songs);
+                                                
+                                                if (songs.Remove(songId))
+                                                {
+                                                    Settings.Instance.AvailableSongs.Songs = songs.ToArray();
+                                                    Settings.Instance.Save();
+                                                    availableSongs.RemoveAll(y => y.beatSaverId == songId);
+                                                    Logger.Instance.Log($"Successfully removed {comArgs[1]} from the song list");
+                                                }
+                                                else
+                                                {
+                                                    Logger.Instance.Warning($"{comArgs[1]} is not in the song list");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]");
+                                            }
+                                        }
+                                        break;
+                                    case "list":
+                                        {
+
+                                            foreach (var com in availableSongs)
+                                            {
+                                                s += $"{Environment.NewLine}> {com.beatSaverId}: {com.authorName} - {com.songName} {com.songSubName}";
+                                            }
+
+                                            Logger.Instance.Log($"Songs:{s}");
+
+                                        };break;
+                                    default:
+                                        {
+                                            Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]");
+                                        }
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]");
+                            }
+                        };break;
                     case "crash":
                         throw new Exception("DebugException");
                 }
@@ -293,54 +395,7 @@ namespace BeatSaberMultiplayerServer
 
             Settings.Instance.AvailableSongs.Songs.ToList().ForEach(id =>
             {
-                var zipPath = Path.Combine(Settings.Instance.Server.Downloads.FullName, $"{id}.zip");
-                Thread.Sleep(25);
-                using (var client = new WebClient())
-                {
-                    client.Headers.Add("user-agent",
-                        $"BeatSaberMultiplayerServer-{Assembly.GetEntryAssembly().GetName().Version}");
-                    if (Settings.Instance.Server.Downloads.GetFiles().All(o => o.Name != $"{id}.zip"))
-                    {
-                        Logger.Instance.Log($"Downloading {id}.zip");
-                        client.DownloadFile($"https://beatsaver.com/dl.php?id={id}", zipPath);
-                    }
-                }
-
-                ZipArchive zip = null;
-                try
-                {
-                    zip = ZipFile.OpenRead(zipPath);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Exception(ex.Message);
-                }
-
-                var songName = zip?.Entries[0].FullName.Split('/')[0];
-                try
-                {
-                    zip?.ExtractToDirectory(Settings.Instance.Server.Downloaded.FullName);
-                    try
-                    {
-                        zip?.Dispose();
-                    }
-                    catch (IOException)
-                    {
-                        Logger.Instance.Exception($"Failed to remove Zip [{id}]");
-                    }
-                }
-                catch (IOException)
-                {
-                    Logger.Instance.Exception($"Folder [{songName}] exists. Continuing.");
-                    try
-                    {
-                        zip?.Dispose();
-                    }
-                    catch (IOException)
-                    {
-                        Logger.Instance.Exception($"Failed to remove Zip [{id}]");
-                    }
-                }
+                DownloadSongByID(id);
             });
 
             Logger.Instance.Log("All songs downloaded!");
@@ -349,26 +404,84 @@ namespace BeatSaberMultiplayerServer
 
             _songs.AsParallel().ForAll(song =>
             {
-                try
-                {
-                    Logger.Instance.Log($"Processing {song.songName} {song.songSubName}");
-
-                    using (NVorbis.VorbisReader vorbis =
-                        new NVorbis.VorbisReader($"{song.path}/{song.difficultyLevels[0].audioPath}"))
-                    {
-                        song.duration = vorbis.TotalTime;
-                    }
-
-                    availableSongs.Add(song);
-                }
-                catch(AggregateException e)
-                {
-                    Logger.Instance.Error(e.Message);
-                    Logger.Instance.Warning("One common cause of this is incorrect case sensitivity in the song's json file in comparison to its actual song name.");
-                }
+                ProcessSong(song);
              });
 
             Logger.Instance.Log("Done!");
+        }
+
+        private static string DownloadSongByID(int id)
+        {
+            var zipPath = Path.Combine(Settings.Instance.Server.Downloads.FullName, $"{id}.zip");
+            Thread.Sleep(25);
+            using (var client = new WebClient())
+            {
+                client.Headers.Add("user-agent",
+                    $"BeatSaberMultiplayerServer-{Assembly.GetEntryAssembly().GetName().Version}");
+                if (Settings.Instance.Server.Downloads.GetFiles().All(o => o.Name != $"{id}.zip"))
+                {
+                    Logger.Instance.Log($"Downloading {id}.zip");
+                    client.DownloadFile($"https://beatsaver.com/dl.php?id={id}", zipPath);
+                }
+            }
+
+            ZipArchive zip = null;
+            try
+            {
+                zip = ZipFile.OpenRead(zipPath);
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Exception(ex.Message);
+            }
+
+            var songName = zip?.Entries[0].FullName.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0];
+            try
+            {
+                zip?.ExtractToDirectory(Path.Combine(Settings.Instance.Server.Downloaded.FullName, id.ToString()));
+                try
+                {
+                    zip?.Dispose();
+                }
+                catch (IOException)
+                {
+                    Logger.Instance.Exception($"Failed to remove Zip [{id}]");
+                }
+            }
+            catch (IOException)
+            {
+                Logger.Instance.Exception($"Folder [{songName}] exists. Continuing.");
+                try
+                {
+                    zip?.Dispose();
+                }
+                catch (IOException)
+                {
+                    Logger.Instance.Exception($"Failed to remove Zip [{id}]");
+                }
+            }
+            return Path.Combine(Settings.Instance.Server.Downloaded.FullName, id.ToString(), songName);
+        }
+
+        private static void ProcessSong(CustomSongInfo song)
+        {
+            try
+            {
+                Logger.Instance.Log($"Processing {song.songName} {song.songSubName}");
+
+                using (NVorbis.VorbisReader vorbis =
+                    new NVorbis.VorbisReader($"{song.path}/{song.difficultyLevels[0].audioPath}"))
+                {
+                    song.duration = vorbis.TotalTime;
+                }
+
+                availableSongs.Add(song);
+            }
+            catch (AggregateException e)
+            {
+                Logger.Instance.Error(e.Message);
+                Logger.Instance.Warning("One common cause of this is incorrect case sensitivity in the song's json file in comparison to its actual song name.");
+            }
         }
 
         void ServerLoop()
@@ -397,7 +510,8 @@ namespace BeatSaberMultiplayerServer
                 {
                     switch (serverState)
                     {
-                        case ServerState.Lobby:
+                        case ServerState.Preparing:
+                        case ServerState.Voting:
                             {
 
                                 sendTimer += (float)deltaTime.TotalSeconds;
@@ -427,17 +541,44 @@ namespace BeatSaberMultiplayerServer
                                 }
 
 
-                                if (lobbyTimer >= lobbyTime / 2 && currentSongIndex == -1)
+                                if (currentSongIndex == -1 && availableSongs.Count > 0)
                                 {
-                                    if (Settings.Instance.AvailableSongs.Shuffle)
+                                    switch (Settings.Instance.AvailableSongs.SongOrder)
                                     {
-                                        Random rand = new Random();
-                                        currentSongIndex = rand.Next(availableSongs.Count);
-                                        if (currentSongIndex == lastSelectedSong) currentSongIndex = lastSelectedSong + 1;
-                                    }
-                                    else
-                                    {
-                                        currentSongIndex = lastSelectedSong + 1;
+                                        case Settings.SongOrder.Voting: {
+
+                                                if(lobbyTimer >= lobbyTime / 2)
+                                                {
+                                                    if (clients.Where(x => x.votedFor != null).Count() > 0)
+                                                    {
+                                                        string selectedLevelId = clients.Where(x => x.votedFor != null).Select(x => x.votedFor).GroupBy(v => v).OrderByDescending(g => g.Count()).First().Key.levelId;
+
+                                                        CustomSongInfo song = availableSongs.FirstOrDefault(x => x.levelId == selectedLevelId);
+
+                                                        if (song != null)
+                                                        {
+                                                            currentSongIndex = availableSongs.IndexOf(song);
+                                                        }
+                                                        else
+                                                        {
+                                                            currentSongIndex = lastSelectedSong + 1;
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        currentSongIndex = lastSelectedSong + 1;
+                                                    }
+                                                }
+
+                                            };break;
+                                        case Settings.SongOrder.Shuffle: {
+                                                Random rand = new Random();
+                                                currentSongIndex = rand.Next(availableSongs.Count);
+                                                if (currentSongIndex == lastSelectedSong) currentSongIndex = lastSelectedSong + 1;
+                                            };break;
+                                        case Settings.SongOrder.List: {
+                                                currentSongIndex = lastSelectedSong + 1;
+                                            };break;
                                     }
 
                                     if (currentSongIndex >= availableSongs.Count)
@@ -445,25 +586,28 @@ namespace BeatSaberMultiplayerServer
                                         currentSongIndex = 0;
                                     }
 
-                                    SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
-                                        ServerCommandType.SetSelectedSong,
-                                        _selectedLevelID: availableSongs[currentSongIndex].levelId,
-                                        _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
+                                    if (currentSongIndex != -1)
+                                    {
+                                        serverState = ServerState.Preparing;
+                                        SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                            ServerCommandType.SetSelectedSong,
+                                            _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
+                                        Logger.Instance.Log($"Next song is {availableSongs[currentSongIndex].songName} {availableSongs[currentSongIndex].songSubName}");
+                                    }
                                 }
 
                                 if (lobbyTimer >= lobbyTime)
                                 {
-                                    SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
-                                        ServerCommandType.SetSelectedSong,
-                                        _selectedLevelID: availableSongs[currentSongIndex].levelId,
-                                        _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
-                                    SendToAllClients(
-                                        JsonConvert.SerializeObject(
-                                            new ServerCommand(ServerCommandType.StartSelectedSongLevel)), wss);
+                                    if (availableSongs.Count > 0)
+                                    {
+                                        SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                            ServerCommandType.StartSelectedSongLevel,
+                                            _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
 
-                                    serverState = ServerState.Playing;
-                                    Logger.Instance.Log("Starting song " + availableSongs[currentSongIndex].songName + " " +
-                                                        availableSongs[currentSongIndex].songSubName + "...");
+                                        serverState = ServerState.Playing;
+                                        Logger.Instance.Log("Starting song " + availableSongs[currentSongIndex].songName + " " +
+                                                            availableSongs[currentSongIndex].songSubName + "...");
+                                    }
                                     _timerSeconds = 0;
                                     lobbyTimer = 0;
                                 }
@@ -490,7 +634,7 @@ namespace BeatSaberMultiplayerServer
                                 {
                                     playTime = new TimeSpan();
                                     sendTimer = 0f;
-                                    serverState = ServerState.Lobby;
+                                    serverState = ServerState.Voting;
                                     lastSelectedSong = currentSongIndex;
                                     currentSongIndex = -1;
                                     Logger.Instance.Log("Returning to lobby...");
@@ -501,7 +645,7 @@ namespace BeatSaberMultiplayerServer
                                 {
                                     playTime = new TimeSpan();
                                     sendTimer = 0f;
-                                    serverState = ServerState.Lobby;
+                                    serverState = ServerState.Voting;
                                     lastSelectedSong = currentSongIndex;
                                     currentSongIndex = -1;
 

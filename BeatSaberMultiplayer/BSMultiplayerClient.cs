@@ -198,8 +198,7 @@ namespace BeatSaberMultiplayer
                 {
                     ServerCommand command = JsonUtility.FromJson<ServerCommand>(data);
                     lastCommands.Add(command);
-
-                    Console.WriteLine(command.commandType.ToString());
+                    
                     if (command.commandType == ServerCommandType.SetPlayerInfos)
                     {
                         _playerInfos.Clear();

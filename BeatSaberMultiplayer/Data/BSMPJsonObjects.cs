@@ -49,7 +49,7 @@ namespace BeatSaberMultiplayer
         }
     }
 
-    enum ServerState { Lobby, Playing };
+    enum ServerState { Voting, Preparing, Playing };
 
     enum ServerCommandType { SetServerState, SetLobbyTimer, DownloadSongs, StartSelectedSongLevel, SetPlayerInfos, SetSelectedSong, UpdateRequired, Ping, Kicked };
 
@@ -82,20 +82,22 @@ namespace BeatSaberMultiplayer
         }
     }
 
-    enum ClientCommandType { GetServerState, SetPlayerInfo, GetAvailableSongs };
+    enum ClientCommandType { GetServerState, SetPlayerInfo, GetAvailableSongs, VoteForSong };
 
     [Serializable]
     class ClientCommand
     {
-        public string version = "0.1";
+        public string version = "0.4.4.0";
         public ClientCommandType commandType;
         public string playerInfo;
+        public string voteForLevelId;
 
-        public ClientCommand(ClientCommandType _type, string _playerInfo = null)
+        public ClientCommand(ClientCommandType _type, string _playerInfo = null, string _voteForLevelId = null)
         {
             version = BSMultiplayerClient.version;
             commandType = _type;
             playerInfo = _playerInfo;
+            voteForLevelId = _voteForLevelId;
         }
 
     }

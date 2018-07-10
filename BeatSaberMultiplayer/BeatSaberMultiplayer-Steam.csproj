@@ -163,6 +163,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Misc\ReflectionUtil.cs" />
     <Compile Include="Misc\SimpleJSON.cs" />
+    <Compile Include="VotingSongListViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ICSharpCode.SharpZipLib\ICSharpCode.SharpZipLib.csproj" />

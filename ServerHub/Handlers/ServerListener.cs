@@ -14,7 +14,7 @@ namespace ServerHub.Handlers {
     public class ServerListener {
         private TcpListener Listener { get; set; } = new TcpListener(IPAddress.Any, Settings.Instance.Server.Port);
 
-        private bool Listen { get; set; }
+        public bool Listen { get; set; }
 
         public List<ClientObject> ConnectedClients { get; set; } = new List<ClientObject>();
 
@@ -58,6 +58,7 @@ namespace ServerHub.Handlers {
                 ThreadPool.QueueUserWorkItem(new WaitCallback(obj => {
                     CancellationTokenSource token = (CancellationTokenSource)obj;
                     var clientObject = new ClientObject {CancellationTokenSource = token, Data = data};
+                    int nullPackets = 0;
                     while (!token.IsCancellationRequested) {
                         if (!clientObject.Data.TcpClient.Connected) {
                             RemoveClient(clientObject);
@@ -65,8 +66,13 @@ namespace ServerHub.Handlers {
                         }
                         try
                         {
-                            PacketHandler(ListenForPackets(ref clientObject), ref clientObject);
+                            if (!PacketHandler(ListenForPackets(ref clientObject), ref clientObject)) nullPackets++;
                         }catch(Exception)
+                        {
+                            Logger.Instance.Warning($"Lost connection to server @ {clientObject.Data.IPv4}:{clientObject.Data.Port}");
+                            cts.Cancel();
+                        }
+                        if (nullPackets >= 128)
                         {
                             Logger.Instance.Warning($"Lost connection to server @ {clientObject.Data.IPv4}:{clientObject.Data.Port}");
                             cts.Cancel();
@@ -106,8 +112,11 @@ namespace ServerHub.Handlers {
                 {
                     packet = Packet.ToPacket(bytes);
                 }
-            
-            
+                else
+                {
+                    Thread.Sleep(5);
+                }
+
                 if (packet is ServerDataPacket) {
                     var sPacket = (ServerDataPacket) packet;
                     if (sPacket.FirstConnect)
@@ -138,10 +147,10 @@ namespace ServerHub.Handlers {
             }
         }
 
-        void PacketHandler(IDataPacket dataPacket, ref ClientObject cO) {
+        bool PacketHandler(IDataPacket dataPacket, ref ClientObject cO) {
             if(dataPacket == null)
             {
-                return;
+                return false;
             }
             switch (dataPacket.ConnectionType) {
                 case ConnectionType.Client:
@@ -172,6 +181,7 @@ namespace ServerHub.Handlers {
                     Logger.Instance.Log("ConnectionType is [Hub]");
                     break;
             }
+            return true;
         }
 
         List<Data> GetServers(int Offset, int count=6) {

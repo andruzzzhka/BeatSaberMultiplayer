@@ -21,6 +21,7 @@ namespace BeatSaberMultiplayerServer
         public ulong playerId;
         public string playerName;
 
+        public CustomSongInfo votedFor = null;
         public ClientState state = ClientState.Disconnected;
 
         Thread _clientLoopThread;
@@ -40,6 +41,15 @@ namespace BeatSaberMultiplayerServer
             int pingTimer = 0;
 
             Logger.Instance.Log("Client connected!");
+
+            if(Misc.Settings.Instance.Server.MaxPlayers != 0)
+            {
+                if(Misc.Settings.Instance.Server.MaxPlayers < ServerMain.clients.Count)
+                {
+                    KickClient("Too many players");
+                    return;
+                }
+            }
 
             while (_clientLoopThread.IsAlive)
             {
@@ -144,7 +154,6 @@ namespace BeatSaberMultiplayerServer
                                             {
                                                 SendToClient(JsonConvert.SerializeObject(new ServerCommand(
                                                     ServerCommandType.SetServerState,
-                                                    _selectedLevelID: ServerMain.availableSongs[ServerMain.currentSongIndex].levelId,
                                                     _selectedSongDuration: ServerMain.availableSongs[ServerMain.currentSongIndex].duration.TotalSeconds,
                                                     _selectedSongPlayTime: ServerMain.playTime.TotalSeconds)));
                                             }
@@ -156,8 +165,13 @@ namespace BeatSaberMultiplayerServer
                                             SendToClient(JsonConvert.SerializeObject(new ServerCommand(
                                                 ServerCommandType.DownloadSongs,
                                                 _songs: ServerMain.availableSongs.Select(x => x.levelId).ToArray())));
-                                        }
-                                        ;
+                                        };
+                                        break;
+                                    case ClientCommandType.VoteForSong:
+                                        {
+                                            if(ServerMain.serverState == ServerState.Voting)
+                                                votedFor = ServerMain.availableSongs.FirstOrDefault(x => x.levelId == command.voteForLevelId);
+                                        };
                                         break;
                                 }
                             }

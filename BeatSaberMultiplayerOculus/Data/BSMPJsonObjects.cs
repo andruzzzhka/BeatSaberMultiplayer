@@ -49,14 +49,14 @@ namespace BeatSaberMultiplayer
         }
     }
 
-    enum ServerState { Lobby, Playing };
+    enum ServerState { Voting, Preparing, Playing };
 
     enum ServerCommandType { SetServerState, SetLobbyTimer, DownloadSongs, StartSelectedSongLevel, SetPlayerInfos, SetSelectedSong, UpdateRequired, Ping, Kicked };
 
     [Serializable]
     class ServerCommand
     {
-        public string version = "0.1";
+        public string version = "0.4.4.0";
         public ServerCommandType commandType;
         public ServerState serverState;
         public int lobbyTimer;
@@ -66,8 +66,9 @@ namespace BeatSaberMultiplayer
         public string[] playerInfos;
         public double selectedSongDuration;
         public double selectedSongPlayTime;
+        public string kickReason;
 
-        public ServerCommand(ServerCommandType _type, int _timer = 0, string[] _songs = null, string _selectedLevelID = null, int _difficulty = 0, string[] _playerInfos = null, double _selectedSongDuration = 0, double _selectedSongPlayTime = 0)
+        public ServerCommand(ServerCommandType _type, int _timer = 0, string[] _songs = null, string _selectedLevelID = null, int _difficulty = 0, string[] _playerInfos = null, double _selectedSongDuration = 0, double _selectedSongPlayTime = 0, string _kickReason = "")
         {
             commandType = _type;
             lobbyTimer = _timer;
@@ -77,23 +78,26 @@ namespace BeatSaberMultiplayer
             playerInfos = _playerInfos;
             selectedSongDuration = _selectedSongDuration;
             selectedSongPlayTime = _selectedSongPlayTime;
+            kickReason = _kickReason;
         }
     }
 
-    enum ClientCommandType { GetServerState, SetPlayerInfo, GetAvailableSongs };
+    enum ClientCommandType { GetServerState, SetPlayerInfo, GetAvailableSongs, VoteForSong };
 
     [Serializable]
     class ClientCommand
     {
-        public string version = "0.1";
+        public string version = "0.4.4.0";
         public ClientCommandType commandType;
         public string playerInfo;
+        public string voteForLevelId;
 
-        public ClientCommand(ClientCommandType _type, string _playerInfo = null)
+        public ClientCommand(ClientCommandType _type, string _playerInfo = null, string _voteForLevelId = null)
         {
             version = BSMultiplayerClient.version;
             commandType = _type;
             playerInfo = _playerInfo;
+            voteForLevelId = _voteForLevelId;
         }
 
     }

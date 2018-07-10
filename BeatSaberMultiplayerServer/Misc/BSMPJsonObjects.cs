@@ -27,13 +27,13 @@ namespace BeatSaberMultiplayerServer
         }
     }
 
-    enum ServerState { Lobby, Playing };
+    enum ServerState { Voting, Preparing, Playing };
 
     enum ServerCommandType {SetServerState, SetLobbyTimer, DownloadSongs, StartSelectedSongLevel, SetPlayerInfos, SetSelectedSong, UpdateRequired, Ping, Kicked };
 
     class ServerCommand
     {
-        public string version = "0.1";
+        public string version = "0.4.4.0";
         public ServerCommandType commandType;
         public ServerState serverState;
         public int lobbyTimer;
@@ -45,14 +45,14 @@ namespace BeatSaberMultiplayerServer
         public double selectedSongPlayTime;
         public string kickReason;
 
-        public ServerCommand(ServerCommandType _type, int _timer = 0, string[] _songs = null, string _selectedLevelID = null, int _difficulty = 0, string[] _playerInfos = null, double _selectedSongDuration = 0, double _selectedSongPlayTime = 0, string _kickReason = "")
+        public ServerCommand(ServerCommandType _type, int _timer = 0, string[] _songs = null, int _difficulty = 0, string[] _playerInfos = null, double _selectedSongDuration = 0, double _selectedSongPlayTime = 0, string _kickReason = "")
         {
             version = Assembly.GetEntryAssembly().GetName().Version.ToString();
             commandType = _type;
             lobbyTimer = _timer;
             songsToDownload = _songs;
             serverState = ServerMain.serverState;
-            selectedLevelID = _selectedLevelID;
+            selectedLevelID = (ServerMain.currentSongIndex >= 0 && ServerMain.availableSongs.Count > ServerMain.currentSongIndex) ? ServerMain.availableSongs[ServerMain.currentSongIndex].levelId : "";
             selectedSongDifficlty = _difficulty;
             playerInfos = _playerInfos;
             selectedSongDuration = _selectedSongDuration;
@@ -61,20 +61,21 @@ namespace BeatSaberMultiplayerServer
         }
     }
 
-    enum ClientCommandType { GetServerState, SetPlayerInfo, GetAvailableSongs };
+    enum ClientCommandType { GetServerState, SetPlayerInfo, GetAvailableSongs, VoteForSong };
 
     [Serializable]
     class ClientCommand
     {
-        public string version = "0.1";
+        public string version = "0.4.4.0";
         public ClientCommandType commandType;
         public string playerInfo;
+        public string voteForLevelId;
 
-        public ClientCommand(ClientCommandType _type, string _playerInfo = null)
+        public ClientCommand(ClientCommandType _type, string _playerInfo = null, string _voteForLevelId = null)
         {
-            
             commandType = _type;
             playerInfo = _playerInfo;
+            voteForLevelId = _voteForLevelId;
         }
 
     }
@@ -99,6 +100,7 @@ namespace BeatSaberMultiplayerServer
         public string path;
         public string levelId;
 
+        public int beatSaverId;
         public TimeSpan duration;
 
         [Serializable]

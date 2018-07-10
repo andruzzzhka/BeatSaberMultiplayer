@@ -44,6 +44,7 @@ namespace BeatSaberMultiplayer
         static int _loadedlevel;
 
         public event Action<string[]> DataReceived;
+        public List<ServerCommand> lastCommands = new List<ServerCommand>();
         
         int localPlayerIndex = -1;
         public List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
@@ -120,9 +121,7 @@ namespace BeatSaberMultiplayer
                 if (_loadedlevel > 2)
                 {
                     StartCoroutine(WaitForControllers());
-
-
-
+                    
                     try
                     {
                         localPlayerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
@@ -174,9 +173,6 @@ namespace BeatSaberMultiplayer
 
                         DataReceived += ReceivedFromServer;
                         StartCoroutine(ReceiveFromServerCoroutine());
-
-                        
-
                     }
                     catch (Exception e)
                     {
@@ -195,12 +191,14 @@ namespace BeatSaberMultiplayer
 
         private void ReceivedFromServer(string[] _data)
         {
+            lastCommands.Clear();
             foreach (string data in _data)
             {
                 try
                 {
                     ServerCommand command = JsonUtility.FromJson<ServerCommand>(data);
-
+                    lastCommands.Add(command);
+                    
                     if (command.commandType == ServerCommandType.SetPlayerInfos)
                     {
                         _playerInfos.Clear();
@@ -308,6 +306,12 @@ namespace BeatSaberMultiplayer
                             PlayerInfosReceived.Invoke(_playerInfos);
                         }
 
+                    }else if(command.commandType == ServerCommandType.Kicked)
+                    {
+                        Console.WriteLine($"You were kicked! Reason: {command.kickReason}");
+                        GameSongController controller = Resources.FindObjectsOfTypeAll<GameSongController>().FirstOrDefault();
+                        ReflectionUtil.SetPrivateField(controller, "_songDidFinish", true);
+                        controller.SendSongDidFinishEvent();
                     }
                 }
                 catch (Exception e)
@@ -364,7 +368,6 @@ namespace BeatSaberMultiplayer
 
 
             results.resultsViewControllerDidPressContinueButtonEvent += delegate(ResultsViewController viewController) {
-
                 try
                 {
                     MultiplayerServerHubViewController hub = ui.CreateViewController<MultiplayerServerHubViewController>();
@@ -376,9 +379,13 @@ namespace BeatSaberMultiplayer
 
                     hub.doNotUpdate = true;
                     FindObjectOfType<MainMenuViewController>().PresentModalViewController(hub, null, true);
-                    lobby.selectedServerIP = lastServerIP;
-                    lobby.selectedServerPort = lastServerPort;
-                    hub.PresentModalViewController(lobby, null, true);
+                    Console.WriteLine(lastCommands.Where(x => x.commandType == ServerCommandType.Kicked && x.kickReason == "Server closed").Count()+"  "+ lastCommands.Count());
+                    if (lastCommands.Where(x => x.commandType == ServerCommandType.Kicked && x.kickReason == "Server closed").Count() <= 0)
+                    {
+                        lobby.selectedServerIP = lastServerIP;
+                        lobby.selectedServerPort = lastServerPort;
+                        hub.PresentModalViewController(lobby, null, true);
+                    }
                 }
                 catch(Exception e)
                 {

@@ -45,13 +45,10 @@ namespace ServerHub {
 
             Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
             
-            listenerThread = new Thread(() => Listener.Start()) {
-                IsBackground = true
-            };
-            listenerThread.Start();
+            Listener.Start();
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
-            while (listenerThread.IsAlive) {
+            while (Listener.Listen) {
                 var x = Console.ReadLine();
                 if (x == string.Empty) continue;
                 var comParts = x?.Split(' ');

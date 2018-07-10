@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Reflection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace BeatSaberMultiplayerServer.Misc {
     [JsonObject(MemberSerialization.OptIn)]
@@ -22,6 +23,8 @@ namespace BeatSaberMultiplayerServer.Misc {
             private string[] _serverHubIPs;
             private int[] _serverHubPorts;
 
+
+            private int _maxPlayers;
             private int _lobbyTime;
 
             private Difficulty _preferredDifficulty;
@@ -133,6 +136,17 @@ namespace BeatSaberMultiplayerServer.Misc {
             }
 
             [JsonProperty]
+            public int MaxPlayers
+            {
+                get => _maxPlayers;
+                set
+                {
+                    _maxPlayers = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
             public int LobbyTime
             {
                 get => _lobbyTime;
@@ -197,6 +211,7 @@ namespace BeatSaberMultiplayerServer.Misc {
                 _serverName = "New Server";
                 _serverHubIPs = new string[] { "beatsaber.jaddie.co.uk", "assistant.moe" };
                 _serverHubPorts = new int[] { 3700, 3700 };
+                _maxPlayers = 0;
                 _lobbyTime = 60;
                 _preferredDifficulty = Difficulty.Expert;
                 SongDirectory = "AvailableSongs/";
@@ -225,22 +240,25 @@ namespace BeatSaberMultiplayerServer.Misc {
                 _logsDir = "Logs/";
             }
         }
-        
+
+        public enum SongOrder { Voting, Shuffle, List}
+
         [JsonObject(MemberSerialization.OptIn)]
         public class AvailableSongsSettings {
 
-            private bool _shuffle;
+            private SongOrder _order;
             private int[] _songs;
 
             private Action MarkDirty { get; }
-
+            
+            [JsonConverter(typeof(StringEnumConverter))]
             [JsonProperty]
-            public bool Shuffle
+            public SongOrder SongOrder
             {
-                get => _shuffle;
+                get => _order;
                 set
                 {
-                    _shuffle = value;
+                    _order = value;
                     MarkDirty();
                 }
             }
@@ -257,8 +275,8 @@ namespace BeatSaberMultiplayerServer.Misc {
 
             public AvailableSongsSettings(Action markDirty) {
                 MarkDirty = markDirty;
-                _shuffle = false;
-                _songs = new int[] { 65};
+                _order = SongOrder.Voting;
+                _songs = new int[] {65};
             }
         }
 

@@ -29,6 +29,7 @@ namespace BeatSaberMultiplayer
         SongLoader _songLoader;
 
         MultiplayerLeaderboardViewController _multiplayerLeaderboard;
+        VotingSongListViewController _votingSongList;
 
         GameObject _loadingIndicator;
         private bool isLoading = false;
@@ -55,6 +56,8 @@ namespace BeatSaberMultiplayer
 
         public List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
         List<AvatarController> _avatars = new List<AvatarController>();
+
+        List<KeyValuePair<CustomSongInfo, CustomLevelStaticData>> serverSongs = new List<KeyValuePair<CustomSongInfo, CustomLevelStaticData>>();
 
         protected override void DidActivate()
         {
@@ -153,23 +156,23 @@ namespace BeatSaberMultiplayer
                 _multiplayerLeaderboard.rectTransform.anchorMin = new Vector2(0.3f, 0f);
                 _multiplayerLeaderboard.rectTransform.anchorMax = new Vector2(0.7f, 1f);
 
-                PushViewController(_multiplayerLeaderboard, true);
-
+                _multiplayerLeaderboard.gameObject.SetActive(false);
             }
-            else
-            {
-                if (_viewControllers.IndexOf(_multiplayerLeaderboard) < 0)
-                {
-                    PushViewController(_multiplayerLeaderboard, true);
-                }
 
+            if(_votingSongList == null)
+            {
+                _votingSongList = BSMultiplayerUI._instance.CreateViewController<VotingSongListViewController>();
+                _votingSongList.rectTransform.anchorMin = new Vector2(0.3f, 0f);
+                _votingSongList.rectTransform.anchorMax = new Vector2(0.7f, 1f);
+
+                _votingSongList.selectedSong += _votingSongList_selectedSong;
             }
 
             Console.WriteLine($"Connecting to {selectedServerIP}:{selectedServerPort}");
             if (BSMultiplayerClient._instance.ConnectToServer(selectedServerIP,selectedServerPort))
             {
-                BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetServerState)));
                 BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetAvailableSongs)));
+                BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetServerState)));
                 StartCoroutine(BSMultiplayerClient._instance.ReceiveFromServerCoroutine());
                 BSMultiplayerClient._instance.DataReceived += DataReceived;
             }
@@ -181,6 +184,14 @@ namespace BeatSaberMultiplayer
                 Destroy(_errorText.gameObject,5f);
             }
 
+        }
+
+        private void _votingSongList_selectedSong(CustomLevelStaticData selectedSong)
+        {
+            BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(
+                new ClientCommand(ClientCommandType.VoteForSong,
+                _voteForLevelId: selectedSong.levelId)));
+            PlayPreview(selectedSong);
         }
 
         private void DataReceived(string[] _data)
@@ -208,19 +219,24 @@ namespace BeatSaberMultiplayer
 
                         if (command != null)
                         {
+                            _serverState = command.serverState;
                             switch (command.commandType)
                             {
                                 case ServerCommandType.UpdateRequired:
                                     {
-
                                         _selectText.text = "Plugin version mismatch:\nServer: "+command.version+"\nClient: "+BSMultiplayerClient.version;
+                                        _timerText.text = "";
+                                        BSMultiplayerClient._instance.DataReceived -= DataReceived;
                                         BSMultiplayerClient._instance.DisconnectFromServer();
                                         _loading = false;
 
                                     };break;
                                 case ServerCommandType.SetServerState:
                                     {
-                                        if (command.serverState == ServerState.Playing)
+
+                                        Console.WriteLine($"Server state is {command.serverState}");
+
+                                        if (_serverState == ServerState.Playing)
                                         {
                                             _loading = false;
                                             TimeSpan timeRemaining = TimeSpan.FromSeconds(command.selectedSongDuration - command.selectedSongPlayTime);
@@ -233,14 +249,35 @@ namespace BeatSaberMultiplayer
                                             (_selectedSongCell.transform as RectTransform).anchoredPosition = new Vector2(14f, 39f);
                                             _selectedSongCell.songName = _selectedSong.songName + "\n<size=80%>" + _selectedSong.songSubName + "</size>";
                                             _selectedSongCell.author = _selectedSong.authorName;
-
-
+                                            
                                             CustomLevelStaticData _songData = SongLoader.CustomLevelStaticDatas.First(x => x.levelId == _selectedSong.levelId);
 
                                             _selectedSongCell.coverImage = _songData.coverImage;
                                             
                                             _songPreviewPlayer.CrossfadeTo(_songData.previewAudioClip, (float)command.selectedSongPlayTime, (float)(command.selectedSongDuration - command.selectedSongPlayTime - 5f), 1f);
-                                            
+
+                                            _multiplayerLeaderboard.gameObject.SetActive(true);
+                                            PushViewController(_multiplayerLeaderboard, true);
+
+                                        }else if(_serverState == ServerState.Preparing)
+                                        {
+                                            if (_multiplayerLeaderboard != null && _viewControllers.IndexOf(_multiplayerLeaderboard) >= 0 && _serverState != ServerState.Playing)
+                                            {
+                                                _viewControllers.Remove(_multiplayerLeaderboard);
+                                                _multiplayerLeaderboard.gameObject.SetActive(false);
+                                            }
+                                            UpdateSelectedSong(command);
+                                        }
+                                        else if(_serverState == ServerState.Voting)
+                                        {
+                                            if (_multiplayerLeaderboard != null && _viewControllers.IndexOf(_multiplayerLeaderboard) >= 0 && _serverState != ServerState.Playing)
+                                            {
+                                                _viewControllers.Remove(_multiplayerLeaderboard);
+                                                _multiplayerLeaderboard.gameObject.SetActive(false);
+                                            }
+                                            _votingSongList.gameObject.SetActive(true);
+                                            PushViewController(_votingSongList, true);
+                                            _votingSongList.SetSongs(serverSongs.Select(x => x.Value).ToList());
                                         }
                                         
                                     }; break;
@@ -249,50 +286,29 @@ namespace BeatSaberMultiplayer
                                         _loading = false;
                                         Console.WriteLine("Set timer text to " + command.lobbyTimer);
                                         _timerText.text = command.lobbyTimer.ToString();
-                                        if (_multiplayerLeaderboard != null && _viewControllers.IndexOf(_multiplayerLeaderboard) >= 0)
+                                        if (_multiplayerLeaderboard != null && _viewControllers.IndexOf(_multiplayerLeaderboard) >= 0 && _serverState != ServerState.Playing)
                                         {
                                             _viewControllers.Remove(_multiplayerLeaderboard);
                                             Destroy(_multiplayerLeaderboard.gameObject);
-                                            _songPreviewPlayer.CrossfadeToDefault();
-                                            _selectedSongCell.gameObject.SetActive(false);
+                                            if (_serverState == ServerState.Voting)
+                                            {
+                                                _songPreviewPlayer.CrossfadeToDefault();
+                                                _selectedSongCell.gameObject.SetActive(false);
+                                            }
                                         }
                                     }; break;
                                 case ServerCommandType.SetSelectedSong:
                                     {
-                                        Console.WriteLine("Set selected song " + command.selectedLevelID);
-
-                                        _loading = false;
-
-                                        if (_selectedSong == null)
+                                        if (command.serverState == ServerState.Preparing)
                                         {
-                                            try
+                                            if (_votingSongList != null && _viewControllers.IndexOf(_votingSongList) >= 0 && _serverState != ServerState.Playing)
                                             {
-                                                _selectedSongDifficulty = command.selectedSongDifficlty;
-                                                _selectedSong = SongLoader.CustomSongInfos.First(x => x.levelId == command.selectedLevelID);
-
-                                                _selectText.text = "Next song:";
-
-                                                _selectedSongCell.gameObject.SetActive(true);
-                                                (_selectedSongCell.transform as RectTransform).anchoredPosition = new Vector2(-25f, 0);
-                                                _selectedSongCell.songName = _selectedSong.songName + "\n<size=80%>" + _selectedSong.songSubName + "</size>";
-                                                _selectedSongCell.author = _selectedSong.authorName;
-
-
-                                                CustomLevelStaticData _songData = SongLoader.CustomLevelStaticDatas.First(x => x.levelId == _selectedSong.levelId);
-
-                                                _selectedSongCell.coverImage = _songData.coverImage;
-
-                                                PlayPreview(_songData);
-
-
+                                                _viewControllers.Remove(_votingSongList);
+                                                _votingSongList.gameObject.SetActive(false);
                                             }
-                                            catch (Exception e)
-                                            {
-                                                Console.WriteLine("EXCEPTION: " + e);
-                                            }
+                                            Console.WriteLine("Next song level id is " + command.selectedLevelID);
+                                            UpdateSelectedSong(command);
                                         }
-
-                                        Console.WriteLine("Done");
 
                                     }; break;
                                 case ServerCommandType.StartSelectedSongLevel:
@@ -305,6 +321,9 @@ namespace BeatSaberMultiplayer
                                         }
 
                                         _avatars.Clear();
+
+                                        _selectedSong = SongLoader.CustomSongInfos.First(x => x.levelId == command.selectedLevelID);
+                                        _selectedSongDifficulty = command.selectedSongDifficlty;
 
                                         Console.WriteLine("Starting selected song! Song: " + _selectedSong.songName + ", Diff: " + ((LevelStaticData.Difficulty)_selectedSongDifficulty).ToString());
                                         
@@ -329,8 +348,31 @@ namespace BeatSaberMultiplayer
                                 case ServerCommandType.DownloadSongs: {
                                         if (!AllSongsDownloaded(command.songsToDownload))
                                         {
+                                            _timerText.text = "";
+                                            if (_votingSongList != null && _viewControllers.IndexOf(_votingSongList) >= 0 && _serverState != ServerState.Playing)
+                                            {
+                                                _viewControllers.Remove(_votingSongList);
+                                                _votingSongList.gameObject.SetActive(false);
+                                            }
+                                            if (_multiplayerLeaderboard != null && _viewControllers.IndexOf(_multiplayerLeaderboard) >= 0 && _serverState != ServerState.Playing)
+                                            {
+                                                _viewControllers.Remove(_multiplayerLeaderboard);
+                                                _multiplayerLeaderboard.gameObject.SetActive(false);
+                                            }
+                                            _songPreviewPlayer.CrossfadeToDefault();
+                                            _selectedSongCell.gameObject.SetActive(false);
                                             StartCoroutine(DownloadSongs(command.songsToDownload));
+                                            BSMultiplayerClient._instance.DataReceived -= DataReceived;
                                             BSMultiplayerClient._instance.DisconnectFromServer();
+                                        }
+                                        else
+                                        {
+                                            serverSongs.Clear();
+
+                                            foreach(string song in command.songsToDownload)
+                                            {
+                                                serverSongs.Add(new KeyValuePair<CustomSongInfo, CustomLevelStaticData>(SongLoader.CustomSongInfos.FirstOrDefault(x => x.levelId == song), SongLoader.CustomLevelStaticDatas.FirstOrDefault(x => x.levelId == song)));
+                                            }
                                         }
                                     };break;
                                 case ServerCommandType.SetPlayerInfos: {
@@ -418,14 +460,22 @@ namespace BeatSaberMultiplayer
 
                                     };break;
                                 case ServerCommandType.Kicked: {
-                                        _selectText.text = "You were kicked";
+                                        _selectText.text = $"You were kicked{(string.IsNullOrEmpty(command.kickReason) ? "" : $"\nReason: {command.kickReason}")}";
+                                        _timerText.text = "";
+                                        if (_multiplayerLeaderboard != null && _viewControllers.IndexOf(_multiplayerLeaderboard) >= 0)
+                                        {
+                                            _viewControllers.Remove(_multiplayerLeaderboard);
+                                            _multiplayerLeaderboard.gameObject.SetActive(false);
+                                            _songPreviewPlayer.CrossfadeToDefault();
+                                            _selectedSongCell.gameObject.SetActive(false);
+                                        }
+                                        BSMultiplayerClient._instance.DataReceived -= DataReceived;
                                         BSMultiplayerClient._instance.DisconnectFromServer();
                                         _loading = false;
                                     }; break;
 
 
                             }
-                            _serverState = command.serverState;
                         }
                         else
                         {
@@ -442,6 +492,44 @@ namespace BeatSaberMultiplayer
                 
 
             StartCoroutine(BSMultiplayerClient._instance.ReceiveFromServerCoroutine());
+        }
+
+        void UpdateSelectedSong(ServerCommand command)
+        {
+            if (string.IsNullOrEmpty(command.selectedLevelID))
+            {
+                return;
+            }
+            if(_selectedSong != null && _selectedSong.levelId == command.selectedLevelID)
+            {
+                return;
+            }
+            Console.WriteLine("Set selected song " + command.selectedLevelID);
+
+            _loading = false;
+
+            try
+            {
+                _selectedSong = SongLoader.CustomSongInfos.First(x => x.levelId == command.selectedLevelID);
+
+                _selectText.gameObject.SetActive(true);
+                _selectText.text = "Next song:";
+
+                _selectedSongCell.gameObject.SetActive(true);
+                (_selectedSongCell.transform as RectTransform).anchoredPosition = new Vector2(-25f, 0);
+                _selectedSongCell.songName = _selectedSong.songName + "\n<size=80%>" + _selectedSong.songSubName + "</size>";
+                _selectedSongCell.author = _selectedSong.authorName;
+                
+                CustomLevelStaticData _songData = SongLoader.CustomLevelStaticDatas.First(x => x.levelId == _selectedSong.levelId);
+
+                _selectedSongCell.coverImage = _songData.coverImage;
+
+                PlayPreview(_songData);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("EXCEPTION: " + e);
+            }
         }
 
         void PlayPreview(LevelStaticData _songData)
@@ -466,7 +554,7 @@ namespace BeatSaberMultiplayer
         IEnumerator DownloadSongByLevelId(string levelId)
         {
             Console.WriteLine("Donwloading "+ levelId.Substring(0, levelId.IndexOf('∎')));
-
+            
             _selectText.text = "Connecting to BeatSaver.com...";
 
             UnityWebRequest wwwId = UnityWebRequest.Get("https://beatsaver.com/api.php?mode=hashinfo&hash=" + levelId.Substring(0,levelId.IndexOf('∎')));
@@ -570,8 +658,9 @@ namespace BeatSaberMultiplayer
 
             if (BSMultiplayerClient._instance.ConnectToServer(selectedServerIP,selectedServerPort))
             {
-
+                BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetAvailableSongs)));
                 BSMultiplayerClient._instance.SendString(JsonUtility.ToJson(new ClientCommand(ClientCommandType.GetServerState)));
+                BSMultiplayerClient._instance.DataReceived += DataReceived;
                 StartCoroutine(BSMultiplayerClient._instance.ReceiveFromServerCoroutine());
             }
             else
@@ -604,7 +693,7 @@ namespace BeatSaberMultiplayer
 
         void Update()
         {
-            if (_serverState == ServerState.Lobby)
+            if (_serverState == ServerState.Voting || _serverState == ServerState.Preparing)
             {
                 _sendTimer += Time.deltaTime;
                 if (_sendTimer > _sendRate)

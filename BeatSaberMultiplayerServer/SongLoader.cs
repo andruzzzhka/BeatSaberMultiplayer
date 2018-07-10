@@ -1,12 +1,13 @@
-﻿namespace BeatSaberMultiplayerServer
+﻿using Newtonsoft.Json;
+using SimpleJSON;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using static BeatSaberMultiplayerServer.CustomSongInfo;
+
+namespace BeatSaberMultiplayerServer
 {
-    using Newtonsoft.Json;
-    using SimpleJSON;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using static BeatSaberMultiplayerServer.CustomSongInfo;
 
     class SongLoader
     {
@@ -31,7 +32,7 @@
         private static string GetSongInfoDirectoryName(string songFolderPath) =>
             Path.GetDirectoryName(songFolderPath).Replace('\\', '/');
 
-        private static CustomSongInfo GetCustomSongInfo(string songPath)
+        public static CustomSongInfo GetCustomSongInfo(string songPath)
         {
             try
             {
@@ -39,6 +40,14 @@
                 customSongInfo.path = songPath;
                 customSongInfo.difficultyLevels = GetDifficultyLevels(GetSongInfoText(songPath));
                 customSongInfo.levelId = customSongInfo.GetIdentifier();
+                if (!string.IsNullOrEmpty(customSongInfo.path))
+                {
+                    var splittedPath = customSongInfo.path.Split(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+                    if (!int.TryParse(splittedPath[splittedPath.Length - 2], out customSongInfo.beatSaverId))
+                    {
+                        customSongInfo.beatSaverId = -1;
+                    }
+                }
 
                 return customSongInfo;
             }
