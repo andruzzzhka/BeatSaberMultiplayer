@@ -481,15 +481,30 @@ namespace BeatSaberMultiplayerServer
 
                 if (song.difficultyLevels[0].audioPath.ToLower().EndsWith(".ogg"))
                 {
-                    using (VorbisReader vorbis =
-                        new VorbisReader($"{song.path}/{song.difficultyLevels[0].audioPath}"))
+                    string pathToLoad = $"{song.path}/{song.difficultyLevels[0].audioPath}";
+                    string[] actualFileNames = Directory.GetFiles(song.path,"*.ogg",SearchOption.TopDirectoryOnly);
+
+                    if (!File.Exists(pathToLoad))
+                    {
+                        pathToLoad = $"{song.path}/{actualFileNames[0]}";
+                    }
+
+                    using (VorbisReader vorbis = new VorbisReader(pathToLoad))
                     {
                         song.duration = vorbis.TotalTime;
                     }
                 }
                 else
                 {
-                    using (AudioFileReader wave = new AudioFileReader($"{song.path}/{song.difficultyLevels[0].audioPath}"))
+                    string pathToLoad = $"{song.path}/{song.difficultyLevels[0].audioPath}";
+                    string[] actualFileNames = Directory.GetFiles(song.path, "*.wav", SearchOption.TopDirectoryOnly);
+
+                    if (!File.Exists(pathToLoad))
+                    {
+                        pathToLoad = $"{song.path}/{actualFileNames[0]}";
+                    }
+
+                    using (AudioFileReader wave = new AudioFileReader(pathToLoad))
                     {
                         song.duration = wave.TotalTime;
                     }
