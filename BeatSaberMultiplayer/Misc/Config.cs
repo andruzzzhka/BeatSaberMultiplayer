@@ -9,8 +9,8 @@ namespace BeatSaberMultiplayer {
     [Serializable]
     public class Config {
         
-        [SerializeField] private string _serverHubIP;
-        [SerializeField] private int _serverHubPort;
+        [SerializeField] private string[] _serverHubIPs;
+        [SerializeField] private int[] _serverHubPorts;
         [SerializeField] private bool _showAvatarsInGame;
         [SerializeField] private bool _showAvatarsInLobby;
 
@@ -40,20 +40,20 @@ namespace BeatSaberMultiplayer {
         /// <summary>
         /// Remember to Save after changing the value
         /// </summary>
-        public string ServerHubIP {
-            get { return _serverHubIP; }
+        public string[] ServerHubIPs {
+            get { return _serverHubIPs; }
             set {
-                _serverHubIP = value;
+                _serverHubIPs = value;
                 MarkDirty();
             }
         }
 
-        public int ServerHubPort
+        public int[] ServerHubPorts
         {
-            get { return _serverHubPort; }
+            get { return _serverHubPorts; }
             set
             {
-                _serverHubPort = value;
+                _serverHubPorts = value;
                 MarkDirty();
             }
         }
@@ -79,8 +79,8 @@ namespace BeatSaberMultiplayer {
         }
 
         Config() {
-            _serverHubIP = "assistant.moe";
-            _serverHubPort = 3700;
+            _serverHubIPs = new string[]{"assistant.moe", "soupwhale.com", "minemalox.me", "beatsaber.weebvr.com", "178.62.239.103", "beatsaber.jaddie.co.uk" };
+            _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700 };
             _showAvatarsInGame = false;
             _showAvatarsInLobby = true;
             MarkDirty();

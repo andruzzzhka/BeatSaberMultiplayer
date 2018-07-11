@@ -26,8 +26,8 @@ namespace BeatSaberMultiplayer
         GameObject _loadingIndicator;
         private bool isLoading = false;
         public bool _loading { get { return isLoading; } set { isLoading = value; SetLoadingIndicator(isLoading); } }
-        
-        TcpClient _serverHubConnection;
+
+        List<ServerHubClient> _serverHubs = new List<ServerHubClient>();
         
 
         protected override void DidActivate()
@@ -40,9 +40,15 @@ namespace BeatSaberMultiplayer
 
                 _backButton.onClick.AddListener(delegate ()
                 {
-                    if(_serverHubConnection != null && _serverHubConnection.Connected)
+                    if(_serverHubs != null && _serverHubs.Count > 0)
                     {
-                        _serverHubConnection.Close();
+                        _serverHubs.ForEach(x =>
+                        {
+                            x.Disconnect();
+
+                            x.ReceivedServerList -= MultiplayerServerHubViewController_receivedServerList;
+                            x.ServerHubException -= MultiplayerServerHubViewController_serverHubException;
+                        });
                         _loading = false;
                     }
                     DismissModalViewController(null, false);
@@ -99,11 +105,30 @@ namespace BeatSaberMultiplayer
 
             }
 
-
-            _multiplayerServerList._currentPage = 0;
+            _serverHubs.Clear();
+            for (int i = 0; i < Config.Instance.ServerHubIPs.Length; i++)
+            {
+                ServerHubClient client = new GameObject($"ServerHubClient-{i}").AddComponent<ServerHubClient>();
+                client.ip = Config.Instance.ServerHubIPs[i];
+                if (Config.Instance.ServerHubPorts.Length <= i)
+                {
+                    client.port = 3700;
+                }
+                else
+                {
+                    client.port = Config.Instance.ServerHubPorts[i];
+                }
+                _serverHubs.Add(client);
+            }
+            
             if (!doNotUpdate)
             {
-                GetPage(_multiplayerServerList._currentPage);
+                _serverHubs.ForEach(x =>
+                {                    
+                    x.ReceivedServerList += MultiplayerServerHubViewController_receivedServerList;
+                    x.ServerHubException += MultiplayerServerHubViewController_serverHubException;
+                });
+                GetServers();
             }
             else
             {
@@ -116,24 +141,20 @@ namespace BeatSaberMultiplayer
         public void UpdatePage()
         {
             _loading = false;
-            GetPage(_multiplayerServerList._currentPage);
+            GetServers();
         }
 
-        internal void GetPage(int currentPage)
+        internal void GetServers()
         {
             if (!_loading)
             {
-                Console.WriteLine($"Getting page {currentPage}");
+                Console.WriteLine($"Get servers from ServerHubs");
                 try
                 {
                     _loading = true;
-                    _multiplayerServerList._pageUpButton.interactable = false;
-                    _multiplayerServerList._pageDownButton.interactable = false;
-                    _serverHubConnection = new TcpClient(Config.Instance.ServerHubIP, Config.Instance.ServerHubPort);
-                    ClientDataPacket packet = new ClientDataPacket() { ConnectionType = ConnectionType.Client, Offset = _multiplayerServerList._currentPage };
 
-                    _serverHubConnection.GetStream().Write(packet.ToBytes(), 0, packet.ToBytes().Length);
-                    StartCoroutine(WaitForResponse());
+                    _serverHubs.ForEach(x => x.RequestServers());
+                    
                     Console.WriteLine("Waiting for response...");
                 }
                 catch (Exception e)
@@ -147,49 +168,20 @@ namespace BeatSaberMultiplayer
             }
         }
 
-
-        IEnumerator WaitForDoneProcess(float timeout)
+        private void MultiplayerServerHubViewController_serverHubException(ServerHubClient sender, Exception e)
         {
-            while (_serverHubConnection.Available <= 0)
-            {
-                yield return null;
-                timeout -= Time.deltaTime;
-                if (timeout <= 0f) break;
-            }
+            _loading = false;
+            TextMeshProUGUI _errorText = ui.CreateText(rectTransform, $"Can't connect to ServerHub @ {sender.ip}:{sender.port}", new Vector2(0f, -48f));
+            _errorText.alignment = TextAlignmentOptions.Center;
+            Destroy(_errorText.gameObject, 4f);
+            Console.WriteLine($"Can't connect to ServerHub @ {sender.ip}:{sender.port}. Exception: {e}");
+            _serverHubs.Remove(sender);
         }
 
-        IEnumerator WaitForResponse()
+        private void MultiplayerServerHubViewController_receivedServerList(ServerHubClient sender, List<Data.Data> servers)
         {
-            yield return WaitForDoneProcess(5f);
-
-            if(_serverHubConnection.Available <= 0)
-            {
-                try
-                {
-                    TextMeshProUGUI _errorText = ui.CreateText(rectTransform, "Can't connect to ServerHub!", new Vector2(0f, -48f));
-                    _errorText.alignment = TextAlignmentOptions.Center;
-                    Destroy(_errorText.gameObject, 4f);
-                    _serverHubConnection.Close();
-                    _loading = false;
-                }catch(Exception e)
-                {
-                    Console.WriteLine($"ServerHub Exception: {e}");
-                }
-                yield break;
-            }
-
-            byte[] bytes = new byte[Packet.MAX_BYTE_LENGTH];
-            ClientDataPacket packet = null;
-            if (_serverHubConnection.GetStream().Read(bytes, 0, bytes.Length) != 0)
-            {
-                packet = Packet.ToClientDataPacket(bytes);
-            }
-
-            _serverHubConnection.Close();
             _loading = false;
-
-            _multiplayerServerList.SetServers((packet as ClientDataPacket).Servers);
-
+            _multiplayerServerList.AddServers(servers);
         }
 
         public void ConnectToServer(string serverIP, int serverPort)
@@ -211,5 +203,117 @@ namespace BeatSaberMultiplayer
             }
         }
 
+    }
+
+    class ServerHubClient : MonoBehaviour
+    {
+        private TcpClient serverHubConnection;
+
+        public string ip;
+        public int port;
+
+        public event Action<ServerHubClient, List<Data.Data>> ReceivedServerList;
+        public event Action<ServerHubClient, Exception> ServerHubException;
+
+        private event Action<List<Data.Data>, int> ReceivedOnePage;
+
+        private List<Data.Data> availableServers = new List<Data.Data>();
+
+        public bool Connect()
+        {
+            try
+            {
+                serverHubConnection = new TcpClient(ip, port);
+
+                Console.WriteLine($"Connected to ServerHub @ {ip}:{port}");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Can't connect to ServerHub @ {ip}:{port}. Exception: {e}");
+                return false;
+            }
+
+        }
+
+        public void Disconnect()
+        {
+            if (serverHubConnection.Connected)
+            {
+                Console.WriteLine($"Diconnecting from ServerHub @ {ip}:{port}");
+                serverHubConnection.Close();
+            }
+        }
+
+        public void RequestServers()
+        {
+            ReceivedOnePage += ServerHubClient_receivedOnePage;
+            availableServers.Clear();
+            StartCoroutine(RequestPage(0));
+        }
+
+        private IEnumerator RequestPage(int page)
+        {
+            Connect();
+            yield return new WaitForSecondsRealtime(0.05f);
+
+            ClientDataPacket packet = new ClientDataPacket() { ConnectionType = ConnectionType.Client, Offset = page };
+
+            serverHubConnection.GetStream().Write(packet.ToBytes(), 0, packet.ToBytes().Length);
+            
+            yield return WaitForDoneProcess(15f);
+
+            if (serverHubConnection.Available <= 0)
+            {
+                try
+                {
+                    serverHubConnection.Close();
+                    ServerHubException.Invoke(this, new Exception("ServerHub is offline"));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"ServerHub Exception: {e}");
+                    ServerHubException.Invoke(this, e);
+                }
+                yield break;
+            }
+
+            byte[] bytes = new byte[Packet.MAX_BYTE_LENGTH];
+
+            packet = null;
+            if (serverHubConnection.GetStream().Read(bytes, 0, bytes.Length) != 0)
+            {
+                packet = Packet.ToClientDataPacket(bytes);
+            }
+            Disconnect();
+            ReceivedOnePage.Invoke(packet.Servers, page);
+        }
+
+        private void ServerHubClient_receivedOnePage(List<Data.Data> servers, int page)
+        {
+            Console.WriteLine($"Received page {page}");
+            
+            availableServers.AddRange(servers);
+
+            if (servers.Count < 6)
+            {
+                ReceivedOnePage -= ServerHubClient_receivedOnePage;
+                ReceivedServerList.Invoke(this, availableServers);
+            }
+            else
+            {
+                StartCoroutine(RequestPage(page+1));
+            }
+        }
+        
+        private IEnumerator WaitForDoneProcess(float timeout)
+        {
+            while (serverHubConnection.Available <= 0)
+            {
+                yield return null;
+                timeout -= Time.deltaTime;
+                if (timeout <= 0f) break;
+            }
+        }
     }
 }

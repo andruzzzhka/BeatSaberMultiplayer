@@ -93,6 +93,8 @@ namespace BeatSaberMultiplayer
             {
                 _songsTableView.ReloadData();
             }
+
+            _songsTableView.ScrollToRow(0, false);
         }
 
         public TableCell CellForRow(int row)

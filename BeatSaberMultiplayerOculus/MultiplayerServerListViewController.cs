@@ -1,7 +1,9 @@
-﻿using HMUI;
+﻿using BeatSaberMultiplayer.Data;
+using HMUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,15 +16,13 @@ namespace BeatSaberMultiplayer
         BSMultiplayerUI ui;
         MultiplayerServerHubViewController _parentMasterViewController;
 
-        public Button _pageUpButton;
-        public Button _pageDownButton;
+        Button _pageUpButton;
+        Button _pageDownButton;
 
-        public TableView _serverTableView;
+        TableView _serverTableView;
         SongListTableCell _serverTableCellInstance;
 
         List<Data.Data> availableServers = new List<Data.Data>();
-
-        public int _currentPage = 0;
 
         protected override void DidActivate()
         {
@@ -41,16 +41,7 @@ namespace BeatSaberMultiplayer
                 _pageUpButton.interactable = true;
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
-
-                    if (_currentPage > 0)
-                    {
-                        if (!_parentMasterViewController._loading)
-                        {
-                            _currentPage -= 1;
-                            _parentMasterViewController.GetPage(_currentPage);
-                        }
-                    }
-
+                    _serverTableView.PageScrollUp();
 
                 });
                 _pageUpButton.interactable = false;
@@ -65,12 +56,7 @@ namespace BeatSaberMultiplayer
                 _pageDownButton.interactable = true;
                 _pageDownButton.onClick.AddListener(delegate ()
                 {
-                    if (!_parentMasterViewController._loading)
-                    {
-                        _currentPage += 1;
-                        Console.WriteLine("Page down");
-                        _parentMasterViewController.GetPage(_currentPage);
-                    }
+                    _serverTableView.PageScrollDown();
 
                 });
                 _pageDownButton.interactable = false;
@@ -92,6 +78,9 @@ namespace BeatSaberMultiplayer
                 (_serverTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 60f);
                 (_serverTableView.transform as RectTransform).position = new Vector3(0f, 0f, 2.4f);
                 (_serverTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
+                
+                ReflectionUtil.SetPrivateField(_serverTableView, "_pageUpButton", _pageUpButton);
+                ReflectionUtil.SetPrivateField(_serverTableView, "_pageDownButton", _pageDownButton);
 
                 _serverTableView.DidSelectRowEvent += ServerTableView_DidSelectRow;
 
@@ -109,11 +98,9 @@ namespace BeatSaberMultiplayer
 
         public void SetServers(List<Data.Data> servers)
         {
-            availableServers = servers;
+            availableServers = new List<Data.Data>(servers).Distinct(new ServerEqualityComparer()).ToList();
 
-            _pageDownButton.interactable = (servers.Count >= 6);
-            _pageUpButton.interactable = (_currentPage != 0);
-            if ((object)_serverTableView.dataSource != this)
+            if (_serverTableView.dataSource != this)
             {
                 _serverTableView.dataSource = this;
             }
@@ -121,6 +108,25 @@ namespace BeatSaberMultiplayer
             {
                 _serverTableView.ReloadData();
             }
+
+            _serverTableView.ScrollToRow(0, false);
+        }
+
+        public void AddServers(List<Data.Data> servers)
+        {
+            availableServers.AddRange(servers);
+            availableServers = availableServers.Distinct(new ServerEqualityComparer()).ToList();
+
+            if (_serverTableView.dataSource != this)
+            {
+                _serverTableView.dataSource = this;
+            }
+            else
+            {
+                _serverTableView.ReloadData();
+            }
+
+            _serverTableView.ScrollToRow(0, false);
         }
 
         private void ServerTableView_DidSelectRow(TableView sender, int row)
@@ -142,7 +148,7 @@ namespace BeatSaberMultiplayer
 
         public int NumberOfRows()
         {
-            return Math.Min(availableServers.Count, 6);
+            return availableServers.Count;
         }
 
         public float RowHeight()
@@ -151,5 +157,18 @@ namespace BeatSaberMultiplayer
         }
 
 
+    }
+
+    class ServerEqualityComparer : IEqualityComparer<Data.Data>
+    {
+        public bool Equals(Data.Data x, Data.Data y)
+        {
+            return (x.IPv4 == y.IPv4) && (x.Name == y.Name) && (x.Port == y.Port);
+        }
+
+        public int GetHashCode(Data.Data obj)
+        {
+            return obj.IPv4.GetHashCode() + obj.Port.GetHashCode() + obj.Name.GetHashCode();
+        }
     }
 }
