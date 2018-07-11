@@ -17,6 +17,8 @@ using Settings = BeatSaberMultiplayerServer.Misc.Settings;
 using Logger = ServerCommons.Misc.Logger;
 using WebSocketSharp;
 using WebSocketSharp.Server;
+using NAudio.Wave;
+using NVorbis;
 
 namespace BeatSaberMultiplayerServer
 {
@@ -477,10 +479,20 @@ namespace BeatSaberMultiplayerServer
             {
                 Logger.Instance.Log($"Processing {song.songName} {song.songSubName}");
 
-                using (NVorbis.VorbisReader vorbis =
-                    new NVorbis.VorbisReader($"{song.path}/{song.difficultyLevels[0].audioPath}"))
+                if (song.difficultyLevels[0].audioPath.ToLower().EndsWith(".ogg"))
                 {
-                    song.duration = vorbis.TotalTime;
+                    using (VorbisReader vorbis =
+                        new VorbisReader($"{song.path}/{song.difficultyLevels[0].audioPath}"))
+                    {
+                        song.duration = vorbis.TotalTime;
+                    }
+                }
+                else
+                {
+                    using (AudioFileReader wave = new AudioFileReader($"{song.path}/{song.difficultyLevels[0].audioPath}"))
+                    {
+                        song.duration = wave.TotalTime;
+                    }
                 }
 
                 availableSongs.Add(song);
