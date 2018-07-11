@@ -110,44 +110,6 @@
     <Compile Include="Data\ConnectionType.cs" />
     <Compile Include="Data\Data.cs" />
     <Compile Include="Data\Packet.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Checksum\Adler32.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Checksum\BZip2Crc.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Checksum\Crc32.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Checksum\IChecksum.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Core\FileSystemScanner.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Core\INameTransform.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Core\IScanFilter.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Core\NameFilter.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Core\PathFilter.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Core\StreamUtils.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Core\WindowsPathUtils.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\SharpZipBaseException.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\Deflater.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\DeflaterConstants.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\DeflaterEngine.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\DeflaterHuffman.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\DeflaterPending.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\Inflater.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\InflaterDynHeader.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\InflaterHuffmanTree.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\PendingBuffer.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\Streams\DeflaterOutputStream.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\Streams\InflaterInputStream.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\Streams\OutputWindow.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\Compression\Streams\StreamManipulator.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\FastZip.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\IEntryFactory.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\WindowsNameTransform.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipConstants.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipEntry.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipEntryFactory.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipException.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipExtraData.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipFile.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipHelperStream.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipInputStream.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipNameTransform.cs" />
-    <Compile Include="ICSharpCode.SharpZipLib\Zip\ZipOutputStream.cs" />
     <Compile Include="Misc\Base64Sprites.cs" />
     <Compile Include="Misc\Config.cs" />
     <Compile Include="Misc\GetUserInfo.cs" />
@@ -155,6 +117,7 @@
     <Compile Include="Misc\ReflectionUtil.cs" />
     <Compile Include="Misc\Serialization.cs" />
     <Compile Include="Misc\SimpleJSON.cs" />
+    <Compile Include="Misc\Unzip.cs" />
     <Compile Include="MultiplayerLeaderboardViewController.cs" />
     <Compile Include="MultiplayerLobbyViewController.cs" />
     <Compile Include="MultiplayerServerHubViewController.cs" />
@@ -163,12 +126,6 @@
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VotingSongListViewController.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="ICSharpCode.SharpZipLib\ICSharpCode.SharpZipLib.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ICSharpCode.SharpZipLib\ICSharpCode.SharpZipLib.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

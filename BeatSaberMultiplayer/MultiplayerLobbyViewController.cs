@@ -1,5 +1,4 @@
 ﻿using BeatSaberMultiplayer.Misc;
-using ICSharpCode.SharpZipLib.Zip;
 using SimpleJSON;
 using SongLoaderPlugin;
 using System;
@@ -610,10 +609,10 @@ namespace BeatSaberMultiplayer
                         File.WriteAllBytes(zipPath, data);
                         Console.WriteLine("Downloaded zip file!");
 
-                        FastZip zip = new FastZip();
+                        Unzip zip = new Unzip(zipPath);
 
                         Console.WriteLine("Extracting...");
-                        zip.ExtractZip(zipPath, $"{customSongsPath}{_tempSong.id}/", null);
+                        zip.ExtractToDirectory($"{customSongsPath}{_tempSong.id}/");
 
                         File.Delete(zipPath);
                     }
