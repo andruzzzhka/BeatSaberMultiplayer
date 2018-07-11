@@ -107,7 +107,7 @@ namespace BeatSaberMultiplayerServer
                 
             for (int i = 0; i < Settings.Instance.Server.ServerHubIPs.Length; i++)
             {
-                if(Settings.Instance.Server.ServerHubPorts.Length >= i)
+                if(Settings.Instance.Server.ServerHubPorts.Length < i)
                 {
                     _serverHubs.Add(Settings.Instance.Server.ServerHubIPs[i], 3700);
                 }
