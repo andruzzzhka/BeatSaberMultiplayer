@@ -1,5 +1,5 @@
 # Plugin Instructions
-Choose your plugin type ([Oculus](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.3.0/BeatSaberMultiplayer-Oculus.zip) / [Steam](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.3.0/BeatSaberMultiplayer-Steam.zip)) and copy it to your `Plugins` folder in your `%BeatSaber%` directory.
+Choose your plugin type ([Oculus](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.4.1/BeatSaberMultiplayer-Oculus.zip) / [Steam](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.4.1/BeatSaberMultiplayer-Steam.zip)) and copy it to your `Plugins` folder in your `%BeatSaber%` directory.
 
 ![PluginFile](https://i.imgur.com/80NKsGq.png)
 
