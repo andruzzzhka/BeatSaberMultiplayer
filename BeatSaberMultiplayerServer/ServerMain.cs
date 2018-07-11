@@ -107,7 +107,7 @@ namespace BeatSaberMultiplayerServer
                 
             for (int i = 0; i < Settings.Instance.Server.ServerHubIPs.Length; i++)
             {
-                if(Settings.Instance.Server.ServerHubPorts.Length < i)
+                if(Settings.Instance.Server.ServerHubPorts.Length <= i)
                 {
                     _serverHubs.Add(Settings.Instance.Server.ServerHubIPs[i], 3700);
                 }
@@ -406,6 +406,14 @@ namespace BeatSaberMultiplayerServer
             {
                 ProcessSong(song);
              });
+
+            CustomSongInfo[] buffer = new CustomSongInfo[availableSongs.Count];
+            availableSongs.CopyTo(buffer);
+            availableSongs.Clear();
+            foreach (int id in Settings.Instance.AvailableSongs.Songs)
+            {
+                availableSongs.Add(buffer.First(x => x.beatSaverId == id));
+            }
 
             Logger.Instance.Log("Done!");
         }
@@ -783,11 +791,11 @@ namespace BeatSaberMultiplayerServer
                 ID = packet.ID;
 
 
-                Logger.Instance.Log($"Connected to ServerHub @ {ip}");
+                Logger.Instance.Log($"Connected to ServerHub @ {ip}:{port}");
             }
             catch(Exception e)
             {
-                Logger.Instance.Warning($"Can't connect to ServerHub @ {ip}");
+                Logger.Instance.Warning($"Can't connect to ServerHub @ {ip}:{port}");
                 Logger.Instance.Warning($"Exception: {e.Message}");
             }
 
@@ -811,13 +819,13 @@ namespace BeatSaberMultiplayerServer
                     };
 
                     client.GetStream().Write(packet.ToBytes(), 0, packet.ToBytes().Length);
-                    Logger.Instance.Log($"Removed this server from ServerHub @ {ip}");
+                    Logger.Instance.Log($"Removed this server from ServerHub @ {ip}:{port}");
 
                     client.Close();
                 }
             }catch(Exception e)
             {
-                Logger.Instance.Warning($"Can't remove server from ServerHub @ {ip}");
+                Logger.Instance.Warning($"Can't remove server from ServerHub @ {ip}:{port}");
                 Logger.Instance.Warning($"Exception: {e.Message}");
             }
         }
