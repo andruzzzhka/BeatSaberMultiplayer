@@ -21,7 +21,7 @@ namespace BeatSaberMultiplayer
         public string selectedServerIP;
         public int selectedServerPort;
 
-        private string beatSaverURL = "https://dev.beatsaver.com";
+        private string beatSaverURL = "https://beatsaver.com";
 
         BSMultiplayerUI ui;
 
@@ -578,8 +578,8 @@ namespace BeatSaberMultiplayer
                 Song _tempSong = Song.FromSearchNode(node["songs"][0]);
                 
                 UnityWebRequest wwwDl = UnityWebRequest.Get(_tempSong.downloadUrl);
+                
 
-                wwwDl.timeout = 10;
                 _selectText.text = "Downloading "+HTML5Decode.HtmlDecode(_tempSong.beatname)+"...";
                 yield return wwwDl.SendWebRequest();
 
@@ -605,12 +605,13 @@ namespace BeatSaberMultiplayer
                         customSongsPath = docPath + "/CustomSongs/";
                         zipPath = customSongsPath + _tempSong.beatname + ".zip";
                         File.WriteAllBytes(zipPath, data);
+
                         Console.WriteLine("Downloaded zip file!");
-
-                        Unzip zip = new Unzip(zipPath);
-
                         Console.WriteLine("Extracting...");
+                        
+                        Unzip zip = new Unzip(zipPath);
                         zip.ExtractToDirectory($"{customSongsPath}{_tempSong.id}/");
+                        zip.Dispose();
 
                         File.Delete(zipPath);
                     }
