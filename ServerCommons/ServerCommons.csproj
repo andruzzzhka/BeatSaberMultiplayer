@@ -3,6 +3,7 @@
     <TargetFrameworks>netcoreapp2.0;net462</TargetFrameworks>
     <Version>0.4.4.1</Version>
     <AssemblyVersion>0.4.4.1</AssemblyVersion>
+    <Configurations>Debug;NewAPI;OldAPI</Configurations>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />

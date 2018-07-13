@@ -100,7 +100,7 @@ namespace BeatSaberMultiplayerServer
         public string path;
         public string levelId;
 
-        public int beatSaverId;
+        public string beatSaverId;
         public TimeSpan duration;
 
         [Serializable]

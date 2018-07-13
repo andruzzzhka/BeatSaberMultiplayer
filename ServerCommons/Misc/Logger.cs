@@ -70,7 +70,6 @@ namespace ServerCommons.Misc {
             Console.ForegroundColor = msg.GetColour();
             LogWriter.WriteLine(msg.Message);
             Console.WriteLine(msg.Message);
-            Console.ResetColor();
         }
 
         FileInfo GetPath() {

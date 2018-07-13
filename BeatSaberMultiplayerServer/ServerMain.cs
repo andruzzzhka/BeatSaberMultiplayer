@@ -38,6 +38,8 @@ namespace BeatSaberMultiplayerServer
         static TcpListener _listener;
 
         public static List<Client> clients = new List<Client>();
+        
+        private static string beatSaverURL = "https://beatsaver.com";
 
         public static ServerState serverState = ServerState.Voting;
         public static List<CustomSongInfo> availableSongs = new List<CustomSongInfo>();
@@ -303,12 +305,12 @@ namespace BeatSaberMultiplayerServer
                                 {
                                     case "add":
                                         {
-                                            int songId;
-                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty() && int.TryParse(comArgs[1], out songId))
+                                            string songId = comArgs[1];
+                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
                                             {
                                                 if (!Settings.Instance.AvailableSongs.Songs.Contains(songId))
                                                 {
-                                                    List<int> songs = new List<int>(Settings.Instance.AvailableSongs.Songs);
+                                                    List<string> songs = new List<string>(Settings.Instance.AvailableSongs.Songs);
                                                     songs.Add(songId);
                                                     Settings.Instance.AvailableSongs.Songs = songs.ToArray();
                                                     Settings.Instance.Save();
@@ -336,12 +338,12 @@ namespace BeatSaberMultiplayerServer
                                         break;
                                     case "remove":
                                         {
-                                            int songId;
-                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty() && int.TryParse(comArgs[1], out songId))
+                                            string songId = comArgs[1];
+                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
                                             {
                                                 clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
 
-                                                List<int> songs = new List<int>(Settings.Instance.AvailableSongs.Songs);
+                                                List<string> songs = new List<string>(Settings.Instance.AvailableSongs.Songs);
                                                 
                                                 if (songs.Remove(songId))
                                                 {
@@ -409,18 +411,37 @@ namespace BeatSaberMultiplayerServer
                 ProcessSong(song);
              });
 
-            CustomSongInfo[] buffer = new CustomSongInfo[availableSongs.Count];
-            availableSongs.CopyTo(buffer);
-            availableSongs.Clear();
-            foreach (int id in Settings.Instance.AvailableSongs.Songs)
+            if (Settings.Instance.AvailableSongs.SongOrder == Settings.SongOrder.List)
             {
-                availableSongs.Add(buffer.First(x => x.beatSaverId == id));
+                CustomSongInfo[] buffer = new CustomSongInfo[availableSongs.Count];
+                availableSongs.CopyTo(buffer);
+                availableSongs.Clear();
+
+                foreach (string id in Settings.Instance.AvailableSongs.Songs)
+                {
+                    try
+                    {
+                        availableSongs.Add(buffer.First(x => x.beatSaverId == id));
+                    }
+                    catch (Exception)
+                    {
+                        Logger.Instance.Warning($"Can't find song with ID {id}");
+                    }
+                }
+
+                var notSortedSongs = buffer.Except(availableSongs).ToList();
+                if (notSortedSongs.Count > 0)
+                {
+                    Logger.Instance.Warning($"{notSortedSongs.Count} songs not sorted!");
+                    availableSongs.AddRange(notSortedSongs);
+                }
             }
+            
 
             Logger.Instance.Log("Done!");
         }
 
-        private static string DownloadSongByID(int id)
+        private static string DownloadSongByID(string id)
         {
             var zipPath = Path.Combine(Settings.Instance.Server.Downloads.FullName, $"{id}.zip");
             Thread.Sleep(25);
@@ -431,7 +452,14 @@ namespace BeatSaberMultiplayerServer
                 if (Settings.Instance.Server.Downloads.GetFiles().All(o => o.Name != $"{id}.zip"))
                 {
                     Logger.Instance.Log($"Downloading {id}.zip");
-                    client.DownloadFile($"https://beatsaver.com/dl.php?id={id}", zipPath);
+                    try
+                    {
+                        client.DownloadFile($"{beatSaverURL}/download/{id}", zipPath);
+                    }catch(Exception)
+                    {
+                        Logger.Instance.Warning($"Can't download {id}.zip");
+                        return null;
+                    }
                 }
             }
 
@@ -443,6 +471,7 @@ namespace BeatSaberMultiplayerServer
             catch (Exception ex)
             {
                 Logger.Instance.Exception(ex.Message);
+                return null;
             }
 
             var songName = zip?.Entries[0].FullName.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0];
@@ -456,6 +485,7 @@ namespace BeatSaberMultiplayerServer
                 catch (IOException)
                 {
                     Logger.Instance.Exception($"Failed to remove Zip [{id}]");
+                    return null;
                 }
             }
             catch (IOException)
@@ -468,9 +498,10 @@ namespace BeatSaberMultiplayerServer
                 catch (IOException)
                 {
                     Logger.Instance.Exception($"Failed to remove Zip [{id}]");
+                    return null;
                 }
             }
-            return Path.Combine(Settings.Instance.Server.Downloaded.FullName, id.ToString(), songName);
+            return Path.Combine(Settings.Instance.Server.Downloaded.FullName, id, songName);
         }
 
         private static void ProcessSong(CustomSongInfo song)

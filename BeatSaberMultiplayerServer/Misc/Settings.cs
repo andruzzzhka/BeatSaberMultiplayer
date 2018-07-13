@@ -247,7 +247,7 @@ namespace BeatSaberMultiplayerServer.Misc {
         public class AvailableSongsSettings {
 
             private SongOrder _order;
-            private int[] _songs;
+            private string[] _songs;
 
             private Action MarkDirty { get; }
             
@@ -264,7 +264,7 @@ namespace BeatSaberMultiplayerServer.Misc {
             }
 
             [JsonProperty]
-            public int[] Songs {
+            public string[] Songs {
                 get => _songs;
                 set
                 {
@@ -276,7 +276,7 @@ namespace BeatSaberMultiplayerServer.Misc {
             public AvailableSongsSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _order = SongOrder.Voting;
-                _songs = new int[] {65};
+                _songs = new string[] {"65-33"};
             }
         }
 

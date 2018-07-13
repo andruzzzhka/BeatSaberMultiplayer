@@ -21,11 +21,11 @@ namespace BeatSaberMultiplayer
         public string selectedServerIP;
         public int selectedServerPort;
 
+        private string beatSaverURL = "https://dev.beatsaver.com";
+
         BSMultiplayerUI ui;
 
         Button _backButton;
-
-        SongLoader _songLoader;
 
         MultiplayerLeaderboardViewController _multiplayerLeaderboard;
         VotingSongListViewController _votingSongList;
@@ -63,7 +63,6 @@ namespace BeatSaberMultiplayer
             
 
             ui = BSMultiplayerUI._instance;
-            _songLoader = FindObjectOfType<SongLoader>();
             localPlayerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
 
             if (_songPreviewPlayer == null)
@@ -554,9 +553,9 @@ namespace BeatSaberMultiplayer
         {
             Console.WriteLine("Downloading "+ levelId.Substring(0, levelId.IndexOf('∎')));
             
-            _selectText.text = "Connecting to BeatSaver.com...";
-
-            UnityWebRequest wwwId = UnityWebRequest.Get("https://beatsaver.com/api.php?mode=hashinfo&hash=" + levelId.Substring(0,levelId.IndexOf('∎')));
+            _selectText.text = "Connecting to BeatSaver...";
+            
+            UnityWebRequest wwwId = UnityWebRequest.Get($"{beatSaverURL}/api/songs/search/hash/" + levelId.Substring(0,levelId.IndexOf('∎')));
             wwwId.timeout = 10;
 
             yield return wwwId.SendWebRequest();
@@ -574,13 +573,12 @@ namespace BeatSaberMultiplayer
             }
             else
             {
-                string parse = wwwId.downloadHandler.text;
-
-                JSONNode node = JSON.Parse(parse);
+                JSONNode node = JSON.Parse(wwwId.downloadHandler.text);
                 
-                Song _tempSong = new Song(node[0]);
+                Song _tempSong = Song.FromSearchNode(node["songs"][0]);
+                
+                UnityWebRequest wwwDl = UnityWebRequest.Get(_tempSong.downloadUrl);
 
-                UnityWebRequest wwwDl = UnityWebRequest.Get("https://beatsaver.com/dl.php?id=" + (_tempSong.id));
                 wwwDl.timeout = 10;
                 _selectText.text = "Downloading "+HTML5Decode.HtmlDecode(_tempSong.beatname)+"...";
                 yield return wwwDl.SendWebRequest();
@@ -621,12 +619,7 @@ namespace BeatSaberMultiplayer
                         Console.WriteLine("EXCEPTION: " + e);
                         yield break;
                     }
-
-
                 }
-
-
-
             }
         }
 

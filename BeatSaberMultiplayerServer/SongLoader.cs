@@ -43,10 +43,7 @@ namespace BeatSaberMultiplayerServer
                 if (!string.IsNullOrEmpty(customSongInfo.path))
                 {
                     var splittedPath = customSongInfo.path.Split(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-                    if (!int.TryParse(splittedPath[splittedPath.Length - 2], out customSongInfo.beatSaverId))
-                    {
-                        customSongInfo.beatSaverId = -1;
-                    }
+                    customSongInfo.beatSaverId = splittedPath[splittedPath.Length - 2];
                 }
 
                 return customSongInfo;
