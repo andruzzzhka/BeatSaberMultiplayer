@@ -64,23 +64,31 @@ namespace BeatSaberMultiplayerServer
         {
             AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
 
+            if (args.Length > 0)
+            {
+                int port;
+                if (int.TryParse(args[0], out port))
+                {
+                    Settings.Instance.Server.Port = port;
+                }
+                else
+                {
+                    if (args[0].StartsWith("--"))
+                    {
+                        ProcessCommand(args[0].TrimStart('-'), args.Skip(1).ToArray(), true);
+                    }
+                    else
+                    {
+
+                    }
+                }
+            }
+
             Console.Title = string.Format(TitleFormat, Settings.Instance.Server.ServerName, 0);
             Logger.Instance.Log($"Beat Saber Multiplayer Server v{serverVersion}");
 
             VersionChecker.CheckForUpdates();
-
-            if (args.Length > 0)
-            {
-                try
-                {
-                    Settings.Instance.Server.Port = int.Parse(args[0]);
-                }
-                catch (Exception e)
-                {
-                    Logger.Instance.Exception($"Can't parse argumnets! Exception: {e}");
-                }
-            }
-
+            
             Logger.Instance.Log($"Hosting Server @ {Settings.Instance.Server.IP}:{Settings.Instance.Server.Port}");
 
             Logger.Instance.Log("Downloading songs from BeatSaver...");
@@ -141,21 +149,33 @@ namespace BeatSaberMultiplayerServer
                 var comParts = x?.Split(' ');
                 var comName = comParts[0];
                 var comArgs = comParts.Skip(1).ToArray();
-                string s = string.Empty;
-                switch (comName.ToLower())
-                {
-                    case "help":
-                        foreach (var com in new[] { "help", "quit", "clients", "blacklist [add/remove] [playerID/IP]", "whitelist [enable/disable/add/remove] [playerID/IP]", "songs [add/remove/list] [songID on BeatSaver]" })
-                        {
-                            s += $"{Environment.NewLine}> {com}";
-                        }
 
-                        Logger.Instance.Log($"Commands:{s}");
-                        break;
-                    case "quit":
-                        Environment.Exit(0);
-                        return;
-                    case "clients":
+                ProcessCommand(comName, comArgs, false);
+            }
+        }
+
+        void ProcessCommand(string comName, string[] comArgs, bool exitAfterPrint)
+        {
+            string s = string.Empty;
+            switch (comName.ToLower())
+            {
+                case "help":
+                    foreach (var com in new[] { "help", "quit", "clients", "blacklist [add/remove] [playerID/IP]", "whitelist [enable/disable/add/remove] [playerID/IP]", "songs [add/remove/list] [songID on BeatSaver]" })
+                    {
+                        s += $"{Environment.NewLine}> {com}";
+                    }
+
+                    Logger.Instance.Log($"Commands:{s}", exitAfterPrint);
+                    break;
+                case "version":
+                    Logger.Instance.Log($"{Assembly.GetEntryAssembly().GetName().Version}", exitAfterPrint);
+                    break;
+                case "quit":
+                    Environment.Exit(0);
+                    return;
+                case "clients":
+                    if (!exitAfterPrint)
+                    {
                         foreach (var t in clients)
                         {
                             var client = t.playerInfo;
@@ -172,224 +192,239 @@ namespace BeatSaberMultiplayerServer
                         }
 
                         if (s == String.Empty) s = " No Clients";
-                        Logger.Instance.Log($"Connected Clients:{s}");
-                        break;
-                    case "blacklist":
+                        Logger.Instance.Log($"Connected Clients:{s}", exitAfterPrint);
+                    }
+                    break;
+                case "blacklist":
+                    {
+                        if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
                         {
-                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
+                            switch (comArgs[0])
                             {
-                                switch (comArgs[0])
-                                {
-                                    case "add":
+                                case "add":
+                                    {
+                                        if (!Settings.Instance.Access.Blacklist.Contains(comArgs[1]))
                                         {
-                                            if (!Settings.Instance.Access.Blacklist.Contains(comArgs[1]))
+                                            clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
+                                            Settings.Instance.Access.Blacklist.Add(comArgs[1]);
+                                            Logger.Instance.Log($"Successfully banned {comArgs[1]}", exitAfterPrint);
+                                            Settings.Instance.Save();
+                                        }
+                                        else
+                                        {
+                                            Logger.Instance.Log($"{comArgs[1]} is already blacklisted", exitAfterPrint);
+                                        }
+                                    }
+                                    break;
+                                case "remove":
+                                    {
+                                        if (Settings.Instance.Access.Blacklist.Remove(comArgs[1]))
+                                        {
+                                            Logger.Instance.Log($"Successfully unbanned {comArgs[1]}", exitAfterPrint);
+                                            Settings.Instance.Save();
+                                        }
+                                        else
+                                        {
+                                            Logger.Instance.Warning($"{comArgs[1]} is not banned", exitAfterPrint);
+                                        }
+                                    }
+                                    break;
+                                default:
+                                    {
+                                        Logger.Instance.Warning($"Command usage: blacklist [add/remove] [playerID/IP]", exitAfterPrint);
+                                    }
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            Logger.Instance.Warning($"Command usage: blacklist [add/remove] [playerID/IP]", exitAfterPrint);
+                        }
+                    }
+                    break;
+                case "whitelist":
+                    {
+                        if (comArgs.Length >= 1)
+                        {
+                            switch (comArgs[0])
+                            {
+                                case "enable":
+                                    {
+                                        Settings.Instance.Access.WhitelistEnabled = true;
+                                        Logger.Instance.Log($"Whitelist enabled", exitAfterPrint);
+                                        Settings.Instance.Save();
+                                    }
+                                    break;
+                                case "disable":
+                                    {
+                                        Settings.Instance.Access.WhitelistEnabled = false;
+                                        Logger.Instance.Log($"Whitelist disabled", exitAfterPrint);
+                                        Settings.Instance.Save();
+                                    }
+                                    break;
+                                case "add":
+                                    {
+                                        if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
+                                        {
+                                            if (!Settings.Instance.Access.Whitelist.Contains(comArgs[1]))
                                             {
-                                                clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
-                                                Settings.Instance.Access.Blacklist.Add(comArgs[1]);
-                                                Logger.Instance.Log($"Successfully banned {comArgs[1]}");
+                                                Settings.Instance.Access.Whitelist.Add(comArgs[1]);
+                                                Settings.Instance.Save();
+                                                Logger.Instance.Log($"Successfully whitelisted {comArgs[1]}", exitAfterPrint);
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Log($"{comArgs[1]} is already whitelisted", exitAfterPrint);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]", exitAfterPrint);
+                                        }
+                                    }
+                                    break;
+                                case "remove":
+                                    {
+                                        if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
+                                        {
+                                            clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
+                                            if (Settings.Instance.Access.Whitelist.Remove(comArgs[1]))
+                                            {
+                                                Logger.Instance.Log($"Successfully removed {comArgs[1]} from whitelist", exitAfterPrint);
                                                 Settings.Instance.Save();
                                             }
                                             else
                                             {
-                                                Logger.Instance.Log($"{comArgs[1]} is already whitelisted");
+                                                Logger.Instance.Warning($"{comArgs[1]} is not whitelisted", exitAfterPrint);
                                             }
                                         }
-                                        break;
-                                    case "remove":
+                                        else
                                         {
-                                            if (Settings.Instance.Access.Blacklist.Remove(comArgs[1]))
-                                            {
-                                                Logger.Instance.Log($"Successfully unbanned {comArgs[1]}");
-                                                Settings.Instance.Save();
-                                            }
-                                            else
-                                            {
-                                                Logger.Instance.Warning($"{comArgs[1]} is not banned");
-                                            }
+                                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]", exitAfterPrint);
                                         }
-                                        break;
-                                    default:
-                                        {
-                                            Logger.Instance.Warning($"Command usage: blacklist [add/remove] [playerID/IP]");
-                                        }
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                Logger.Instance.Warning($"Command usage: blacklist [add/remove] [playerID/IP]");
+                                    }
+                                    break;
+                                default:
+                                    {
+                                        Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]", exitAfterPrint);
+                                    }
+                                    break;
                             }
                         }
-                        break;
-                    case "whitelist":
+                        else
                         {
-                            if (comArgs.Length >= 1)
-                            {
-                                switch (comArgs[0])
-                                {
-                                    case "enable":
-                                        {
-                                            Settings.Instance.Access.WhitelistEnabled = true;
-                                            Logger.Instance.Log($"Whitelist enabled");
-                                            Settings.Instance.Save();
-                                        }
-                                        break;
-                                    case "disable":
-                                        {
-                                            Settings.Instance.Access.WhitelistEnabled = false;
-                                            Logger.Instance.Log($"Whitelist disabled");
-                                            Settings.Instance.Save();
-                                        }
-                                        break;
-                                    case "add":
-                                        {
-                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
-                                            {
-                                                if (!Settings.Instance.Access.Whitelist.Contains(comArgs[1]))
-                                                {
-                                                    Settings.Instance.Access.Whitelist.Add(comArgs[1]);
-                                                    Settings.Instance.Save();
-                                                    Logger.Instance.Log($"Successfully whitelisted {comArgs[1]}");
-                                                }
-                                                else
-                                                {
-                                                    Logger.Instance.Log($"{comArgs[1]} is already whitelisted");
-                                                }
-                                            }
-                                            else
-                                            {
-                                                Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]");
-                                            }
-                                        }
-                                        break;
-                                    case "remove":
-                                        {
-                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
-                                            {
-                                                clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
-                                                if (Settings.Instance.Access.Whitelist.Remove(comArgs[1]))
-                                                {
-                                                    Logger.Instance.Log($"Successfully removed {comArgs[1]} from whitelist");
-                                                    Settings.Instance.Save();
-                                                }
-                                                else
-                                                {
-                                                    Logger.Instance.Warning($"{comArgs[1]} is not whitelisted");
-                                                }
-                                            }
-                                            else
-                                            {
-                                                Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]");
-                                            }
-                                        }
-                                        break;
-                                    default:
-                                        {
-                                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]");
-                                        }
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]");
-                            }
-
-
+                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]", exitAfterPrint);
                         }
-                        break;
-                    case "songs": {
-                            if (comArgs.Length >= 1)
+
+
+                    }
+                    break;
+                case "songs":
+                    {
+                        if (comArgs.Length >= 1)
+                        {
+                            switch (comArgs[0])
                             {
-                                switch (comArgs[0])
-                                {
-                                    case "add":
+                                case "add":
+                                    {
+                                        string songId = comArgs[1];
+                                        if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
                                         {
-                                            string songId = comArgs[1];
-                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
+                                            if (!Settings.Instance.AvailableSongs.Songs.Contains(songId))
                                             {
-                                                if (!Settings.Instance.AvailableSongs.Songs.Contains(songId))
-                                                {
-                                                    List<string> songs = new List<string>(Settings.Instance.AvailableSongs.Songs);
-                                                    songs.Add(songId);
-                                                    Settings.Instance.AvailableSongs.Songs = songs.ToArray();
-                                                    Settings.Instance.Save();
-                                                    string path = DownloadSongByID(songId);
-
-                                                    ProcessSong(SongLoader.GetCustomSongInfo(path));
-
-                                                    Logger.Instance.Log($"Successfully added {comArgs[1]} to the song list");
-
-                                                    SendToAllClients(new ServerCommand(
-                                                        ServerCommandType.DownloadSongs,
-                                                        _songs: availableSongs.Select(y => y.levelId).ToArray()), wss);
-                                                }
-                                                else
-                                                {
-                                                    Logger.Instance.Log($"{comArgs[1]} is already on the song list");
-                                                }
-
-                                            }
-                                            else
-                                            {
-                                                Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]");
-                                            }
-                                        }
-                                        break;
-                                    case "remove":
-                                        {
-                                            string songId = comArgs[1];
-                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
-                                            {
-                                                clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
-
                                                 List<string> songs = new List<string>(Settings.Instance.AvailableSongs.Songs);
-                                                
-                                                if (songs.Remove(songId))
-                                                {
-                                                    Settings.Instance.AvailableSongs.Songs = songs.ToArray();
-                                                    Settings.Instance.Save();
-                                                    availableSongs.RemoveAll(y => y.beatSaverId == songId);
-                                                    Logger.Instance.Log($"Successfully removed {comArgs[1]} from the song list");
-                                                }
-                                                else
-                                                {
-                                                    Logger.Instance.Warning($"{comArgs[1]} is not in the song list");
-                                                }
+                                                songs.Add(songId);
+                                                Settings.Instance.AvailableSongs.Songs = songs.ToArray();
+                                                Settings.Instance.Save();
+                                                string path = DownloadSongByID(songId);
+
+                                                ProcessSong(SongLoader.GetCustomSongInfo(path));
+
+                                                Logger.Instance.Log($"Successfully added {comArgs[1]} to the song list", exitAfterPrint);
+
+                                                SendToAllClients(new ServerCommand(
+                                                    ServerCommandType.DownloadSongs,
+                                                    _songs: availableSongs.Select(y => y.levelId).ToArray()), wss);
                                             }
                                             else
                                             {
-                                                Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]");
+                                                Logger.Instance.Log($"{comArgs[1]} is already on the song list", exitAfterPrint);
+                                            }
+
+                                        }
+                                        else
+                                        {
+                                            Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]", exitAfterPrint);
+                                        }
+                                    }
+                                    break;
+                                case "remove":
+                                    {
+                                        string songId = comArgs[1];
+                                        if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
+                                        {
+                                            clients.Where(y => y.clientIP == comArgs[1] || y.playerId.ToString() == comArgs[1]).AsParallel().ForAll(z => z.KickClient());
+
+                                            List<string> songs = new List<string>(Settings.Instance.AvailableSongs.Songs);
+
+                                            if (songs.Remove(songId))
+                                            {
+                                                Settings.Instance.AvailableSongs.Songs = songs.ToArray();
+                                                Settings.Instance.Save();
+                                                availableSongs.RemoveAll(y => y.beatSaverId == songId);
+                                                Logger.Instance.Log($"Successfully removed {comArgs[1]} from the song list", exitAfterPrint);
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Warning($"{comArgs[1]} is not in the song list", exitAfterPrint);
                                             }
                                         }
-                                        break;
-                                    case "list":
+                                        else
                                         {
-
+                                            Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]", exitAfterPrint);
+                                        }
+                                    }
+                                    break;
+                                case "list":
+                                    {
+                                        if (exitAfterPrint)
+                                        {
+                                            foreach (var com in Settings.Instance.AvailableSongs.Songs)
+                                            {
+                                                s += $"{Environment.NewLine}> {com}";
+                                            }
+                                        }
+                                        else
+                                        {
                                             foreach (var com in availableSongs)
                                             {
                                                 s += $"{Environment.NewLine}> {com.beatSaverId}: {com.authorName} - {com.songName} {com.songSubName}";
                                             }
-
-                                            Logger.Instance.Log($"Songs:{s}");
-
-                                        };break;
-                                    default:
-                                        {
-                                            Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]");
                                         }
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]");
-                            }
-                        };break;
-                    case "crash":
-                        throw new Exception("DebugException");
-                }
 
+                                        Logger.Instance.Log($"Songs:{s}", exitAfterPrint);
+
+                                    }; break;
+                                default:
+                                    {
+                                        Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]", exitAfterPrint);
+                                    }
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]", exitAfterPrint);
+                        }
+                    }; break;
+                case "crash":
+                    throw new Exception("DebugException");
+
+            }
+
+            if (exitAfterPrint)
+            {
+                Environment.Exit(0);
             }
         }
         

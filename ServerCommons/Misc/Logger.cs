@@ -26,10 +26,12 @@ namespace ServerCommons.Misc {
         public struct LogMessage {
             public string Message { get; set; }
             public LoggerLevel Level { get; set; }
+            public bool PrintToLog { get; set; }
 
-            public LogMessage(string msg, LoggerLevel lvl) {
+            public LogMessage(string msg, LoggerLevel lvl, bool log = true) {
                 Message = msg;
                 Level = lvl;
+                PrintToLog = log;
             }
         }
         
@@ -47,20 +49,32 @@ namespace ServerCommons.Misc {
 
         #region Log Functions
 
-        public void Log(object msg) {
-            PrintLogMessage(new LogMessage($"[LOG @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Info));
+        public void Log(object msg, bool hideHeader = false) {
+            if(!hideHeader)
+                PrintLogMessage(new LogMessage($"[LOG @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Info));
+            else
+                PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Info, false));
         }
 
-        public void Error(object msg) {
-            PrintLogMessage(new LogMessage($"[ERROR @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Error));
+        public void Error(object msg, bool hideHeader = false) {
+            if (!hideHeader)
+                PrintLogMessage(new LogMessage($"[ERROR @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Error));
+            else
+                PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Error, false));
         }
 
-        public void Exception(object msg) {
-            PrintLogMessage(new LogMessage($"[EXCEPTION @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Exception));
+        public void Exception(object msg, bool hideHeader = false) {
+            if (!hideHeader)
+                PrintLogMessage(new LogMessage($"[EXCEPTION @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Exception));
+            else
+                PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Exception, false));
         }
 
-        public void Warning(object msg) {
-            PrintLogMessage(new LogMessage($"[WARNING @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Warning));
+        public void Warning(object msg, bool hideHeader = false) {
+            if (!hideHeader)
+                PrintLogMessage(new LogMessage($"[Warning @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Warning));
+            else
+                PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Warning, false));
         }
 
         #endregion
@@ -68,13 +82,22 @@ namespace ServerCommons.Misc {
         void PrintLogMessage(LogMessage msg)
         {
             Console.ForegroundColor = msg.GetColour();
-            LogWriter.WriteLine(msg.Message);
             Console.WriteLine(msg.Message);
+            if (msg.PrintToLog)
+                LogWriter.WriteLine(msg.Message);
         }
 
         FileInfo GetPath() {
             var logsDir = new DirectoryInfo($"./{Settings.Instance.Logger.LogsDir}/{DateTime.Now:dd-MM-yy}");
             logsDir.Create();
+            
+            if (logsDir.GetFiles().Length > 0)
+            {
+                if (string.IsNullOrEmpty(File.ReadAllText($"{logsDir.FullName}/{logsDir.GetFiles().Length - 1}.txt")))
+                {
+                    return new FileInfo($"{logsDir.FullName}/{logsDir.GetFiles().Length - 1}.txt");
+                }
+            }
             return new FileInfo($"{logsDir.FullName}/{logsDir.GetFiles().Length}.txt");
         }
 

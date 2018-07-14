@@ -22,12 +22,6 @@ namespace ServerHub {
 
         private Thread listenerThread { get; set; }
 
-        Program() {
-            ShutdownEventCatcher.Shutdown += OnShutdown;
-            AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
-            IP = GetPublicIPv4();
-        }
-
         private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Logger.Instance.Exception(e.ExceptionObject.ToString());
@@ -39,43 +33,81 @@ namespace ServerHub {
         }
 
         void Start(string[] args) {
+
+            AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
+
+            if (args.Length > 0)
+            {
+                if (args[0].StartsWith("--"))
+                {
+                    ProcessCommand(args[0].TrimStart('-'), args.Skip(1).ToArray(), true);
+                }
+                else
+                {
+
+                }
+            }
+
+            ShutdownEventCatcher.Shutdown += OnShutdown;
+            IP = GetPublicIPv4();
+
             Logger.Instance.Log($"Beat Saber Multiplayer ServerHub v{Assembly.GetEntryAssembly().GetName().Version}");
 
             VersionChecker.CheckForUpdates();
 
             Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
-            
+
             Listener.Start();
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
-            while (Listener.Listen) {
+            while (Listener.Listen)
+            {
                 var x = Console.ReadLine();
                 if (x == string.Empty) continue;
                 var comParts = x?.Split(' ');
-                var comName = comParts[0];
-                var comArgs = comParts.Skip(1).ToArray();
-                string s = string.Empty;
-                switch (comName.ToLower()) {
-                    case "help":
-                        foreach (var com in new [] {"Help", "Quit", "Clients"}) {
-                            s += $"{Environment.NewLine}> {com}";
-                        }
-                        Logger.Instance.Log($"Commands:{s}");
-                        break;
-                    case "quit":
-                        Environment.Exit(0);
-                        return;
-                    case "clients":
-                        foreach (var t in Listener.ConnectedClients.Where(o => o.Data.ID!=-1)) {
+                string comName = comParts[0];
+                string[] comArgs = comParts.Skip(1).ToArray();
+
+                ProcessCommand(comName, comArgs, false);
+
+            }
+        }
+
+        void ProcessCommand(string comName, string[] comArgs, bool exitAfterPrint)
+        {
+            string s = string.Empty;
+            switch (comName.ToLower())
+            {
+                case "help":
+                    foreach (var com in new[] { "help", "version", "quit", "clients" })
+                    {
+                        s += $"{Environment.NewLine}> {com}";
+                    }
+                    Logger.Instance.Log($"Commands:{s}", exitAfterPrint);
+                    break;
+                case "version":
+                    Logger.Instance.Log($"{Assembly.GetEntryAssembly().GetName().Version}", exitAfterPrint);
+                    break;
+                case "quit":
+                    Environment.Exit(0);
+                    return;
+                case "clients":
+                    if (!exitAfterPrint)
+                    {
+                        foreach (var t in Listener.ConnectedClients.Where(o => o.Data.ID != -1))
+                        {
                             var client = t.Data;
                             s += $"{Environment.NewLine}[{client.ID}] {client.Name} @ {client.IPv4}:{client.Port}";
                         }
                         Logger.Instance.Log($"Connected Clients:{s}");
-                        break;
-                    case "crash":
-                        throw new Exception("DebugException");
-                }
+                    }
+                    break;
+                case "crash":
+                    throw new Exception("DebugException");
             }
+
+            if (exitAfterPrint)
+                Environment.Exit(0);
         }
 
         string GetPublicIPv4() {
