@@ -771,16 +771,16 @@ namespace BeatSaberMultiplayerServer
 
             foreach (CustomSongInfo.DifficultyLevel diff in _song.difficultyLevels)
             {
-                if ((int)Enum.Parse(typeof(Difficulty), diff.difficulty) <= (int)Settings.Instance.Server.PreferredDifficulty &&
-                    (int)Enum.Parse(typeof(Difficulty), diff.difficulty) >= difficulty)
+                if ((int)Enum.Parse(typeof(Difficulty), diff.difficulty, true) <= (int)Settings.Instance.Server.PreferredDifficulty &&
+                    (int)Enum.Parse(typeof(Difficulty), diff.difficulty, true) >= difficulty)
                 {
-                    difficulty = (int)Enum.Parse(typeof(Difficulty), diff.difficulty);
+                    difficulty = (int)Enum.Parse(typeof(Difficulty), diff.difficulty, true);
                 }
             }
 
             if (difficulty == 0 && _song.difficultyLevels.Length > 0)
             {
-                difficulty = (int)Enum.Parse(typeof(Difficulty), _song.difficultyLevels[0].difficulty);
+                difficulty = (int)Enum.Parse(typeof(Difficulty), _song.difficultyLevels[0].difficulty, true);
             }
 
             return difficulty;
