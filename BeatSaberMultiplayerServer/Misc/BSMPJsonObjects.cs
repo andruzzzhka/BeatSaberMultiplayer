@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BeatSaberMultiplayerServer.Misc;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,7 +14,11 @@ namespace BeatSaberMultiplayerServer
     {
         public string playerName;
         public ulong playerId;
+
         public int playerScore;
+        public int playerCutBlocks;
+        public int playerComboBlocks;
+        public int playerEnergy;
 
         public string playerAvatar;
         
@@ -22,7 +27,6 @@ namespace BeatSaberMultiplayerServer
         {
             playerName = _name;
             playerId = _id;
-            playerScore = 0;
             playerAvatar = _avatar;
         }
     }
@@ -33,7 +37,7 @@ namespace BeatSaberMultiplayerServer
 
     class ServerCommand
     {
-        public string version = "0.4.4.0";
+        public string version = "0.4.5.0";
         public ServerCommandType commandType;
         public ServerState serverState;
         public int lobbyTimer;
@@ -44,8 +48,10 @@ namespace BeatSaberMultiplayerServer
         public double selectedSongDuration;
         public double selectedSongPlayTime;
         public string kickReason;
+        public bool noFailMode;
+        public string scoreboardScoreFormat;
 
-        public ServerCommand(ServerCommandType _type, int _timer = 0, string[] _songs = null, int _difficulty = 0, string[] _playerInfos = null, double _selectedSongDuration = 0, double _selectedSongPlayTime = 0, string _kickReason = "")
+        public ServerCommand(ServerCommandType _type, int _timer = 0, string[] _songs = null, int _difficulty = 0, string[] _playerInfos = null, double _selectedSongDuration = 0, double _selectedSongPlayTime = 0, string _kickReason = null)
         {
             version = Assembly.GetEntryAssembly().GetName().Version.ToString();
             commandType = _type;
@@ -58,6 +64,8 @@ namespace BeatSaberMultiplayerServer
             selectedSongDuration = _selectedSongDuration;
             selectedSongPlayTime = _selectedSongPlayTime;
             kickReason = _kickReason;
+            noFailMode = Settings.Instance.Server.NoFailMode;
+            scoreboardScoreFormat = Settings.Instance.Server.ScoreboardScoreFormat;
         }
     }
 
@@ -66,7 +74,7 @@ namespace BeatSaberMultiplayerServer
     [Serializable]
     class ClientCommand
     {
-        public string version = "0.4.4.0";
+        public string version = "0.4.5.0";
         public ClientCommandType commandType;
         public string playerInfo;
         public string voteForLevelId;

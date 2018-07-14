@@ -31,6 +31,7 @@ namespace BeatSaberMultiplayer
         GameplayManager _gameManager;
         VRCenterAdjust _roomAdjust;
         ScoreController _scoreController;
+        GameEnergyCounter _energyController;
 
         public PlayerInfo localPlayerInfo;
         string lastPlayerInfo;
@@ -47,6 +48,8 @@ namespace BeatSaberMultiplayer
         public event Action<string[]> DataReceived;
         public List<ServerCommand> lastCommands = new List<ServerCommand>();
         
+        public string scoreboardScoreFormat = "{0}";
+
         int localPlayerIndex = -1;
         public List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
 
@@ -213,6 +216,11 @@ namespace BeatSaberMultiplayer
                     
                     if (command.commandType == ServerCommandType.SetPlayerInfos)
                     {
+                        if (command.scoreboardScoreFormat != null)
+                        {
+                            scoreboardScoreFormat = command.scoreboardScoreFormat;
+                        }
+
                         _playerInfos.Clear();
                         foreach (string playerStr in command.playerInfos)
                         {
@@ -561,6 +569,8 @@ namespace BeatSaberMultiplayer
                         ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper").inputFocusWasCapturedEvent -= _gameManager.HandleInputFocusWasCaptured;
                     
                     }
+
+
                 }
                 catch (Exception e)
                 {
@@ -575,9 +585,20 @@ namespace BeatSaberMultiplayer
             if (_scoreController != null)
             {
                 _scoreController.scoreDidChangeEvent += ScoreChanged;
+                _scoreController.noteWasCutEvent += noteWasCutEvent;
+                _scoreController.comboDidChangeEvent += comboDidChangeEvent;
             }
 
             Console.WriteLine("Found score controller");
+
+            _energyController = FindObjectOfType<GameEnergyCounter>();
+
+            if (_energyController != null)
+            {
+                _energyController.gameEnergyDidChangeEvent += EnergyDidChangeEvent;
+            }
+            
+            Console.WriteLine("Found energy controller");
 
             _roomAdjust = FindObjectOfType<VRCenterAdjust>();
 
@@ -587,6 +608,22 @@ namespace BeatSaberMultiplayer
                 roomRotationOffset = _roomAdjust.transform.rotation;
             }
             
+        }
+
+        private void EnergyDidChangeEvent(float energy)
+        {
+            localPlayerInfo.playerEnergy = (int)Math.Round(energy*100);
+        }
+
+        private void comboDidChangeEvent(int obj)
+        {
+            localPlayerInfo.playerComboBlocks = obj;
+        }
+
+        private void noteWasCutEvent(NoteData arg1, NoteCutInfo arg2, int score)
+        {
+            if(arg2.allIsOK)
+                localPlayerInfo.playerCutBlocks++;
         }
 
         private void ScoreChanged(int score)

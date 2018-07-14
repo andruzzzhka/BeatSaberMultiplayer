@@ -23,11 +23,13 @@ namespace BeatSaberMultiplayerServer.Misc {
             private string[] _serverHubIPs;
             private int[] _serverHubPorts;
 
-
+            private bool _noFailMode;
             private int _maxPlayers;
             private int _lobbyTime;
 
             private Difficulty _preferredDifficulty;
+
+            private string _scoreboardScoreFormat;
 
             [JsonProperty]
             private string SongDirectory;
@@ -136,6 +138,17 @@ namespace BeatSaberMultiplayerServer.Misc {
             }
 
             [JsonProperty]
+            public bool NoFailMode
+            {
+                get => _noFailMode;
+                set
+                {
+                    _noFailMode = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
             public int MaxPlayers
             {
                 get => _maxPlayers;
@@ -164,6 +177,17 @@ namespace BeatSaberMultiplayerServer.Misc {
                 set
                 {
                     _preferredDifficulty = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
+            public string ScoreboardScoreFormat
+            {
+                get => _scoreboardScoreFormat;
+                set
+                {
+                    _scoreboardScoreFormat = value;
                     MarkDirty();
                 }
             }
@@ -209,11 +233,13 @@ namespace BeatSaberMultiplayerServer.Misc {
                 _wsport = 3702;
                 _wsenabled = false;
                 _serverName = "New Server";
-                _serverHubIPs = new string[] { "beatsaber.jaddie.co.uk", "assistant.moe" };
-                _serverHubPorts = new int[] { 3700, 3700 };
+                _serverHubIPs = new string[] { "hub.assistant.moe", "soupwhale.com", "minemalox.me", "beatsaber.weebvr.com", "178.62.239.103", "beatsaber.jaddie.co.uk" };
+                _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700 };
+                _noFailMode = true;
                 _maxPlayers = 0;
                 _lobbyTime = 60;
                 _preferredDifficulty = Difficulty.Expert;
+                _scoreboardScoreFormat = "{0}";
                 SongDirectory = "AvailableSongs/";
             }
         }

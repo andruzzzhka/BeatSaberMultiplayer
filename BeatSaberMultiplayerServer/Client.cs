@@ -26,7 +26,7 @@ namespace BeatSaberMultiplayerServer
 
         Thread _clientLoopThread;
 
-        public Queue<string> sendQueue = new Queue<string>();
+        public Queue<ServerCommand> sendQueue = new Queue<ServerCommand>();
 
         public Client(TcpClient client)
         {
@@ -62,7 +62,7 @@ namespace BeatSaberMultiplayerServer
                         pingTimer++;
                         if (pingTimer > 180)
                         {
-                            SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.Ping)));
+                            SendToClient(new ServerCommand(ServerCommandType.Ping));
                             pingTimer = 0;
                         }
 
@@ -79,7 +79,7 @@ namespace BeatSaberMultiplayerServer
                                 if (clientVersion.Major != ServerMain.serverVersion.Major || clientVersion.Minor != ServerMain.serverVersion.Minor || clientVersion.Build != ServerMain.serverVersion.Build)
                                 {
                                     state = ClientState.UpdateRequired;
-                                    SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.UpdateRequired)));
+                                    SendToClient(new ServerCommand(ServerCommandType.UpdateRequired));
                                     return;
                                 }
 
@@ -146,25 +146,23 @@ namespace BeatSaberMultiplayerServer
                                         {
                                             if (ServerMain.serverState != ServerState.Playing)
                                             {
-                                                SendToClient(
-                                                    JsonConvert.SerializeObject(
-                                                        new ServerCommand(ServerCommandType.SetServerState)));
+                                                SendToClient(new ServerCommand(ServerCommandType.SetServerState));
                                             }
                                             else
                                             {
-                                                SendToClient(JsonConvert.SerializeObject(new ServerCommand(
+                                                SendToClient(new ServerCommand(
                                                     ServerCommandType.SetServerState,
                                                     _selectedSongDuration: ServerMain.availableSongs[ServerMain.currentSongIndex].duration.TotalSeconds,
-                                                    _selectedSongPlayTime: ServerMain.playTime.TotalSeconds)));
+                                                    _selectedSongPlayTime: ServerMain.playTime.TotalSeconds));
                                             }
                                         }
                                         ;
                                         break;
                                     case ClientCommandType.GetAvailableSongs:
                                         {
-                                            SendToClient(JsonConvert.SerializeObject(new ServerCommand(
+                                            SendToClient(new ServerCommand(
                                                 ServerCommandType.DownloadSongs,
-                                                _songs: ServerMain.availableSongs.Select(x => x.levelId).ToArray())));
+                                                _songs: ServerMain.availableSongs.Select(x => x.levelId).ToArray()));
                                         };
                                         break;
                                     case ClientCommandType.VoteForSong:
@@ -205,14 +203,14 @@ namespace BeatSaberMultiplayerServer
 
         public void KickClient()
         {
-            SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.Kicked)));
+            SendToClient(new ServerCommand(ServerCommandType.Kicked));
             DestroyClient();
             Logger.Instance.Log($"Kicked player \"{playerName}\" : {playerId}");
         }
 
         public void KickClient(string reason)
         {
-            SendToClient(JsonConvert.SerializeObject(new ServerCommand(ServerCommandType.Kicked, _kickReason: reason)));
+            SendToClient(new ServerCommand(ServerCommandType.Kicked, _kickReason: reason));
             DestroyClient();
             Logger.Instance.Log($"Kicked player \"{playerName}\" : {playerId} with reason \"{reason}\"");
         }
@@ -266,13 +264,15 @@ namespace BeatSaberMultiplayerServer
             return strBuffer;
         }
 
-        public bool SendToClient(string message)
+        public bool SendToClient(ServerCommand command)
         {
             if (_client == null || !_client.Connected)
             {
                 return false;
             }
 
+            string message = JsonConvert.SerializeObject(command, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore });
+            
             byte[] buffer = Encoding.UTF8.GetBytes(message);
             try
             {

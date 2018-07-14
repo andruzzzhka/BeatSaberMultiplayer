@@ -22,7 +22,8 @@ namespace BeatSaberMultiplayer
         void Update()
         {
             progress += Time.deltaTime * 20;
-            playerScoreText.text = Mathf.Lerp(previousScore, currentScore, Mathf.Clamp01(progress)).ToString("#");
+            int score = (int)Mathf.Lerp(previousScore, currentScore, Mathf.Clamp01(progress));
+            playerScoreText.text = string.Format(BSMultiplayerClient._instance.scoreboardScoreFormat, score, _playerInfo.playerEnergy, _playerInfo.playerCutBlocks, _playerInfo.playerComboBlocks);
         }
 
         void Awake()
@@ -48,7 +49,7 @@ namespace BeatSaberMultiplayer
 
             if (_playerInfo != null)
             {
-                playerPlaceText.text = (_index+1).ToString();
+                playerPlaceText.text = (_index + 1).ToString();
                 playerNameText.text = _playerInfo.playerName;
                 previousScore = currentScore;
                 currentScore = _playerInfo.playerScore;

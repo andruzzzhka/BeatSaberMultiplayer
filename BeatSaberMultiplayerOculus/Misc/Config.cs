@@ -79,7 +79,7 @@ namespace BeatSaberMultiplayer {
         }
 
         Config() {
-            _serverHubIPs = new string[]{"assistant.moe", "soupwhale.com", "minemalox.me", "beatsaber.weebvr.com", "178.62.239.103", "beatsaber.jaddie.co.uk" };
+            _serverHubIPs = new string[]{"hub.assistant.moe", "soupwhale.com", "minemalox.me", "beatsaber.weebvr.com", "178.62.239.103", "beatsaber.jaddie.co.uk" };
             _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700 };
             _showAvatarsInGame = false;
             _showAvatarsInLobby = true;

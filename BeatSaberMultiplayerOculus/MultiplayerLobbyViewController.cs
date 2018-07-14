@@ -327,7 +327,7 @@ namespace BeatSaberMultiplayer
                                         
                                         BSMultiplayerClient._instance.DataReceived -= DataReceived;
                                         GameplayOptions gameplayOptions = new GameplayOptions();
-                                        gameplayOptions.noEnergy = true;
+                                        gameplayOptions.noEnergy = command.noFailMode;
                                         gameplayOptions.mirror = false;
 
                                         if (BSMultiplayerClient._instance._mainGameSceneSetupData != null)

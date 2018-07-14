@@ -320,9 +320,9 @@ namespace BeatSaberMultiplayerServer
 
                                                     Logger.Instance.Log($"Successfully added {comArgs[1]} to the song list");
 
-                                                    SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                                    SendToAllClients(new ServerCommand(
                                                         ServerCommandType.DownloadSongs,
-                                                        _songs: availableSongs.Select(y => y.levelId).ToArray())), wss);
+                                                        _songs: availableSongs.Select(y => y.levelId).ToArray()), wss);
                                                 }
                                                 else
                                                 {
@@ -591,18 +591,18 @@ namespace BeatSaberMultiplayerServer
                                 if (Math.Ceiling(lobbyTimer) > _timerSeconds && _timerSeconds > -1)
                                 {
                                     _timerSeconds = Math.Ceiling(lobbyTimer);
-                                    SendToAllClients(JsonConvert.SerializeObject(
+                                    SendToAllClients(
                                         new ServerCommand(ServerCommandType.SetLobbyTimer,
-                                            Math.Max(lobbyTime - _timerSeconds, 0))));
+                                            Math.Max(lobbyTime - _timerSeconds, 0)));
                                 }
 
                                 if (sendTimer >= sendTime)
                                 {
-                                    SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                    SendToAllClients(new ServerCommand(
                                         ServerCommandType.SetPlayerInfos,
                                         _playerInfos: (clients.Where(x => x.playerInfo != null)
                                             .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray()
-                                        )));
+                                        ));
                                     sendTimer = 0f;
                                 }
 
@@ -655,9 +655,9 @@ namespace BeatSaberMultiplayerServer
                                     if (currentSongIndex != -1)
                                     {
                                         serverState = ServerState.Preparing;
-                                        SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                        SendToAllClients(new ServerCommand(
                                             ServerCommandType.SetSelectedSong,
-                                            _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
+                                            _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex])), wss);
                                         Logger.Instance.Log($"Next song is {availableSongs[currentSongIndex].songName} {availableSongs[currentSongIndex].songSubName}");
                                     }
                                 }
@@ -666,9 +666,9 @@ namespace BeatSaberMultiplayerServer
                                 {
                                     if (availableSongs.Count > 0)
                                     {
-                                        SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                        SendToAllClients(new ServerCommand(
                                             ServerCommandType.StartSelectedSongLevel,
-                                            _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex]))), wss);
+                                            _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex])), wss);
 
                                         serverState = ServerState.Playing;
                                         Logger.Instance.Log("Starting song " + availableSongs[currentSongIndex].songName + " " +
@@ -686,13 +686,13 @@ namespace BeatSaberMultiplayerServer
 
                                 if (sendTimer >= sendTime)
                                 {
-                                    SendToAllClients(JsonConvert.SerializeObject(new ServerCommand(
+                                    SendToAllClients(new ServerCommand(
                                         ServerCommandType.SetPlayerInfos,
                                         _playerInfos: (clients.Where(x => x.playerInfo != null)
                                             .OrderByDescending(x => x.playerInfo.playerScore)
                                             .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray(),
                                         _selectedSongDuration: availableSongs[currentSongIndex].duration.TotalSeconds,
-                                        _selectedSongPlayTime: playTime.TotalSeconds)), wss);
+                                        _selectedSongPlayTime: playTime.TotalSeconds), wss);
                                     sendTimer = 0f;
                                 }
 
@@ -751,12 +751,12 @@ namespace BeatSaberMultiplayerServer
             return difficulty;
         }
 
-        static void SendToAllClients(string message, bool retryOnError = false)
+        static void SendToAllClients(ServerCommand command, bool retryOnError = false)
         {
             try
             {
                 clients.Where(x => x != null && (x.state == ClientState.Connected || x.state == ClientState.Playing))
-                    .AsParallel().ForAll(x => { x.sendQueue.Enqueue(message); });
+                    .AsParallel().ForAll(x => { x.sendQueue.Enqueue(command); });
             }
             catch (Exception e)
             {
@@ -764,16 +764,16 @@ namespace BeatSaberMultiplayerServer
             }
         }
 
-        static void SendToAllClients(string message, WebSocketServer wss, bool retryOnError = false)
+        static void SendToAllClients(ServerCommand command, WebSocketServer wss, bool retryOnError = false)
         {
             try
             {
                 clients.Where(x => x != null && (x.state == ClientState.Connected || x.state == ClientState.Playing))
-                    .AsParallel().ForAll(x => { x.sendQueue.Enqueue(message); });
+                    .AsParallel().ForAll(x => { x.sendQueue.Enqueue(command); });
                 
                 if (wss != null)
                 {
-                    wss.WebSocketServices["/"].Sessions.Broadcast(message);
+                    wss.WebSocketServices["/"].Sessions.Broadcast(JsonConvert.SerializeObject(command));
                 }
             }
             catch (Exception e)
