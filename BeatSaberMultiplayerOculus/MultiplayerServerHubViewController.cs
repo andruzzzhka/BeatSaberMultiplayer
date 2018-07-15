@@ -40,16 +40,22 @@ namespace BeatSaberMultiplayer
 
                 _backButton.onClick.AddListener(delegate ()
                 {
-                    if(_serverHubs != null && _serverHubs.Count > 0)
+                    try
                     {
-                        _serverHubs.ForEach(x =>
+                        if (_serverHubs != null && _serverHubs.Count > 0)
                         {
-                            x.Disconnect();
+                            _serverHubs.ForEach(x =>
+                            {
+                                x.Disconnect();
 
-                            x.ReceivedServerList -= MultiplayerServerHubViewController_receivedServerList;
-                            x.ServerHubException -= MultiplayerServerHubViewController_serverHubException;
-                        });
-                        _loading = false;
+                                x.ReceivedServerList -= MultiplayerServerHubViewController_receivedServerList;
+                                x.ServerHubException -= MultiplayerServerHubViewController_serverHubException;
+                            });
+                            _loading = false;
+                        }
+                    }catch(Exception e)
+                    {
+                        Console.WriteLine($"Can't disconnect from ServerHubs. Exception: {e}");
                     }
                     DismissModalViewController(null, false);
 
