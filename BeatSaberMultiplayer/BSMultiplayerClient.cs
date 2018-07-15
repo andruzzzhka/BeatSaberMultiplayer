@@ -386,7 +386,6 @@ namespace BeatSaberMultiplayer
 
             results.GetComponentsInChildren<Button>().First(x => x.name == "RestartButton").interactable = false;
 
-
             results.resultsViewControllerDidPressContinueButtonEvent += delegate(ResultsViewController viewController) {
                 try
                 {
@@ -411,8 +410,13 @@ namespace BeatSaberMultiplayer
                 {
                     Console.WriteLine($"RESULTS EXCEPTION: {e}");
                 }
-
             };
+
+            MultiplayerResultsLeaderboardHolder resultsLeaderboard = BSMultiplayerUI._instance.CreateViewController<MultiplayerResultsLeaderboardHolder>();
+            results.screen.screenSystem.rightScreen.SetRootViewController(resultsLeaderboard);
+
+            resultsLeaderboard.SetLeaderboard(_playerInfos.ToArray());
+
         }
 
         public IEnumerator ReceiveFromServerCoroutine()

@@ -129,6 +129,7 @@
     <Compile Include="Misc\Unzip.cs" />
     <Compile Include="MultiplayerLeaderboardViewController.cs" />
     <Compile Include="MultiplayerLobbyViewController.cs" />
+    <Compile Include="MultiplayerResultsLeaderboardHolder.cs" />
     <Compile Include="MultiplayerServerHubViewController.cs" />
     <Compile Include="MultiplayerServerListViewController.cs" />
     <Compile Include="PlayerInfoDisplay.cs" />

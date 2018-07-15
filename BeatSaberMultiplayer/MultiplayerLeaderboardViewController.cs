@@ -41,7 +41,6 @@ namespace BeatSaberMultiplayer
                 (_leaderboardTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0.5f);
                 (_leaderboardTableView.transform as RectTransform).anchorMax = new Vector2(1f, 0.5f);
                 (_leaderboardTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 60f);
-                (_leaderboardTableView.transform as RectTransform).position = new Vector3(0f, 0f, 2.4f);
                 (_leaderboardTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
                                 
             }
