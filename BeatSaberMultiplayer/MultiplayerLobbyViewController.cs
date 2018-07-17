@@ -630,7 +630,7 @@ namespace BeatSaberMultiplayer
                         docPath = docPath.Substring(0, docPath.Length - 5);
                         docPath = docPath.Substring(0, docPath.LastIndexOf("/"));
                         customSongsPath = docPath + "/CustomSongs/"+ _tempSong.id + "/";
-                        zipPath = customSongsPath + _tempSong.beatname+ ".zip";
+                        zipPath = customSongsPath + _tempSong.id+ ".zip";
                         if (!Directory.Exists(customSongsPath))
                         {
                             Directory.CreateDirectory(customSongsPath);
