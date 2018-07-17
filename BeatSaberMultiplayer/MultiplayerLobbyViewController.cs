@@ -1,4 +1,5 @@
 ﻿using BeatSaberMultiplayer.Misc;
+using ICSharpCode.SharpZipLib.Zip;
 using SimpleJSON;
 using SongLoaderPlugin;
 using System;
@@ -579,16 +580,42 @@ namespace BeatSaberMultiplayer
                 
                 UnityWebRequest wwwDl = UnityWebRequest.Get(_tempSong.downloadUrl);
                 
+                bool timeout = false;
+                float time = 0f;
 
-                _selectText.text = "Downloading "+HTML5Decode.HtmlDecode(_tempSong.beatname)+"...";
-                yield return wwwDl.SendWebRequest();
+                UnityWebRequestAsyncOperation asyncRequest = wwwDl.SendWebRequest();
 
-                if (wwwId.isNetworkError || wwwId.isHttpError)
+                while (!asyncRequest.isDone || asyncRequest.progress < 1f)
                 {
-                    Console.WriteLine(wwwId.error);
-                    TextMeshProUGUI _errorText = ui.CreateText(rectTransform, String.Format(wwwId.error), new Vector2(0f, -48f));
-                    _errorText.alignment = TextAlignmentOptions.Center;
-                    Destroy(_errorText.gameObject, 2f);
+                    yield return null;
+
+                    time += Time.deltaTime;
+
+                    if (time >= 15f && asyncRequest.progress == 0f)
+                    {
+                        wwwDl.Abort();
+                        timeout = true;
+                    }
+
+                    _selectText.text = "Downloading " + HTML5Decode.HtmlDecode(_tempSong.beatname) + " - "+Math.Round(asyncRequest.progress*100)+"%";
+                }
+
+                if (wwwId.isNetworkError || wwwId.isHttpError || timeout)
+                {
+                    if (timeout)
+                    {
+                        Console.WriteLine("Request timeout");
+                        TextMeshProUGUI _errorText = ui.CreateText(rectTransform, String.Format("Request timeout"), new Vector2(0f, -48f));
+                        _errorText.alignment = TextAlignmentOptions.Center;
+                        Destroy(_errorText.gameObject, 2f);
+                    }
+                    else
+                    {
+                        Console.WriteLine(wwwId.error);
+                        TextMeshProUGUI _errorText = ui.CreateText(rectTransform, String.Format(wwwId.error), new Vector2(0f, -48f));
+                        _errorText.alignment = TextAlignmentOptions.Center;
+                        Destroy(_errorText.gameObject, 2f);
+                    }
                 }
                 else
                 {
@@ -602,16 +629,19 @@ namespace BeatSaberMultiplayer
                         docPath = Application.dataPath;
                         docPath = docPath.Substring(0, docPath.Length - 5);
                         docPath = docPath.Substring(0, docPath.LastIndexOf("/"));
-                        customSongsPath = docPath + "/CustomSongs/";
-                        zipPath = customSongsPath + _tempSong.beatname + ".zip";
+                        customSongsPath = docPath + "/CustomSongs/"+ _tempSong.id + "/";
+                        zipPath = customSongsPath + _tempSong.beatname+ ".zip";
+                        if (!Directory.Exists(customSongsPath))
+                        {
+                            Directory.CreateDirectory(customSongsPath);
+                        }
                         File.WriteAllBytes(zipPath, data);
 
                         Console.WriteLine("Downloaded zip file!");
                         Console.WriteLine("Extracting...");
-                        
-                        Unzip zip = new Unzip(zipPath);
-                        zip.ExtractToDirectory($"{customSongsPath}{_tempSong.id}/");
-                        zip.Dispose();
+
+                        FastZip zip = new FastZip();
+                        zip.ExtractZip(zipPath, customSongsPath, null);
 
                         File.Delete(zipPath);
                     }
