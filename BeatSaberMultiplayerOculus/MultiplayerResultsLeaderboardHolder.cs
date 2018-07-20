@@ -12,7 +12,7 @@ namespace BeatSaberMultiplayer
 
         MultiplayerLeaderboardViewController _multiplayerLeaderboard;
 
-        protected override void DidActivate()
+        protected override void DidActivate(bool firstActivation, ActivationType type)
         {
             if (_multiplayerLeaderboard == null)
             {

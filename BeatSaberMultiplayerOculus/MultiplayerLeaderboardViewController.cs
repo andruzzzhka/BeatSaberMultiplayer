@@ -19,7 +19,7 @@ namespace BeatSaberMultiplayer
 
         PlayerInfo[] playerInfos;
 
-        protected override void DidActivate()
+        protected override void DidActivate(bool firstActivation, ActivationType type)
         {
             ui = BSMultiplayerUI._instance;
 

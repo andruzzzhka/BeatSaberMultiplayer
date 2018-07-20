@@ -386,14 +386,14 @@ namespace BeatSaberMultiplayer
 
             results.GetComponentsInChildren<Button>().First(x => x.name == "RestartButton").interactable = false;
 
-            results.resultsViewControllerDidPressContinueButtonEvent += delegate(ResultsViewController viewController) {
+            results.continueButtonPressedEvent += delegate(ResultsViewController viewController) {
                 try
                 {
                     MultiplayerServerHubViewController hub = ui.CreateViewController<MultiplayerServerHubViewController>();
                     MultiplayerLobbyViewController lobby = ui.CreateViewController<MultiplayerLobbyViewController>();
 
                     viewController.DismissModalViewController(null, true);
-                    FindObjectOfType<SongSelectionMasterViewController>().DismissModalViewController(null, true);
+                    FindObjectOfType<StandardLevelSelectionNavigationController>().DismissModalViewController(null, true);
                     FindObjectOfType<SoloModeSelectionViewController>().DismissModalViewController(null, true);
 
                     hub.doNotUpdate = true;

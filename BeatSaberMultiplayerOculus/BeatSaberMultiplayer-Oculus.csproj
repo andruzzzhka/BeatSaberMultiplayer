@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BeatSaberMultiplayer</RootNamespace>
     <AssemblyName>BeatSaberMultiplayer</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -20,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'NewAPI|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,6 +30,7 @@
     <DefineConstants>TRACE;NEWAPI</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'OldAPI|AnyCPU'">
     <OutputPath>bin\OldAPI\</OutputPath>
@@ -37,6 +40,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -56,6 +60,8 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
@@ -122,54 +128,9 @@
     <Compile Include="Misc\Base64Sprites.cs" />
     <Compile Include="Misc\Config.cs" />
     <Compile Include="Misc\GetUserInfo.cs" />
-    <Compile Include="Misc\HTML5Decode.cs" />
     <Compile Include="Misc\ReflectionUtil.cs" />
     <Compile Include="Misc\Serialization.cs" />
-    <Compile Include="Misc\SimpleJSON.cs" />
-    <Compile Include="Misc\Zip\Checksums\Adler32.cs" />
-    <Compile Include="Misc\Zip\Checksums\CRC32.cs" />
-    <Compile Include="Misc\Zip\Checksums\IChecksum.cs" />
-    <Compile Include="Misc\Zip\Checksums\StrangeCRC.cs" />
-    <Compile Include="Misc\Zip\Core\FileSystemScanner.cs" />
-    <Compile Include="Misc\Zip\Core\INameTransform.cs" />
-    <Compile Include="Misc\Zip\Core\IScanFilter.cs" />
-    <Compile Include="Misc\Zip\Core\NameFilter.cs" />
-    <Compile Include="Misc\Zip\Core\PathFilter.cs" />
-    <Compile Include="Misc\Zip\Core\StreamUtils.cs" />
-    <Compile Include="Misc\Zip\Core\WindowsPathUtils.cs" />
-    <Compile Include="Misc\Zip\Encryption\PkzipClassic.cs" />
-    <Compile Include="Misc\Zip\Encryption\ZipAESStream.cs" />
-    <Compile Include="Misc\Zip\Encryption\ZipAESTransform.cs" />
-    <Compile Include="Misc\Zip\Lzw\LzwConstants.cs" />
-    <Compile Include="Misc\Zip\Lzw\LzwException.cs" />
-    <Compile Include="Misc\Zip\Lzw\LzwInputStream.cs" />
-    <Compile Include="Misc\Zip\SharpZipBaseException.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\Deflater.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\DeflaterConstants.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\DeflaterEngine.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\DeflaterHuffman.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\DeflaterPending.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\Inflater.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\InflaterDynHeader.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\InflaterHuffmanTree.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\PendingBuffer.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\Streams\DeflaterOutputStream.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\Streams\InflaterInputStream.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\Streams\OutputWindow.cs" />
-    <Compile Include="Misc\Zip\Zip\Compression\Streams\StreamManipulator.cs" />
-    <Compile Include="Misc\Zip\Zip\FastZip.cs" />
-    <Compile Include="Misc\Zip\Zip\IEntryFactory.cs" />
-    <Compile Include="Misc\Zip\Zip\WindowsNameTransform.cs" />
-    <Compile Include="Misc\Zip\Zip\ZipConstants.cs" />
-    <Compile Include="Misc\Zip\Zip\ZipEntry.cs" />
-    <Compile Include="Misc\Zip\Zip\ZipEntryFactory.cs" />
-    <Compile Include="Misc\Zip\Zip\ZipException.cs" />
-    <Compile Include="Misc\Zip\Zip\ZipExtraData.cs" />
-    <Compile Include="Misc\Zip\Zip\ZipFile.cs" />
-    <Compile Include="Misc\Zip\Zip\ZipHelperStream.cs" />
-    <Compile Include="Misc\Zip\Zip\ZipInputStream.cs" />
-    <Compile Include="Misc\Zip\Zip\ZipNameTransform.cs" />
-    <Compile Include="Misc\Zip\Zip\ZipOutputStream.cs" />
+    <Compile Include="Misc\ZipArchiveExtensions.cs" />
     <Compile Include="MultiplayerLeaderboardViewController.cs" />
     <Compile Include="MultiplayerLobbyViewController.cs" />
     <Compile Include="MultiplayerResultsLeaderboardHolder.cs" />

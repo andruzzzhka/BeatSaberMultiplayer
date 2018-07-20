@@ -73,49 +73,27 @@ namespace BeatSaberMultiplayer
 
         private void CreateMultiplayerButton()
         {
-
             Button _multiplayerButton = CreateUIButton(_mainMenuRectTransform, "PartyButton");
-            Console.ForegroundColor = ConsoleColor.Gray;
-            
-            (Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "SoloButton").transform as RectTransform).anchoredPosition = new Vector2(-19f,8f);
-            (Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "PartyButton").transform as RectTransform).anchoredPosition = new Vector2(-18f, 8f);
+            _multiplayerButton.transform.SetParent(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "SoloButton").transform.parent);
 
+            SetButtonText(ref _multiplayerButton, "Online");
+            SetButtonIcon(ref _multiplayerButton, Base64ToSprite(Base64Sprites.onlineIcon));
 
-            try
+            _multiplayerButton.onClick.AddListener(delegate ()
             {
-                (_multiplayerButton.transform as RectTransform).anchoredPosition = new Vector2(19f, 8f);
-                (_multiplayerButton.transform as RectTransform).sizeDelta = new Vector2(36f, 36f);
-
-                SetButtonText(ref _multiplayerButton, "Online");
-
-                SetButtonIcon(ref _multiplayerButton, Base64ToSprite(Base64Sprites.onlineIcon));
-
-                _multiplayerButton.onClick.AddListener(delegate () {
-
-                    try
+                try
+                {
+                    if (_multiplayerServerHubViewController == null)
                     {
-
-                        if (_multiplayerServerHubViewController == null)
-                        {
-                            _multiplayerServerHubViewController = CreateViewController<MultiplayerServerHubViewController>();
-
-
-                        }
-                        _mainMenuViewController.PresentModalViewController(_multiplayerServerHubViewController, null, false);
-
+                        _multiplayerServerHubViewController = CreateViewController<MultiplayerServerHubViewController>();
                     }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("EXCETPION IN BUTTON: " + e.Message);
-                    }
-
-                });
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("EXCEPTION: " + e.Message);
-            }
+                    _mainMenuViewController.PresentModalViewController(_multiplayerServerHubViewController, null, false);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("EXCETPION IN BUTTON: " + e.Message);
+                }
+            });
         }
 
 

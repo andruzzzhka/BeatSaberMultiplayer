@@ -30,7 +30,7 @@ namespace BeatSaberMultiplayer
         List<ServerHubClient> _serverHubs = new List<ServerHubClient>();
         
 
-        protected override void DidActivate()
+        protected override void DidActivate(bool firstActivation, ActivationType type)
         {
             ui = BSMultiplayerUI._instance;
 
