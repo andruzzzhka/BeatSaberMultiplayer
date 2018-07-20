@@ -20,17 +20,17 @@ namespace BeatSaberMultiplayer
         Button _pageDownButton;
 
         TableView _serverTableView;
-        SongListTableCell _serverTableCellInstance;
+        StandardLevelListTableCell _serverTableCellInstance;
 
         List<Data.Data> availableServers = new List<Data.Data>();
 
-        protected override void DidActivate()
+        protected override void DidActivate(bool firstActivation, ActivationType type)
         {
             ui = BSMultiplayerUI._instance;
 
             _parentMasterViewController = transform.parent.GetComponent<MultiplayerServerHubViewController>();
 
-            _serverTableCellInstance = Resources.FindObjectsOfTypeAll<SongListTableCell>().First(x => (x.name == "SongListTableCell"));
+            _serverTableCellInstance = Resources.FindObjectsOfTypeAll<StandardLevelListTableCell>().First(x => (x.name == "StandardLevelListTableCell"));
 
             if (_pageUpButton == null)
             {
@@ -82,7 +82,7 @@ namespace BeatSaberMultiplayer
                 ReflectionUtil.SetPrivateField(_serverTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_serverTableView, "_pageDownButton", _pageDownButton);
 
-                _serverTableView.DidSelectRowEvent += ServerTableView_DidSelectRow;
+                _serverTableView.didSelectRowEvent += ServerTableView_DidSelectRow;
 
                 _serverTableView.dataSource = this;
 
@@ -137,7 +137,7 @@ namespace BeatSaberMultiplayer
 
         public TableCell CellForRow(int row)
         {
-            SongListTableCell cell = Instantiate(_serverTableCellInstance);
+            StandardLevelListTableCell cell = Instantiate(_serverTableCellInstance);
 
             Destroy(cell.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name.ToLower().Contains("cover")));
             cell.songName = availableServers[row].Name;

@@ -1,5 +1,6 @@
 ﻿using HMUI;
 using SongLoaderPlugin;
+using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,17 +13,17 @@ namespace BeatSaberMultiplayer
 {
     class VotingSongListViewController : VRUIViewController, TableView.IDataSource
     {
-        public event Action<CustomLevelStaticData> selectedSong;
+        public event Action<CustomLevel> selectedSong;
 
         public Button _pageUpButton;
         public Button _pageDownButton;
 
         public TableView _songsTableView;
-        SongListTableCell _songListTableCellInstance;
+        StandardLevelListTableCell _songListTableCellInstance;
 
-        List<CustomLevelStaticData> songs;
+        List<CustomLevel> songs;
 
-        protected override void DidActivate()
+        protected override void DidActivate(bool firstActivation, ActivationType type)
         {
             if (_pageUpButton == null)
             {
@@ -50,7 +51,7 @@ namespace BeatSaberMultiplayer
                 });
             }
 
-            _songListTableCellInstance = Resources.FindObjectsOfTypeAll<SongListTableCell>().First(x => (x.name == "SongListTableCell"));
+            _songListTableCellInstance = Resources.FindObjectsOfTypeAll<StandardLevelListTableCell>().First(x => (x.name == "StandardLevelListTableCell"));
 
             if (_songsTableView == null)
             {
@@ -72,7 +73,7 @@ namespace BeatSaberMultiplayer
                 ReflectionUtil.SetPrivateField(_songsTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_songsTableView, "_pageDownButton", _pageDownButton);
 
-                _songsTableView.DidSelectRowEvent += _songsTableView_DidSelectRowEvent;
+                _songsTableView.didSelectRowEvent += _songsTableView_DidSelectRowEvent;
             }
         }
 
@@ -81,7 +82,7 @@ namespace BeatSaberMultiplayer
             selectedSong.Invoke(songs[row]);
         }
 
-        public void SetSongs(List<CustomLevelStaticData> _songs)
+        public void SetSongs(List<CustomLevel> _songs)
         {
             songs = _songs;
 
@@ -99,9 +100,9 @@ namespace BeatSaberMultiplayer
 
         public TableCell CellForRow(int row)
         {
-            SongListTableCell cell = Instantiate(_songListTableCellInstance);
+            StandardLevelListTableCell cell = Instantiate(_songListTableCellInstance);
 
-            cell.author = songs[row].authorName;
+            cell.author = songs[row].songAuthorName;
             cell.coverImage = songs[row].coverImage;
             cell.songName = $"{songs[row].songName}\n<size=80%>{songs[row].songSubName}</size>";
 

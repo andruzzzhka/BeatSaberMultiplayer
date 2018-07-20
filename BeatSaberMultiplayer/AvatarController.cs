@@ -1,4 +1,4 @@
-﻿using CustomAvatar;
+﻿//using CustomAvatar;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,8 +14,8 @@ namespace BeatSaberMultiplayer
     {
         PlayerInfo playerInfo;
 
-        AvatarScript avatar;
-        AvatarBodyManager bodyManager;
+        //AvatarScript avatar;
+        //AvatarBodyManager bodyManager;
 
         TextMeshPro playerNameText;
 
@@ -48,25 +48,29 @@ namespace BeatSaberMultiplayer
 
         void CreateGameObjects()
         {
-
+            /*
             if (avatar == null)
             {
                 Console.WriteLine("Spawning avatar");
                 avatar = AvatarScript.SpawnAvatar(".\\CustomAvatars\\TemplateFullBody.avatar", true);
                 
                 StartCoroutine(WaitForAvatar());
-            }            
+            } */           
         }
 
         private IEnumerator WaitForAvatar()
         {
+            yield break;
+            /*
             yield return new WaitUntil(delegate () { return avatar.getInstance() != null; });
 
             AvatarLoaded();
+            */
         }
 
         private void AvatarLoaded()
         {
+            /*
             if (bodyManager == null)
             {
                 bodyManager = avatar.GetBodyManager();
@@ -87,10 +91,12 @@ namespace BeatSaberMultiplayer
             }
 
             Console.WriteLine("Avatar loaded");
+            */
         }
 
         void Update()
         {
+            /*
             if (playerNameText != null)
             {
                 interpolationProgress += Time.deltaTime * 20;
@@ -105,23 +111,27 @@ namespace BeatSaberMultiplayer
                 
                 playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InputTracking.GetLocalPosition(XRNode.Head));
             }
+            */
         }
 
         void OnDestroy()
         {
+            /*
             Destroy(avatar.getInstance());
             Destroy(avatar.gameObject);
+            */
         }
 
         public void SetPlayerInfo(PlayerInfo _playerInfo, float offset, bool isLocal)
         {
             
-
+            
             if (_playerInfo == null)
             {
                 Destroy(gameObject);
                 return;
             }
+            /*
             try
             {
 
@@ -178,6 +188,7 @@ namespace BeatSaberMultiplayer
             {
                 Console.WriteLine($"AVATAR EXCEPTION: {_playerInfo.playerName}: {e}");
             }
+            */
         }
 
         private void SetRendererInChilds(Transform origin, bool enabled)

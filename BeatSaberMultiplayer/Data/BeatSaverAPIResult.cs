@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using SimpleJSON;
 using SongLoaderPlugin;
+using SongLoaderPlugin.OverrideClasses;
 
 namespace BeatSaberMultiplayer
 {
@@ -23,12 +24,6 @@ namespace BeatSaberMultiplayer
             difficulty = difficultyLevel.difficulty;
             difficultyRank = difficultyLevel.difficultyRank;
             jsonPath = difficultyLevel.jsonPath;
-        }
-
-        public DifficultyLevel(LevelStaticData.DifficultyLevel difficultyLevel)
-        {
-            difficulty = LevelStaticData.GetDifficultyName(difficultyLevel.difficulty);
-            difficultyRank = difficultyLevel.difficultyRank;
         }
 
         public DifficultyLevel(string Difficulty, int DifficultyRank, string JsonPath, int Offset = 0)
@@ -179,12 +174,12 @@ namespace BeatSaberMultiplayer
 
 
 
-        public Song(CustomLevelStaticData _data)
+        public Song(CustomLevel _data)
         {
             songName = _data.songName;
             songSubName = _data.songSubName;
-            authorName = _data.authorName;
-            difficultyLevels = ConvertDifficultyLevels(_data.difficultyLevels);
+            authorName = _data.songAuthorName;
+            difficultyLevels = ConvertDifficultyLevels(_data.difficultyBeatmaps);
         }
 
         public Song(CustomSongInfo _song)
@@ -192,17 +187,9 @@ namespace BeatSaberMultiplayer
 
             songName = _song.songName;
             songSubName = _song.songSubName;
-            authorName = _song.authorName;
+            authorName = _song.songAuthorName;
             difficultyLevels = ConvertDifficultyLevels(_song.difficultyLevels);
             path = _song.path;
-        }
-
-        public Song(LevelStaticData _data)
-        {
-            songName = _data.songName;
-            songSubName = _data.songSubName;
-            authorName = _data.authorName;
-            difficultyLevels = ConvertDifficultyLevels(_data.difficultyLevels);
         }
 
         public DifficultyLevel[] ConvertDifficultyLevels(CustomSongInfo.DifficultyLevel[] _difficultyLevels)
@@ -225,7 +212,7 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public DifficultyLevel[] ConvertDifficultyLevels(LevelStaticData.DifficultyLevel[] _difficultyLevels)
+        public DifficultyLevel[] ConvertDifficultyLevels(IStandardLevelDifficultyBeatmap[] _difficultyLevels)
         {
             if (_difficultyLevels != null && _difficultyLevels.Length > 0)
             {
