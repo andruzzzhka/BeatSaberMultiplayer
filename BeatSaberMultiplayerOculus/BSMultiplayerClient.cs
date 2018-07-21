@@ -85,6 +85,8 @@ namespace BeatSaberMultiplayer
                      return true;
                 }
                 
+                Console.WriteLine($"Connecting to {serverIP}:{serverPort}");
+
                 _connection = new TcpClient(serverIP, serverPort);
                 _connectionStream = _connection.GetStream();
 
@@ -131,7 +133,7 @@ namespace BeatSaberMultiplayer
         {
             GetUserInfo.UpdateUserInfo();
 
-            if (_connection.Connected)
+            if (_connection != null && _connection.Connected)
             {
                 if (_loadedlevel > 2)
                 {
@@ -198,7 +200,7 @@ namespace BeatSaberMultiplayer
                 {
                     DataReceived -= ReceivedFromServer;
                     DisconnectFromServer();
-                    StartCoroutine(WaitForResults());
+                    StartCoroutine(WaitForMenu());
                 }
             }
 
@@ -378,44 +380,42 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        IEnumerator WaitForResults()
+        public void BindToFinishEvent()
         {
-            yield return new WaitUntil(delegate () { return Resources.FindObjectsOfTypeAll<ResultsViewController>().Count() > 0; });
+            _mainGameSceneSetupData.didFinishEvent += _mainGameSceneSetupData_didFinishEvent;
+        }
 
-            ResultsViewController results = Resources.FindObjectsOfTypeAll<ResultsViewController>().First();
+        private void _mainGameSceneSetupData_didFinishEvent(MainGameSceneSetupData sender, LevelCompletionResults completitionResult)
+        {
 
-            results.GetComponentsInChildren<Button>().First(x => x.name == "RestartButton").interactable = false;
+            _mainGameSceneSetupData.didFinishEvent -= _mainGameSceneSetupData_didFinishEvent;
+            Resources.FindObjectsOfTypeAll<MenuSceneSetupData>().First().TransitionToScene((completitionResult == null) ? 0.35f : 1.3f);
+        }
 
-            results.continueButtonPressedEvent += delegate(ResultsViewController viewController) {
-                try
+        IEnumerator WaitForMenu()
+        {
+            yield return new WaitUntil(delegate () { return Resources.FindObjectsOfTypeAll<MainMenuViewController>().Count() > 0; });
+
+            try
+            {
+                MultiplayerServerHubViewController hub = ui.CreateViewController<MultiplayerServerHubViewController>();
+                MultiplayerLobbyViewController lobby = ui.CreateViewController<MultiplayerLobbyViewController>();
+
+                bool serverClosed = lastCommands.Any(x => x.commandType == ServerCommandType.Kicked && x.kickReason == "Server closed");
+
+                hub.doNotUpdate = !serverClosed;
+                FindObjectOfType<MainMenuViewController>().PresentModalViewController(hub, null, true);
+                if (!serverClosed)
                 {
-                    MultiplayerServerHubViewController hub = ui.CreateViewController<MultiplayerServerHubViewController>();
-                    MultiplayerLobbyViewController lobby = ui.CreateViewController<MultiplayerLobbyViewController>();
-
-                    viewController.DismissModalViewController(null, true);
-                    FindObjectOfType<StandardLevelSelectionNavigationController>().DismissModalViewController(null, true);
-                    FindObjectOfType<SoloModeSelectionViewController>().DismissModalViewController(null, true);
-
-                    hub.doNotUpdate = true;
-                    FindObjectOfType<MainMenuViewController>().PresentModalViewController(hub, null, true);
-                    Console.WriteLine(lastCommands.Where(x => x.commandType == ServerCommandType.Kicked && x.kickReason == "Server closed").Count()+"  "+ lastCommands.Count());
-                    if (lastCommands.Where(x => x.commandType == ServerCommandType.Kicked && x.kickReason == "Server closed").Count() <= 0)
-                    {
-                        lobby.selectedServerIP = lastServerIP;
-                        lobby.selectedServerPort = lastServerPort;
-                        hub.PresentModalViewController(lobby, null, true);
-                    }
+                    lobby.selectedServerIP = lastServerIP;
+                    lobby.selectedServerPort = lastServerPort;
+                    hub.PresentModalViewController(lobby, null, true);
                 }
-                catch(Exception e)
-                {
-                    Console.WriteLine($"RESULTS EXCEPTION: {e}");
-                }
-            };
-
-            MultiplayerResultsLeaderboardHolder resultsLeaderboard = BSMultiplayerUI._instance.CreateViewController<MultiplayerResultsLeaderboardHolder>();
-            results.screen.screenSystem.rightScreen.SetRootViewController(resultsLeaderboard);
-
-            resultsLeaderboard.SetLeaderboard(_playerInfos.ToArray());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"MENU EXCEPTION: {e}");
+            }
 
         }
 

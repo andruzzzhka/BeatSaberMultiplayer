@@ -168,7 +168,7 @@ namespace BeatSaberMultiplayerServer
                                     case ClientCommandType.VoteForSong:
                                         {
                                             if(ServerMain.serverState == ServerState.Voting)
-                                                votedFor = ServerMain.availableSongs.FirstOrDefault(x => x.levelId == command.voteForLevelId);
+                                                votedFor = ServerMain.availableSongs.FirstOrDefault(x => x.levelId.Substring(0, 32) == command.voteForLevelId.Substring(0, 32));
                                         };
                                         break;
                                 }
@@ -182,15 +182,18 @@ namespace BeatSaberMultiplayerServer
                     }
                     else
                     {
-                        ServerMain.clients.Remove(this);
-                        if (_client != null)
+                        if ((ServerMain.serverState == ServerState.Playing && ServerMain.playTime.TotalSeconds <= ServerMain.availableSongs[ServerMain.currentSongIndex].duration.TotalSeconds - 10f) || ServerMain.serverState != ServerState.Playing)
                         {
-                            _client.Close();
-                            _client = null;
+                            ServerMain.clients.Remove(this);
+                            if (_client != null)
+                            {
+                                _client.Close();
+                                _client = null;
+                            }
+                            state = ClientState.Disconnected;
+                            Logger.Instance.Log("Client disconnected!");
+                            return;
                         }
-                        state = ClientState.Disconnected;
-                        Logger.Instance.Log("Client disconnected!");
-                        return;
                     }
                 }catch(Exception e)
                 {

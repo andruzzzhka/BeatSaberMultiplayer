@@ -50,7 +50,8 @@ namespace BeatSaberMultiplayer
         public void SetLeaderboard(PlayerInfo[] _playerInfos)
         {
             playerInfos = _playerInfos;
-            if ((object)_leaderboardTableView.dataSource != this)
+            
+            if (_leaderboardTableView.dataSource != this)
             {
                 _leaderboardTableView.dataSource = this;
             }

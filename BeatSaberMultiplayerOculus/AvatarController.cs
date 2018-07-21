@@ -1,4 +1,4 @@
-﻿//using CustomAvatar;
+﻿using CustomAvatar;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,8 +14,8 @@ namespace BeatSaberMultiplayer
     {
         PlayerInfo playerInfo;
 
-        //AvatarScript avatar;
-        //AvatarBodyManager bodyManager;
+        AvatarScript avatar;
+        AvatarBodyManager bodyManager;
 
         TextMeshPro playerNameText;
 
@@ -48,37 +48,35 @@ namespace BeatSaberMultiplayer
 
         void CreateGameObjects()
         {
-            /*
+            
             if (avatar == null)
             {
                 Console.WriteLine("Spawning avatar");
                 avatar = AvatarScript.SpawnAvatar(".\\CustomAvatars\\TemplateFullBody.avatar", true);
                 
                 StartCoroutine(WaitForAvatar());
-            } */           
+            }
         }
 
         private IEnumerator WaitForAvatar()
         {
-            yield break;
-            /*
             yield return new WaitUntil(delegate () { return avatar.getInstance() != null; });
 
             AvatarLoaded();
-            */
+
         }
 
         private void AvatarLoaded()
         {
-            /*
+
             if (bodyManager == null)
             {
                 bodyManager = avatar.GetBodyManager();
             }
 
-            if (ReflectionUtil.GetPrivateField<GameObject>(avatar, "fpsAvatarInstance") != null)
+            if (ReflectionUtil.GetPrivateField<GameObject>(avatar, "_fpsAvatarInstance") != null)
             {
-                Destroy(ReflectionUtil.GetPrivateField<GameObject>(avatar, "fpsAvatarInstance"));
+                Destroy(ReflectionUtil.GetPrivateField<GameObject>(avatar, "_fpsAvatarInstance"));
                 Console.WriteLine("Destroyed fps avatar instance");
             }
 
@@ -91,12 +89,12 @@ namespace BeatSaberMultiplayer
             }
 
             Console.WriteLine("Avatar loaded");
-            */
+
         }
 
         void Update()
         {
-            /*
+
             if (playerNameText != null)
             {
                 interpolationProgress += Time.deltaTime * 20;
@@ -108,36 +106,36 @@ namespace BeatSaberMultiplayer
                 bodyManager.SetHeadPosRot(Vector3.Lerp(lastHeadPos, targetHeadPos, interpolationProgress), Quaternion.Lerp(lastHeadRot, targetHeadRot, interpolationProgress));
                 bodyManager.SetLeftHandPosRot(Vector3.Lerp(lastLeftHandPos, targetLeftHandPos, interpolationProgress), Quaternion.Lerp(lastLeftHandRot, targetLeftHandRot, interpolationProgress));
                 bodyManager.SetRightHandPosRot(Vector3.Lerp(lastRightHandPos, targetRightHandPos, interpolationProgress), Quaternion.Lerp(lastRightHandRot, targetRightHandRot, interpolationProgress));
-                
+
                 playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InputTracking.GetLocalPosition(XRNode.Head));
             }
-            */
+
         }
 
         void OnDestroy()
         {
-            /*
+
             Destroy(avatar.getInstance());
             Destroy(avatar.gameObject);
-            */
+
         }
 
         public void SetPlayerInfo(PlayerInfo _playerInfo, float offset, bool isLocal)
         {
-            
-            
+
+
             if (_playerInfo == null)
             {
                 Destroy(gameObject);
                 return;
             }
-            /*
+
             try
             {
 
                 playerInfo = _playerInfo;
 
-                if(playerNameText == null || avatar == null || bodyManager == null)
+                if (playerNameText == null || avatar == null || bodyManager == null)
                 {
                     return;
                 }
@@ -180,21 +178,21 @@ namespace BeatSaberMultiplayer
 
                 lastLeftHandRot = targetLeftHandRot;
                 targetLeftHandRot = _playerInfo.leftHandRot;
-                
+
                 playerNameText.text = playerInfo.playerName;
-                
+
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine($"AVATAR EXCEPTION: {_playerInfo.playerName}: {e}");
             }
-            */
+
         }
 
         private void SetRendererInChilds(Transform origin, bool enabled)
         {
             Renderer[] rends = origin.gameObject.GetComponentsInChildren<Renderer>();
-            foreach(Renderer rend in rends)
+            foreach (Renderer rend in rends)
             {
                 rend.enabled = enabled;
             }

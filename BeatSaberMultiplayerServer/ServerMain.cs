@@ -160,7 +160,7 @@ namespace BeatSaberMultiplayerServer
             switch (comName.ToLower())
             {
                 case "help":
-                    foreach (var com in new[] { "help", "quit", "clients", "blacklist [add/remove] [playerID/IP]", "whitelist [enable/disable/add/remove] [playerID/IP]", "songs [add/remove/list] [songID on BeatSaver]" })
+                    foreach (var com in new[] { "help", "quit", "clients", "blacklist [add/remove] [playerID/IP]", "whitelist [enable/disable/add/remove] [playerID/IP]", "songs [add/remove/start/list] [songID on BeatSaver]" })
                     {
                         s += $"{Environment.NewLine}> {com}";
                     }
@@ -354,7 +354,7 @@ namespace BeatSaberMultiplayerServer
                                         }
                                         else
                                         {
-                                            Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]", exitAfterPrint);
+                                            Logger.Instance.Warning($"Command usage: songs [add/remove/start/list] [songID on BeatSaver]", exitAfterPrint);
                                         }
                                     }
                                     break;
@@ -381,7 +381,7 @@ namespace BeatSaberMultiplayerServer
                                         }
                                         else
                                         {
-                                            Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]", exitAfterPrint);
+                                            Logger.Instance.Warning($"Command usage: songs [add/remove/start/list] [songID on BeatSaver]", exitAfterPrint);
                                         }
                                     }
                                     break;
@@ -405,16 +405,35 @@ namespace BeatSaberMultiplayerServer
                                         Logger.Instance.Log($"Songs:{s}", exitAfterPrint);
 
                                     }; break;
+                                case "start":
+                                    {
+                                        if (!exitAfterPrint && serverState != ServerState.Playing && currentSongIndex == -1)
+                                        {
+                                            string songId = comArgs[1];
+                                            if (comArgs.Length == 2 && !comArgs[1].IsNullOrEmpty())
+                                            {
+                                                currentSongIndex = availableSongs.FindIndex(x => x.beatSaverId == songId);
+                                                SendToAllClients(new ServerCommand(
+                                                    ServerCommandType.SetSelectedSong,
+                                                    _difficulty: GetPreferredDifficulty(availableSongs[currentSongIndex])), wss);
+                                                Logger.Instance.Log($"Next song is {availableSongs[currentSongIndex].songName} {availableSongs[currentSongIndex].songSubName}");
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Warning($"Command usage: songs [add/remove/start/list] [songID on BeatSaver]", exitAfterPrint);
+                                            }
+                                        }
+                                    }; break;
                                 default:
                                     {
-                                        Logger.Instance.Warning($"Command usage: songs [add/remove/list] [songID on BeatSaver]", exitAfterPrint);
+                                        Logger.Instance.Warning($"Command usage: songs [add/remove/start/list] [songID on BeatSaver]", exitAfterPrint);
                                     }
                                     break;
                             }
                         }
                         else
                         {
-                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]", exitAfterPrint);
+                            Logger.Instance.Warning($"Command usage: songs [add/remove/start/list] [songID on BeatSaver]", exitAfterPrint);
                         }
                     }; break;
                 case "crash":
@@ -680,6 +699,12 @@ namespace BeatSaberMultiplayerServer
                                         case Settings.SongOrder.List: {
                                                 currentSongIndex = lastSelectedSong + 1;
                                             };break;
+                                        case Settings.SongOrder.Manual:
+                                            {
+                                                serverState = ServerState.Preparing;
+                                                lobbyTimer = 0;
+                                            };break;
+
                                     }
 
                                     if (currentSongIndex >= availableSongs.Count)
@@ -731,7 +756,7 @@ namespace BeatSaberMultiplayerServer
                                     sendTimer = 0f;
                                 }
 
-                                if (playTime.TotalSeconds >= availableSongs[currentSongIndex].duration.TotalSeconds + 2.5f)
+                                if (playTime.TotalSeconds >= availableSongs[currentSongIndex].duration.TotalSeconds + 15f)
                                 {
                                     playTime = new TimeSpan();
                                     sendTimer = 0f;
@@ -739,18 +764,21 @@ namespace BeatSaberMultiplayerServer
                                     lastSelectedSong = currentSongIndex;
                                     currentSongIndex = -1;
                                     Logger.Instance.Log("Returning to lobby...");
+
+                                    SendToAllClients(new ServerCommand(ServerCommandType.SetServerState));
                                 }
 
 
-                                if (clients.Count(x => x.state == ClientState.Playing) == 0 && playTime.TotalSeconds > 5)
+                                if (clients.Count(x => x.state == ClientState.Playing) == 0 && playTime.TotalSeconds > 5 && playTime.TotalSeconds <= availableSongs[currentSongIndex].duration.TotalSeconds-10f)
                                 {
                                     playTime = new TimeSpan();
                                     sendTimer = 0f;
                                     serverState = ServerState.Voting;
                                     lastSelectedSong = currentSongIndex;
                                     currentSongIndex = -1;
-
                                     Logger.Instance.Log("Returning to lobby (NO PLAYERS)...");
+
+                                    SendToAllClients(new ServerCommand(ServerCommandType.SetServerState));
                                 }
                             };
                             break;

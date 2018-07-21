@@ -267,7 +267,7 @@ namespace BeatSaberMultiplayerServer.Misc {
             }
         }
 
-        public enum SongOrder { Voting, Shuffle, List}
+        public enum SongOrder { Voting, Shuffle, List, Manual}
 
         [JsonObject(MemberSerialization.OptIn)]
         public class AvailableSongsSettings {
