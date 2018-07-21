@@ -635,6 +635,7 @@ namespace BeatSaberMultiplayer
                 {
                     string docPath = "";
                     string customSongsPath = "";
+                    string zipPath = "";
                     try
                     {
                         byte[] data = wwwDl.downloadHandler.data;
@@ -643,20 +644,28 @@ namespace BeatSaberMultiplayer
                         docPath = docPath.Substring(0, docPath.Length - 5);
                         docPath = docPath.Substring(0, docPath.LastIndexOf("/"));
                         customSongsPath = docPath + "/CustomSongs/" + _tempSong.id + "/";
+                        zipPath = customSongsPath + _tempSong.id + ".zip";
                         if (!Directory.Exists(customSongsPath))
                         {
                             Directory.CreateDirectory(customSongsPath);
                         }
-
+                        File.WriteAllBytes(zipPath, data);
                         Console.WriteLine("Downloaded zip file!");
+
                         Console.WriteLine("Extracting...");
 
-                        Stream stream = new MemoryStream(data);
-
-                        using (ZipArchive zip = new ZipArchive(stream, ZipArchiveMode.Read))
+                        try
                         {
-                            zip.ExtractToDirectory(customSongsPath, true);
+                            ZipFile.ExtractToDirectory(zipPath, customSongsPath);
                         }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"Can't extract ZIP! Exception: {e}");
+                        }
+
+
+                        File.Delete(zipPath);
+
                     }
                     catch (Exception e)
                     {
