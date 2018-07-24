@@ -1,35 +1,23 @@
-# Plugin Instructions
-Choose your plugin type ([Oculus](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.4.1/BeatSaberMultiplayer-Oculus.zip) / [Steam](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.4.1/BeatSaberMultiplayer-Steam.zip)) and copy it to your `Plugins` folder in your `%BeatSaber%` directory.
+# Plugin Releases
+Client:[Guide](https://bs.assistant.moe/Multiplayer/#Install) Provided by assisant
 
-![PluginFile](https://i.imgur.com/80NKsGq.png)
+[Oculus](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.2/BeatSaberMultiplayer-Oculus.zip)
 
-After you first run the game with the plugin, you should have a `Config` folder inside your `%BeatSaber%` directory.
+[Steam](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.2/BeatSaberMultiplayer-Steam.zip)
 
-![ConfigFolder](https://i.imgur.com/WACzxZr.png)
+Server:[Guide](https://bs.assistant.moe/Multiplayer/#Server) Provided by assisant
 
-Modify the `IP` & `Port` inside of the `BeatSaberMultiplayer.json` file to connect to a server with the corresponding port.
+[Windows](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.2/MultiplayerServer_win-64.zip)
 
-![ConfigFile](https://i.imgur.com/98ojeTX.png)
+[Linux-64bit](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.2/MultiplayerServer_linux-64.zip)
 
-----
-# Server Instructions
-- [Port-Forward](https://portforward.com/) the default port `3700`
-- Run the server
-## Play with people online
-- Go to [WhatIsMyIP](https://www.whatismyip.com/) and find your **Public IPv4**
+[Linux-Arm](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.2/MultiplayerServer_linux-arm.zip)
 
-![GetPublicIP](https://i.imgur.com/jNjvmIQ.png)
-- Edit the `IP` value in`%BeatSaber%/Config/BeatSaberMultiplayer.json` to match your IPv4
+ServerHub:[Guide](https://bs.assistant.moe/Multiplayer/#Hub) Provided by assisant
 
-![EditingIP](https://i.imgur.com/XLYT4tV.png)
-## Play with people on your internet
-- Go to `Command Prompt` and type `ipconfig` and find your **IPv4 Address**
+[Windows](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.2/ServerHub_win-64.zip)
 
-![IpConfig](https://techsupportpro.uk/wp-content/uploads/2016/09/ipconfig-1.png)
-- Edit the `IP` value in`%BeatSaber%/Config/BeatSaberMultiplayer.json` to match the IPv4 of the computer running the server
+[Linux-64bit](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.2/ServerHub_linux-64.zip)
 
-![EditingIP](https://i.imgur.com/Qlwnyip.png)
+[Linux-Arm](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.2/ServerHub_linux-arm.zip)
 
-----
-# ServerHub
-![Flowchat](https://i.imgur.com/hCXfw1j.png)
