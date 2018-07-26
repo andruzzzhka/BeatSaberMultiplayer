@@ -19,6 +19,7 @@ using WebSocketSharp;
 using WebSocketSharp.Server;
 using NAudio.Wave;
 using NVorbis;
+using Open.Nat;
 
 namespace BeatSaberMultiplayerServer
 {
@@ -94,52 +95,10 @@ namespace BeatSaberMultiplayerServer
             Logger.Instance.Log("Downloading songs from BeatSaver...");
             DownloadSongs();
 
-
-            Logger.Instance.Log("Starting server...");
-            _listener = new TcpListener(IPAddress.Any, Settings.Instance.Server.Port);
-
-            _listener.Start();
-
-            Logger.Instance.Log("Waiting for clients...");
-
-            ServerLoopThread = new Thread(ServerLoop) { IsBackground = true };
-            ServerLoopThread.Start();
-            
-            AcceptClientThread();
-
-            if (Settings.Instance.Server.WSEnabled)
-            {
-                Logger.Instance.Log($"WebSocket Server started @ {Settings.Instance.Server.IP}:{Settings.Instance.Server.WSPort}");
-                wss = new WebSocketServer(Settings.Instance.Server.WSPort);
-                wss.AddWebSocketService<Broadcast>("/");
-                wss.Start();
-            }
-            
-            Dictionary<string, int> _serverHubs = new Dictionary<string, int>();
-                
-            for (int i = 0; i < Settings.Instance.Server.ServerHubIPs.Length; i++)
-            {
-                if(Settings.Instance.Server.ServerHubPorts.Length <= i)
-                {
-                    _serverHubs.Add(Settings.Instance.Server.ServerHubIPs[i], 3700);
-                }
-                else
-                {
-                    _serverHubs.Add(Settings.Instance.Server.ServerHubIPs[i], Settings.Instance.Server.ServerHubPorts[i]);
-                }
-            }
-
-            _serverHubs.AsParallel().ForAll(x =>
-            {
-                ServerHubClient client = new ServerHubClient();
-                _serverHubClients.Add(client);
-
-                client.Connect(x.Key, x.Value);
-            }
-            );
+            StartServer();
 
             ShutdownEventCatcher.Shutdown += OnServerShutdown;
-
+            
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
             while (Thread.CurrentThread.IsAlive)
@@ -602,6 +561,92 @@ namespace BeatSaberMultiplayerServer
                 Logger.Instance.Error(e.Message);
                 Logger.Instance.Warning("One common cause of this is incorrect case sensitivity in the song's json file in comparison to its actual song name.");
             }
+        }
+
+        async void StartServer()
+        {
+            if (Settings.Instance.Server.TryUPnP)
+            {
+                Logger.Instance.Log($"Trying to open port {Settings.Instance.Server.Port} using UPnP...");
+                try
+                {
+                    NatDiscoverer discoverer = new NatDiscoverer();
+                    CancellationTokenSource cts = new CancellationTokenSource(2500);
+                    NatDevice device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
+
+                    await device.CreatePortMapAsync(new Mapping(Protocol.Tcp, Settings.Instance.Server.Port, Settings.Instance.Server.Port, "BeatSaber Multiplayer Server"));
+
+                    Logger.Instance.Log($"Port {Settings.Instance.Server.Port} is open!");
+                }
+                catch (Exception)
+                {
+                    Logger.Instance.Warning($"Can't open port {Settings.Instance.Server.Port} using UPnP!");
+                }
+            }
+
+
+            Logger.Instance.Log("Starting server...");
+            _listener = new TcpListener(IPAddress.Any, Settings.Instance.Server.Port);
+
+            _listener.Start();
+
+            Logger.Instance.Log("Waiting for clients...");
+
+            ServerLoopThread = new Thread(ServerLoop) { IsBackground = true };
+            ServerLoopThread.Start();
+
+            AcceptClientThread();
+
+            if (Settings.Instance.Server.WSEnabled)
+            {
+                if (Settings.Instance.Server.TryUPnP)
+                {
+                    Logger.Instance.Log($"Trying to open port {Settings.Instance.Server.WSPort} using UPnP...");
+                    try
+                    {
+                        NatDiscoverer discoverer = new NatDiscoverer();
+                        CancellationTokenSource cts = new CancellationTokenSource(2500);
+                        NatDevice device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
+
+                        await device.CreatePortMapAsync(new Mapping(Protocol.Tcp, Settings.Instance.Server.WSPort, Settings.Instance.Server.WSPort, "BeatSaber Multiplayer WebSocket Server"));
+
+                        Logger.Instance.Log($"Port {Settings.Instance.Server.WSPort} is open!");
+                    }
+                    catch (Exception)
+                    {
+                        Logger.Instance.Warning($"Can't open port {Settings.Instance.Server.WSPort} using UPnP!");
+                    }
+                }
+
+                wss = new WebSocketServer(Settings.Instance.Server.WSPort);
+                wss.AddWebSocketService<Broadcast>("/");
+                wss.Start();
+                Logger.Instance.Log($"WebSocket Server started @ {Settings.Instance.Server.IP}:{Settings.Instance.Server.WSPort}");
+            }
+
+            Dictionary<string, int> _serverHubs = new Dictionary<string, int>();
+
+            for (int i = 0; i < Settings.Instance.Server.ServerHubIPs.Length; i++)
+            {
+                if (Settings.Instance.Server.ServerHubPorts.Length <= i)
+                {
+                    _serverHubs.Add(Settings.Instance.Server.ServerHubIPs[i], 3700);
+                }
+                else
+                {
+                    _serverHubs.Add(Settings.Instance.Server.ServerHubIPs[i], Settings.Instance.Server.ServerHubPorts[i]);
+                }
+            }
+
+            _serverHubs.AsParallel().ForAll(x =>
+            {
+                ServerHubClient client = new ServerHubClient();
+                _serverHubClients.Add(client);
+
+                client.Connect(x.Key, x.Value);
+            }
+            );
+            
         }
 
         void ServerLoop()

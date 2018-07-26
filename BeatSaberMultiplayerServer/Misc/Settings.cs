@@ -18,6 +18,8 @@ namespace BeatSaberMultiplayerServer.Misc {
             private int _wsport;
             private bool _wsenabled;
 
+            private bool _tryUPnP;
+
             private string _serverName;
 
             private string[] _serverHubIPs;
@@ -91,6 +93,23 @@ namespace BeatSaberMultiplayerServer.Misc {
                 set
                 {
                     _wsenabled = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool TryUPnP
+            {
+                get
+                {
+                    return _tryUPnP;
+                }
+                set
+                {
+                    _tryUPnP = value;
                     MarkDirty();
                 }
             }
@@ -232,6 +251,7 @@ namespace BeatSaberMultiplayerServer.Misc {
                 _port = 3701;
                 _wsport = 3702;
                 _wsenabled = false;
+                _tryUPnP = true;
                 _serverName = "New Server";
                 _serverHubIPs = new string[] { "hub.assistant.moe", "soupwhale.com", "minemalox.me", "beatsaber.weebvr.com", "178.62.239.103", "beatsaber.jaddie.co.uk" };
                 _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700 };

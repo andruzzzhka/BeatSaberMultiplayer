@@ -10,6 +10,7 @@ namespace ServerHub.Misc {
         [JsonObject(MemberSerialization.OptIn)]
         public class ServerSettings {
             private int _port;
+            private bool _tryUPnP;
 
             private Action MarkDirty { get; }
         
@@ -25,9 +26,27 @@ namespace ServerHub.Misc {
                 }
             }
 
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool TryUPnP
+            {
+                get
+                {
+                    return _tryUPnP;
+                }
+                set
+                {
+                    _tryUPnP = value;
+                    MarkDirty();
+                }
+            }
+
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
+                _tryUPnP = true;
             }
         }
         [JsonObject(MemberSerialization.OptIn)]

@@ -9,6 +9,7 @@ using ServerCommons.Misc;
 using Settings = ServerHub.Misc.Settings;
 using Math = ServerCommons.Misc.Math;
 using System.Threading.Tasks;
+using Open.Nat;
 
 namespace ServerHub.Handlers {
     public class ServerListener {
@@ -43,8 +44,28 @@ namespace ServerHub.Handlers {
             Console.Title = string.Format(TitleFormat, ConnectedClients.Count(o => o.Data.ID != -1));
         }
 
-        public void Start() {
+        public async void StartAsync() {
             Listen = true;
+
+            if (Settings.Instance.Server.TryUPnP)
+            {
+                Logger.Instance.Log($"Trying to open port {Settings.Instance.Server.Port} using UPnP...");
+                try
+                {
+                    NatDiscoverer discoverer = new NatDiscoverer();
+                    CancellationTokenSource cts = new CancellationTokenSource(2500);
+                    NatDevice device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
+
+                    await device.CreatePortMapAsync(new Mapping(Protocol.Tcp, Settings.Instance.Server.Port, Settings.Instance.Server.Port, "BeatSaber Multiplayer ServerHub"));
+
+                    Logger.Instance.Log($"Port {Settings.Instance.Server.Port} is open!");
+                }
+                catch (Exception)
+                {
+                    Logger.Instance.Warning($"Can't open port {Settings.Instance.Server.Port} using UPnP!");
+                }
+            }
+
             Listener.Start();
             BeginListening();
         }

@@ -57,7 +57,7 @@ namespace ServerHub {
 
             Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
 
-            Listener.Start();
+            Listener.StartAsync();
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
             while (Listener.Listen)
