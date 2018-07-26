@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.0;net462</TargetFrameworks>
-    <Version>0.4.6.0</Version>
-    <AssemblyVersion>0.4.6.0</AssemblyVersion>
+    <Version>0.4.5.3</Version>
+    <AssemblyVersion>0.4.5.3</AssemblyVersion>
     <Configurations>Debug;NewAPI;OldAPI</Configurations>
-    <FileVersion>0.4.6.0</FileVersion>
+    <FileVersion>0.4.5.3</FileVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
