@@ -509,9 +509,9 @@ namespace BeatSaberMultiplayerServer
                     try
                     {
                         client.DownloadFile($"{beatSaverURL}/download/{id}", zipPath);
-                    }catch(Exception)
+                    }catch(Exception e)
                     {
-                        Logger.Instance.Warning($"Can't download {id}.zip");
+                        Logger.Instance.Warning($"Can't download {id}.zip! Exception: {e}");
                         return null;
                     }
                 }
@@ -654,7 +654,7 @@ namespace BeatSaberMultiplayerServer
                                 {
                                     SendToAllClients(new ServerCommand(
                                         ServerCommandType.SetPlayerInfos,
-                                        _playerInfos: (clients.Where(x => x.playerInfo != null)
+                                        _playerInfos: (clients.Where(x => x != null && x.playerInfo != null)
                                             .Select(x => JsonConvert.SerializeObject(x.playerInfo))).ToArray()
                                         ));
                                     sendTimer = 0f;

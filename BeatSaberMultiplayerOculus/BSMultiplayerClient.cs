@@ -2,13 +2,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.XR;
 using VRUI;
 
@@ -394,14 +391,34 @@ namespace BeatSaberMultiplayer
 
         IEnumerator WaitForMenu()
         {
-            yield return new WaitUntil(delegate () { return Resources.FindObjectsOfTypeAll<MainMenuViewController>().Count() > 0; });
+            yield return new WaitUntil(delegate () { return Resources.FindObjectsOfTypeAll<VRUIScreenSystem>().Any(); });
+            VRUIScreenSystem screenSystem = Resources.FindObjectsOfTypeAll<VRUIScreenSystem>().First();
+
+            yield return new WaitWhile(delegate () { Console.WriteLine("Waiting for mainScreen"); return screenSystem.mainScreen == null; });
+            yield return new WaitWhile(delegate () { Console.WriteLine("Waiting for rootViewController"); return screenSystem.mainScreen.rootViewController == null; });
 
             try
             {
+
+                VRUIViewController root = screenSystem.mainScreen.rootViewController;
+
+                List<VRUIViewController> children = new List<VRUIViewController>();
+
+                children.Add(root);
+
+                while(children.Last().childViewController != null)
+                {
+                    children.Add(children.Last().childViewController);
+                }
+
+                children.Reverse();
+                children.Remove(root);
+                children.ForEach(x => { Console.WriteLine($"Dismissing {x.name}..."); x.DismissModalViewController(null, true); });
+
                 MultiplayerServerHubViewController hub = ui.CreateViewController<MultiplayerServerHubViewController>();
                 MultiplayerLobbyViewController lobby = ui.CreateViewController<MultiplayerLobbyViewController>();
 
-                bool serverClosed = lastCommands.Any(x => x.commandType == ServerCommandType.Kicked && x.kickReason == "Server closed");
+                bool serverClosed = (lastCommands != null) ? lastCommands.Any(x => x.commandType == ServerCommandType.Kicked && x.kickReason == "Server closed") : false;
 
                 hub.doNotUpdate = !serverClosed;
                 FindObjectOfType<MainMenuViewController>().PresentModalViewController(hub, null, true);
