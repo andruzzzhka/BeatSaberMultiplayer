@@ -714,7 +714,7 @@ namespace BeatSaberMultiplayerServer
 
                                                 if(lobbyTimer >= lobbyTime / 2)
                                                 {
-                                                    if (clients.Where(x => x.votedFor != null).Count() > 0)
+                                                    if (clients.Any(x => x.votedFor != null))
                                                     {
                                                         string selectedLevelId = clients.Where(x => x.votedFor != null).Select(x => x.votedFor).GroupBy(v => v).OrderByDescending(g => g.Count()).First().Key.levelId;
 
@@ -890,12 +890,25 @@ namespace BeatSaberMultiplayerServer
             }
         }
 
+        public static void UpdateServerHubs()
+        {
+            try
+            {
+                _serverHubClients.ForEach(x => x.UpdateServerState());
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
         async void AcceptClientThread()
         {
             while (ServerLoopThread.IsAlive)
             {
                 TcpClient client = await _listener.AcceptTcpClientAsync();
                 clients.Add(new Client(client));
+                UpdateServerHubs();
             }
         }
         
@@ -924,7 +937,7 @@ namespace BeatSaberMultiplayerServer
 
         TcpClient client;
 
-        public int ID;
+        public int serverID;
         
         public void Connect(string serverHubIP, int serverHubPort)
         {
@@ -941,7 +954,9 @@ namespace BeatSaberMultiplayerServer
                     FirstConnect = true,
                     IPv4 = Settings.Instance.Server.IP,
                     Port = Settings.Instance.Server.Port,
-                    Name = Settings.Instance.Server.ServerName
+                    Name = Settings.Instance.Server.ServerName,
+                    MaxPlayers = Settings.Instance.Server.MaxPlayers,
+                    Players = 0
                 };
 
                 byte[] packetBytes = packet.ToBytes();
@@ -954,10 +969,10 @@ namespace BeatSaberMultiplayerServer
                     packet = (ServerDataPacket)Packet.ToPacket(bytes);
                 }
 
-                ID = packet.ID;
+                serverID = packet.ID;
 
 
-                Logger.Instance.Log($"Connected to ServerHub @ {ip}:{port}");
+                Logger.Instance.Log($"Connected to ServerHub @ {ip}:{port} with ID {serverID}");
             }
             catch(Exception e)
             {
@@ -965,6 +980,35 @@ namespace BeatSaberMultiplayerServer
                 Logger.Instance.Warning($"Exception: {e.Message}");
             }
 
+        }
+
+        public void UpdateServerState()
+        {
+            if (client.Connected)
+            {
+                try {
+                    ServerDataPacket packet = new ServerDataPacket
+                    {
+                        ConnectionType = ConnectionType.Server,
+                        FirstConnect = false,
+                        IPv4 = Settings.Instance.Server.IP,
+                        Port = Settings.Instance.Server.Port,
+                        ID = serverID,
+                        Name = Settings.Instance.Server.ServerName,
+                        MaxPlayers = Settings.Instance.Server.MaxPlayers,
+                        Players = ServerMain.clients.Count(x => x != null && x._client != null && x._client.Connected)
+                    };
+
+                    byte[] packetBytes = packet.ToBytes();
+
+                    client.GetStream().Write(packetBytes, 0, packetBytes.Length);
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"Can't send updated server state to ServerHub @ {ip}:{port}");
+                    Logger.Instance.Warning($"Exception: {e.Message}");
+                }
+            }
         }
 
         public void Disconnect()
@@ -976,7 +1020,7 @@ namespace BeatSaberMultiplayerServer
                     ServerDataPacket packet = new ServerDataPacket
                     {
                         ConnectionType = ConnectionType.Server,
-                        ID = ID,
+                        ID = serverID,
                         FirstConnect = false,
                         IPv4 = Settings.Instance.Server.IP,
                         Port = Settings.Instance.Server.Port,

@@ -140,7 +140,7 @@ namespace BeatSaberMultiplayer
             StandardLevelListTableCell cell = Instantiate(_serverTableCellInstance);
 
             Destroy(cell.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name.ToLower().Contains("cover")));
-            cell.songName = availableServers[row].Name;
+            cell.songName = ((availableServers[row].MaxPlayers == 0) ? $"({availableServers[row].Players}/INF) " : $"({availableServers[row].Players}/{availableServers[row].MaxPlayers}) ") + availableServers[row].Name;
             cell.author = $"{availableServers[row].IPv4}:{availableServers[row].Port}";
 
             return cell;
@@ -163,12 +163,12 @@ namespace BeatSaberMultiplayer
     {
         public bool Equals(Data.Data x, Data.Data y)
         {
-            return (x.IPv4 == y.IPv4) && (x.Name == y.Name) && (x.Port == y.Port);
+            return (x.IPv4 == y.IPv4) && (x.Name == y.Name) && (x.Port == y.Port) && (x.Players == y.Players) && (x.MaxPlayers == y.MaxPlayers);
         }
 
         public int GetHashCode(Data.Data obj)
         {
-            return obj.IPv4.GetHashCode() + obj.Port.GetHashCode() + obj.Name.GetHashCode();
+            return obj.IPv4.GetHashCode() + obj.Port.GetHashCode() + obj.Name.GetHashCode() + obj.Players.GetHashCode() + obj.MaxPlayers.GetHashCode();
         }
     }
 }

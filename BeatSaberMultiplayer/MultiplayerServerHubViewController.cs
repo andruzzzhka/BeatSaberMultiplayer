@@ -159,6 +159,7 @@ namespace BeatSaberMultiplayer
                 {
                     _loading = true;
 
+                    _multiplayerServerList.SetServers(new List<Data.Data>());
                     _serverHubs.ForEach(x => x.RequestServers());
                     
                     Console.WriteLine("Waiting for response...");
@@ -304,6 +305,7 @@ namespace BeatSaberMultiplayer
             if (servers.Count < 6)
             {
                 ReceivedOnePage -= ServerHubClient_receivedOnePage;
+                availableServers.ForEach(x => Console.WriteLine($"{x.Name} {x.Players}/{x.MaxPlayers}"));
                 ReceivedServerList.Invoke(this, availableServers);
             }
             else

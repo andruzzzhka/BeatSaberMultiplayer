@@ -13,6 +13,10 @@ namespace ServerCommons.Data {
         [JsonProperty]
         public bool FirstConnect { get; set; }
         [JsonProperty]
+        public int Players { get; set; }
+        [JsonProperty]
+        public int MaxPlayers { get; set; }
+        [JsonProperty]
         public string IPv4 { get; set; }
         [JsonProperty]
         public int Port { get; set; }

@@ -97,7 +97,7 @@ namespace ServerHub {
                         foreach (var t in Listener.ConnectedClients.Where(o => o.Data.ID != -1))
                         {
                             var client = t.Data;
-                            s += $"{Environment.NewLine}[{client.ID}] {client.Name} @ {client.IPv4}:{client.Port}";
+                            s += $"{Environment.NewLine}[{client.ID}] {client.Name} @ {client.IPv4}:{client.Port} ({client.Players}/{client.MaxPlayers})";
                         }
                         Logger.Instance.Log($"Connected Clients:{s}");
                     }

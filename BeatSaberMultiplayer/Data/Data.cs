@@ -10,6 +10,8 @@ namespace BeatSaberMultiplayer.Data {
         public int ID;
         public bool FirstConnect;
         public string Name;
+        public int Players;
+        public int MaxPlayers;
         public string IPv4;
         public int Port;
 
@@ -17,6 +19,8 @@ namespace BeatSaberMultiplayer.Data {
             ID = -1;
             TcpClient = null;
             Name = "";
+            Players = 0;
+            MaxPlayers = 0;
             IPv4 = "";
             Port = 0;
         }
@@ -25,6 +29,8 @@ namespace BeatSaberMultiplayer.Data {
             ID = id;
             TcpClient = null;
             Name = "";
+            Players = 0;
+            MaxPlayers = 0;
             IPv4 = "";
             Port = 0;
         }

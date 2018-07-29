@@ -10,6 +10,10 @@ namespace ServerCommons.Data {
         [JsonProperty]
         public string Name { get; set; }
         [JsonProperty]
+        public int Players { get; set; }
+        [JsonProperty]
+        public int MaxPlayers { get; set; }
+        [JsonProperty]
         public string IPv4 { get; set; }
         [JsonProperty]
         public int Port { get; set; }
@@ -18,6 +22,8 @@ namespace ServerCommons.Data {
             ID = -1;
             TcpClient = null;
             Name = "";
+            Players = 0;
+            MaxPlayers = 0;
             IPv4 = "";
             Port = 0;
         }
@@ -26,6 +32,8 @@ namespace ServerCommons.Data {
             ID = id;
             TcpClient = null;
             Name = "";
+            Players = 0;
+            MaxPlayers = 0;
             IPv4 = "";
             Port = 0;
         }

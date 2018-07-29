@@ -149,7 +149,7 @@ namespace ServerHub.Handlers {
                             Logger.Instance.Log($"Removed {duplicates} duplicate{(duplicates > 1?"s":"")}");
                         }
 
-                        cO.Data = new Data(ConnectedClients.Count(x => x.Data.ID != -1) == 0 ? 0 : ConnectedClients.Last(x => x.Data.ID != -1).Data.ID + 1) { TcpClient = client, FirstConnect = sPacket.FirstConnect, IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port };
+                        cO.Data = new Data(ConnectedClients.Count(x => x.Data.ID != -1) == 0 ? 0 : ConnectedClients.Last(x => x.Data.ID != -1).Data.ID + 1) { TcpClient = client, FirstConnect = sPacket.FirstConnect, IPv4 = sPacket.IPv4, Name = sPacket.Name, Port = sPacket.Port, MaxPlayers = sPacket.MaxPlayers };
                         AddClient(cO);
 
                         Logger.Instance.Log($"Registered Server [{cO.Data.Name}] @ [{cO.Data.IPv4}:{cO.Data.Port}]");
@@ -183,6 +183,10 @@ namespace ServerHub.Handlers {
                         cO.Data.TcpClient.Close();
                         cO.CancellationTokenSource.Cancel();
                     }
+                    else
+                    {
+                        cO.CancellationTokenSource.Cancel();
+                    }
                     break;
                 case ConnectionType.Server:
                     var serverData = (ServerDataPacket)dataPacket;
@@ -195,8 +199,13 @@ namespace ServerHub.Handlers {
                     cO.Data.IPv4 = serverData.IPv4;
                     cO.Data.Name = serverData.Name;
                     cO.Data.Port = serverData.Port;
-                    serverData.ID = cO.Data.ID;
-                    cO.Data.TcpClient.GetStream().Write(serverData.ToBytes(), 0, serverData.ToBytes().Length);
+                    cO.Data.MaxPlayers = serverData.MaxPlayers;
+                    cO.Data.Players = serverData.Players;
+                    if (serverData.FirstConnect)
+                    {
+                        serverData.ID = cO.Data.ID;
+                        cO.Data.TcpClient.GetStream().Write(serverData.ToBytes(), 0, serverData.ToBytes().Length);
+                    }
                     break;
                 case ConnectionType.Hub:
                     Logger.Instance.Log("ConnectionType is [Hub]");

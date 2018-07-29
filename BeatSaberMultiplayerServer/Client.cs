@@ -80,7 +80,7 @@ namespace BeatSaberMultiplayerServer
                                 {
                                     state = ClientState.UpdateRequired;
                                     SendToClient(new ServerCommand(ServerCommandType.UpdateRequired));
-                                    return;
+                                    DestroyClient();
                                 }
 
                                 if (state != ClientState.Playing && state != ClientState.Connected)
@@ -184,14 +184,7 @@ namespace BeatSaberMultiplayerServer
                     {
                         if ((ServerMain.serverState == ServerState.Playing && ServerMain.playTime.TotalSeconds <= ServerMain.availableSongs[ServerMain.currentSongIndex].duration.TotalSeconds - 10f) || ServerMain.serverState != ServerState.Playing)
                         {
-                            ServerMain.clients.Remove(this);
-                            if (_client != null)
-                            {
-                                _client.Close();
-                                _client = null;
-                            }
-                            state = ClientState.Disconnected;
-                            Logger.Instance.Log("Client disconnected!");
+                            DestroyClient();
                             return;
                         }
                     }
@@ -292,12 +285,16 @@ namespace BeatSaberMultiplayerServer
 
         public void DestroyClient()
         {
+            ServerMain.clients.Remove(this);
             if (_client != null)
             {
-                ServerMain.clients.Remove(this);
-                Thread.Sleep(150);
+                Thread.Sleep(50);
                 _client.Close();
             }
+
+            state = ClientState.Disconnected;
+            Logger.Instance.Log("Client disconnected!");
+            ServerMain.UpdateServerHubs();
         }
 
 

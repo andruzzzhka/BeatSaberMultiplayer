@@ -21,7 +21,7 @@ namespace BeatSaberMultiplayer.Data {
                 List<Data> dataList = new List<Data>();
                 foreach(JSONNode node in obj["Servers"].Children)
                 {
-                    dataList.Add(new Data { Name = node["Name"], IPv4 = node["IPv4"], Port = node["Port"] });
+                    dataList.Add(new Data { Name = node["Name"], IPv4 = node["IPv4"], Port = node["Port"], Players = node["Players"], MaxPlayers = node["MaxPlayers"] });
                 }
                 return new ClientDataPacket { ConnectionType = ConnectionType.Client, Offset = obj["Offset"].AsInt, Servers = dataList };
             }
