@@ -305,7 +305,6 @@ namespace BeatSaberMultiplayer
             if (servers.Count < 6)
             {
                 ReceivedOnePage -= ServerHubClient_receivedOnePage;
-                availableServers.ForEach(x => Console.WriteLine($"{x.Name} {x.Players}/{x.MaxPlayers}"));
                 ReceivedServerList.Invoke(this, availableServers);
             }
             else
