@@ -93,7 +93,7 @@ namespace ServerHub.Misc {
                 catch (Exception ex) {
                     _instance = new Settings();
                     _instance.Save();
-                    ServerCommons.Misc.Logger.Instance.Exception(ex.Message);
+                    Misc.Logger.Instance.Exception(ex.Message);
                 }
 
                 return _instance;

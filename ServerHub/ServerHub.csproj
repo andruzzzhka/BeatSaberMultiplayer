@@ -34,7 +34,4 @@
     </None>
     <None Remove="Properties\**" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ServerCommons\ServerCommons.csproj" />
-  </ItemGroup>
 </Project>

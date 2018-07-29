@@ -1,24 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading;
-using BeatSaberMultiplayerServer.Misc;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using ServerCommons.Misc;
-using ServerHub.Handlers;
-using Settings = ServerHub.Misc.Settings;
+using ServerHub.Misc;
 
-namespace ServerHub {
+namespace ServerHub.Hub
+{
     class Program {
         private static string IP { get; set; }
 
         static void Main(string[] args) => new Program().Start(args);
-
-        private ServerListener Listener { get; set; } = new ServerListener();
 
         private Thread listenerThread { get; set; }
 
@@ -29,7 +21,7 @@ namespace ServerHub {
         }
 
         private void OnShutdown(ShutdownEventArgs obj) {
-            Listener.Stop();
+            //Listener.Stop();
         }
 
         void Start(string[] args) {
@@ -57,9 +49,10 @@ namespace ServerHub {
 
             Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
 
-            Listener.StartAsync();
+            //Listener.StartAsync();
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
+            /*
             while (Listener.Listen)
             {
                 var x = Console.ReadLine();
@@ -71,6 +64,7 @@ namespace ServerHub {
                 ProcessCommand(comName, comArgs, false);
 
             }
+            */
         }
 
         void ProcessCommand(string comName, string[] comArgs, bool exitAfterPrint)
@@ -94,12 +88,14 @@ namespace ServerHub {
                 case "clients":
                     if (!exitAfterPrint)
                     {
+                        /*
                         foreach (var t in Listener.ConnectedClients.Where(o => o.Data.ID != -1))
                         {
                             var client = t.Data;
                             s += $"{Environment.NewLine}[{client.ID}] {client.Name} @ {client.IPv4}:{client.Port} ({client.Players}/{client.MaxPlayers})";
                         }
                         Logger.Instance.Log($"Connected Clients:{s}");
+                        */
                     }
                     break;
                 case "crash":

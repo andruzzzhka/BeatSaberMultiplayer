@@ -116,30 +116,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AvatarController.cs" />
-    <Compile Include="BSMultiplayerClient.cs" />
-    <Compile Include="BSMultiplayerUI.cs" />
-    <Compile Include="Data\BeatSaverAPIResult.cs" />
-    <Compile Include="Data\BSMPJsonObjects.cs" />
-    <Compile Include="Data\ClientDataPacket.cs" />
-    <Compile Include="Data\ConnectionType.cs" />
-    <Compile Include="Data\Data.cs" />
-    <Compile Include="Data\Packet.cs" />
     <Compile Include="Misc\Base64Sprites.cs" />
-    <Compile Include="Misc\Config.cs" />
     <Compile Include="Misc\GetUserInfo.cs" />
     <Compile Include="Misc\ReflectionUtil.cs" />
     <Compile Include="Misc\Serialization.cs" />
-    <Compile Include="Misc\ZipArchiveExtensions.cs" />
-    <Compile Include="MultiplayerLeaderboardViewController.cs" />
-    <Compile Include="MultiplayerLobbyViewController.cs" />
-    <Compile Include="MultiplayerResultsLeaderboardHolder.cs" />
-    <Compile Include="MultiplayerServerHubViewController.cs" />
-    <Compile Include="MultiplayerServerListViewController.cs" />
-    <Compile Include="PlayerInfoDisplay.cs" />
-    <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VotingSongListViewController.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
