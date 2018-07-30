@@ -21,7 +21,7 @@ namespace ServerHub.Hub
         }
 
         private void OnShutdown(ShutdownEventArgs obj) {
-            //Listener.Stop();
+            HubListener.Stop();
         }
 
         void Start(string[] args) {
@@ -49,11 +49,11 @@ namespace ServerHub.Hub
 
             Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
 
-            //Listener.StartAsync();
+            HubListener.Start();
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
-            /*
-            while (Listener.Listen)
+            
+            while (HubListener.Listen)
             {
                 var x = Console.ReadLine();
                 if (x == string.Empty) continue;
@@ -64,7 +64,7 @@ namespace ServerHub.Hub
                 ProcessCommand(comName, comArgs, false);
 
             }
-            */
+            
         }
 
         void ProcessCommand(string comName, string[] comArgs, bool exitAfterPrint)
@@ -88,14 +88,13 @@ namespace ServerHub.Hub
                 case "clients":
                     if (!exitAfterPrint)
                     {
-                        /*
-                        foreach (var t in Listener.ConnectedClients.Where(o => o.Data.ID != -1))
+                        foreach (var client in HubListener.GetClientsInLobby())
                         {
-                            var client = t.Data;
-                            s += $"{Environment.NewLine}[{client.ID}] {client.Name} @ {client.IPv4}:{client.Port} ({client.Players}/{client.MaxPlayers})";
+                            IPEndPoint remote = (IPEndPoint)client.tcpClient.Client.RemoteEndPoint;
+                            s += $"{Environment.NewLine}[{client.state}] {client.playerInfo} @ {remote.Address}:{remote.Port}";
                         }
-                        Logger.Instance.Log($"Connected Clients:{s}");
-                        */
+                        Logger.Instance.Log($"Clients in Lobby:{s}");
+                        
                     }
                     break;
                 case "crash":

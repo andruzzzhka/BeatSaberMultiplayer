@@ -1,5 +1,6 @@
 ﻿using ServerHub.Data;
 using ServerHub.Misc;
+using ServerHub.Room;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,6 +9,8 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace ServerHub.Data
 {
@@ -15,10 +18,11 @@ namespace ServerHub.Data
 
     class Client
     {
-        Thread clientLoopThread;
+        Timer clientLoopTimer;
+        Stopwatch timeoutTimer;
 
         public event Action<Client> clientDisconnected;
-        public event Action<Client, int> clientJoinedRoom;
+        public event Action<Client, int, string> clientJoinedRoom;
         public event Action<Client> clientJoinedLobby;
 
         public TcpClient tcpClient;
@@ -46,8 +50,12 @@ namespace ServerHub.Data
                 state = ClientState.Lobby;
                 tcpClient.SendData(new BasePacket(CommandType.Connect, new byte[0]));
 
-                clientLoopThread = new Thread(ClientLoop);
-                clientLoopThread.Start();
+                clientLoopTimer = new Timer(50);
+                clientLoopTimer.Elapsed += ClientLoop;
+                clientLoopTimer.AutoReset = true;
+
+                timeoutTimer = new Stopwatch();
+                clientLoopTimer.Start();
             }
             else
             {
@@ -56,46 +64,46 @@ namespace ServerHub.Data
 
         }
 
-        void ClientLoop()
+        void ClientLoop(object sender, ElapsedEventArgs e)
         {
-            Stopwatch timeoutTimer = new Stopwatch();
 
-            while (clientLoopThread.IsAlive)
+            if ((state == ClientState.Room || state == ClientState.Game) && !timeoutTimer.IsRunning)
+                timeoutTimer.Start();
+
+            if (timeoutTimer.ElapsedMilliseconds > 3000)
+                KickClient();
+            
+            BasePacket packet = tcpClient.ReceiveData(true);
+
+            switch (packet.commandType)
             {
-                if ((state == ClientState.Room || state == ClientState.Game) && !timeoutTimer.IsRunning)
-                    timeoutTimer.Start();
-
-                if(timeoutTimer.ElapsedMilliseconds > 3000)
-                    KickClient();
-
-
-                BasePacket packet = tcpClient.ReceiveData(true);
-
-                switch (packet.commandType)
-                {
-                    case CommandType.Disconnect:
-                        {
-                            DestroyClient();
-                        }break;
-                    case CommandType.UpdatePlayerInfo:
-                        {
-                            playerInfo = new PlayerInfo(packet.additionalData);
-                            timeoutTimer.Restart();
-                        }
-                        break;
-                    case CommandType.JoinRoom:
-                        {
-                            clientJoinedRoom.Invoke(this, BitConverter.ToInt32(packet.additionalData, 0));
-                            state = ClientState.Room;
-                        }break;
-                    case CommandType.LeaveRoom:
-                        {
-                            clientJoinedLobby.Invoke(this);
-                            state = ClientState.Lobby;
-                        }break;
-                }
-
-
+                case CommandType.Disconnect:
+                    {
+                        DestroyClient();
+                    }
+                    break;
+                case CommandType.UpdateServerInfo:
+                    {
+                        playerInfo = new PlayerInfo(packet.additionalData);
+                        timeoutTimer.Restart();
+                    }
+                    break;
+                case CommandType.JoinRoom:
+                    {
+                        clientJoinedRoom.Invoke(this, BitConverter.ToInt32(packet.additionalData, 0), Encoding.UTF8.GetString(packet.additionalData, 8, BitConverter.ToInt32(packet.additionalData, 4)));
+                    }
+                    break;
+                case CommandType.LeaveRoom:
+                    {
+                        clientJoinedLobby.Invoke(this);
+                        state = ClientState.Lobby;
+                    }
+                    break;
+                case CommandType.GetRooms:
+                    {
+                        tcpClient.SendData(new BasePacket(CommandType.GetRooms, RoomsController.GetRoomsListInBytes()));
+                    }
+                    break;
             }
 
         }

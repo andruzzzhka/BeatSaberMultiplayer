@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ServerHub.Data
 {
-    public enum CommandType: byte { Connect, Disconnect, GetRooms, CreateRoom, SetRoomSettings, JoinRoom, LeaveRoom, SetSelectedSong, StartLevel, UpdatePlayerInfo }
+    public enum CommandType: byte { Connect, Disconnect, GetRooms, CreateRoom, SetRoomSettings, JoinRoom, GetRoomState, LeaveRoom, SetSelectedSong, StartLevel, UpdateServerInfo }
 
     public class BasePacket
     {
