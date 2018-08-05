@@ -11,42 +11,39 @@ namespace ServerHub.Room
     {
         public uint roomId;
 
-        List<Client> roomClients = new List<Client>();
-        RoomSettings roomSettings;
-        RoomState roomState;
+        public List<Client> roomClients = new List<Client>();
+        public RoomSettings roomSettings;
+        public RoomState roomState;
 
-        List<string> availableSongs = new List<string>();
+        public List<string> availableSongs = new List<string>();
 
-        PlayerInfo roomHost;
+        public PlayerInfo roomHost;
 
-        Timer roomLoopTimer = new Timer(50);
-
-        public Room(RoomSettings settings, PlayerInfo host)
+        public Room(uint id, RoomSettings settings, PlayerInfo host)
         {
+            roomId = id;
             roomSettings = settings;
             roomHost = host;
         }
 
         public void StartRoom()
         {
-            roomLoopTimer.Elapsed += RoomLoop;
-            roomLoopTimer.AutoReset = true;
-            roomLoopTimer.Start();
+            HighResolutionTimer.LoopTimer.Elapsed += RoomLoop;
         }
 
         public void StopRoom()
         {
-
+            HighResolutionTimer.LoopTimer.Elapsed -= RoomLoop;
         }
 
         public RoomInfo GetRoomInfo()
         {
-            return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, noFail = roomSettings.NoFail };
+            return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, noFail = roomSettings.NoFail, roomHost = roomHost, roomState = roomState };
         }
 
-        private void RoomLoop(object sender, ElapsedEventArgs e)
+        private void RoomLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
-            Logger.Instance.Log("LOOP");
+            //Logger.Instance.Log($"LOOP {e.Delay}");
         }
     }
 }

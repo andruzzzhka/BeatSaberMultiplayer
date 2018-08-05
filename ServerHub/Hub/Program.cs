@@ -4,6 +4,7 @@ using System.Net;
 using System.Reflection;
 using System.Threading;
 using ServerHub.Misc;
+using ServerHub.Room;
 
 namespace ServerHub.Hub
 {
@@ -41,6 +42,9 @@ namespace ServerHub.Hub
             }
 
             ShutdownEventCatcher.Shutdown += OnShutdown;
+            
+            HighResolutionTimer.LoopTimer.Start();
+
             IP = GetPublicIPv4();
 
             Logger.Instance.Log($"Beat Saber Multiplayer ServerHub v{Assembly.GetEntryAssembly().GetName().Version}");
@@ -91,14 +95,22 @@ namespace ServerHub.Hub
                         foreach (var client in HubListener.GetClientsInLobby())
                         {
                             IPEndPoint remote = (IPEndPoint)client.tcpClient.Client.RemoteEndPoint;
-                            s += $"{Environment.NewLine}[{client.state}] {client.playerInfo} @ {remote.Address}:{remote.Port}";
+                            s += $"{Environment.NewLine}[{client.playerInfo.playerState}] {client.playerInfo.playerName} @ {remote.Address}:{remote.Port}";
                         }
                         Logger.Instance.Log($"Clients in Lobby:{s}");
                         
                     }
                     break;
-                case "crash":
-                    throw new Exception("DebugException");
+                case "testroom":
+                    {
+                        RoomsController.CreateRoom(new Data.RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "test", NoFail = true, MaxPlayers = 4 }, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
+                    }
+                    break;
+                case "testroomwopass":
+                    {
+                        RoomsController.CreateRoom(new Data.RoomSettings() { Name = "Debug Server", UsePassword = false, Password = "test", NoFail = false, MaxPlayers = 4 }, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
+                    }
+                    break;
             }
 
             if (exitAfterPrint)

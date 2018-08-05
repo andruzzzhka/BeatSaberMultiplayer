@@ -10,34 +10,34 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Timers;
-using Timer = System.Timers.Timer;
 
 namespace ServerHub.Data
 {
-    enum ClientState { Disconnected, Lobby, Room, Game }
-
     class Client
     {
-        Timer clientLoopTimer;
         Stopwatch timeoutTimer;
 
         public event Action<Client> clientDisconnected;
-        public event Action<Client, int, string> clientJoinedRoom;
-        public event Action<Client> clientJoinedLobby;
+        public event Action<Client, uint, string> clientJoinedRoom;
+        public event Action<Client> clientLeftRoom;
 
         public TcpClient tcpClient;
-
-        public ClientState state;
         public PlayerInfo playerInfo;
+
+        public uint joinedRoomID;
 
         public Client(TcpClient tcp)
         {
             tcpClient = tcp;
+        }
+
+        public void InitializeClient()
+        {
             BasePacket packet = tcpClient.ReceiveData(true);
 
-            if(packet.commandType == CommandType.Connect)
+            if (packet.commandType == CommandType.Connect)
             {
-                uint version = BitConverter.ToUInt32(packet.additionalData,0);
+                uint version = BitConverter.ToUInt32(packet.additionalData, 0);
 
                 uint serverVersion = ((uint)Assembly.GetEntryAssembly().GetName().Version.Major).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Minor).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Revision).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Build);
 
@@ -47,33 +47,34 @@ namespace ServerHub.Data
                 }
 
                 playerInfo = new PlayerInfo(packet.additionalData.Skip(4).ToArray());
-                state = ClientState.Lobby;
+                playerInfo.playerState = PlayerState.Lobby;
                 tcpClient.SendData(new BasePacket(CommandType.Connect, new byte[0]));
 
-                clientLoopTimer = new Timer(50);
-                clientLoopTimer.Elapsed += ClientLoop;
-                clientLoopTimer.AutoReset = true;
-
                 timeoutTimer = new Stopwatch();
-                clientLoopTimer.Start();
+                HighResolutionTimer.LoopTimer.Elapsed += ClientLoop;
             }
             else
             {
                 throw new Exception("Wrong command received!");
             }
-
         }
 
-        void ClientLoop(object sender, ElapsedEventArgs e)
+        void ClientLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
 
-            if ((state == ClientState.Room || state == ClientState.Game) && !timeoutTimer.IsRunning)
+            if ((playerInfo.playerState == PlayerState.Room || playerInfo.playerState == PlayerState.Game) && !timeoutTimer.IsRunning)
                 timeoutTimer.Start();
 
             if (timeoutTimer.ElapsedMilliseconds > 3000)
                 KickClient();
             
             BasePacket packet = tcpClient.ReceiveData(true);
+
+            if(packet == null)
+            {
+                DestroyClient();
+                return;
+            }
 
             switch (packet.commandType)
             {
@@ -90,18 +91,32 @@ namespace ServerHub.Data
                     break;
                 case CommandType.JoinRoom:
                     {
-                        clientJoinedRoom.Invoke(this, BitConverter.ToInt32(packet.additionalData, 0), Encoding.UTF8.GetString(packet.additionalData, 8, BitConverter.ToInt32(packet.additionalData, 4)));
+                        uint roomId = BitConverter.ToUInt32(packet.additionalData, 0);
+                        if (RoomsController.GetRoomsList().Any(x => x.roomId == roomId && x.usePassword))
+                        {
+                            clientJoinedRoom?.Invoke(this, roomId, Encoding.UTF8.GetString(packet.additionalData, 8, BitConverter.ToInt32(packet.additionalData, 4)));
+                        }
+                        else
+                        {
+                            clientJoinedRoom?.Invoke(this, roomId, "");
+                        }
                     }
                     break;
                 case CommandType.LeaveRoom:
                     {
-                        clientJoinedLobby.Invoke(this);
-                        state = ClientState.Lobby;
+                        clientLeftRoom?.Invoke(this);
+                        playerInfo.playerState = PlayerState.Lobby;
                     }
                     break;
                 case CommandType.GetRooms:
                     {
                         tcpClient.SendData(new BasePacket(CommandType.GetRooms, RoomsController.GetRoomsListInBytes()));
+                    }
+                    break;
+                case CommandType.CreateRoom:
+                    {
+                        uint roomId = RoomsController.CreateRoom(new RoomSettings(packet.additionalData), playerInfo);
+                        tcpClient.SendData(new BasePacket(CommandType.CreateRoom, BitConverter.GetBytes(roomId)));
                     }
                     break;
             }
@@ -110,10 +125,12 @@ namespace ServerHub.Data
 
         public void DestroyClient()
         {
+            Logger.Instance.Warning("Client disconnected!");
             if (tcpClient != null)
             {
                 tcpClient.Close();
             }
+            HighResolutionTimer.LoopTimer.Elapsed -= ClientLoop;
             clientDisconnected.Invoke(this);
         }
 

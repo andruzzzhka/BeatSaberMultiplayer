@@ -1,10 +1,13 @@
 ﻿using Open.Nat;
 using ServerHub.Data;
 using ServerHub.Misc;
+using ServerHub.Room;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +31,8 @@ namespace ServerHub.Hub
                 OpenPort();
             }
 
+            HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
+
             listener.Start();
             BeginListening();
         }
@@ -35,6 +40,12 @@ namespace ServerHub.Hub
         public static void Stop()
         {
 
+        }
+
+        private static void HubLoop(object sender, HighResolutionTimerElapsedEventArgs e)
+        {
+            List<RoomInfo> roomsList = RoomsController.GetRoomsList();
+            Console.Title = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total";
         }
 
         async static void OpenPort()
@@ -63,6 +74,10 @@ namespace ServerHub.Hub
                 Client client = await AcceptClient();
                 hubClients.Add(client);
                 client.clientDisconnected += ClientDisconnected;
+                client.clientJoinedRoom += RoomsController.ClientJoined;
+                client.clientLeftRoom += RoomsController.ClientLeftRoom;
+
+                client.InitializeClient();
             }
         }
 
@@ -83,7 +98,8 @@ namespace ServerHub.Hub
             {
                 client = null;
             }
-            return new Client(client);
+            Client newClient = new Client(client);
+            return newClient;
         }
 
         public static List<Client> GetClientsInLobby()
