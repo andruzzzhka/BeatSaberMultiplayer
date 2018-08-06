@@ -1,0 +1,11 @@
+bin/
+obj/
+output/
+*.Dockerfile
+.git/
+docker-compose.yml
+publish-docker.sh
+publish-relese.cmd
+README.md
+.gitignore
+.gitattributes
