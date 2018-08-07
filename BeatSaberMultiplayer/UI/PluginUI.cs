@@ -21,6 +21,7 @@ namespace BeatSaberMultiplayer.UI
         public ServerHubFlowCoordinator serverHubFlowCoordinator;
         public RoomCreationFlowCoordinator roomCreationFlowCoordinator;
         public RoomFlowCoordinator roomFlowCoordinator;
+        public DownloadFlowCoordinator downloadFlowCoordinator;
 
         public static void OnLoad()
         {
@@ -56,6 +57,10 @@ namespace BeatSaberMultiplayer.UI
                 if (roomFlowCoordinator == null)
                 {
                     roomFlowCoordinator = new GameObject("RoomFlow").AddComponent<RoomFlowCoordinator>();
+                }
+                if (downloadFlowCoordinator == null)
+                {
+                    downloadFlowCoordinator = new GameObject("DownloadFlow").AddComponent<DownloadFlowCoordinator>();
                 }
 
                 CreateOnlineButton();

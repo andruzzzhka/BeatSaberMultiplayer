@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ServerHub.Data
+namespace BeatSaberMultiplayer.Data
 {
     public enum RoomState: byte {SelectingSong, Preparing, InGame, Results }
+    public enum SongSelectionType : byte { Manual,  Random, Voting }
 
     public class RoomInfo
     {
@@ -15,12 +16,16 @@ namespace ServerHub.Data
         public bool usePassword;
 
         public RoomState roomState;
+        public SongSelectionType songSelectionType;
         public PlayerInfo roomHost;
 
         public int players;
         public int maxPlayers;
 
         public bool noFail;
+
+        public byte selectedDifficulty;
+        public SongInfo selectedSong;
 
 
         public RoomInfo()
@@ -40,14 +45,21 @@ namespace ServerHub.Data
                 usePassword = (data[8 + nameLength] == 0) ? false : true;
 
                 roomState = (RoomState)data[9 + nameLength];
+                songSelectionType = (SongSelectionType)data[10 + nameLength];
 
-                int hostInfoLength = BitConverter.ToInt32(data, 10 + nameLength);
-                roomHost = new PlayerInfo(data.Skip(14 + nameLength).Take(hostInfoLength).ToArray());
+                int hostInfoLength = BitConverter.ToInt32(data, 11 + nameLength);
+                roomHost = new PlayerInfo(data.Skip(15 + nameLength).Take(hostInfoLength).ToArray());
 
-                players = BitConverter.ToInt32(data, 14 + nameLength + hostInfoLength);
-                maxPlayers = BitConverter.ToInt32(data, 18 + nameLength + hostInfoLength);
+                players = BitConverter.ToInt32(data, 15 + nameLength + hostInfoLength);
+                maxPlayers = BitConverter.ToInt32(data, 19 + nameLength + hostInfoLength);
                 
-                noFail = (data[22 + nameLength + hostInfoLength] == 0) ? false : true;
+                noFail = (data[23 + nameLength + hostInfoLength] == 0) ? false : true;
+
+                if(data.Length > 24 + nameLength + hostInfoLength)
+                {
+                    selectedDifficulty = data[24 + nameLength + hostInfoLength];
+                    selectedSong = new SongInfo(data.Skip(25 + nameLength + hostInfoLength).ToArray());
+                }
             }
         }
 
@@ -64,6 +76,7 @@ namespace ServerHub.Data
             buffer.Add(usePassword ? (byte)1 : (byte)0);
 
             buffer.Add((byte)roomState);
+            buffer.Add((byte)songSelectionType);
 
             byte[] hostInfo = roomHost.ToBytes();
             buffer.AddRange(hostInfo);
@@ -72,6 +85,12 @@ namespace ServerHub.Data
             buffer.AddRange(BitConverter.GetBytes(maxPlayers));
             
             buffer.Add(noFail ? (byte)1 : (byte)0);
+
+            if (selectedSong != null)
+            {
+                buffer.Add(selectedDifficulty);
+                buffer.AddRange(selectedSong.ToBytes(false));
+            }
             
             if(includeSize)
                 buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));

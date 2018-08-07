@@ -1,5 +1,5 @@
-﻿using BeatSaberMultiplayer.Misc;
-using ServerHub.Data;
+﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +29,10 @@ namespace BeatSaberMultiplayer
         public string ip;
         public int port;
 
+        public PlayerInfo playerInfo;
+        
+        public bool isHost;
+
         public static void CreateClient()
         {
             if(instance != null)
@@ -44,7 +48,7 @@ namespace BeatSaberMultiplayer
         {
             instance = this;
             DontDestroyOnLoad(this);
-
+            playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
         }
 
         public void Disconnect(bool dontDestroy = false)
@@ -83,7 +87,7 @@ namespace BeatSaberMultiplayer
 
             List<byte> buffer = new List<byte>();
             buffer.AddRange(BitConverter.GetBytes(Plugin.pluginVersion));
-            buffer.AddRange(new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).ToBytes(false));
+            buffer.AddRange(playerInfo.ToBytes(false));
             tcpClient.SendData(new BasePacket(CommandType.Connect, buffer.ToArray()));
             BasePacket response = tcpClient.ReceiveData();
 
@@ -111,6 +115,7 @@ namespace BeatSaberMultiplayer
                 }
             }
 
+            playerInfo.playerState = PlayerState.Lobby;
             Connected = true;
             ConnectedToServerHub?.Invoke();
 
@@ -174,6 +179,17 @@ namespace BeatSaberMultiplayer
             if (Connected && tcpClient.Connected)
             {
                 tcpClient.SendData(new BasePacket(CommandType.LeaveRoom, new byte[0]));
+            }
+
+            playerInfo.playerState = PlayerState.Lobby;
+        }
+
+        public void RequestRoomInfo()
+        {
+            if (Connected && tcpClient.Connected)
+            {
+                tcpClient.SendData(new BasePacket(CommandType.GetRoomInfo, new byte[0]));
+                Log.Info("Requested RoomInfo...");
             }
         }
     }

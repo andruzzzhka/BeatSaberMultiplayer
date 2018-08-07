@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace ServerHub.Data
@@ -11,9 +12,11 @@ namespace ServerHub.Data
         public bool UsePassword;
         public string Password;
 
+        public SongSelectionType SelectionType;
         public int MaxPlayers;
         public bool NoFail;
 
+        public List<SongInfo> availableSongs;
 
         public RoomSettings()
         {
@@ -22,7 +25,7 @@ namespace ServerHub.Data
 
         public RoomSettings(byte[] data)
         {
-            if(data.Length > 9)
+            if(data.Length > 14)
             {
                 int nameLength = BitConverter.ToInt32(data, 0);
                 Name = Encoding.UTF8.GetString(data, 4, nameLength);
@@ -34,7 +37,26 @@ namespace ServerHub.Data
 
                 MaxPlayers = BitConverter.ToInt32(data, 9 + nameLength + passLength);
 
-                NoFail = (data[13 + nameLength + passLength] == 0) ? false : true;
+                SelectionType = (SongSelectionType)(data[13 + nameLength + passLength]);
+                NoFail = (data[14 + nameLength + passLength] == 0) ? false : true;
+
+                int songsCount = BitConverter.ToInt32(data, 15 + nameLength + passLength);
+
+                Stream byteStream = new MemoryStream(data, 19 + nameLength + passLength, data.Length - (19 + nameLength + passLength));
+
+                availableSongs = new List<SongInfo>();
+                for (int j = 0; j < songsCount; j++)
+                {
+                    byte[] sizeBytes = new byte[4];
+                    byteStream.Read(sizeBytes, 0, 4);
+
+                    int songInfoSize = BitConverter.ToInt32(sizeBytes, 0);
+
+                    byte[] songInfoBytes = new byte[songInfoSize];
+                    byteStream.Read(songInfoBytes, 0, songInfoSize);
+
+                    availableSongs.Add(new SongInfo(songInfoBytes));
+                }
             }
         }
 
@@ -54,7 +76,11 @@ namespace ServerHub.Data
             
             buffer.AddRange(BitConverter.GetBytes(MaxPlayers));
 
+            buffer.Add((byte)SelectionType);
             buffer.Add(NoFail ? (byte)1 : (byte)0);
+
+            buffer.AddRange(BitConverter.GetBytes(availableSongs.Count));
+            availableSongs.ForEach(x => buffer.AddRange(x.ToBytes()));
 
             if (includeSize)
                 buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Timers;
 
-namespace ServerHub.Room
+namespace ServerHub.Rooms
 {
     class Room
     {
@@ -14,8 +14,6 @@ namespace ServerHub.Room
         public List<Client> roomClients = new List<Client>();
         public RoomSettings roomSettings;
         public RoomState roomState;
-
-        public List<string> availableSongs = new List<string>();
 
         public PlayerInfo roomHost;
 
@@ -41,8 +39,20 @@ namespace ServerHub.Room
             return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, noFail = roomSettings.NoFail, roomHost = roomHost, roomState = roomState };
         }
 
+        public byte[] GetSongsLevelIDs()
+        {
+            List<byte> buffer = new List<byte>();
+
+            buffer.AddRange(BitConverter.GetBytes(roomSettings.availableSongs.Count));
+
+            roomSettings.availableSongs.ForEach(x => buffer.AddRange(HexConverter.ConvertHexToBytesX(x.levelId)));
+
+            return buffer.ToArray();
+        }
+
         private void RoomLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
+
             //Logger.Instance.Log($"LOOP {e.Delay}");
         }
     }

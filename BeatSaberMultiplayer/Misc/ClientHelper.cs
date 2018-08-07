@@ -1,4 +1,4 @@
-﻿using ServerHub.Data;
+﻿using BeatSaberMultiplayer.Data;
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;

@@ -1,7 +1,7 @@
 ﻿using Open.Nat;
 using ServerHub.Data;
 using ServerHub.Misc;
-using ServerHub.Room;
+using ServerHub.Rooms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,7 +44,7 @@ namespace ServerHub.Hub
 
         private static void HubLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
-            List<RoomInfo> roomsList = RoomsController.GetRoomsList();
+            List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
             Console.Title = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total";
         }
 

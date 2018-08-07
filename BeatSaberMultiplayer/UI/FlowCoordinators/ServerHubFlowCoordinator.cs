@@ -1,6 +1,6 @@
-﻿using BeatSaberMultiplayer.Misc;
+﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers;
-using ServerHub.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -64,7 +64,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void UpdateRoomsList()
         {
-            _serverHubClients.ForEach(x => x.Abort());
+            _serverHubClients.ForEach(x =>
+            {
+                x.Abort();
+                x.ReceivedRoomsList -= ReceivedRoomsList;
+                x.ServerHubException -= ServerHubException;
+            });
             _serverHubClients.Clear();
 
             for (int i = 0; i < Config.Instance.ServerHubIPs.Length; i++)

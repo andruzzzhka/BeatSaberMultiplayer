@@ -1,6 +1,7 @@
 ﻿using ServerHub.Data;
 using ServerHub.Misc;
-using ServerHub.Room;
+using ServerHub.Rooms;
+using ServerHub.Rooms;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -75,15 +76,24 @@ namespace ServerHub.Data
                 DestroyClient();
                 return;
             }
+            
+            Logger.Instance.Log($"Received packet from client: type={packet.commandType}");
 
             switch (packet.commandType)
             {
+                case CommandType.Connect:
+                    {
+                        if(packet.additionalData == null || packet.additionalData.Length == 0 || !packet.additionalData.Any(x => x != 0))
+                        {
+                            DestroyClient();
+                        }
+                    }break;
                 case CommandType.Disconnect:
                     {
                         DestroyClient();
                     }
                     break;
-                case CommandType.UpdateServerInfo:
+                case CommandType.UpdatePlayerInfo:
                     {
                         playerInfo = new PlayerInfo(packet.additionalData);
                         timeoutTimer.Restart();
@@ -92,7 +102,7 @@ namespace ServerHub.Data
                 case CommandType.JoinRoom:
                     {
                         uint roomId = BitConverter.ToUInt32(packet.additionalData, 0);
-                        if (RoomsController.GetRoomsList().Any(x => x.roomId == roomId && x.usePassword))
+                        if (RoomsController.GetRoomInfosList().Any(x => x.roomId == roomId && x.usePassword))
                         {
                             clientJoinedRoom?.Invoke(this, roomId, Encoding.UTF8.GetString(packet.additionalData, 8, BitConverter.ToInt32(packet.additionalData, 4)));
                         }
@@ -119,6 +129,16 @@ namespace ServerHub.Data
                         tcpClient.SendData(new BasePacket(CommandType.CreateRoom, BitConverter.GetBytes(roomId)));
                     }
                     break;
+                case CommandType.GetRoomInfo:
+                    {
+                        Logger.Instance.Log("Client room: "+joinedRoomID);
+                        if(joinedRoomID != 0)
+                        {
+                            Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
+                            tcpClient.SendData(new BasePacket(CommandType.GetRoomInfo, joinedRoom.GetSongsLevelIDs().Concat(joinedRoom.GetRoomInfo().ToBytes(false)).ToArray()));
+                        }
+
+                    }break;
             }
 
         }

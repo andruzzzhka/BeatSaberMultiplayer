@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ServerHub.Data
+namespace BeatSaberMultiplayer.Data
 {
-    public enum PlayerState: byte { Disconnected, Lobby, Room, Game, Spectating }
+    public enum PlayerState: byte { Disconnected, Lobby, Room, Game, Spectating, DownloadingSongs }
 
     public class PlayerInfo
     {
@@ -72,7 +72,7 @@ namespace ServerHub.Data
         {
             if (obj is PlayerInfo)
             {
-                return (playerId == (obj as PlayerInfo).playerId) && (playerName == (obj as PlayerInfo).playerName) && (playerScore == (obj as PlayerInfo).playerScore) && (playerCutBlocks == (obj as PlayerInfo).playerCutBlocks) && (playerComboBlocks == (obj as PlayerInfo).playerComboBlocks) && (playerEnergy == (obj as PlayerInfo).playerEnergy) && ((obj as PlayerInfo).playerAvatar.SequenceEqual(playerAvatar));
+                return (playerId == (obj as PlayerInfo).playerId) && (playerName == (obj as PlayerInfo).playerName);
             }
             else
             {

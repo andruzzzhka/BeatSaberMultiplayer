@@ -30,7 +30,7 @@ namespace MultiplayerTests
         {
             for (int i = 0; i < 100000; i++)
             {
-                RoomSettings initial = new RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "testtesttest", MaxPlayers = 4, NoFail = true };
+                RoomSettings initial = new RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "testtesttest", MaxPlayers = 4, NoFail = true, availableSongs = new List<SongInfo>() { new SongInfo() { songName = "TEST SONG", levelId = "CC773C754F14B6290B5D2CB196EB1BF4", songDuration = 230f } } };
 
                 byte[] converted = initial.ToBytes().Skip(4).ToArray();
 
@@ -45,7 +45,7 @@ namespace MultiplayerTests
         {
             for (int i = 0; i < 100000; i++)
             {
-                RoomInfo initial = new RoomInfo() { name = "Debug Server", usePassword = true, players = 2, maxPlayers = 4, noFail = true, roomHost = new PlayerInfo("andruzzzhka", 76561198047255564) { playerScore = 14000, playerComboBlocks = 15, playerState = PlayerState.Spectating, playerCutBlocks = 150, playerEnergy = 0.6f }};
+                RoomInfo initial = new RoomInfo() { name = "Debug Server", usePassword = true, players = 2, maxPlayers = 4, noFail = true, roomHost = new PlayerInfo("andruzzzhka", 76561198047255564) { playerScore = 14000, playerComboBlocks = 15, playerState = PlayerState.Spectating, playerCutBlocks = 150, playerEnergy = 0.6f }, roomState = RoomState.SelectingSong, selectedDifficulty = 3, selectedSong = new SongInfo() { songName = "Test song", songDuration = 350f, levelId = "281C6C8588C5B1F72F7584BAAE98ADFC" }, songSelectionType = SongSelectionType.Random };
 
                 byte[] converted = initial.ToBytes().Skip(4).ToArray();
 
@@ -87,6 +87,21 @@ namespace MultiplayerTests
             }
 
             
+        }
+
+        [TestMethod]
+        public void SongInfoSerializationTest()
+        {
+            for (int i = 0; i < 100000; i++)
+            {
+                SongInfo initial = new SongInfo() { songName = "TEST SONG", levelId = "CC773C754F14B6290B5D2CB196EB1BF4", songDuration = 230f };
+
+                byte[] converted = initial.ToBytes().Skip(4).ToArray();
+
+                SongInfo deserialized = new SongInfo(converted);
+
+                Assert.AreEqual(initial, deserialized);
+            }
         }
 
         [TestMethod]

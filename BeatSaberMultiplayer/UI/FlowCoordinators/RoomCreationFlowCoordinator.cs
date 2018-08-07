@@ -1,6 +1,7 @@
-﻿using BeatSaberMultiplayer.Misc;
+﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen;
-using ServerHub.Data;
+using SongLoaderPlugin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,10 +50,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public void CreateRoomPressed(RoomSettings settings)
         {
             _roomSettings = settings;
+            _roomSettings.availableSongs = SongLoader.CustomLevels.Select(x => new SongInfo() { songName = x.songName, levelId = x.levelID.Substring(0, 32)}).ToList();
 
             if (Client.instance == null)
             {
-                Log.Info("Creating client");
                 Client.CreateClient();
             }
             if(!Client.instance.Connected || (Client.instance.Connected && (Client.instance.ip != _selectedServerHub.ip || Client.instance.port != _selectedServerHub.port)))

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ServerHub.Room
+namespace ServerHub.Rooms
 {
     public enum JoinResult : byte { Success, RoomNotFound, IncorrectPassword, TooMuchPlayers}
 
@@ -19,14 +19,16 @@ namespace ServerHub.Room
             rooms.Add(room);
             room.StartRoom();
 
-            Logger.Instance.Log($"New room created! Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, noFail={settings.NoFail}");
+            Logger.Instance.Log($"New room created! Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, noFail={settings.NoFail}, songSelecionType={settings.SelectionType}, songsCount={settings.availableSongs.Count}");
 
             return room.roomId;
         }
 
         public static void ClientJoined(Client client, uint roomId, string password)
         {
-            if(rooms.Any(x => x.roomId == roomId))
+            Logger.Instance.Log("Client joining room " + roomId);
+
+            if (rooms.Any(x => x.roomId == roomId))
             {
                 Room room = rooms.First(x => x.roomId == roomId);
                 RoomInfo roomInfo = room.GetRoomInfo();
@@ -38,16 +40,20 @@ namespace ServerHub.Room
                         if (room.roomSettings.Password == password)
                         {
                             client.tcpClient.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.Success }));
+                            client.joinedRoomID = room.roomId;
                             room.roomClients.Add(client);
                         }
                         else
                         {
                             client.tcpClient.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.IncorrectPassword }));
                         }
+
                     }
                     else
                     {
                         client.tcpClient.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.Success }));
+                        client.joinedRoomID = room.roomId;
+                        room.roomClients.Add(client);
                     }
                 }
                 else
@@ -68,6 +74,7 @@ namespace ServerHub.Room
             {
                 room.roomClients.Remove(client);
             }
+            client.joinedRoomID = 0;
         }
 
         public static int GetRoomsCount()
@@ -75,9 +82,14 @@ namespace ServerHub.Room
             return rooms.Count;
         }
 
-        public static List<RoomInfo> GetRoomsList()
+        public static List<RoomInfo> GetRoomInfosList()
         {
             return rooms.Select(x => x.GetRoomInfo()).ToList();
+        }
+
+        public static List<Room> GetRoomsList()
+        {
+            return rooms;
         }
 
         public static byte[] GetRoomsListInBytes()

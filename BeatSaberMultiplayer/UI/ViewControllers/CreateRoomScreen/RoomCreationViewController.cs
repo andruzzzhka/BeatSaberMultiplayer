@@ -1,6 +1,6 @@
-﻿using BeatSaberMultiplayer.Misc;
+﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.UIElements;
-using ServerHub.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,8 +21,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private Button _editNameButton;
         private Button _editPasswordButton;
         private BoolViewController _usePasswordToggle;
-        private BoolViewController _noFailToggle;
+        private ListViewController _songSelectionList;
         private ListViewController _maxPlayersList;
+        private BoolViewController _noFailToggle;
         private TextMeshProUGUI _nameText;
         private TextMeshProUGUI _passwordText;
 
@@ -33,6 +34,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         private string _roomName;
         private string _roomPassword;
+        private SongSelectionType _songSelectionType;
         private int _maxPlayers = 0;
         private bool _usePassword = false;
         private bool _noFailMode = true;
@@ -56,19 +58,30 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _usePasswordToggle.ValueChanged += UsePasswordToggle_ValueChanged;
                 _usePasswordToggle.Value = _usePassword;
 
-                _noFailToggle = CustomSettingsHelper.AddToggleSetting<BoolViewController>(rectTransform, "No Fail Mode");
-                (_noFailToggle.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
-                (_noFailToggle.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
-                (_noFailToggle.transform as RectTransform).anchoredPosition = new Vector2(0f, -10f);
-                _noFailToggle.ValueChanged += NoFailToggle_ValueChanged;
-                _noFailToggle.Value = _noFailMode;
+                _songSelectionList = CustomSettingsHelper.AddListSetting<ListViewController>(rectTransform, "Song Selection");
+                (_songSelectionList.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
+                (_songSelectionList.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
+                (_songSelectionList.transform as RectTransform).anchoredPosition = new Vector2(0f, 0f);
+                _songSelectionList.ValueChanged += SongSelection_ValueChanged;
+                _songSelectionList.maxValue = 1; //disabled "Voting" for now
+                _songSelectionList.Value = (int)_songSelectionType;
+                _songSelectionList.textForValues = new string[] { "Manual", "Random", "Voting" };
+                _songSelectionList.UpdateText();
 
                 _maxPlayersList = CustomSettingsHelper.AddListSetting<ListViewController>(rectTransform, "Max Players");
                 (_maxPlayersList.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
                 (_maxPlayersList.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
-                (_maxPlayersList.transform as RectTransform).anchoredPosition = new Vector2(0f, 0f);
+                (_maxPlayersList.transform as RectTransform).anchoredPosition = new Vector2(0f, -10f);
                 _maxPlayersList.ValueChanged += MaxPlayers_ValueChanged;
-                _maxPlayersList._value = _maxPlayers;
+                _maxPlayersList.Value = _maxPlayers;
+                _maxPlayersList.maxValue = 16;
+
+                _noFailToggle = CustomSettingsHelper.AddToggleSetting<BoolViewController>(rectTransform, "No Fail Mode");
+                (_noFailToggle.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
+                (_noFailToggle.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
+                (_noFailToggle.transform as RectTransform).anchoredPosition = new Vector2(0f, -20f);
+                _noFailToggle.ValueChanged += NoFailToggle_ValueChanged;
+                _noFailToggle.Value = _noFailMode;
 
                 _roomName = $"{GetUserInfo.GetUserName()}'s room".ToUpper();
                 _nameText = BeatSaberUI.CreateText(rectTransform, _roomName, new Vector2(-15f, -14.5f));
@@ -106,10 +119,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 (_createRoomButton.transform as RectTransform).anchoredPosition = new Vector2(-65f, 1.5f);
                 _createRoomButton.onClick.RemoveAllListeners();
                 _createRoomButton.onClick.AddListener(delegate () {
-                    CreatedRoom?.Invoke(new RoomSettings() { Name = _roomName, UsePassword = _usePassword, Password = _roomPassword, NoFail = _noFailMode, MaxPlayers = _maxPlayers});
+                    CreatedRoom?.Invoke(new RoomSettings() { Name = _roomName, UsePassword = _usePassword, Password = _roomPassword, NoFail = _noFailMode, MaxPlayers = _maxPlayers, SelectionType = _songSelectionType});
                 });
                 CheckRequirements();
             }
+        }
+
+        private void SongSelection_ValueChanged(int obj)
+        {
+            _songSelectionType = (SongSelectionType)obj;
         }
 
         private void MaxPlayers_ValueChanged(int obj)
