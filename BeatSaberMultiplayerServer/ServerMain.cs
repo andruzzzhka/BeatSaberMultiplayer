@@ -1,4 +1,4 @@
-﻿using BeatSaberMultiplayerServer.Misc;
+using BeatSaberMultiplayerServer.Misc;
 using Newtonsoft.Json;
 using ServerCommons.Data;
 using ServerCommons.Misc;
@@ -408,8 +408,6 @@ namespace BeatSaberMultiplayerServer
         
         private static void DownloadSongs()
         {
-            Settings.Instance.Server.Downloaded.GetDirectories().AsParallel().ForAll(dir => dir.Delete(true));
-
             Settings.Instance.AvailableSongs.Songs.ToList().AsParallel().ForAll(id =>
             {
                 DownloadSongByID(id);
@@ -419,6 +417,16 @@ namespace BeatSaberMultiplayerServer
 
             List<CustomSongInfo> _songs = SongLoader.RetrieveAllSongs();
 
+            List<string> newSongs = new List<string>();
+            foreach(CustomSongInfo song in _songs)
+            {
+                if(song.beatSaverId != "Downloaded")
+                {
+                    newSongs.Add(song.beatSaverId);
+                }
+            }
+            Settings.Instance.AvailableSongs.Songs = newSongs.ToArray();
+        
             _songs.AsParallel().ForAll(song =>
             {
                 ProcessSong(song);
@@ -456,6 +464,12 @@ namespace BeatSaberMultiplayerServer
 
         private static string DownloadSongByID(string id)
         {
+            if (Directory.Exists(Environment.CurrentDirectory + "\\AvailableSongs\\Downloaded\\" + id))
+            {
+                Logger.Instance.Warning($"Song with ID [{id}] already exists. Continuing.");
+                return null;
+            }
+
             var zipPath = Path.Combine(Settings.Instance.Server.Downloads.FullName, $"{id}.zip");
             Thread.Sleep(25);
             using (var client = new WebClient())
@@ -560,6 +574,11 @@ namespace BeatSaberMultiplayerServer
             {
                 Logger.Instance.Error(e.Message);
                 Logger.Instance.Warning("One common cause of this is incorrect case sensitivity in the song's json file in comparison to its actual song name.");
+            }
+            catch(Exception e)
+            {
+                Logger.Instance.Error(e.Message);
+                Logger.Instance.Warning($"An unknown error occured when attempting to process song {song.songName}");
             }
         }
 
