@@ -36,7 +36,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void SongsDownloaded()
         {
+#if DEBUG
             Log.Info("All songs downloaded!");
+#endif
             SongLoader.SongsLoadedEvent -= SongsLoadedEvent;
             SongLoader.SongsLoadedEvent += SongsLoadedEvent;
             SongLoader.Instance.RefreshSongs(false);
@@ -54,7 +56,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public IEnumerator EnqueueSongByLevelID(string levelId)
         {
-            Log.Info("Donwloading " + levelId);
+#if DEBUG
+            Log.Info("Downloading " + levelId);
+#endif
             if (_downloadQueueViewController == null)
             {
                 _downloadQueueViewController = BeatSaberUI.CreateViewController<DownloadQueueViewController>();
@@ -77,8 +81,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             else
             {
+#if DEBUG
                 Console.WriteLine("Received response from BeatSaver");
-
+#endif
                 JSONNode node = JSON.Parse(wwwId.downloadHandler.text);
 
                 if (node["songs"].Count == 0)
@@ -139,7 +144,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             else
             {
+#if DEBUG
                 Log.Info("Received response from BeatSaver.com...");
+#endif
 
                 string zipPath = "";
                 string docPath = "";
@@ -160,7 +167,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         Directory.CreateDirectory(customSongsPath);
                     }
                     File.WriteAllBytes(zipPath, data);
+#if DEBUG
                     Log.Info("Downloaded zip file!");
+#endif
                 }
                 catch (Exception e)
                 {
@@ -169,7 +178,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     yield break;
                 }
 
+#if DEBUG
                 Log.Info("Extracting...");
+#endif
 
                 try
                 {
@@ -193,7 +204,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 songInfo.songQueueState = SongQueueState.Downloaded;
 
-                Log.Info("Downloaded!");
+                Log.Info($"Downloaded {songInfo.songName} {songInfo.songSubName}!");
                 _downloadQueueViewController.Refresh();
 
                 if(!_downloadQueueViewController._queuedSongs.Any(x => x.songQueueState == SongQueueState.Downloading || x.songQueueState == SongQueueState.Queued))

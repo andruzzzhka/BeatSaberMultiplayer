@@ -38,7 +38,10 @@ namespace BeatSaberMultiplayer.Data
             buffer.AddRange(BitConverter.GetBytes(nameBuffer.Length));
             buffer.AddRange(nameBuffer);
 
-            buffer.AddRange(HexConverter.ConvertHexToBytesX(levelId));
+            if(levelId != null)
+                buffer.AddRange(HexConverter.ConvertHexToBytesX(levelId));
+            else
+                buffer.AddRange(new byte[16]);
 
             buffer.AddRange(BitConverter.GetBytes(songDuration));
 

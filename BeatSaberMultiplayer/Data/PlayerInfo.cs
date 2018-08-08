@@ -1,7 +1,10 @@
-﻿using System;
+﻿using BeatSaberMultiplayer.Misc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
+using UnityEngine.XR;
 
 namespace BeatSaberMultiplayer.Data
 {
@@ -19,13 +22,18 @@ namespace BeatSaberMultiplayer.Data
         public uint playerComboBlocks;
         public float playerEnergy;
 
-        public byte[] playerAvatar;
+        public Vector3 headPos;
+        public Vector3 rightHandPos;
+        public Vector3 leftHandPos;
 
-        public PlayerInfo(string _name, ulong _id, byte[] _avatar = null)
+        public Quaternion headRot;
+        public Quaternion rightHandRot;
+        public Quaternion leftHandRot;
+
+        public PlayerInfo(string _name, ulong _id)
         {
             playerName = _name;
             playerId = _id;
-            playerAvatar = (_avatar == null) ? new byte[0] : _avatar;
         }
 
         public PlayerInfo(byte[] data)
@@ -41,7 +49,15 @@ namespace BeatSaberMultiplayer.Data
             playerComboBlocks = BitConverter.ToUInt32(data, 21 + nameLength);
             playerEnergy = BitConverter.ToSingle(data, 25 + nameLength);
 
-            playerAvatar = data.Skip(29 + nameLength).Take(84).ToArray();
+            byte[] avatar = data.Skip(29 + nameLength).Take(84).ToArray();
+
+            rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
+            leftHandPos = Serialization.ToVector3(avatar.Skip(12).Take(12).ToArray());
+            headPos = Serialization.ToVector3(avatar.Skip(24).Take(12).ToArray());
+
+            rightHandRot = Serialization.ToQuaternion(avatar.Skip(36).Take(16).ToArray());
+            leftHandRot = Serialization.ToQuaternion(avatar.Skip(52).Take(16).ToArray());
+            headRot = Serialization.ToQuaternion(avatar.Skip(68).Take(16).ToArray());
         }
 
         public byte[] ToBytes(bool includeSize = true)
@@ -59,8 +75,15 @@ namespace BeatSaberMultiplayer.Data
             buffer.AddRange(BitConverter.GetBytes(playerCutBlocks));
             buffer.AddRange(BitConverter.GetBytes(playerComboBlocks));
             buffer.AddRange(BitConverter.GetBytes(playerEnergy));
-
-            buffer.AddRange(playerAvatar);
+            
+                        
+            buffer.AddRange(Serialization.Combine(
+                            Serialization.ToBytes(rightHandPos),
+                            Serialization.ToBytes(leftHandPos),
+                            Serialization.ToBytes(headPos),
+                            Serialization.ToBytes(rightHandRot),
+                            Serialization.ToBytes(leftHandRot),
+                            Serialization.ToBytes(headRot)));
 
             if (includeSize)
                 buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));

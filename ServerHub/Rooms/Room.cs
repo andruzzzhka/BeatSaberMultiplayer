@@ -17,6 +17,10 @@ namespace ServerHub.Rooms
 
         public PlayerInfo roomHost;
 
+        public SongInfo selectedSong;
+        public byte selectedDifficulty;
+
+
         public Room(uint id, RoomSettings settings, PlayerInfo host)
         {
             roomId = id;
@@ -36,24 +40,106 @@ namespace ServerHub.Rooms
 
         public RoomInfo GetRoomInfo()
         {
-            return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, noFail = roomSettings.NoFail, roomHost = roomHost, roomState = roomState };
+            return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, noFail = roomSettings.NoFail, roomHost = roomHost, roomState = roomState, songSelectionType=roomSettings.SelectionType, selectedSong = selectedSong, selectedDifficulty = selectedDifficulty };
         }
 
         public byte[] GetSongsLevelIDs()
         {
             List<byte> buffer = new List<byte>();
 
-            buffer.AddRange(BitConverter.GetBytes(roomSettings.availableSongs.Count));
+            buffer.AddRange(BitConverter.GetBytes(roomSettings.AvailableSongs.Count));
 
-            roomSettings.availableSongs.ForEach(x => buffer.AddRange(HexConverter.ConvertHexToBytesX(x.levelId)));
+            roomSettings.AvailableSongs.ForEach(x => buffer.AddRange(HexConverter.ConvertHexToBytesX(x.levelId)));
 
             return buffer.ToArray();
         }
 
         private void RoomLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
+            
+            if (roomSettings.SelectionType == SongSelectionType.Random && roomState == RoomState.SelectingSong)
+            {
+                roomState = RoomState.Preparing;
+                Random rand = new Random();
+                selectedSong = roomSettings.AvailableSongs[rand.Next(0, roomSettings.AvailableSongs.Count-1)];
+                BroadcastPacket(new BasePacket(CommandType.SetSelectedSong, selectedSong.ToBytes(false)));
+            }
+            List<byte> buffer = new List<byte>();
+            buffer.AddRange(new byte[8]);
+            buffer.AddRange(BitConverter.GetBytes(roomClients.Count));
+            roomClients.ForEach(x => buffer.AddRange(x.playerInfo.ToBytes()));
+            BroadcastPacket(new BasePacket(CommandType.UpdatePlayerInfo, buffer.ToArray()));
 
-            //Logger.Instance.Log($"LOOP {e.Delay}");
+#if DEBUG
+            Logger.Instance.Log($"LOOP {e.Delay}");
+#endif
+            
+        }
+
+        public void BroadcastPacket(BasePacket packet)
+        {
+            foreach (Client client in roomClients)
+            {
+                try
+                {
+                    client.SendData(packet);
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"Can't send packet to {client.playerInfo.playerName}! Exception: {e}");
+                }
+            }
+        }
+
+        public void SetSelectedSong(PlayerInfo sender, SongInfo song)
+        {
+            if (sender.Equals(roomHost))
+            {
+                selectedSong = song;
+                if (selectedSong == null)
+                {
+                    switch (roomSettings.SelectionType)
+                    {
+                        case SongSelectionType.Manual:
+                            {
+
+                                roomState = RoomState.SelectingSong;
+                                BroadcastPacket(new BasePacket(CommandType.SetSelectedSong, new byte[0]));
+                            }
+                            break;
+                        case SongSelectionType.Random:
+                            {
+                                roomState = RoomState.Preparing;
+                                Random rand = new Random();
+                                selectedSong = roomSettings.AvailableSongs[rand.Next(0, roomSettings.AvailableSongs.Count - 1)];
+                                BroadcastPacket(new BasePacket(CommandType.SetSelectedSong, selectedSong.ToBytes(false)));
+                            }
+                            break;
+                    }
+                }
+                else
+                {
+                    roomState = RoomState.Preparing;
+                    BroadcastPacket(new BasePacket(CommandType.SetSelectedSong, selectedSong.ToBytes(false)));
+                }
+            }
+        }
+
+        public void StartLevel(PlayerInfo sender, byte difficulty, SongInfo song)
+        {
+            if (sender.Equals(roomHost))
+            {
+                selectedSong = song;
+                selectedDifficulty = difficulty;
+
+                List<byte> buffer = new List<byte>();
+                buffer.Add(selectedDifficulty);
+                buffer.AddRange(selectedSong.ToBytes(false));
+
+                BroadcastPacket(new BasePacket(CommandType.StartLevel, buffer.ToArray()));
+
+                roomState = RoomState.InGame;
+            }
         }
     }
 }

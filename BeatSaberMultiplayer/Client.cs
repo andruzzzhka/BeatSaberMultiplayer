@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
+using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,8 @@ namespace BeatSaberMultiplayer
 {
     class Client : MonoBehaviour
     {
+        public static event Action ClientCreated;
+        public static event Action ClientDestroyed;
         public static Client instance;
 
         public event Action ConnectedToServerHub;
@@ -49,6 +52,7 @@ namespace BeatSaberMultiplayer
             instance = this;
             DontDestroyOnLoad(this);
             playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
+            ClientCreated?.Invoke();
         }
 
         public void Disconnect(bool dontDestroy = false)
@@ -68,6 +72,7 @@ namespace BeatSaberMultiplayer
             if (!dontDestroy)
             {
                 instance = null;
+                ClientDestroyed?.Invoke();
                 Destroy(gameObject);
             }
         }
@@ -129,13 +134,20 @@ namespace BeatSaberMultiplayer
         {
             while (tcpClient.Connected && receiverThread.IsAlive)
             {
+#if DEBUG
                 Log.Info("Waiting for packet...");
+#endif
                 BasePacket packet = tcpClient.ReceiveData();
+#if DEBUG
                 Log.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");
+#endif
                 PacketReceived?.Invoke(packet);
 
                 if(packet.commandType == CommandType.Disconnect)
                 {
+#if DEBUG
+                    Log.Info("Disconnecting...");
+#endif
                     Disconnect();
                 }
             }
@@ -145,7 +157,9 @@ namespace BeatSaberMultiplayer
         {
             if (Connected && tcpClient.Connected)
             {
+#if DEBUG
                 Log.Info("Joining room " + roomId);
+#endif
                 tcpClient.SendData(new BasePacket(CommandType.JoinRoom, BitConverter.GetBytes(roomId)));
             }
         }
@@ -154,7 +168,9 @@ namespace BeatSaberMultiplayer
         {
             if (Connected && tcpClient.Connected)
             {
+#if DEBUG
                 Log.Info("Joining room " + roomId+" with password "+password);
+#endif
 
                 List<byte> buffer = new List<byte>();
                 buffer.AddRange(BitConverter.GetBytes(roomId));
@@ -171,6 +187,9 @@ namespace BeatSaberMultiplayer
             if(Connected && tcpClient.Connected)
             {
                 tcpClient.SendData(new BasePacket(CommandType.CreateRoom, settings.ToBytes(false)));
+#if DEBUG
+                Log.Info("Creating room...");
+#endif
             }
         }
 
@@ -179,8 +198,25 @@ namespace BeatSaberMultiplayer
             if (Connected && tcpClient.Connected)
             {
                 tcpClient.SendData(new BasePacket(CommandType.LeaveRoom, new byte[0]));
+#if DEBUG
+                Log.Info("Leaving room...");
+#endif
             }
+            isHost = false;
+            playerInfo.playerState = PlayerState.Lobby;
+        }
 
+
+        public void DestroyRoom()
+        {
+            if (Connected && tcpClient.Connected)
+            {
+                tcpClient.SendData(new BasePacket(CommandType.DestroyRoom, new byte[0]));
+#if DEBUG
+                Log.Info("Destroying room...");
+#endif
+            }
+            isHost = false;
             playerInfo.playerState = PlayerState.Lobby;
         }
 
@@ -189,7 +225,46 @@ namespace BeatSaberMultiplayer
             if (Connected && tcpClient.Connected)
             {
                 tcpClient.SendData(new BasePacket(CommandType.GetRoomInfo, new byte[0]));
+#if DEBUG
                 Log.Info("Requested RoomInfo...");
+#endif
+            }
+        }
+
+        public void SetSelectedSong(SongInfo song)
+        {
+            if (Connected && tcpClient.Connected)
+            {
+                if (song == null)
+                {
+                    tcpClient.SendData(new BasePacket(CommandType.SetSelectedSong, new byte[0]));
+                }
+                else
+                {
+                    tcpClient.SendData(new BasePacket(CommandType.SetSelectedSong, song.ToBytes(false)));
+                }
+#if DEBUG
+                Log.Info("Sending SongInfo for selected song...");
+#endif
+            }
+        }
+
+        public void StartLevel(CustomLevel song, LevelDifficulty difficulty)
+        {
+            if (Connected && tcpClient.Connected)
+            {
+                List<byte> buffer = new List<byte>();
+                buffer.Add((byte)difficulty);
+                buffer.AddRange(new SongInfo() { songName = song.songName +" "+song.songSubName, levelId = song.levelID.Substring(0, 32), songDuration = song.audioClip.length}.ToBytes(false));
+                tcpClient.SendData(new BasePacket(CommandType.StartLevel, buffer.ToArray()));
+            }
+        }
+
+        public void SendPlayerInfo()
+        {
+            if (Connected && tcpClient.Connected)
+            {
+                tcpClient.SendData(new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)));
             }
         }
     }

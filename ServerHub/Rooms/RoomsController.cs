@@ -18,16 +18,31 @@ namespace ServerHub.Rooms
             Room room = new Room(GetNextFreeID(), settings, host);
             rooms.Add(room);
             room.StartRoom();
-
-            Logger.Instance.Log($"New room created! Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, noFail={settings.NoFail}, songSelecionType={settings.SelectionType}, songsCount={settings.availableSongs.Count}");
-
+#if DEBUG
+            Logger.Instance.Log($"New room created! Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, noFail={settings.NoFail}, songSelecionType={settings.SelectionType}, songsCount={settings.AvailableSongs.Count}");
+#endif
             return room.roomId;
         }
 
-        public static void ClientJoined(Client client, uint roomId, string password)
+        public static void DestroyRoom(PlayerInfo sender, uint roomId)
         {
-            Logger.Instance.Log("Client joining room " + roomId);
+#if DEBUG
+            Logger.Instance.Log("Destroying room " + roomId);
+#endif
+            if (rooms.Any(x => x.roomId == roomId))
+            {
+                Room room = rooms.First(x => x.roomId == roomId);
+                room.StopRoom();
+                room.BroadcastPacket(new BasePacket(CommandType.LeaveRoom, new byte[0]));
+                rooms.Remove(room);
+            }
+        }
 
+        public static bool ClientJoined(Client client, uint roomId, string password)
+        {
+#if DEBUG
+            Logger.Instance.Log("Client joining room " + roomId);
+#endif
             if (rooms.Any(x => x.roomId == roomId))
             {
                 Room room = rooms.First(x => x.roomId == roomId);
@@ -39,31 +54,36 @@ namespace ServerHub.Rooms
                     {
                         if (room.roomSettings.Password == password)
                         {
-                            client.tcpClient.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.Success }));
+                            client.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.Success }));
                             client.joinedRoomID = room.roomId;
                             room.roomClients.Add(client);
+                            return true;
                         }
                         else
                         {
-                            client.tcpClient.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.IncorrectPassword }));
+                            client.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.IncorrectPassword }));
+                            return false;
                         }
 
                     }
                     else
                     {
-                        client.tcpClient.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.Success }));
+                        client.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.Success }));
                         client.joinedRoomID = room.roomId;
                         room.roomClients.Add(client);
+                        return true;
                     }
                 }
                 else
                 {
-                    client.tcpClient.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.TooMuchPlayers }));
+                    client.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.TooMuchPlayers }));
+                    return false;
                 }
             }
             else
             {
-                client.tcpClient.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.RoomNotFound}));
+                client.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.RoomNotFound}));
+                return false;
             }
         } 
 

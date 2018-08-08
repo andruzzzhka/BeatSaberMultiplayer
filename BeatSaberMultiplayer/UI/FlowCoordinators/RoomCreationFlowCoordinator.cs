@@ -50,7 +50,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public void CreateRoomPressed(RoomSettings settings)
         {
             _roomSettings = settings;
-            _roomSettings.availableSongs = SongLoader.CustomLevels.Select(x => new SongInfo() { songName = x.songName, levelId = x.levelID.Substring(0, 32)}).ToList();
+            _roomSettings.AvailableSongs = SongLoader.CustomLevels.Select(x => new SongInfo() { songName = x.songName, levelId = x.levelID.Substring(0, 32)}).ToList();
 
             if (Client.instance == null)
             {

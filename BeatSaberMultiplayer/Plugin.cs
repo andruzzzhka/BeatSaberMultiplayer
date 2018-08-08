@@ -18,17 +18,14 @@ namespace BeatSaberMultiplayer
 
         public void OnActiveSceneChanged(Scene prevScene, Scene nextScene)
         {
+#if DEBUG
             Log.Info("Loading scene " + nextScene.name);
+#endif
             if (nextScene.name == "Menu")
             {
                 BeatSaberUI.OnLoad();
                 PluginUI.OnLoad();
-                //BSMultiplayerClient.OnLoad(level, Version);
-            }
-            else if(nextScene.name == "StandardLevel")
-            {
-                Log.Info("Initializing online...");
-                //BSMultiplayerClient.OnLoad(level, Version);
+                InGameOnlineController.OnLoad();
             }
         }
 

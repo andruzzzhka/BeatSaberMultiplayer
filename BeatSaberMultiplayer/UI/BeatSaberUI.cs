@@ -119,7 +119,7 @@ namespace BeatSaberMultiplayer.UI
             return textMesh;
         }
 
-        public TextMeshPro CreateWorldText(Transform parent, string text)
+        public static TextMeshPro CreateWorldText(Transform parent, string text)
         {
             TextMeshPro textMesh = new GameObject("CustomUIText").AddComponent<TextMeshPro>();
             textMesh.transform.SetParent(parent, false);

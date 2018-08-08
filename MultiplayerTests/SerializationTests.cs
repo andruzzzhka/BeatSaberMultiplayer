@@ -30,7 +30,7 @@ namespace MultiplayerTests
         {
             for (int i = 0; i < 100000; i++)
             {
-                RoomSettings initial = new RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "testtesttest", MaxPlayers = 4, NoFail = true, availableSongs = new List<SongInfo>() { new SongInfo() { songName = "TEST SONG", levelId = "CC773C754F14B6290B5D2CB196EB1BF4", songDuration = 230f } } };
+                RoomSettings initial = new RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "testtesttest", MaxPlayers = 4, NoFail = true, AvailableSongs = new List<SongInfo>() { new SongInfo() { songName = "TEST SONG", levelId = "CC773C754F14B6290B5D2CB196EB1BF4", songDuration = 230f } } };
 
                 byte[] converted = initial.ToBytes().Skip(4).ToArray();
 

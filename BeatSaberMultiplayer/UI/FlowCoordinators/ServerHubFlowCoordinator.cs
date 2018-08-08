@@ -23,6 +23,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (mainMenuViewController == null)
                 return;
 
+            PresentServerHubUI();
+
+            UpdateRoomsList();
+
+        }
+
+        private void PresentServerHubUI()
+        {
             if (_serverHubNavigationController == null)
             {
                 _serverHubNavigationController = BeatSaberUI.CreateViewController<ServerHubNavigationController>();
@@ -34,9 +42,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _serverHubNavigationController.roomListViewController.selectedRoom -= RoomSelected;
             _serverHubNavigationController.roomListViewController.createRoomButtonPressed += CreateRoomPressed;
             _serverHubNavigationController.roomListViewController.selectedRoom += RoomSelected;
-
-            UpdateRoomsList();
-
         }
 
         private void CreateRoomPressed()
@@ -62,8 +67,17 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             PluginUI.instance.roomFlowCoordinator.JoinRoom(_serverHubNavigationController, ip, port, roomId, usePassword, pass);
         }
 
+        public void ReturnToRoom()
+        {
+            PresentServerHubUI();
+            PluginUI.instance.roomFlowCoordinator.ReturnToRoom(_serverHubNavigationController);
+        }
+
         public void UpdateRoomsList()
         {
+#if DEBUG
+            Log.Info("Updating rooms list...");
+#endif
             _serverHubClients.ForEach(x =>
             {
                 x.Abort();
@@ -89,11 +103,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _serverHubNavigationController.roomListViewController.SetRooms(null);
             _serverHubNavigationController.SetLoadingState(true);
             _serverHubClients.ForEach(x => x.GetRooms());
+#if DEBUG
+            Log.Info("Requested rooms lists from ServerHubs...");
+#endif
         }
 
         private void ReceivedRoomsList(ServerHubClient sender, List<RoomInfo> rooms)
         {
+#if DEBUG
             Log.Info($"Received {rooms.Count} rooms from {sender.ip}:{sender.port}");
+#endif
             _serverHubNavigationController.roomListViewController.SetRooms(_serverHubClients);
             _serverHubNavigationController.SetLoadingState(false);
         }

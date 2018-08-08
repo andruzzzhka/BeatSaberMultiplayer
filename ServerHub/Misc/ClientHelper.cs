@@ -9,13 +9,16 @@ namespace ServerHub.Misc
 {
     static class ClientHelper
     {
+        public static event Action<Client> LostConnection;
 
-        public static BasePacket ReceiveData(this TcpClient client, bool waitForData = true)
+        public static BasePacket ReceiveData(this Client client, bool waitForData = true)
         {
-            if (client == null || !client.Connected)
+            TcpClient tcpClient = client.tcpClient;
+
+            if (tcpClient == null || !tcpClient.Connected)
                 return null;
 
-            if (!waitForData && client.Available == 0)
+            if (!waitForData && tcpClient.Available == 0)
                 return null;
 
             byte[] dataBuffer = null;
@@ -23,36 +26,50 @@ namespace ServerHub.Misc
             try
             {
                 byte[] lengthBuffer = new byte[4];
-                client.GetStream().Read(lengthBuffer, 0, 4);
+                tcpClient.GetStream().Read(lengthBuffer, 0, 4);
                 int length = BitConverter.ToInt32(lengthBuffer, 0);
 
                 dataBuffer = new byte[length];
-                client.GetStream().Read(dataBuffer, 0, length);
+                tcpClient.GetStream().Read(dataBuffer, 0, length);
             }catch(IOException e)
             {
-                Logger.Instance.Log($"Lost connection to the client: {e}");
+#if DEBUG
+                Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}: {e}");
+#else
+                Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}.");
+#endif
+                LostConnection?.Invoke(client);
+            }
+            catch (Exception)
+            {
+
             }
 
             return new BasePacket(dataBuffer);            
         }
 
-        public static bool SendData(this TcpClient client, BasePacket packet)
+        public static void SendData(this Client client, BasePacket packet)
         {
-            if (client == null || !client.Connected)
-                return false;
+            TcpClient tcpClient = client.tcpClient;
+
+            if (tcpClient == null || !tcpClient.Connected)
+                return;
 
             byte[] buffer = packet.ToBytes();
-            int result = 0;
 
             try
             {
-                result = client.Client.Send(buffer);
+                tcpClient.Client.Send(buffer);
             }catch(IOException e)
             {
-                Logger.Instance.Log($"Lost connection to the client: {e}");
+#if DEBUG
+                Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}: {e}");
+#else
+                Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}.");
+#endif
+                LostConnection?.Invoke(client);
             }
-
-            return result == buffer.Length;
+            
         }
 
     }

@@ -34,7 +34,13 @@ namespace ServerHub.Hub
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
 
             listener.Start();
+            ClientHelper.LostConnection += ClientHelper_LostConnection;
             BeginListening();
+        }
+
+        private static void ClientHelper_LostConnection(Client obj)
+        {
+            ClientDisconnected(obj);
         }
 
         public static void Stop()
@@ -74,21 +80,32 @@ namespace ServerHub.Hub
                 Client client = await AcceptClient();
                 hubClients.Add(client);
                 client.clientDisconnected += ClientDisconnected;
-                client.clientJoinedRoom += RoomsController.ClientJoined;
+                client.clientJoinedRoom += ClientJoinedRoom;
                 client.clientLeftRoom += RoomsController.ClientLeftRoom;
 
                 client.InitializeClient();
             }
         }
 
+        private static void ClientJoinedRoom(Client sender, uint room, string password)
+        {
+            if(RoomsController.ClientJoined(sender, room, password))
+            {
+                hubClients.Remove(sender);
+            }
+        }
+
         private static void ClientDisconnected(Client sender)
         {
+            RoomsController.ClientLeftRoom(sender);
             hubClients.Remove(sender);
         }
 
         static async Task<Client> AcceptClient()
         {
-            Logger.Instance.Log("Waiting for a connection");
+#if DEBUG
+            Logger.Instance.Log("Waiting for a connection...");
+#endif
             TcpClient client;
             try
             {

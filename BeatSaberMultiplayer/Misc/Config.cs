@@ -12,11 +12,11 @@ namespace BeatSaberMultiplayer {
         [SerializeField] private string[] _serverHubIPs;
         [SerializeField] private int[] _serverHubPorts;
         [SerializeField] private bool _showAvatarsInGame;
-        [SerializeField] private bool _showAvatarsInLobby;
+        [SerializeField] private bool _showAvatarsInRoom;
 
         private static Config _instance;
         
-        private static FileInfo FileLocation { get; } = new FileInfo($"./Config/{Assembly.GetExecutingAssembly().GetName().Name}.json");
+        private static FileInfo FileLocation { get; } = new FileInfo($"./UserData/{Assembly.GetExecutingAssembly().GetName().Name}.json");
 
         public static Config Instance {
             get {
@@ -68,12 +68,12 @@ namespace BeatSaberMultiplayer {
             }
         }
 
-        public bool ShowAvatarsInLobby
+        public bool ShowAvatarsInRoom
         {
-            get { return _showAvatarsInLobby; }
+            get { return _showAvatarsInRoom; }
             set
             {
-                _showAvatarsInLobby = value;
+                _showAvatarsInRoom = value;
                 MarkDirty();
             }
         }
@@ -82,7 +82,7 @@ namespace BeatSaberMultiplayer {
             _serverHubIPs = new string[]{ "127.0.0.1" };
             _serverHubPorts = new int[] { 3700 };
             _showAvatarsInGame = false;
-            _showAvatarsInLobby = true;
+            _showAvatarsInRoom = true;
             MarkDirty();
         }
 

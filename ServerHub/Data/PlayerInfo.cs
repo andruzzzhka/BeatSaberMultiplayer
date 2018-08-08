@@ -25,7 +25,7 @@ namespace ServerHub.Data
         {
             playerName = _name;
             playerId = _id;
-            playerAvatar = (_avatar == null) ? new byte[0] : _avatar;
+            playerAvatar = (_avatar == null) ? new byte[84] : _avatar;
         }
 
         public PlayerInfo(byte[] data)

@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BeatSaberMultiplayer</RootNamespace>
     <AssemblyName>BeatSaberMultiplayer</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -23,24 +23,9 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'NewAPI|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Debug\Plugins\</OutputPath>
-    <DefineConstants>TRACE;NEWAPI</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'OldAPI|AnyCPU'">
-    <OutputPath>bin\OldAPI\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>false</Prefer32Bit>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -124,6 +109,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AvatarController.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Data\BasePacket.cs" />
     <Compile Include="Data\BeatSaverAPIResult.cs" />
@@ -131,15 +117,18 @@
     <Compile Include="Data\RoomInfo.cs" />
     <Compile Include="Data\RoomSettings.cs" />
     <Compile Include="Data\SongInfo.cs" />
+    <Compile Include="InGameOnlineController.cs" />
     <Compile Include="Misc\Base64Sprites.cs" />
     <Compile Include="Misc\ClientHelper.cs" />
     <Compile Include="Misc\Config.cs" />
+    <Compile Include="Misc\CustomExtensions.cs" />
     <Compile Include="Misc\GetUserInfo.cs" />
     <Compile Include="Misc\HexConverter.cs" />
     <Compile Include="Misc\LoadScripts.cs" />
     <Compile Include="Misc\Log.cs" />
     <Compile Include="Misc\ReflectionUtil.cs" />
     <Compile Include="Misc\Serialization.cs" />
+    <Compile Include="PlayerInfoDisplay.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\BeatSaberUI.cs" />
@@ -156,8 +145,10 @@
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\CustomKeyboardViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DownloadQueueViewController.cs" />
-    <Compile Include="UI\ViewControllers\RoomScreen\HostSongSelectionViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\RoomManagementViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\ServerHubNavigationController.cs" />

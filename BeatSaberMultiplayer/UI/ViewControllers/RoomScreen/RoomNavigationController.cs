@@ -21,19 +21,27 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             if(firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
                 _backButton = BeatSaberUI.CreateBackButton(rectTransform);
-                _backButton.onClick.AddListener(delegate () { DismissModalViewController(null, false); PluginUI.instance.roomFlowCoordinator.LeaveRoom(); });
+                _backButton.onClick.AddListener(delegate () { PluginUI.instance.roomFlowCoordinator.LeaveRoom(); });
 
                 _errorText = BeatSaberUI.CreateText(rectTransform, "", new Vector2(0f, -25f));
                 _errorText.fontSize = 8f;
                 _errorText.alignment = TextAlignmentOptions.Center;
                 _errorText.rectTransform.sizeDelta = new Vector2(120f, 6f);
+
+
             }
+            _errorText.text = "";
         }
 
         public void DisplayError(string error)
         {
             if(_errorText != null)
                 _errorText.text = "Can't join room!\n"+error;
+        }
+
+        protected override void LeftAndRightScreenViewControllers(out VRUIViewController leftScreenViewController, out VRUIViewController rightScreenViewController)
+        {
+            PluginUI.instance.roomFlowCoordinator.GetLeftAndRightScreenViewControllers(out leftScreenViewController, out rightScreenViewController);
         }
 
     }

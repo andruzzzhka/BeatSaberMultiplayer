@@ -91,7 +91,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             int removed = _queuedSongs.RemoveAll(x => x.songQueueState != SongQueueState.Downloading && x.songQueueState != SongQueueState.Queued);
 
+#if DEBUG
             Log.Info($"Removed {removed} songs from queue");
+#endif
 
             _queuedSongsTableView.ReloadData();
         }

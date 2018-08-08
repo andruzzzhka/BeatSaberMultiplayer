@@ -5,18 +5,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
-    class HostSongSelectionViewController : VRUIViewController, TableView.IDataSource
+    class SongSelectionViewController : VRUIViewController, TableView.IDataSource
     {
         public event Action<CustomLevel> SongSelected;
 
         private Button _pageUpButton;
         private Button _pageDownButton;
+
+        TextMeshProUGUI _hostIsSelectingSongText;
 
         TableView _songsTableView;
         StandardLevelListTableCell _songTableCellInstance;
@@ -27,6 +30,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             if (firstActivation && type == ActivationType.AddedToHierarchy)
             {
+                bool isHost = Client.instance.isHost;
+
                 _songTableCellInstance = Resources.FindObjectsOfTypeAll<StandardLevelListTableCell>().First(x => (x.name == "StandardLevelListTableCell"));
 
                 _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
@@ -40,6 +45,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 });
                 _pageUpButton.interactable = false;
+                _pageUpButton.gameObject.SetActive(isHost);
 
                 _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
                 (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
@@ -52,7 +58,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 });
                 _pageDownButton.interactable = false;
-                
+                _pageDownButton.gameObject.SetActive(isHost);
+
                 _songsTableView = new GameObject().AddComponent<TableView>();
                 _songsTableView.transform.SetParent(rectTransform, false);
 
@@ -71,6 +78,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 _songsTableView.didSelectRowEvent += SongsTableView_DidSelectRow;
                 _songsTableView.dataSource = this;
+                _songsTableView.gameObject.SetActive(isHost);
+
+                _hostIsSelectingSongText = BeatSaberUI.CreateText(rectTransform, "Host is selecting song...", new Vector2(0f, -25f));
+                _hostIsSelectingSongText.fontSize = 8f;
+                _hostIsSelectingSongText.alignment = TextAlignmentOptions.Center;
+                _hostIsSelectingSongText.rectTransform.sizeDelta = new Vector2(120f, 6f);
+                _hostIsSelectingSongText.gameObject.SetActive(!isHost);
 
             }
             else
@@ -78,6 +92,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _songsTableView.ReloadData();
             }
 
+        }
+
+        protected override void LeftAndRightScreenViewControllers(out VRUIViewController leftScreenViewController, out VRUIViewController rightScreenViewController)
+        {
+            PluginUI.instance.roomFlowCoordinator.GetLeftAndRightScreenViewControllers(out leftScreenViewController, out rightScreenViewController);
         }
 
         private void SongsTableView_DidSelectRow(TableView sender, int row)
@@ -99,6 +118,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
 
             _songsTableView.ScrollToRow(0, false);
+        }
+        
+        public void UpdateViewController()
+        {
+            bool isHost = Client.instance.isHost;
+            _songsTableView.gameObject.SetActive(isHost);
+            _pageUpButton.gameObject.SetActive(isHost);
+            _pageDownButton.gameObject.SetActive(isHost);
+            _hostIsSelectingSongText.gameObject.SetActive(!isHost);
         }
 
         public TableCell CellForRow(int row)

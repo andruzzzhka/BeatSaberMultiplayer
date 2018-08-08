@@ -16,7 +16,7 @@ namespace ServerHub.Data
         public int MaxPlayers;
         public bool NoFail;
 
-        public List<SongInfo> availableSongs;
+        public List<SongInfo> AvailableSongs;
 
         public RoomSettings()
         {
@@ -44,7 +44,7 @@ namespace ServerHub.Data
 
                 Stream byteStream = new MemoryStream(data, 19 + nameLength + passLength, data.Length - (19 + nameLength + passLength));
 
-                availableSongs = new List<SongInfo>();
+                AvailableSongs = new List<SongInfo>();
                 for (int j = 0; j < songsCount; j++)
                 {
                     byte[] sizeBytes = new byte[4];
@@ -55,7 +55,7 @@ namespace ServerHub.Data
                     byte[] songInfoBytes = new byte[songInfoSize];
                     byteStream.Read(songInfoBytes, 0, songInfoSize);
 
-                    availableSongs.Add(new SongInfo(songInfoBytes));
+                    AvailableSongs.Add(new SongInfo(songInfoBytes));
                 }
             }
         }
@@ -79,8 +79,8 @@ namespace ServerHub.Data
             buffer.Add((byte)SelectionType);
             buffer.Add(NoFail ? (byte)1 : (byte)0);
 
-            buffer.AddRange(BitConverter.GetBytes(availableSongs.Count));
-            availableSongs.ForEach(x => buffer.AddRange(x.ToBytes()));
+            buffer.AddRange(BitConverter.GetBytes(AvailableSongs.Count));
+            AvailableSongs.ForEach(x => buffer.AddRange(x.ToBytes()));
 
             if (includeSize)
                 buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));
