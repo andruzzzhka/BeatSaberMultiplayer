@@ -16,6 +16,9 @@ namespace ServerHub.Hub
 {
     static class HubListener
     {
+        private static List<float> _ticksLength = new List<float>();
+        private static DateTime _lastTick;
+
         static TcpListener listener = new TcpListener(IPAddress.Any, Settings.Instance.Server.Port);
 
         static public bool Listen;
@@ -32,6 +35,7 @@ namespace ServerHub.Hub
             }
 
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
+            _lastTick = DateTime.Now;
 
             listener.Start();
             ClientHelper.LostConnection += ClientHelper_LostConnection;
@@ -50,8 +54,14 @@ namespace ServerHub.Hub
 
         private static void HubLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
+            if(_ticksLength.Count > 15)
+            {
+                _ticksLength.RemoveAt(0);
+            }
+            _ticksLength.Add(DateTime.Now.Subtract(_lastTick).Ticks/TimeSpan.TicksPerMillisecond);
+            _lastTick = DateTime.Now;
             List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
-            Console.Title = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total";
+            Console.Title = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total, {(1000/(_ticksLength.Sum()/_ticksLength.Count)).ToString("0.0")} tickrate";
         }
 
         async static void OpenPort()

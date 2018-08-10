@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BeatSaberMultiplayer</RootNamespace>
     <AssemblyName>BeatSaberMultiplayer</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -147,6 +147,7 @@
     <Compile Include="UI\ViewControllers\CustomKeyboardViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DownloadQueueViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\LeaderboardViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomManagementViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />

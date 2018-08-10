@@ -123,6 +123,19 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 });
                 CheckRequirements();
             }
+            else
+            {
+                _roomPassword = "";
+                _roomName = $"{GetUserInfo.GetUserName()}'s room".ToUpper();
+                _songSelectionList.Value = (int)_songSelectionType;
+                _songSelectionList.textForValues = new string[] { "Manual", "Random", "Voting" };
+                _songSelectionList.UpdateText();
+                _noFailToggle.Value = _noFailMode;
+                _maxPlayersList.Value = _maxPlayers;
+                
+                CheckRequirements();
+            }
+
         }
 
         private void SongSelection_ValueChanged(int obj)
@@ -137,15 +150,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         private void PasswordEntered(string obj)
         {
-            _passwordText.text = obj.ToUpper();
-            _roomPassword = string.IsNullOrEmpty(obj) ? "ENTER PASSWORD" : obj.ToUpper();
+            _roomPassword = obj.ToUpper();
+            _passwordText.text = string.IsNullOrEmpty(obj) ? "ENTER PASSWORD" : obj.ToUpper();
             CheckRequirements();
         }
 
         private void NameEntered(string obj)
         {
-            _nameText.text = obj.ToUpper();
-            _roomName = string.IsNullOrEmpty(obj) ? "ENTER ROOM NAME" : obj.ToUpper();
+            _roomName = obj.ToUpper();
+            _nameText.text = string.IsNullOrEmpty(obj) ? "ENTER ROOM NAME" : obj.ToUpper();
             CheckRequirements();
         }
 

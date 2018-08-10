@@ -1,6 +1,7 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
+using CustomAvatar;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -29,6 +30,7 @@ namespace BeatSaberMultiplayer
 
         private List<AvatarController> _avatars = new List<AvatarController>();
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
+        private GameObject _scoreScreen;
 
         private Scene _currentScene;
 
@@ -41,12 +43,15 @@ namespace BeatSaberMultiplayer
 
         public void Awake()
         {
-            Instance = this;
-            DontDestroyOnLoad(this);
+            if (Instance != this)
+            {
+                Instance = this;
+                DontDestroyOnLoad(this);
 
-            SceneManager.activeSceneChanged += OnActiveSceneChanged;
-            Client.ClientCreated += ClientCreated;
-            _currentScene = SceneManager.GetActiveScene();
+                SceneManager.activeSceneChanged += OnActiveSceneChanged;
+                Client.ClientCreated += ClientCreated;
+                _currentScene = SceneManager.GetActiveScene();
+            }
         }
 
         private void ClientCreated()
@@ -56,9 +61,6 @@ namespace BeatSaberMultiplayer
 
         private void PacketReceived(BasePacket packet)
         {
-#if DEBUG
-            Log.Info("Packet received");
-#endif
             if (packet.commandType == CommandType.UpdatePlayerInfo)
             {
                 int playersCount = BitConverter.ToInt32(packet.additionalData, 8);
@@ -79,11 +81,10 @@ namespace BeatSaberMultiplayer
                     playerInfos.Add(new PlayerInfo(playerInfoBytes));
                 }
 
-                Log.Info(playerInfos.Count+" players in the room");
-                
+                playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene.name == "StandardLevel") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu")).ToList();
+
                 int localPlayerIndex = playerInfos.FindIndexInList(Client.instance.playerInfo);
 
-                
                 if ((Config.Instance.ShowAvatarsInGame && _currentScene.name == "StandardLevel") || (Config.Instance.ShowAvatarsInRoom && _currentScene.name == "Menu"))
                 {
                     try
@@ -134,10 +135,19 @@ namespace BeatSaberMultiplayer
                 {
                     if (_scoreDisplays.Count < 5)
                     {
-                        int displaysToCreate = 5 - _scoreDisplays.Count;
-                        for(int i = 0; i < displaysToCreate; i++)
+                        _scoreScreen = new GameObject("ScoreScreen");
+                        _scoreScreen.transform.position = new Vector3(0f, 4f, 12f);
+                        _scoreScreen.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+
+                        _scoreDisplays.Clear();
+
+                        for (int i = 0; i < 5; i++)
                         {
-                            _scoreDisplays.Add(new GameObject("ScoreDisplay").AddComponent<PlayerInfoDisplay>());
+                            PlayerInfoDisplay buffer = new GameObject("ScoreDisplay " + i).AddComponent<PlayerInfoDisplay>();
+                            buffer.transform.SetParent(_scoreScreen.transform);
+                            buffer.transform.localPosition = new Vector3(0f, 2.5f - i, 0);
+
+                            _scoreDisplays.Add(buffer);
                         }
                     }
                     
@@ -181,34 +191,84 @@ namespace BeatSaberMultiplayer
                     }
                 }
 
-                Client.instance.playerInfo.headPos = InputTracking.GetLocalPosition(XRNode.Head);
-                Client.instance.playerInfo.headRot = InputTracking.GetLocalRotation(XRNode.Head);
-                Client.instance.playerInfo.leftHandPos = InputTracking.GetLocalPosition(XRNode.LeftHand);
-                Client.instance.playerInfo.leftHandRot = InputTracking.GetLocalRotation(XRNode.LeftHand);
-                Client.instance.playerInfo.rightHandPos = InputTracking.GetLocalPosition(XRNode.RightHand);
-                Client.instance.playerInfo.rightHandRot = InputTracking.GetLocalRotation(XRNode.RightHand);
+                Client.instance.playerInfo.headPos = GetXRNodeWorldPosRot(XRNode.Head).Position;
+                Client.instance.playerInfo.headRot = GetXRNodeWorldPosRot(XRNode.Head).Rotation;
+                Client.instance.playerInfo.leftHandPos = GetXRNodeWorldPosRot(XRNode.LeftHand).Position;
+                Client.instance.playerInfo.leftHandRot = GetXRNodeWorldPosRot(XRNode.LeftHand).Rotation;
+                Client.instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
+                Client.instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
 
                 Client.instance.SendPlayerInfo();
             }
         }
 
+        private static PosRot GetXRNodeWorldPosRot(XRNode node)
+        {
+            var pos = InputTracking.GetLocalPosition(node);
+            var rot = InputTracking.GetLocalRotation(node);
+
+            var roomCenter = BeatSaberUtil.GetRoomCenter();
+            var roomRotation = BeatSaberUtil.GetRoomRotation();
+            pos += roomCenter;
+            pos = roomRotation * pos;
+            rot = roomRotation * rot;
+            return new PosRot(pos, rot);
+        }
+
+        public void DestroyAvatars()
+        {
+            try
+            {
+                for (int i = 0; i < _avatars.Count; i++)
+                {
+                    if (_avatars[i] != null)
+                        Destroy(_avatars[i].gameObject);
+                }
+                _avatars.Clear();
+            }catch(Exception e)
+            {
+                Log.Exception($"Can't destroy avatars! Exception: {e}");
+            }
+        }
+
+        public void DestroyScoreScreens()
+        {
+            try
+            {
+                for (int i = 0; i < _scoreDisplays.Count; i++)
+                {
+                    if (_scoreDisplays[i] != null)
+                        Destroy(_scoreDisplays[i].gameObject);
+                }
+                _scoreDisplays.Clear();
+                Destroy(_scoreScreen);
+            }
+            catch (Exception e)
+            {
+                Log.Exception($"Can't destroy score screens! Exception: {e}");
+            }
+        }
+
         private void OnActiveSceneChanged(Scene prev, Scene next)
         {
-            if(next.name == "StandardLevel")
+            _currentScene = next;
+            if (_currentScene.name == "StandardLevel")
             {
+                DestroyAvatars();
+                DestroyScoreScreens();
                 if (Client.instance.Connected)
                 {
                     StartCoroutine(FindControllers());
                 }
             }
-            else if(next.name == "Menu")
+            else if(_currentScene.name == "Menu")
             {
+                DestroyAvatars();
                 if (Client.instance.Connected)
                 {
                     StartCoroutine(ReturnToRoom());
                 }
             }
-            _currentScene = next;
         }
 
         public void SongFinished(MainGameSceneSetupData sender, LevelCompletionResults result)
@@ -310,15 +370,6 @@ namespace BeatSaberMultiplayer
 #if DEBUG
             Log.Info("Found energy controller");
 #endif
-            _roomAdjust = FindObjectOfType<VRCenterAdjust>();
-
-            if (_roomAdjust != null)
-            {
-                roomPositionOffset = _roomAdjust.transform.position;
-                roomRotationOffset = _roomAdjust.transform.rotation;
-            }
-            
-
         }
 
         private void EnergyDidChangeEvent(float energy)

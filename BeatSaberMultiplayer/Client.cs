@@ -2,6 +2,7 @@
 using BeatSaberMultiplayer.Misc;
 using SongLoaderPlugin.OverrideClasses;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -36,6 +37,8 @@ namespace BeatSaberMultiplayer
         
         public bool isHost;
 
+        Queue<BasePacket> _packetsQueue = new Queue<BasePacket>();
+
         public static void CreateClient()
         {
             if(instance != null)
@@ -49,10 +52,13 @@ namespace BeatSaberMultiplayer
 
         public void Awake()
         {
-            instance = this;
-            DontDestroyOnLoad(this);
-            playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
-            ClientCreated?.Invoke();
+            if (instance != this)
+            {
+                instance = this;
+                DontDestroyOnLoad(this);
+                playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
+                ClientCreated?.Invoke();
+            }
         }
 
         public void Disconnect(bool dontDestroy = false)
@@ -62,6 +68,7 @@ namespace BeatSaberMultiplayer
                 try
                 {
                     tcpClient.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
+                    //Thread.Sleep(150);
                     tcpClient.Close();
                 }
                 catch (Exception)
@@ -69,6 +76,7 @@ namespace BeatSaberMultiplayer
 
                 }
             }
+
             if (!dontDestroy)
             {
                 instance = null;
@@ -83,6 +91,7 @@ namespace BeatSaberMultiplayer
             port = Port;
 
             tcpClient = new TcpClient();
+            tcpClient.NoDelay = true;
             tcpClient.BeginConnect(ip, port, new AsyncCallback(ConnectedCallback), null);
         }
 
@@ -123,33 +132,39 @@ namespace BeatSaberMultiplayer
             playerInfo.playerState = PlayerState.Lobby;
             Connected = true;
             ConnectedToServerHub?.Invoke();
-
+            
             receiverThread = new Thread(ReceiveData) { IsBackground = true };
             receiverThread.Start();
         }
 
-       
-
-        public void ReceiveData()
+        public void Update()
         {
-            while (tcpClient.Connected && receiverThread.IsAlive)
+            while (_packetsQueue.Count > 0)
             {
-#if DEBUG
-                Log.Info("Waiting for packet...");
-#endif
-                BasePacket packet = tcpClient.ReceiveData();
-#if DEBUG
-                Log.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");
-#endif
+                BasePacket packet = _packetsQueue.Dequeue();
+
                 PacketReceived?.Invoke(packet);
 
-                if(packet.commandType == CommandType.Disconnect)
+                if (packet.commandType == CommandType.Disconnect)
                 {
 #if DEBUG
                     Log.Info("Disconnecting...");
 #endif
                     Disconnect();
                 }
+            }
+        }
+
+        public void ReceiveData()
+        {
+            while (tcpClient.Connected && receiverThread.IsAlive)
+            {
+                BasePacket packet = tcpClient.ReceiveData();
+#if DEBUG
+                if(packet.commandType != CommandType.UpdatePlayerInfo)
+                    Log.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");
+#endif
+                _packetsQueue.Enqueue(packet);
             }
         }
 
@@ -253,6 +268,9 @@ namespace BeatSaberMultiplayer
         {
             if (Connected && tcpClient.Connected)
             {
+#if DEBUG
+                Log.Info("Starting level...");
+#endif
                 List<byte> buffer = new List<byte>();
                 buffer.Add((byte)difficulty);
                 buffer.AddRange(new SongInfo() { songName = song.songName +" "+song.songSubName, levelId = song.levelID.Substring(0, 32), songDuration = song.audioClip.length}.ToBytes(false));

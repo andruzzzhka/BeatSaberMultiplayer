@@ -22,21 +22,29 @@ namespace BeatSaberMultiplayer.Misc
             int length = BitConverter.ToInt32(lengthBuffer, 0);
 
             byte[] dataBuffer = new byte[length];
-            client.GetStream().Read(dataBuffer, 0, length);
+
+            int nDataRead = 0;
+            int nStartIndex = 0;
+
+            while (nDataRead < length)
+            {
+
+                int nBytesRead = client.Client.Receive(dataBuffer, nStartIndex, length - nStartIndex, SocketFlags.None);
+
+                nDataRead += nBytesRead;
+                nStartIndex += nBytesRead;
+            }
 
             return new BasePacket(dataBuffer);            
         }
 
-        public static bool SendData(this TcpClient client, BasePacket packet)
+        public static void SendData(this TcpClient client, BasePacket packet)
         {
             if (client == null || !client.Connected)
-                return false;
+                return;
 
             byte[] buffer = packet.ToBytes();
-
-            int result = client.Client.Send(buffer);
-
-            return result == buffer.Length;
+            client.GetStream().Write(buffer, 0, buffer.Length);
         }
 
     }

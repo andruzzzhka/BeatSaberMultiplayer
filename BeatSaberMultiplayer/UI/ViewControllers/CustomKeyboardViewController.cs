@@ -34,7 +34,7 @@ namespace BeatSaberMultiplayer.UI
                 _customKeyboard = _customKeyboardGO.AddComponent<CustomUIKeyboard>();
 
                 _customKeyboard.uiKeyboardKeyEvent = delegate (char input) { _inputString += input; UpdateInputText(); };
-                _customKeyboard.uiKeyboardDeleteEvent = delegate () { _inputString = _inputString.Substring(0, _inputString.Length - 1); UpdateInputText(); };
+                _customKeyboard.uiKeyboardDeleteEvent = delegate () { _inputString = _inputString.Substring(0, Math.Max(_inputString.Length - 1, 0)); UpdateInputText(); };
             }
 
             if(_inputText == null)
@@ -45,7 +45,6 @@ namespace BeatSaberMultiplayer.UI
             }
             else
             {
-                _inputString = "";
                 UpdateInputText();
             }
 

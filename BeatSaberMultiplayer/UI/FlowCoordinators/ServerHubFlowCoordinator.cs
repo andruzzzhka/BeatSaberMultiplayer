@@ -29,14 +29,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         }
 
-        private void PresentServerHubUI()
+        private void PresentServerHubUI(bool immediately = false)
         {
             if (_serverHubNavigationController == null)
             {
                 _serverHubNavigationController = BeatSaberUI.CreateViewController<ServerHubNavigationController>();
             }
 
-            mainMenuViewController.PresentModalViewController(_serverHubNavigationController, null, false);
+            mainMenuViewController.PresentModalViewController(_serverHubNavigationController, null, immediately);
             _serverHubNavigationController.PushViewController(_serverHubNavigationController.roomListViewController, true);
             _serverHubNavigationController.roomListViewController.createRoomButtonPressed -= CreateRoomPressed;
             _serverHubNavigationController.roomListViewController.selectedRoom -= RoomSelected;
@@ -69,7 +69,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void ReturnToRoom()
         {
-            PresentServerHubUI();
+            PresentServerHubUI(true);
             PluginUI.instance.roomFlowCoordinator.ReturnToRoom(_serverHubNavigationController);
         }
 

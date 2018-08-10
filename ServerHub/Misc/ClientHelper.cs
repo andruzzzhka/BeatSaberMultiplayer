@@ -30,8 +30,20 @@ namespace ServerHub.Misc
                 int length = BitConverter.ToInt32(lengthBuffer, 0);
 
                 dataBuffer = new byte[length];
-                tcpClient.GetStream().Read(dataBuffer, 0, length);
-            }catch(IOException e)
+
+                int nDataRead = 0;
+                int nStartIndex = 0;
+
+                while (nDataRead < length)
+                {
+
+                    int nBytesRead = tcpClient.Client.Receive(dataBuffer, nStartIndex, length - nStartIndex, SocketFlags.None);
+
+                    nDataRead += nBytesRead;
+                    nStartIndex += nBytesRead;
+                }
+            }
+            catch(IOException e)
             {
 #if DEBUG
                 Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}: {e}");
@@ -60,6 +72,10 @@ namespace ServerHub.Misc
             try
             {
                 tcpClient.Client.Send(buffer);
+#if DEBUG
+                if (packet.commandType != CommandType.UpdatePlayerInfo)
+                    Logger.Instance.Log($"Sent {packet.commandType} to {client.playerInfo.playerName}");
+#endif
             }catch(IOException e)
             {
 #if DEBUG

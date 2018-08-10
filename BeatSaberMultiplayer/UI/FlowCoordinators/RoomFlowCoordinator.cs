@@ -5,7 +5,9 @@ using BeatSaberMultiplayer.UI.ViewControllers.RoomScreen;
 using SongLoaderPlugin;
 using SongLoaderPlugin.OverrideClasses;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,6 +46,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         SongSelectionViewController _songSelectionViewController;
         DifficultySelectionViewController _difficultySelectionViewController;
+        LeaderboardViewController _leaderboardViewController;
 
         RoomManagementViewController _roomManagementViewController;
 
@@ -84,7 +87,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _roomNavigationController = BeatSaberUI.CreateViewController<RoomNavigationController>();
             }
 
-            _serverHubNavigationController.PresentModalViewController(_roomNavigationController, null);
+            _serverHubNavigationController.PresentModalViewController(_roomNavigationController, null, true);
 
             joined = true;
             ConnectedToServerHub();
@@ -156,6 +159,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             HideDifficultySelection();
             HideSongsList();
+            HideLeaderboard();
+            InGameOnlineController.Instance.DestroyAvatars();
+            PreviewPlayer.CrossfadeToDefault();
             _roomNavigationController.DismissModalViewController(null, false);
             PluginUI.instance.serverHubFlowCoordinator.UpdateRoomsList();
         }
@@ -198,6 +204,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                 Client.instance.playerInfo.playerState = PlayerState.DownloadingSongs;
                                 Client.instance.RequestRoomInfo();
+                                Client.instance.SendPlayerInfo();
                                 joined = true;
                             }
                             break;
@@ -227,150 +234,207 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             else
             {
-                switch (packet.commandType)
+                try
                 {
-                    case CommandType.GetRoomInfo:
-                        {
-                            int songsCount = BitConverter.ToInt32(packet.additionalData, 0);
-                            Dictionary<string, bool> songIds = new Dictionary<string, bool>();
-                            availableSongsLevelIDs.Clear();
-                            for (int i = 0; i < songsCount; i++)
+                    switch (packet.commandType)
+                    {
+                        case CommandType.GetRoomInfo:
                             {
-                                string levelId = BitConverter.ToString(packet.additionalData.Skip(4 + 16 * i).Take(16).ToArray()).Replace("-", "");
-                                songIds.Add(levelId, SongLoader.CustomLevels.Any(x => x.levelID.StartsWith(levelId)));
-                                availableSongsLevelIDs.Add(levelId);
-                            }
+                                int songsCount = BitConverter.ToInt32(packet.additionalData, 0);
+                                Dictionary<string, bool> songIds = new Dictionary<string, bool>();
+                                availableSongsLevelIDs.Clear();
+                                for (int i = 0; i < songsCount; i++)
+                                {
+                                    string levelId = BitConverter.ToString(packet.additionalData.Skip(4 + 16 * i).Take(16).ToArray()).Replace("-", "");
+                                    songIds.Add(levelId, SongLoader.CustomLevels.Any(x => x.levelID.StartsWith(levelId)));
+                                    availableSongsLevelIDs.Add(levelId);
+                                }
 
-                            roomInfo = new RoomInfo(packet.additionalData.Skip(4 + 16 * songsCount).ToArray());
-                            Client.instance.isHost = Client.instance.playerInfo.Equals(roomInfo.roomHost);
+                                roomInfo = new RoomInfo(packet.additionalData.Skip(4 + 16 * songsCount).ToArray());
+                                Client.instance.isHost = Client.instance.playerInfo.Equals(roomInfo.roomHost);
 
-                            if (songIds.All(x => x.Value))
-                            {
-                                Client.instance.playerInfo.playerState = PlayerState.Room;
+                                if (songIds.All(x => x.Value))
+                                {
+                                    Client.instance.playerInfo.playerState = PlayerState.Room;
 #if DEBUG
-                                Log.Info("All songs downloaded!");
+                                    Log.Info("All songs downloaded!");
 #endif
+                                    switch (roomInfo.roomState)
+                                    {
+                                        case RoomState.SelectingSong:
+                                            {
+                                                HideLeaderboard();
+                                                HideDifficultySelection();
+                                                ShowSongsList();
+                                            }
+                                            break;
+                                        case RoomState.Preparing:
+                                            {
+                                                HideLeaderboard();
+                                                HideSongsList();
+                                                if (roomInfo.selectedSong != null)
+                                                    ShowDifficultySelection(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                                            }
+                                            break;
+                                        case RoomState.InGame:
+                                            {
+                                                HideDifficultySelection();
+                                                HideSongsList();
+                                                ShowLeaderboard(new PlayerInfo[0], SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                                            }
+                                            break;
+                                        case RoomState.Results:
+                                            {
+                                                HideDifficultySelection();
+                                                HideSongsList();
+                                                ShowLeaderboard(new PlayerInfo[0], SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                                            }
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+#if DEBUG
+                                    Log.Info("Downloading missing songs...");
+#endif
+                                    foreach (var song in songIds.Where(x => !x.Value))
+                                    {
+                                        Client.instance.playerInfo.playerState = PlayerState.DownloadingSongs;
+                                        PluginUI.instance.downloadFlowCoordinator.AllSongsDownloaded += DownloadFlowCoordinator_AllSongsDownloaded;
+                                        StartCoroutine(PluginUI.instance.downloadFlowCoordinator.EnqueueSongByLevelID(song.Key));
+                                    }
+                                }
+                            }
+                            break;
+                        case CommandType.SetSelectedSong:
+                            {
+
+                                if (packet.additionalData == null || packet.additionalData.Length == 0)
+                                {
+                                    roomInfo.roomState = RoomState.SelectingSong;
+                                    roomInfo.selectedSong = null;
+
+                                    if (Client.instance.playerInfo.playerState == PlayerState.DownloadingSongs)
+                                        return;
+
+                                    PreviewPlayer.CrossfadeToDefault();
+                                    HideLeaderboard();
+                                    HideDifficultySelection();
+                                    ShowSongsList();
+                                }
+                                else
+                                {
+                                    roomInfo.roomState = RoomState.Preparing;
+                                    SongInfo selectedSong = new SongInfo(packet.additionalData);
+                                    roomInfo.selectedSong = selectedSong;
+
+                                    if (Client.instance.playerInfo.playerState == PlayerState.DownloadingSongs)
+                                        return;
+
+                                    CustomLevel selectedLevel = SongLoader.CustomLevels.First(x => x.levelID.StartsWith(selectedSong.levelId));
+                                    HideLeaderboard();
+                                    HideSongsList();
+                                    ShowDifficultySelection(selectedLevel);
+                                }
+                            }
+                            break;
+                        case CommandType.TransferHost:
+                            {
+                                roomInfo.roomHost = new PlayerInfo(packet.additionalData);
+                                Client.instance.isHost = Client.instance.playerInfo.Equals(roomInfo.roomHost);
+
+                                if (Client.instance.playerInfo.playerState == PlayerState.DownloadingSongs)
+                                    return;
+
                                 switch (roomInfo.roomState)
                                 {
                                     case RoomState.SelectingSong:
                                         {
-                                            HideDifficultySelection();
-                                            ShowSongsList();
+                                            UpdateSongsList();
                                         }
                                         break;
                                     case RoomState.Preparing:
                                         {
-                                            HideSongsList();
-                                            if(roomInfo.selectedSong != null)
-                                                ShowDifficultySelection(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
-                                        }break;
+                                            if (roomInfo.selectedSong != null)
+                                                UpdateDifficultySelection(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                                        }
+                                        break;
                                 }
+                                _roomManagementViewController.UpdateViewControlelr();
                             }
-                            else
+                            break;
+                        case CommandType.StartLevel:
                             {
-#if DEBUG
-                                Log.Info("Downloading missing songs...");
-#endif
-                                foreach (var song in songIds.Where(x => !x.Value))
+                                if (Client.instance.playerInfo.playerState == PlayerState.DownloadingSongs)
+                                    return;
+
+                                Client.instance.playerInfo.playerComboBlocks = 0;
+                                Client.instance.playerInfo.playerCutBlocks = 0;
+                                Client.instance.playerInfo.playerEnergy = 0f;
+                                Client.instance.playerInfo.playerScore = 0;
+
+                                byte difficulty = packet.additionalData[0];
+                                SongInfo songInfo = new SongInfo(packet.additionalData.Skip(1).ToArray());
+
+                                GameplayOptions gameplayOptions = new GameplayOptions();
+                                gameplayOptions.noEnergy = roomInfo.noFail;
+
+                                MainGameSceneSetupData mainGameSceneSetupData = Resources.FindObjectsOfTypeAll<MainGameSceneSetupData>().FirstOrDefault();
+
+                                if (mainGameSceneSetupData != null)
                                 {
-                                    Client.instance.playerInfo.playerState = PlayerState.DownloadingSongs;
-                                    PluginUI.instance.downloadFlowCoordinator.AllSongsDownloaded += DownloadFlowCoordinator_AllSongsDownloaded;
-                                    StartCoroutine(PluginUI.instance.downloadFlowCoordinator.EnqueueSongByLevelID(song.Key));
+                                    Client.instance.playerInfo.playerState = PlayerState.Game;
+                                    roomInfo.roomState = RoomState.InGame;
+                                    mainGameSceneSetupData.Init(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(songInfo.levelId)).GetDifficultyLevel((LevelDifficulty)difficulty), gameplayOptions, GameplayMode.SoloStandard, 0f);
+                                    mainGameSceneSetupData.didFinishEvent += InGameOnlineController.Instance.SongFinished;
+                                    mainGameSceneSetupData.TransitionToScene(0.7f);
+                                    return;
+                                }
+                                else
+                                {
+                                    Log.Error("SceneSetupData is null!");
                                 }
                             }
-                        }
-                        break;
-                    case CommandType.SetSelectedSong:
-                        {
-                           
-                            if (packet.additionalData == null || packet.additionalData.Length == 0)
+                            break;
+                        case CommandType.LeaveRoom:
                             {
-                                roomInfo.roomState = RoomState.SelectingSong;
-                                roomInfo.selectedSong = null;
-
-                                if (Client.instance.playerInfo.playerState == PlayerState.DownloadingSongs)
-                                    return;
-
-                                PreviewPlayer.CrossfadeToDefault();
-                                HideDifficultySelection();
-                                ShowSongsList();
+                                LeaveRoom();
                             }
-                            else
+                            break;
+                        case CommandType.UpdatePlayerInfo:
                             {
-                                roomInfo.roomState = RoomState.Preparing;
-                                SongInfo selectedSong = new SongInfo(packet.additionalData);
-                                roomInfo.selectedSong = selectedSong;
+                                if (roomInfo != null && (roomInfo.roomState == RoomState.InGame || roomInfo.roomState == RoomState.Results))
+                                {
+                                    int playersCount = BitConverter.ToInt32(packet.additionalData, 8);
 
-                                if (Client.instance.playerInfo.playerState == PlayerState.DownloadingSongs)
-                                    return;
+                                    Stream byteStream = new MemoryStream(packet.additionalData, 12, packet.additionalData.Length - 12);
 
-                                CustomLevel selectedLevel = SongLoader.CustomLevels.First(x => x.levelID.StartsWith(selectedSong.levelId));
-                                HideSongsList();
-                                ShowDifficultySelection(selectedLevel);
-                            }
-                        }
-                        break;
-                    case CommandType.TransferHost:
-                        {
-                            roomInfo.roomHost = new PlayerInfo(packet.additionalData);
-                            Client.instance.isHost = Client.instance.playerInfo.Equals(roomInfo.roomHost);
-
-                            if (Client.instance.playerInfo.playerState == PlayerState.DownloadingSongs)
-                                return;
-
-                            switch (roomInfo.roomState)
-                            {
-                                case RoomState.SelectingSong:
+                                    List<PlayerInfo> playerInfos = new List<PlayerInfo>();
+                                    for (int j = 0; j < playersCount; j++)
                                     {
-                                        UpdateSongsList();
-                                    }break;
-                                case RoomState.Preparing:
-                                    {
-                                        if(roomInfo.selectedSong != null)
-                                            UpdateDifficultySelection(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
-                                    }break;
+                                        byte[] sizeBytes = new byte[4];
+                                        byteStream.Read(sizeBytes, 0, 4);
+
+                                        int playerInfoSize = BitConverter.ToInt32(sizeBytes, 0);
+
+                                        byte[] playerInfoBytes = new byte[playerInfoSize];
+                                        byteStream.Read(playerInfoBytes, 0, playerInfoSize);
+
+                                        playerInfos.Add(new PlayerInfo(playerInfoBytes));
+                                    }
+                                    UpdateLeaderboard(playerInfos.ToArray(), BitConverter.ToSingle(packet.additionalData, 0), BitConverter.ToSingle(packet.additionalData, 4), (roomInfo.roomState == RoomState.Results));
+                                }
                             }
-                            _roomManagementViewController.UpdateViewControlelr();
-                        }
-                        break;
-                    case CommandType.StartLevel:
-                        {
-                            if (Client.instance.playerInfo.playerState == PlayerState.DownloadingSongs)
-                                return;
-
-                            Client.instance.playerInfo.playerComboBlocks = 0;
-                            Client.instance.playerInfo.playerCutBlocks = 0;
-                            Client.instance.playerInfo.playerEnergy = 0f;
-                            Client.instance.playerInfo.playerScore = 0;
-
-                            byte difficulty = packet.additionalData[0];
-                            SongInfo songInfo = new SongInfo(packet.additionalData.Skip(1).ToArray());
-
-                            GameplayOptions gameplayOptions = new GameplayOptions();
-                            gameplayOptions.noEnergy = roomInfo.noFail;
-
-                            MainGameSceneSetupData mainGameSceneSetupData = Resources.FindObjectsOfTypeAll<MainGameSceneSetupData>().FirstOrDefault();
-
-                            if (mainGameSceneSetupData != null)
-                            {
-                                Client.instance.playerInfo.playerState = PlayerState.Game;
-                                roomInfo.roomState = RoomState.InGame;
-                                mainGameSceneSetupData.Init(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(songInfo.levelId)).GetDifficultyLevel((LevelDifficulty)difficulty), gameplayOptions, GameplayMode.SoloStandard, 0f);
-                                mainGameSceneSetupData.didFinishEvent += InGameOnlineController.Instance.SongFinished;
-                                mainGameSceneSetupData.TransitionToScene(0.7f);
-                                return;
-                            }
-                            else
-                            {
-                                Log.Error("SceneSetupData is null!");
-                            }
-                        }
-                        break;
-                    case CommandType.LeaveRoom:
-                        {
-                            LeaveRoom();
-                        }
-                        break;
+                            break;
+                    }
+                }catch(Exception e)
+                {
+                    Log.Exception("Can't parse packet!");
+                    if (packet != null)
+                    {
+                        Log.Exception($"Packet={packet.commandType}, DataLength={packet.additionalData.Length}");
+                    }
+                    Log.Exception(e.ToString());
                 }
             }
         }
@@ -382,13 +446,31 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 case RoomState.SelectingSong:
                     {
+                        HideLeaderboard();
+                        HideDifficultySelection();
                         ShowSongsList();
                     }
                     break;
                 case RoomState.Preparing:
                     {
+                        HideLeaderboard();
+                        HideSongsList();
                         if (roomInfo.selectedSong != null)
                             ShowDifficultySelection(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                    }
+                    break;
+                case RoomState.InGame:
+                    {
+                        HideDifficultySelection();
+                        HideSongsList();
+                        ShowLeaderboard(new PlayerInfo[0], SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                    }
+                    break;
+                case RoomState.Results:
+                    {
+                        HideDifficultySelection();
+                        HideSongsList();
+                        ShowLeaderboard(new PlayerInfo[0], SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
                     }
                     break;
             }
@@ -504,6 +586,54 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (_difficultySelectionViewController != null)
             {
                 _difficultySelectionViewController.UpdateViewController(song);
+            }
+        }
+
+        public void ShowLeaderboard(PlayerInfo[] playerInfos, CustomLevel song)
+        {
+            if (_leaderboardViewController == null)
+            {
+                _leaderboardViewController = BeatSaberUI.CreateViewController<LeaderboardViewController>();
+            }
+            if (_roomNavigationController.GetPrivateField<List<VRUIViewController>>("_viewControllers").IndexOf(_leaderboardViewController) < 0)
+            {
+                _roomNavigationController.PushViewController(_leaderboardViewController, false);
+                    
+                SongLoader.Instance.LoadAudioClipForLevel(song, SongLoaded);
+                _leaderboardViewController.SetLeaderboard(playerInfos);
+                _leaderboardViewController.SelectedSong = song;
+            }
+            else
+            {
+                SongLoader.Instance.LoadAudioClipForLevel(song, SongLoaded);
+                _leaderboardViewController.SetLeaderboard(playerInfos);
+                _leaderboardViewController.SelectedSong = song;
+            }
+        }
+
+        public void HideLeaderboard()
+        {
+            if (_leaderboardViewController != null)
+            {
+                if (_roomNavigationController.GetPrivateField<List<VRUIViewController>>("_viewControllers").IndexOf(_leaderboardViewController) >= 0)
+                {
+                    _roomNavigationController.PopViewControllerImmediately();
+                    Destroy(_leaderboardViewController.gameObject);
+                }
+            }
+            PreviewPlayer.CrossfadeToDefault();
+        }
+
+        public void UpdateLeaderboard(PlayerInfo[] playerInfos, float currentTime, float totalTime, bool results)
+        {
+            if (_leaderboardViewController != null)
+            {
+                _leaderboardViewController.SetLeaderboard(playerInfos);
+                _leaderboardViewController.SetTimer(totalTime - currentTime, results);
+                if (_leaderboardViewController.SelectedSong == null)
+                {
+                    _leaderboardViewController.SelectedSong = SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId));
+                }
             }
         }
     }
