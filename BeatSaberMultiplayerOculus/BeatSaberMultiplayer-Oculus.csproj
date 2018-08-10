@@ -101,10 +101,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Misc\Base64Sprites.cs" />
     <Compile Include="Misc\GetUserInfo.cs" />
-    <Compile Include="Misc\ReflectionUtil.cs" />
-    <Compile Include="Misc\Serialization.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
