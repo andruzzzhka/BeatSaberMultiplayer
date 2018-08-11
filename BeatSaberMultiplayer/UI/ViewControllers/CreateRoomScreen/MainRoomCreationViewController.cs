@@ -13,7 +13,7 @@ using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 {
-    class RoomCreationViewController : VRUIViewController
+    class MainRoomCreationViewController : VRUIViewController
     {
         public event Action<RoomSettings> CreatedRoom;
 
@@ -138,6 +138,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         }
 
+        protected override void LeftAndRightScreenViewControllers(out VRUIViewController leftScreenViewController, out VRUIViewController rightScreenViewController)
+        {
+            PluginUI.instance.roomCreationFlowCoordinator.LeftAndRightScreenViewControllers(out leftScreenViewController, out rightScreenViewController);
+        }
+
         private void SongSelection_ValueChanged(int obj)
         {
             _songSelectionType = (SongSelectionType)obj;
@@ -173,9 +178,19 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             CheckRequirements();
         }
 
-        private void CheckRequirements()
+        public void Update()
         {
-            _createRoomButton.interactable = (!_usePassword || (_usePassword && !string.IsNullOrEmpty(_roomPassword))) && !string.IsNullOrEmpty(_roomName);
+            SetCreateButtonInteractable();
+        }
+
+        public void SetCreateButtonInteractable()
+        {
+            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
+        }
+
+        public bool CheckRequirements()
+        {
+            return (!_usePassword || (_usePassword && !string.IsNullOrEmpty(_roomPassword))) && !string.IsNullOrEmpty(_roomName);
         }
 
 

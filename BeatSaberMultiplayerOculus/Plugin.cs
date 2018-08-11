@@ -27,7 +27,6 @@ namespace BeatSaberMultiplayer
                 PluginUI.OnLoad();
                 InGameOnlineController.OnLoad();
             }
-            AvatarController.OnLoad();
         }
 
         public void OnApplicationQuit()

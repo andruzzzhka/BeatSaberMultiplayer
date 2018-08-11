@@ -194,6 +194,15 @@ namespace ServerHub.Data
                             }
                         }
                         break;
+                    case CommandType.TransferHost:
+                        {
+                            if (joinedRoomID != 0)
+                            {
+                                Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
+                                joinedRoom.TransferHost(playerInfo, new PlayerInfo(packet.additionalData));
+                            }
+                        }
+                        break;
                 }
                 
                 packet = this.ReceiveData(false);

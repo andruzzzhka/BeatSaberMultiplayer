@@ -22,7 +22,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             if (mainMenuViewController == null)
                 return;
-
+            
+            AvatarController.LoadAvatar();
             PresentServerHubUI();
 
             UpdateRoomsList();

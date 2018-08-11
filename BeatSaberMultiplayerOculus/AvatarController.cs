@@ -57,12 +57,12 @@ namespace BeatSaberMultiplayer
 
         public PosRot RightPosRot => new PosRot(interpRightHandPos, interpRightHandRot);
 
-        public static void OnLoad()
+        public static void LoadAvatar()
         {
             if (avatarInstance == null)
             {
                 CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().ForEach(x => Log.Info(x.FullPath));
-                avatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.First(x => x.FullPath.Contains("TemplateFullBody"));
+                avatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.Contains("TemplateFullBody"));
             }
             Log.Info($"Found avatar, isLoaded={avatarInstance.IsLoaded}");
             if (!avatarInstance.IsLoaded)

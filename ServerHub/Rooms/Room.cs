@@ -181,5 +181,14 @@ namespace ServerHub.Rooms
                 _songStartTime = DateTime.Now;
             }
         }
+
+        public void TransferHost(PlayerInfo sender, PlayerInfo newHost)
+        {
+            if (sender.Equals(roomHost))
+            {
+                roomHost = newHost;
+                BroadcastPacket(new BasePacket(CommandType.TransferHost, roomHost.ToBytes(false)));
+            }
+        }
     }
 }

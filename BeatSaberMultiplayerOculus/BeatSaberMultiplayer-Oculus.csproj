@@ -134,8 +134,9 @@
     <Compile Include="UI\UIElements\CustomUIKeyboard.cs" />
     <Compile Include="UI\UIElements\DownloadQueueTableCell.cs" />
     <Compile Include="UI\UIElements\ListViewController.cs" />
+    <Compile Include="UI\ViewControllers\CreateRoomScreen\LeftRoomCreationViewController.cs" />
+    <Compile Include="UI\ViewControllers\CreateRoomScreen\MainRoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
-    <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\CustomKeyboardViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DownloadQueueViewController.cs" />

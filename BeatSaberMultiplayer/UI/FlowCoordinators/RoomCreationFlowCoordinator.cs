@@ -14,7 +14,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
     class RoomCreationFlowCoordinator : FlowCoordinator
     {
         RoomCreationServerHubsListViewController _serverHubsViewController;
-        RoomCreationViewController _roomCreationViewController;
+        MainRoomCreationViewController _mainRoomCreationViewController;
+        LeftRoomCreationViewController _leftRoomCreationViewController;
 
         ServerHubClient _selectedServerHub;
         RoomSettings _roomSettings;
@@ -38,19 +39,38 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             _selectedServerHub = serverHubClient;
 
-            if(_roomCreationViewController == null)
+            if(_mainRoomCreationViewController == null)
             {
-                _roomCreationViewController = BeatSaberUI.CreateViewController<RoomCreationViewController>();
-                _roomCreationViewController.CreatedRoom += CreateRoomPressed;
+                _mainRoomCreationViewController = BeatSaberUI.CreateViewController<MainRoomCreationViewController>();
+                _mainRoomCreationViewController.CreatedRoom += CreateRoomPressed;
+            }
+            if (_leftRoomCreationViewController == null)
+            {
+                _leftRoomCreationViewController = BeatSaberUI.CreateViewController<LeftRoomCreationViewController>();
+                _leftRoomCreationViewController.SetSongs(SongLoader.CustomLevels);
             }
 
-            _serverHubsViewController.PresentModalViewController(_roomCreationViewController, null);
+            _serverHubsViewController.PresentModalViewController(_mainRoomCreationViewController, null);
         }
-        
+
+        public bool CheckRequirements()
+        {
+            return _leftRoomCreationViewController.CheckRequirements() && _mainRoomCreationViewController.CheckRequirements();
+        }
+
+        public void LeftAndRightScreenViewControllers(out VRUIViewController leftScreenViewController, out VRUIViewController rightScreenViewController)
+        {
+            leftScreenViewController = _leftRoomCreationViewController;
+            rightScreenViewController = null;
+        }
+
         public void CreateRoomPressed(RoomSettings settings)
         {
+            if (!PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements())
+                return;
+
             _roomSettings = settings;
-            _roomSettings.AvailableSongs = SongLoader.CustomLevels.Select(x => new SongInfo() { songName = x.songName, levelId = x.levelID.Substring(0, 32)}).ToList();
+            _roomSettings.AvailableSongs = _leftRoomCreationViewController.selectedSongs.Select(x => new SongInfo() { songName = x.songName + " " + x.songSubName, levelId = x.levelID.Substring(0, 32), songDuration = x.audioClip.length }).ToList();
 
             if (Client.instance == null)
             {
@@ -83,7 +103,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 Client.instance.PacketReceived -= PacketReceived;
                 _createdRoomId = BitConverter.ToUInt32(packet.additionalData, 0);
-                _roomCreationViewController.DismissModalViewController(null, true);
+                _mainRoomCreationViewController.DismissModalViewController(null, true);
                 _serverHubsViewController.DismissModalViewController(null, true);
 
                 PluginUI.instance.serverHubFlowCoordinator.JoinRoom(_selectedServerHub.ip, _selectedServerHub.port, _createdRoomId, _roomSettings.UsePassword, _roomSettings.Password);
