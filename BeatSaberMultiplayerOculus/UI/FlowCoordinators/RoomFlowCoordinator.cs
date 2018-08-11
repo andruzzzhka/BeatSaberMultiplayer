@@ -157,9 +157,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 Client.instance.Disconnect();
                 joined = false;
             }
+            
             HideDifficultySelection();
             HideSongsList();
             HideLeaderboard();
+            PluginUI.instance.downloadFlowCoordinator.HideQueue();
             InGameOnlineController.Instance.DestroyAvatars();
             PreviewPlayer.CrossfadeToDefault();
             _roomNavigationController.DismissModalViewController(null, false);
@@ -291,6 +293,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                             }
                                             break;
                                     }
+                                    _roomManagementViewController.UpdateViewController(Client.instance.isHost);
                                 }
                                 else
                                 {
@@ -350,17 +353,17 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 {
                                     case RoomState.SelectingSong:
                                         {
-                                            UpdateSongsList();
+                                            ShowSongsList();
                                         }
                                         break;
                                     case RoomState.Preparing:
                                         {
                                             if (roomInfo.selectedSong != null)
-                                                UpdateDifficultySelection(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                                                ShowDifficultySelection(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
                                         }
                                         break;
                                 }
-                                _roomManagementViewController.UpdateViewControlelr();
+                                _roomManagementViewController.UpdateViewController(Client.instance.isHost);
                             }
                             break;
                         case CommandType.StartLevel:
@@ -479,7 +482,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void ShowSongsList()
         {
-            if(_songSelectionViewController == null)
+            if (_songSelectionViewController == null)
             {
                 _songSelectionViewController = BeatSaberUI.CreateViewController<SongSelectionViewController>();
             }
@@ -493,7 +496,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _songSelectionViewController.SetSongs(availableSongs);
                 _songSelectionViewController.SongSelected += SongSelected;
             }
-            
+
+            _songSelectionViewController.UpdateViewController(Client.instance.isHost);
         }
 
         public void HideSongsList()
@@ -509,20 +513,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        public void UpdateSongsList()
-        {
-            if (_songSelectionViewController != null)
-            {
-                if (_roomNavigationController.GetPrivateField<List<VRUIViewController>>("_viewControllers").IndexOf(_songSelectionViewController) >= 0)
-                {
-                    _songSelectionViewController.UpdateViewController();
-                }
-            }
-        }
-
         private void SongSelected(CustomLevel song)
         {
-            Client.instance.SetSelectedSong(new SongInfo() { songName = song.name + " " + song.songSubName, levelId = song.levelID.Substring(0, 32) });
+            Client.instance.SetSelectedSong(new SongInfo() { songName = song.songName + " " + song.songSubName, levelId = song.levelID.Substring(0, 32) });
         }
 
         private void SongLoaded(CustomLevel song)
@@ -546,15 +539,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 _difficultySelectionViewController.DiscardPressed += DiscardPressed;
                 _difficultySelectionViewController.PlayPressed += PlayPressed;
-                SongLoader.Instance.LoadAudioClipForLevel(song, SongLoaded);
-                _difficultySelectionViewController.SetSelectedSong(song);
             }
-            else
-            {
-                SongLoader.Instance.LoadAudioClipForLevel(song, SongLoaded);
-                _difficultySelectionViewController.SetSelectedSong(song);
-                UpdateDifficultySelection(song);
-            }
+            SongLoader.Instance.LoadAudioClipForLevel(song, SongLoaded);
+            _difficultySelectionViewController.SetSelectedSong(song);
+            _difficultySelectionViewController.UpdateViewController(Client.instance.isHost);
         }
 
         private void PlayPressed(CustomLevel song, LevelDifficulty difficulty)
@@ -581,14 +569,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        public void UpdateDifficultySelection(CustomLevel song)
-        {
-            if (_difficultySelectionViewController != null)
-            {
-                _difficultySelectionViewController.UpdateViewController(song);
-            }
-        }
-
         public void ShowLeaderboard(PlayerInfo[] playerInfos, CustomLevel song)
         {
             if (_leaderboardViewController == null)
@@ -598,17 +578,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (_roomNavigationController.GetPrivateField<List<VRUIViewController>>("_viewControllers").IndexOf(_leaderboardViewController) < 0)
             {
                 _roomNavigationController.PushViewController(_leaderboardViewController, false);
-                    
-                SongLoader.Instance.LoadAudioClipForLevel(song, SongLoaded);
-                _leaderboardViewController.SetLeaderboard(playerInfos);
-                _leaderboardViewController.SelectedSong = song;
             }
-            else
-            {
-                SongLoader.Instance.LoadAudioClipForLevel(song, SongLoaded);
-                _leaderboardViewController.SetLeaderboard(playerInfos);
-                _leaderboardViewController.SelectedSong = song;
-            }
+
+            SongLoader.Instance.LoadAudioClipForLevel(song, SongLoaded);
+            _leaderboardViewController.SetLeaderboard(playerInfos);
+            _leaderboardViewController.SelectedSong = song;
         }
 
         public void HideLeaderboard()
@@ -630,10 +604,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 _leaderboardViewController.SetLeaderboard(playerInfos);
                 _leaderboardViewController.SetTimer(totalTime - currentTime, results);
-                if (_leaderboardViewController.SelectedSong == null)
-                {
-                    _leaderboardViewController.SelectedSong = SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId));
-                }
             }
         }
     }

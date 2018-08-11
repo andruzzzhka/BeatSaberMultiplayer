@@ -13,7 +13,7 @@ using UnityEngine;
 
 namespace BeatSaberMultiplayer
 {
-    class Client : MonoBehaviour
+    class Client : MonoBehaviour, IDisposable
     {
         public static event Action ClientCreated;
         public static event Action ClientDestroyed;
@@ -68,7 +68,7 @@ namespace BeatSaberMultiplayer
                 try
                 {
                     tcpClient.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
-                    //Thread.Sleep(150);
+                    Thread.Sleep(150);
                     tcpClient.Close();
                 }
                 catch (Exception)
@@ -284,6 +284,13 @@ namespace BeatSaberMultiplayer
             {
                 tcpClient.SendData(new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)));
             }
+        }
+
+        public void Dispose()
+        {
+            receiverThread.Abort();
+            tcpClient.Dispose();
+            _packetsQueue.Clear();
         }
     }
 }

@@ -101,8 +101,50 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AvatarController.cs" />
+    <Compile Include="Client.cs" />
+    <Compile Include="Data\BasePacket.cs" />
+    <Compile Include="Data\BeatSaverAPIResult.cs" />
+    <Compile Include="Data\PlayerInfo.cs" />
+    <Compile Include="Data\RoomInfo.cs" />
+    <Compile Include="Data\RoomSettings.cs" />
+    <Compile Include="Data\SongInfo.cs" />
+    <Compile Include="InGameOnlineController.cs" />
+    <Compile Include="Misc\Base64Sprites.cs" />
+    <Compile Include="Misc\ClientHelper.cs" />
+    <Compile Include="Misc\Config.cs" />
+    <Compile Include="Misc\CustomExtensions.cs" />
     <Compile Include="Misc\GetUserInfo.cs" />
+    <Compile Include="Misc\HexConverter.cs" />
+    <Compile Include="Misc\LoadScripts.cs" />
+    <Compile Include="Misc\Log.cs" />
+    <Compile Include="Misc\ReflectionUtil.cs" />
+    <Compile Include="Misc\Serialization.cs" />
+    <Compile Include="PlayerInfoDisplay.cs" />
+    <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UI\BeatSaberUI.cs" />
+    <Compile Include="UI\FlowCoordinators\DownloadFlowCoordinator.cs" />
+    <Compile Include="UI\FlowCoordinators\RoomCreationFlowCoordinator.cs" />
+    <Compile Include="UI\FlowCoordinators\RoomFlowCoordinator.cs" />
+    <Compile Include="UI\FlowCoordinators\ServerHubFlowCoordinator.cs" />
+    <Compile Include="UI\PluginUI.cs" />
+    <Compile Include="UI\UIElements\BoolViewController.cs" />
+    <Compile Include="UI\UIElements\CustomSettingsHelper.cs" />
+    <Compile Include="UI\UIElements\CustomUIKeyboard.cs" />
+    <Compile Include="UI\UIElements\DownloadQueueTableCell.cs" />
+    <Compile Include="UI\UIElements\ListViewController.cs" />
+    <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
+    <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationViewController.cs" />
+    <Compile Include="UI\ViewControllers\CustomKeyboardViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\DownloadQueueViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\LeaderboardViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\RoomManagementViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
+    <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
+    <Compile Include="UI\ViewControllers\ServerHubScreen\ServerHubNavigationController.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

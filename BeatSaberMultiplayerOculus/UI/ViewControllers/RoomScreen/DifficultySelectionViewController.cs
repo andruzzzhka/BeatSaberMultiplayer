@@ -216,16 +216,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             //BeatSaberUI.SetButtonText(_readyButton, ready ? "CANCEL" : "READY");
         }
 
-        public void UpdateViewController(CustomLevel song)
+        public void UpdateViewController(bool isHost)
         {
-            _easyButton.gameObject.SetActive(Client.instance.isHost);
-            _normalButton.gameObject.SetActive(Client.instance.isHost);
-            _hardButton.gameObject.SetActive(Client.instance.isHost);
-            _expertButton.gameObject.SetActive(Client.instance.isHost);
-            _expertPlusButton.gameObject.SetActive(Client.instance.isHost);
-            _discardButton.gameObject.SetActive(Client.instance.isHost);
-            _playButton.gameObject.SetActive(Client.instance.isHost);
-            _selectDifficultyText.gameObject.SetActive(Client.instance.isHost);
+            _easyButton.gameObject.SetActive(isHost);
+            _normalButton.gameObject.SetActive(isHost);
+            _hardButton.gameObject.SetActive(isHost);
+            _expertButton.gameObject.SetActive(isHost);
+            _expertPlusButton.gameObject.SetActive(isHost);
+            _discardButton.gameObject.SetActive(isHost);
+            _playButton.gameObject.SetActive(isHost);
+            _selectDifficultyText.gameObject.SetActive(isHost);
             //_readyButton.gameObject.SetActive(!Client.instance.isHost);
         }
     }

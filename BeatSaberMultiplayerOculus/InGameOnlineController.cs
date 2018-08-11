@@ -23,10 +23,6 @@ namespace BeatSaberMultiplayer
         private GameplayManager _gameManager;
         private ScoreController _scoreController;
         private GameEnergyCounter _energyController;
-        private VRCenterAdjust _roomAdjust;
-
-        public Vector3 roomPositionOffset;
-        public Quaternion roomRotationOffset;
 
         private List<AvatarController> _avatars = new List<AvatarController>();
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
@@ -81,7 +77,7 @@ namespace BeatSaberMultiplayer
                     playerInfos.Add(new PlayerInfo(playerInfoBytes));
                 }
 
-                playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene.name == "StandardLevel") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu")).ToList();
+                playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene.name == "StandardLevel") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu")).OrderByDescending(x => x.playerScore).ToList();
 
                 int localPlayerIndex = playerInfos.FindIndexInList(Client.instance.playerInfo);
 
@@ -91,32 +87,28 @@ namespace BeatSaberMultiplayer
                     {
                         if (_avatars.Count > playerInfos.Count)
                         {
-                            List<AvatarController> avatarsToRemove = new List<AvatarController>();
                             for (int i = playerInfos.Count; i < _avatars.Count; i++)
                             {
-                                avatarsToRemove.Add(_avatars[i]);
+                                if(_avatars[i] != null && _avatars[i].gameObject != null)
+                                    Destroy(_avatars[i].gameObject);
                             }
-                            foreach (AvatarController avatar in avatarsToRemove)
-                            {
-                                _avatars.Remove(avatar);
-                                Destroy(avatar.gameObject);
-                            }
-
+                            _avatars.RemoveAll(x => x == null || x.gameObject == null);
                         }
                         else if (_avatars.Count < playerInfos.Count)
                         {
                             for (int i = 0; i < (playerInfos.Count - _avatars.Count); i++)
                             {
                                 _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
-
                             }
                         }
 
                         List<PlayerInfo> _playerInfosByID = playerInfos.OrderBy(x => x.playerId).ToList();
+
                         for (int i = 0; i < playerInfos.Count; i++)
                         {
                             if (_currentScene.name == "StandardLevel")
                             {
+                                
                                 _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - _playerInfosByID.FindIndexInList(Client.instance.playerInfo)) * 3f, Client.instance.playerInfo.Equals(_playerInfosByID[i]));
                             }
                             else
@@ -251,23 +243,29 @@ namespace BeatSaberMultiplayer
 
         private void OnActiveSceneChanged(Scene prev, Scene next)
         {
-            _currentScene = next;
-            if (_currentScene.name == "StandardLevel")
+            try
             {
-                DestroyAvatars();
-                DestroyScoreScreens();
-                if (Client.instance.Connected)
+                _currentScene = next;
+                if (_currentScene.name == "StandardLevel")
                 {
-                    StartCoroutine(FindControllers());
+                    DestroyAvatars();
+                    DestroyScoreScreens();
+                    if (Client.instance != null && Client.instance.Connected)
+                    {
+                        StartCoroutine(FindControllers());
+                    }
                 }
-            }
-            else if(_currentScene.name == "Menu")
+                else if (_currentScene.name == "Menu")
+                {
+                    DestroyAvatars();
+                    if (Client.instance != null && Client.instance.Connected)
+                    {
+                        StartCoroutine(ReturnToRoom());
+                    }
+                }
+            }catch(Exception e)
             {
-                DestroyAvatars();
-                if (Client.instance.Connected)
-                {
-                    StartCoroutine(ReturnToRoom());
-                }
+                Log.Exception($"Exception on {_currentScene.name} scene load! {e}");
             }
         }
 

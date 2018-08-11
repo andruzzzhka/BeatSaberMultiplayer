@@ -48,7 +48,9 @@ namespace ServerHub.Hub
             }
 
             ShutdownEventCatcher.Shutdown += OnShutdown;
-            
+
+            Settings.Instance.Server.Tickrate = Misc.Math.Clamp(Settings.Instance.Server.Tickrate, 5, 150);
+            HighResolutionTimer.LoopTimer.Interval = 1000/Settings.Instance.Server.Tickrate;
             HighResolutionTimer.LoopTimer.Start();
 #if DEBUG
             InitializePipe();
@@ -158,6 +160,7 @@ namespace ServerHub.Hub
                         if (int.TryParse(comArgs[0], out tickrate))
                         {
                             tickrate = Misc.Math.Clamp(tickrate, 5, 150);
+                            Settings.Instance.Server.Tickrate = tickrate;
                             HighResolutionTimer.LoopTimer.Interval = 1000f / tickrate;
                         }
                     }

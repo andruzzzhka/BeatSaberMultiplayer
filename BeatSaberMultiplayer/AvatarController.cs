@@ -15,10 +15,11 @@ namespace BeatSaberMultiplayer
 {
     class AvatarController : MonoBehaviour, IAvatarInput
     {
+        static CustomAvatar.CustomAvatar avatarInstance;
+
         PlayerInfo playerInfo;
 
         SpawnedAvatar avatar;
-        CustomAvatar.CustomAvatar avatarInstance;
 
         TextMeshPro playerNameText;
 
@@ -56,39 +57,59 @@ namespace BeatSaberMultiplayer
 
         public PosRot RightPosRot => new PosRot(interpRightHandPos, interpRightHandRot);
 
-        public AvatarController()
+        public static void OnLoad()
         {
-            CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().ForEach(x => Log.Info(x.FullPath));
-            avatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.First(x => x.FullPath.Contains("TemplateFullBody"));
+            if (avatarInstance == null)
+            {
+                CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().ForEach(x => Log.Info(x.FullPath));
+                avatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.First(x => x.FullPath.Contains("TemplateFullBody"));
+            }
+            Log.Info($"Found avatar, isLoaded={avatarInstance.IsLoaded}");
             if (!avatarInstance.IsLoaded)
             {
                 avatarInstance.Load(AvatarLoaded);
             }
-            else
-            {
-                InitializeAvatarController();
-            }
         }
 
-        private void AvatarLoaded(CustomAvatar.CustomAvatar avatar, AvatarLoadResult result)
+        public AvatarController()
+        {
+            StartCoroutine(InitializeAvatarController());
+        }
+
+        private static void AvatarLoaded(CustomAvatar.CustomAvatar avatar, AvatarLoadResult result)
         {
             if (result == AvatarLoadResult.Completed)
             {
 #if DEBUG
                 Log.Info("Loaded avatar");
 #endif
-                InitializeAvatarController();
+            }
+            else
+            {
+                Log.Error($"Can't load avatar! Error: {result}");
             }
         }
 
-        void InitializeAvatarController()
+        IEnumerator InitializeAvatarController()
         {
+            if (!avatarInstance.IsLoaded)
+            {
+#if DEBUG
+                Log.Info("Waiting for avatar to load");
+#endif
+                yield return new WaitWhile(delegate () { return !avatarInstance.IsLoaded; });
+            }
+            else
+            {
+                yield return null;
+            }
+
 #if DEBUG
             Log.Info("Spawning avatar");
 #endif
             avatar = AvatarSpawner.SpawnAvatar(avatarInstance, this);
-
-            playerNameText = BeatSaberUI.CreateWorldText(avatar.CustomAvatar.ViewPoint, "INVALID");
+            
+            playerNameText = BeatSaberUI.CreateWorldText(transform, "INVALID");
             playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 0.25f, 0f);
             playerNameText.alignment = TextAlignmentOptions.Center;
             playerNameText.fontSize = 2.5f;
@@ -114,6 +135,8 @@ namespace BeatSaberMultiplayer
                 interpLeftHandRot = Quaternion.Lerp(lastLeftHandRot, targetLeftHandRot, interpolationProgress);
                 interpRightHandRot = Quaternion.Lerp(lastRightHandRot, targetRightHandRot, interpolationProgress);
 
+                transform.position = interpHeadPos;
+
                 playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InputTracking.GetLocalPosition(XRNode.Head));
             }
 
@@ -121,7 +144,9 @@ namespace BeatSaberMultiplayer
 
         void OnDestroy()
         {
+#if DEBUG
             Log.Info("Destroying avatar");
+#endif
             Destroy(avatar.GameObject);
         }
 
@@ -140,18 +165,16 @@ namespace BeatSaberMultiplayer
                     return;
                 }
 
-#if DEBUG
-                if (false)
-#else
                 if (isLocal)
-#endif
                 {
                     playerNameText.gameObject.SetActive(false);
+#if !DEBUG
                     if (rendererEnabled)
                     {
                         SetRendererInChilds(avatar.GameObject.transform, false);
                         rendererEnabled = false;
                     }
+#endif
                 }
                 else
                 {

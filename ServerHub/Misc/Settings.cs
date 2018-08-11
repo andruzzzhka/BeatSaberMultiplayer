@@ -10,18 +10,35 @@ namespace ServerHub.Misc {
         [JsonObject(MemberSerialization.OptIn)]
         public class ServerSettings {
             private int _port;
+            private int _tickrate;
             private bool _tryUPnP;
 
             private Action MarkDirty { get; }
-        
+
             /// <summary>
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
-            public int Port {
+            public int Port
+            {
                 get => _port;
-                set {
+                set
+                {
                     _port = value;
+                    MarkDirty();
+                }
+            }
+            
+            /// <summary>
+             /// Remember to Save after changing the value
+             /// </summary>
+            [JsonProperty]
+            public int Tickrate
+            {
+                get => _tickrate;
+                set
+                {
+                    _tickrate = value;
                     MarkDirty();
                 }
             }
@@ -46,6 +63,7 @@ namespace ServerHub.Misc {
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
+                _tickrate = 30;
                 _tryUPnP = true;
             }
         }
@@ -126,6 +144,7 @@ namespace ServerHub.Misc {
 
         void MarkDirty() {
             IsDirty = true;
+            Save();
         }
 
         void MarkClean() {

@@ -36,13 +36,14 @@ namespace BeatSaberMultiplayer
         public static Behaviour CopyComponent(Behaviour original, Type originalType, Type overridingType, GameObject destination)
         {
             Behaviour copy = null;
+
             try
             {
                 copy = destination.AddComponent(overridingType) as Behaviour;
-            }catch(Exception e)
+            }catch(Exception)
             {
-
             }
+
             copy.enabled = false;
 
             Type type = originalType;

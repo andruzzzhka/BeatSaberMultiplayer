@@ -23,15 +23,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _destroyRoomButton.onClick.AddListener(delegate() {
                     DestroyRoomPressed?.Invoke();
                 });
+                
             }
 
         }
 
 
-        public void UpdateViewControlelr()
+        public void UpdateViewController(bool isHost)
         {
-            bool isHost = Client.instance.isHost;
-
             _destroyRoomButton.gameObject.SetActive(isHost);
         }
     }

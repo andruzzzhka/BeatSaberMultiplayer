@@ -46,9 +46,23 @@ namespace ServerHub.Misc
             catch(IOException e)
             {
 #if DEBUG
-                Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}: {e}");
+                if (client.playerInfo != null)
+                {
+                    Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}: {e}");
+                }
+                else
+                {
+                    Logger.Instance.Log($"Lost connection to the client: {e}");
+                }
 #else
-                Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}.");
+                if (client.playerInfo != null)
+                {
+                    Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}.");
+                }
+                else
+                {
+                    Logger.Instance.Log($"Lost connection to the client.");
+                }
 #endif
                 LostConnection?.Invoke(client);
             }

@@ -57,10 +57,15 @@ namespace BeatSaberMultiplayer
             }
 
         }
-        
+
+        protected override void LeftAndRightScreenViewControllers(out VRUIViewController leftScreenViewController, out VRUIViewController rightScreenViewController)
+        {
+            PluginUI.instance.roomFlowCoordinator.GetLeftAndRightScreenViewControllers(out leftScreenViewController, out rightScreenViewController);
+        }
+
         public void SetLeaderboard(PlayerInfo[] _playerInfos)
         {
-            this._playerInfos = _playerInfos.Where(x => x.playerState == PlayerState.Game || (x.playerState == PlayerState.Room && x.playerScore > 0)).ToArray();
+            this._playerInfos = _playerInfos.Where(x => x.playerState == PlayerState.Game || (x.playerState == PlayerState.Room && x.playerScore > 0)).OrderByDescending(x => x.playerScore).ToArray();
 
             if (_leaderboardTableView == null)
                 return;

@@ -42,6 +42,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             SongLoader.SongsLoadedEvent -= SongsLoadedEvent;
             SongLoader.SongsLoadedEvent += SongsLoadedEvent;
             SongLoader.Instance.RefreshSongs(false);
+            HideQueue();
+        }
+
+        public void HideQueue()
+        {
+            if (_downloadQueueViewController == null)
+                return;
             if (_roomNavigationController.GetPrivateField<List<VRUIViewController>>("_viewControllers").IndexOf(_downloadQueueViewController) >= 0)
             {
                 _roomNavigationController.PopViewControllerImmediately();
