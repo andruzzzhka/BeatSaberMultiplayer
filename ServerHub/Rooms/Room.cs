@@ -13,6 +13,9 @@ namespace ServerHub.Rooms
         public uint roomId;
 
         public List<Client> roomClients = new List<Client>();
+
+        private List<PlayerInfo> _readyPlayers = new List<PlayerInfo>();
+
         public RoomSettings roomSettings;
         public RoomState roomState;
 
@@ -67,6 +70,10 @@ namespace ServerHub.Rooms
                 {
                     roomState = RoomState.Results;
                     _resultsStartTime = DateTime.Now;
+                    List<byte> roomInfoBuffer = new List<byte>();
+                    roomInfoBuffer.Add(0);
+                    roomInfoBuffer.AddRange(GetRoomInfo().ToBytes(false));
+                    BroadcastPacket(new BasePacket(CommandType.GetRoomInfo, roomInfoBuffer.ToArray()));
                 }
             }
 
@@ -84,8 +91,9 @@ namespace ServerHub.Rooms
             {
                 roomState = RoomState.Preparing;
                 Random rand = new Random();
-                selectedSong = roomSettings.AvailableSongs[rand.Next(0, roomSettings.AvailableSongs.Count-1)];
+                selectedSong = roomSettings.AvailableSongs[rand.Next(roomSettings.AvailableSongs.Count)];
                 BroadcastPacket(new BasePacket(CommandType.SetSelectedSong, selectedSong.ToBytes(false)));
+                ReadyStateChanged(roomHost, true);
             }
 
             List<byte> buffer = new List<byte>();
@@ -152,6 +160,7 @@ namespace ServerHub.Rooms
                                 Random rand = new Random();
                                 selectedSong = roomSettings.AvailableSongs[rand.Next(0, roomSettings.AvailableSongs.Count - 1)];
                                 BroadcastPacket(new BasePacket(CommandType.SetSelectedSong, selectedSong.ToBytes(false)));
+                                ReadyStateChanged(roomHost, true);
                             }
                             break;
                     }
@@ -160,6 +169,7 @@ namespace ServerHub.Rooms
                 {
                     roomState = RoomState.Preparing;
                     BroadcastPacket(new BasePacket(CommandType.SetSelectedSong, selectedSong.ToBytes(false)));
+                    ReadyStateChanged(roomHost, true);
                 }
             }
         }
@@ -189,6 +199,26 @@ namespace ServerHub.Rooms
                 roomHost = newHost;
                 BroadcastPacket(new BasePacket(CommandType.TransferHost, roomHost.ToBytes(false)));
             }
+        }
+
+        public void ReadyStateChanged(PlayerInfo sender, bool ready)
+        {
+            if (ready)
+            {
+                if (!_readyPlayers.Contains(sender))
+                {
+                    _readyPlayers.Add(sender);
+                }
+            }
+            else
+            {
+                _readyPlayers.Remove(sender);
+            }
+
+            List<byte> buffer = new List<byte>();
+            buffer.AddRange(BitConverter.GetBytes(_readyPlayers.Count));
+            buffer.AddRange(BitConverter.GetBytes(roomClients.Count));
+            BroadcastPacket(new BasePacket(CommandType.PlayerReady, buffer.ToArray()));
         }
     }
 }

@@ -153,7 +153,11 @@ namespace ServerHub.Data
                             if (joinedRoomID != 0)
                             {
                                 Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
-                                this.SendData(new BasePacket(CommandType.GetRoomInfo, joinedRoom.GetSongsLevelIDs().Concat(joinedRoom.GetRoomInfo().ToBytes(false)).ToArray()));
+                                List<byte> buffer = new List<byte>();
+                                buffer.Add(1);
+                                buffer.AddRange(joinedRoom.GetSongsLevelIDs());
+                                buffer.AddRange(joinedRoom.GetRoomInfo().ToBytes(false));
+                                this.SendData(new BasePacket(CommandType.GetRoomInfo, buffer.ToArray()));
                             }
 
                         }
@@ -200,6 +204,15 @@ namespace ServerHub.Data
                             {
                                 Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
                                 joinedRoom.TransferHost(playerInfo, new PlayerInfo(packet.additionalData));
+                            }
+                        }
+                        break;
+                    case CommandType.PlayerReady:
+                        {
+                            if (joinedRoomID != 0)
+                            {
+                                Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
+                                joinedRoom.ReadyStateChanged(playerInfo, (packet.additionalData[0] == 0) ? false : true);
                             }
                         }
                         break;

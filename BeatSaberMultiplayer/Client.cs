@@ -286,6 +286,14 @@ namespace BeatSaberMultiplayer
             }
         }
 
+        public void SendPlayerReady(bool ready)
+        {
+            if (Connected && tcpClient.Connected)
+            {
+                tcpClient.SendData(new BasePacket(CommandType.PlayerReady, new byte[1] { (byte)(ready ? 1 : 0) }));
+            }
+        }
+
         public void Dispose()
         {
             receiverThread.Abort();

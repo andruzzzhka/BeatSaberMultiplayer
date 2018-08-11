@@ -31,10 +31,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         Button _discardButton;
         Button _playButton;
-        //Button _readyButton;
+        Button _readyButton;
 
         TextMeshProUGUI _selectDifficultyText;
-        //TextMeshProUGUI _playersReadyText;
+        TextMeshProUGUI _playersReadyText;
 
         bool ready;
 
@@ -54,11 +54,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _selectDifficultyText.fontSize = 7f;
                 _selectDifficultyText.gameObject.SetActive(isHost);
 
-                /*
-                _playersReadyText = BeatSaberUI.CreateText(rectTransform, "0/0 players ready", new Vector2(0f, -5f));
+                _playersReadyText = BeatSaberUI.CreateText(rectTransform, "0/0 players ready", new Vector2(0f, 5f));
+                _playersReadyText.rectTransform.anchorMin = new Vector2(0.5f, 0f);
+                _playersReadyText.rectTransform.anchorMax = new Vector2(0.5f, 0f);
                 _playersReadyText.alignment = TextAlignmentOptions.Center;
                 _playersReadyText.fontSize = 5.5f;
-                */
 
                 _discardButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
                 (_discardButton.transform as RectTransform).anchoredPosition = new Vector2(-105f, 10f);
@@ -75,8 +75,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 BeatSaberUI.SetButtonTextSize(_playButton, 5.5f);
                 _playButton.onClick.AddListener(delegate () { PlayPressed?.Invoke(_selectedSong, _selectedDifficulty); });
                 _playButton.gameObject.SetActive(isHost);
-
-                /*
+                
                 _readyButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
                 (_readyButton.transform as RectTransform).anchoredPosition = new Vector2(-65f, 10f);
                 (_readyButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
@@ -84,7 +83,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 BeatSaberUI.SetButtonTextSize(_readyButton, 5.5f);
                 _readyButton.onClick.AddListener(delegate () { ready = !ready; ReadyPressed?.Invoke(ready); UpdateButtons(); });
                 _readyButton.gameObject.SetActive(!isHost);
-                */
 
                 float buttonsY = 60f;
                 float buttonsStartX = -115f;
@@ -137,13 +135,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             _playButton.interactable = interactable;
         }
-
-        /*
-        public void SetPlayersRead(int playersReady, int playersTotal)
+        
+        public void SetPlayersReady(int playersReady, int playersTotal)
         {
             _playersReadyText.text = $"{playersReady}/{playersTotal} players ready";
         }
-        */
 
         public void SetSelectedSong(CustomLevel song)
         {
@@ -213,7 +209,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _expertButton.interactable = _selectedSong.difficultyBeatmaps.Any(x => x.difficulty == LevelDifficulty.Expert);
             _expertPlusButton.interactable = _selectedSong.difficultyBeatmaps.Any(x => x.difficulty == LevelDifficulty.ExpertPlus);
             
-            //BeatSaberUI.SetButtonText(_readyButton, ready ? "CANCEL" : "READY");
+            BeatSaberUI.SetButtonText(_readyButton, ready ? "CANCEL" : "READY");
         }
 
         public void UpdateViewController(bool isHost)
@@ -226,7 +222,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _discardButton.gameObject.SetActive(isHost);
             _playButton.gameObject.SetActive(isHost);
             _selectDifficultyText.gameObject.SetActive(isHost);
-            //_readyButton.gameObject.SetActive(!Client.instance.isHost);
+            _readyButton.gameObject.SetActive(!isHost);
         }
     }
 }
