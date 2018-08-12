@@ -88,12 +88,14 @@ namespace ServerHub.Hub
             while (Listen)
             {
                 Client client = await AcceptClient();
-                hubClients.Add(client);
-                client.clientDisconnected += ClientDisconnected;
-                client.clientJoinedRoom += ClientJoinedRoom;
-                client.clientLeftRoom += RoomsController.ClientLeftRoom;
 
-                client.InitializeClient();
+                if (client.InitializeClient())
+                {
+                    hubClients.Add(client);
+                    client.clientDisconnected += ClientDisconnected;
+                    client.clientJoinedRoom += ClientJoinedRoom;
+                    client.clientLeftRoom += RoomsController.ClientLeftRoom;
+                }                
             }
         }
 

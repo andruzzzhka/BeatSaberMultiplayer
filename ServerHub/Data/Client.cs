@@ -32,33 +32,43 @@ namespace ServerHub.Data
             tcpClient.NoDelay = true;
         }
 
-        public void InitializeClient()
+        public bool InitializeClient()
         {
-            BasePacket packet = this.ReceiveData(true);
-
-            if (packet.commandType == CommandType.Connect)
+            try
             {
-                uint version = BitConverter.ToUInt32(packet.additionalData, 0);
+                BasePacket packet = this.ReceiveData(true);
 
-                uint serverVersion = ((uint)Assembly.GetEntryAssembly().GetName().Version.Major).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Minor).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Build).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Revision);
-
-                if (version != serverVersion)
+                if (packet.commandType == CommandType.Connect && packet.additionalData != null && packet.additionalData.Length > 0)
                 {
-                    KickClient("Plugin version mismatch:\nServer: " + serverVersion + "\nClient: " + version);
+                    uint version = BitConverter.ToUInt32(packet.additionalData, 0);
+
+                    uint serverVersion = ((uint)Assembly.GetEntryAssembly().GetName().Version.Major).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Minor).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Build).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Revision);
+
+                    if (version != serverVersion)
+                    {
+                        KickClient("Plugin version mismatch:\nServer: " + serverVersion + "\nClient: " + version);
+                    }
+
+                    playerInfo = new PlayerInfo(packet.additionalData.Skip(4).ToArray());
+                    playerInfo.playerState = PlayerState.Lobby;
+                    this.SendData(new BasePacket(CommandType.Connect, new byte[0]));
+
+                    Logger.Instance.Log($"{playerInfo.playerName} connected!");
+
+                    timeoutTimer = new Stopwatch();
+                    HighResolutionTimer.LoopTimer.Elapsed += ClientLoop;
+
+                    return true;
                 }
-
-                playerInfo = new PlayerInfo(packet.additionalData.Skip(4).ToArray());
-                playerInfo.playerState = PlayerState.Lobby;
-                this.SendData(new BasePacket(CommandType.Connect, new byte[0]));
-
-                Logger.Instance.Log($"{playerInfo.playerName} connected!");
-
-                timeoutTimer = new Stopwatch();
-                HighResolutionTimer.LoopTimer.Elapsed += ClientLoop;
+                else
+                {
+                    throw new Exception("Wrong command received!");
+                }
             }
-            else
+            catch (Exception e)
             {
-                throw new Exception("Wrong command received!");
+                Logger.Instance.Warning($"Can't initialize client! Exception: {e}");
+                return false;
             }
         }
 
