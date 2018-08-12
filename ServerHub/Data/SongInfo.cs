@@ -52,7 +52,7 @@ namespace ServerHub.Data
         {
             if(obj is SongInfo)
             {
-                return (songName == (obj as SongInfo).songName) && (levelId == (obj as SongInfo).levelId) && (songDuration == (obj as SongInfo).songDuration);
+                return levelId == (obj as SongInfo).levelId;
             }
             else
             {
@@ -63,9 +63,7 @@ namespace ServerHub.Data
         public override int GetHashCode()
         {
             var hashCode = -1413302877;
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(songName);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(levelId);
-            hashCode = hashCode * -1521134295 + songDuration.GetHashCode();
             return hashCode;
         }
     }

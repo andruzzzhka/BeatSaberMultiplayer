@@ -165,8 +165,8 @@ namespace ServerHub.Data
                                 Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
                                 List<byte> buffer = new List<byte>();
                                 buffer.Add(1);
-                                buffer.AddRange(joinedRoom.GetSongsLevelIDs());
-                                buffer.AddRange(joinedRoom.GetRoomInfo().ToBytes(false));
+                                buffer.AddRange(joinedRoom.GetSongInfos());
+                                buffer.AddRange(joinedRoom.GetRoomInfo().ToBytes());
                                 this.SendData(new BasePacket(CommandType.GetRoomInfo, buffer.ToArray()));
                             }
 

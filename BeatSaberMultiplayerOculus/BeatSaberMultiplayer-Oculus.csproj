@@ -144,6 +144,7 @@
     <Compile Include="UI\ViewControllers\RoomScreen\RoomManagementViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\VotingViewController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\ServerHubNavigationController.cs" />
   </ItemGroup>

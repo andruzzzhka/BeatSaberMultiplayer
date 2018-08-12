@@ -8,7 +8,7 @@ using ServerHub.Data;
 namespace MultiplayerTests
 {
     [TestClass]
-    public class SerializationTests
+    public class MultiplayerTests
     {
         [TestMethod]
         public void PlayerInfoSerializationTest()
@@ -120,6 +120,21 @@ namespace MultiplayerTests
             }
         }
 
+        [TestMethod]
+        public void VotingTest()
+        {
+            Dictionary<PlayerInfo, SongInfo> _votes = new Dictionary<PlayerInfo, SongInfo>();
+            _votes.Add(new PlayerInfo("andruzzzhka1", 12341), new SongInfo() { songName = "TEST SONG 1", levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper() });
+            _votes.Add(new PlayerInfo("andruzzzhka2", 12342), new SongInfo() { songName = "TEST SONG 1", levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper() });
+            _votes.Add(new PlayerInfo("andruzzzhka3", 12343), new SongInfo() { songName = "TEST SONG 1", levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper() });
+            _votes.Add(new PlayerInfo("andruzzzhkb1", 12341), new SongInfo() { songName = "TEST SONG 2", levelId = "37da4b5bc7795b08b87888b035760db7".ToUpper() });
+            _votes.Add(new PlayerInfo("andruzzzhkb2", 12342), new SongInfo() { songName = "TEST SONG 2", levelId = "37da4b5bc7795b08b87888b035760db7".ToUpper() });
+            _votes.Add(new PlayerInfo("andruzzzhkc1", 12343), new SongInfo() { songName = "TEST SONG 3", levelId = "32da4b5bc7795b08b88888b035760db7".ToUpper() });
+
+            SongInfo result = _votes.GroupBy(x => x.Value).OrderByDescending(y => y.Count()).First().Key;
+
+            Assert.AreEqual(new SongInfo() { songName = "TEST SONG 1", levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper() }, result);
+        }
 
         public static byte[] GetRoomsListInBytes(List<RoomInfo> rooms)
         {

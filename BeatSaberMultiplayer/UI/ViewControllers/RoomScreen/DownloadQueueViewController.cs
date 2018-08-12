@@ -89,7 +89,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void Refresh()
         {
-            int removed = _queuedSongs.RemoveAll(x => x.songQueueState != SongQueueState.Downloading && x.songQueueState != SongQueueState.Queued);
+            int removed = _queuedSongs.RemoveAll(x => x.songQueueState == SongQueueState.Available && x.songQueueState == SongQueueState.Downloaded);
 
 #if DEBUG
             Log.Info($"Removed {removed} songs from queue");
@@ -101,12 +101,17 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public void EnqueueSong(Song song)
         {
             _queuedSongs.Add(song);
-            song.songQueueState = SongQueueState.Queued;
+            if (song.songQueueState != SongQueueState.Error)
+            {
+                song.songQueueState = SongQueueState.Queued;
+            }
 
             Refresh();
 
-
-            StartCoroutine(DownloadSongFromQueue(song));
+            if (song.songQueueState != SongQueueState.Error)
+            {
+                StartCoroutine(DownloadSongFromQueue(song));
+            }
         }
 
         IEnumerator DownloadSongFromQueue(Song song)

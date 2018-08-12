@@ -100,7 +100,7 @@ namespace BeatSaberMultiplayer
             _timerText.text = results ? $"RESULTS {(int)time}" : SecondsToString(time);
         }
 
-        public virtual string SecondsToString(float time)
+        public string SecondsToString(float time)
         {
             int minutes = (int)(time / 60f);
             int seconds = (int)(time - minutes * 60);

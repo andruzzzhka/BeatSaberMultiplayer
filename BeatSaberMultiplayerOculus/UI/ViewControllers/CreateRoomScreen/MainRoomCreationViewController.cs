@@ -63,7 +63,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 (_songSelectionList.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
                 (_songSelectionList.transform as RectTransform).anchoredPosition = new Vector2(0f, 0f);
                 _songSelectionList.ValueChanged += SongSelection_ValueChanged;
-                _songSelectionList.maxValue = 1; //disabled "Voting" for now
+                _songSelectionList.maxValue = 2;
                 _songSelectionList.Value = (int)_songSelectionType;
                 _songSelectionList.textForValues = new string[] { "Manual", "Random", "Voting" };
                 _songSelectionList.UpdateText();

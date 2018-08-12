@@ -61,10 +61,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             AllSongsDownloaded?.Invoke();
         }
 
-        public IEnumerator EnqueueSongByLevelID(string levelId)
+        public IEnumerator EnqueueSongByLevelID(SongInfo song)
         {
 #if DEBUG
-            Log.Info("Downloading " + levelId);
+            Log.Info("Downloading " + song.levelId);
 #endif
             if (_downloadQueueViewController == null)
             {
@@ -75,7 +75,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _roomNavigationController.PushViewController(_downloadQueueViewController, false);
             }
 
-            UnityWebRequest wwwId = UnityWebRequest.Get($"{beatSaverURL}/api/songs/search/hash/" + levelId.Substring(0, 32));
+            UnityWebRequest wwwId = UnityWebRequest.Get($"{beatSaverURL}/api/songs/search/hash/" + song.levelId);
             wwwId.timeout = 10;
 
             yield return wwwId.SendWebRequest();
@@ -83,19 +83,21 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             if (wwwId.isNetworkError || wwwId.isHttpError)
             {
-                Console.WriteLine(wwwId.error);
+                Log.Error(wwwId.error);
                 _downloadQueueViewController.DisplayError(wwwId.error);
             }
             else
             {
 #if DEBUG
-                Console.WriteLine("Received response from BeatSaver");
+                Log.Info("Received response from BeatSaver...");
 #endif
                 JSONNode node = JSON.Parse(wwwId.downloadHandler.text);
 
                 if (node["songs"].Count == 0)
                 {
-                    _downloadQueueViewController.DisplayError($"Song {levelId} doesn't exist!");
+                    Log.Error($"Song {song.songName} doesn't exist on BeatSaver!");
+                    _downloadQueueViewController.EnqueueSong(new Song() { songName = song.songName, authorName = "", coverUrl = "", songQueueState = SongQueueState.Error, hash = song.levelId});
+
                     yield break;
                 }
 
@@ -147,7 +149,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     TextMeshProUGUI _errorText = BeatSaberUI.CreateText(_downloadQueueViewController.rectTransform, www.error, new Vector2(18f, -64f));
                     Destroy(_errorText.gameObject, 2f);
                 }
-                StartCoroutine(DownloadSongCoroutine(songInfo));
             }
             else
             {
@@ -214,7 +215,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 Log.Info($"Downloaded {songInfo.songName} {songInfo.songSubName}!");
                 _downloadQueueViewController.Refresh();
 
-                if(!_downloadQueueViewController._queuedSongs.Any(x => x.songQueueState == SongQueueState.Downloading || x.songQueueState == SongQueueState.Queued))
+                if(!_downloadQueueViewController._queuedSongs.Any(x => x.songQueueState == SongQueueState.Downloading || x.songQueueState == SongQueueState.Queued || x.songQueueState == SongQueueState.Error))
                 {
                     SongsDownloaded();
                 }
