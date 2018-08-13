@@ -74,14 +74,23 @@ namespace BeatSaberMultiplayer
                     byte[] playerInfoBytes = new byte[playerInfoSize];
                     byteStream.Read(playerInfoBytes, 0, playerInfoSize);
 
-                    playerInfos.Add(new PlayerInfo(playerInfoBytes));
+                    try
+                    {
+                        playerInfos.Add(new PlayerInfo(playerInfoBytes));
+                    }
+                    catch (Exception e)
+                    {
+#if DEBUG
+                        Log.Exception($"Can't parse PlayerInfo! Excpetion: {e}");
+#endif
+                    }
                 }
 
                 playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene.name == "StandardLevel") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu")).OrderByDescending(x => x.playerScore).ToList();
-
+                
                 int localPlayerIndex = playerInfos.FindIndexInList(Client.instance.playerInfo);
 
-                if ((Config.Instance.ShowAvatarsInGame && _currentScene.name == "StandardLevel") || (Config.Instance.ShowAvatarsInRoom && _currentScene.name == "Menu"))
+                if (ShowAvatarsInGame() || ShowAvatarsInRoom() || !Config.Instance.SpectatorMode)
                 {
                     try
                     {
@@ -108,7 +117,6 @@ namespace BeatSaberMultiplayer
                         {
                             if (_currentScene.name == "StandardLevel")
                             {
-                                
                                 _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - _playerInfosByID.FindIndexInList(Client.instance.playerInfo)) * 3f, Client.instance.playerInfo.Equals(_playerInfosByID[i]));
                             }
                             else
@@ -156,8 +164,6 @@ namespace BeatSaberMultiplayer
                     }
                     else
                     {
-
-
                         if (localPlayerIndex < 3)
                         {
                             for (int i = 0; i < 5; i++)
@@ -194,7 +200,17 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        private static PosRot GetXRNodeWorldPosRot(XRNode node)
+        private bool ShowAvatarsInGame()
+        {
+            return Config.Instance.ShowAvatarsInGame && _currentScene.name == "StandardLevel";
+        }
+
+        private bool ShowAvatarsInRoom()
+        {
+            return Config.Instance.ShowAvatarsInRoom && _currentScene.name == "Menu";
+        }
+
+        public static PosRot GetXRNodeWorldPosRot(XRNode node)
         {
             var pos = InputTracking.GetLocalPosition(node);
             var rot = InputTracking.GetLocalRotation(node);

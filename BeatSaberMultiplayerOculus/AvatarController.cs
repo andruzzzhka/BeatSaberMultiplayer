@@ -50,6 +50,7 @@ namespace BeatSaberMultiplayer
         float interpolationProgress = 0f;
 
         bool rendererEnabled = true;
+        Camera _camera;
 
         public PosRot HeadPosRot => new PosRot(interpHeadPos, interpHeadRot);
 
@@ -114,6 +115,7 @@ namespace BeatSaberMultiplayer
             playerNameText.alignment = TextAlignmentOptions.Center;
             playerNameText.fontSize = 2.5f;
 
+            _camera = Resources.FindObjectsOfTypeAll<Camera>().FirstOrDefault(x => x.name == "Camera Plus");
         }
 
         void Update()
@@ -121,7 +123,14 @@ namespace BeatSaberMultiplayer
 
             if (avatar != null)
             {
-                interpolationProgress += Time.deltaTime * 30;
+                if (Client.instance.Tickrate < 88f)
+                {
+                    interpolationProgress += Time.deltaTime * Client.instance.Tickrate;
+                }
+                else
+                {
+                    interpolationProgress = 1f;
+                }
                 if (interpolationProgress > 1f)
                 {
                     interpolationProgress = 1f;
@@ -137,7 +146,15 @@ namespace BeatSaberMultiplayer
 
                 transform.position = interpHeadPos;
 
-                playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InputTracking.GetLocalPosition(XRNode.Head));
+                if (Config.Instance.SpectatorMode && _camera != null)
+                {
+                    playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
+                }
+                else
+                {
+                    playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
+                }
+                
             }
 
         }
@@ -153,7 +170,15 @@ namespace BeatSaberMultiplayer
         public void SetPlayerInfo(PlayerInfo _playerInfo, float offset, bool isLocal)
         {
             if (_playerInfo == null)
+            {
+                playerNameText.gameObject.SetActive(false);
+                if (rendererEnabled)
+                {
+                    SetRendererInChilds(avatar.GameObject.transform, false);
+                    rendererEnabled = false;
+                }
                 return;
+            }
 
             try
             {

@@ -39,6 +39,11 @@ namespace BeatSaberMultiplayer
 
         Queue<BasePacket> _packetsQueue = new Queue<BasePacket>();
 
+        DateTime _lastPacketTime;
+        List<float> _averagePacketTimes = new List<float>();
+
+        public float Tickrate { get { return 1000f / ((_averagePacketTimes.Sum() / _averagePacketTimes.Count) > 0f ? (_averagePacketTimes.Sum() / _averagePacketTimes.Count) : 1000f); } }
+
         public static void CreateClient()
         {
             if(instance != null)
@@ -98,6 +103,7 @@ namespace BeatSaberMultiplayer
         private void ConnectedCallback(IAsyncResult ar)
         {
             tcpClient.EndConnect(ar);
+            _lastPacketTime = DateTime.Now;
 
             List<byte> buffer = new List<byte>();
             buffer.AddRange(BitConverter.GetBytes(Plugin.pluginVersion));
@@ -160,8 +166,12 @@ namespace BeatSaberMultiplayer
             while (tcpClient.Connected && receiverThread.IsAlive)
             {
                 BasePacket packet = tcpClient.ReceiveData();
+                if (_averagePacketTimes.Count > 119)
+                    _averagePacketTimes.RemoveAt(0);
+                _averagePacketTimes.Add((float)DateTime.Now.Subtract(_lastPacketTime).TotalMilliseconds);
+                _lastPacketTime = DateTime.Now;
 #if DEBUG
-                if(packet.commandType != CommandType.UpdatePlayerInfo)
+                if (packet.commandType != CommandType.UpdatePlayerInfo)
                     Log.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");
 #endif
                 _packetsQueue.Enqueue(packet);
