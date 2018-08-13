@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using UnityEngine.XR;
 using VRUI;
 
@@ -23,6 +24,7 @@ namespace BeatSaberMultiplayer
         private GameplayManager _gameManager;
         private ScoreController _scoreController;
         private GameEnergyCounter _energyController;
+        private PauseMenuManager _pauseMenuManager;
 
         private List<AvatarController> _avatars = new List<AvatarController>();
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
@@ -347,12 +349,13 @@ namespace BeatSaberMultiplayer
                 {
                     if (ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger") != null)
                     {
-                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").SetCallback(delegate () { });
+                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").SetCallback(delegate () { ShowMenu(); });
                     }
 
                     if (ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper") != null)
                     {
                         ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper").inputFocusWasCapturedEvent -= _gameManager.HandleInputFocusWasCaptured;
+                        ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper").inputFocusWasCapturedEvent += ShowMenu;
                     }
                 }
                 catch (Exception e)
@@ -384,6 +387,24 @@ namespace BeatSaberMultiplayer
 #if DEBUG
             Log.Info("Found energy controller");
 #endif
+
+            _pauseMenuManager = FindObjectsOfType<PauseMenuManager>().First();
+
+            if (_pauseMenuManager != null)
+            {
+                OnlinePauseAnimController _pauseAnim = new GameObject("OnlinePauseAnimController").AddComponent<OnlinePauseAnimController>();
+                _pauseAnim.animationDidFinishEvent += _pauseMenuManager.HandleResumeAnimationDidFinish;
+                _pauseMenuManager.SetPrivateField("_resumePauseAnimationController", _pauseAnim);
+                _pauseMenuManager.GetPrivateField<GameObject>("_gameObjectsWrapper").GetComponentsInChildren<Button>().First(x => x.name == "RestartButton").interactable = false;
+            }
+        }
+
+        private void ShowMenu()
+        {
+            _pauseMenuManager.enabled = true;
+
+            _pauseMenuManager.SetPrivateField("_ignoreFirstFrameVRControllerInteraction", true);
+            _pauseMenuManager.GetPrivateField<GameObject>("_gameObjectsWrapper").SetActive(true);
         }
 
         private void EnergyDidChangeEvent(float energy)

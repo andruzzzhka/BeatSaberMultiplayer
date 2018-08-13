@@ -134,6 +134,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             cell.songName = $"{song.songName}\n<size=80%>{song.songSubName}</size>";
             cell.author = song.songAuthorName;
 
+            cell.reuseIdentifier = "SongCell";
+
             return cell;
         }
 

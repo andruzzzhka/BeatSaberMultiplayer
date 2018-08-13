@@ -42,7 +42,7 @@ namespace BeatSaberMultiplayer
         DateTime _lastPacketTime;
         List<float> _averagePacketTimes = new List<float>();
 
-        public float Tickrate { get { return 1000f / ((_averagePacketTimes.Sum() / _averagePacketTimes.Count) > 0f ? (_averagePacketTimes.Sum() / _averagePacketTimes.Count) : 1000f); } }
+        public float Tickrate;
 
         public static void CreateClient()
         {
@@ -170,6 +170,8 @@ namespace BeatSaberMultiplayer
                     _averagePacketTimes.RemoveAt(0);
                 _averagePacketTimes.Add((float)DateTime.Now.Subtract(_lastPacketTime).TotalMilliseconds);
                 _lastPacketTime = DateTime.Now;
+
+                Tickrate = 1000f / (_averagePacketTimes.Sum() / _averagePacketTimes.Count);
 #if DEBUG
                 if (packet.commandType != CommandType.UpdatePlayerInfo)
                     Log.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");

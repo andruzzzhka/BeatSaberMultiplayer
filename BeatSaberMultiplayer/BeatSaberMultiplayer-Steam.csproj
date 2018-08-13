@@ -129,6 +129,7 @@
     <Compile Include="Misc\ReflectionUtil.cs" />
     <Compile Include="Misc\Serialization.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
+    <Compile Include="OnlinePauseAnimController.cs" />
     <Compile Include="OnlineVRController.cs" />
     <Compile Include="PlayerInfoDisplay.cs" />
     <Compile Include="Plugin.cs" />
