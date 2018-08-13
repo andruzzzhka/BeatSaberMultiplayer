@@ -373,14 +373,23 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 byte difficulty = packet.additionalData[0];
                                 SongInfo songInfo = new SongInfo(packet.additionalData.Skip(1).ToArray());
 
-                                GameplayOptions gameplayOptions = new GameplayOptions();
-                                gameplayOptions.noEnergy = roomInfo.noFail;
-
                                 MainGameSceneSetupData mainGameSceneSetupData = Resources.FindObjectsOfTypeAll<MainGameSceneSetupData>().FirstOrDefault();
 
                                 if (mainGameSceneSetupData != null)
                                 {
-                                    Client.instance.playerInfo.playerState = PlayerState.Game;
+                                    GameplayOptions gameplayOptions = new GameplayOptions();
+
+                                    if (Config.Instance.SpectatorMode)
+                                    {
+                                        Client.instance.playerInfo.playerState = PlayerState.Spectating;
+                                        gameplayOptions.noEnergy = true;
+                                    }
+                                    else
+                                    {
+                                        Client.instance.playerInfo.playerState = PlayerState.Game;
+                                        gameplayOptions.noEnergy = roomInfo.noFail;
+                                    }
+
                                     roomInfo.roomState = RoomState.InGame;
                                     mainGameSceneSetupData.Init(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(songInfo.levelId)).GetDifficultyLevel((LevelDifficulty)difficulty), gameplayOptions, GameplayMode.SoloStandard, 0f);
                                     mainGameSceneSetupData.didFinishEvent += InGameOnlineController.Instance.SongFinished;

@@ -22,6 +22,8 @@ namespace BeatSaberMultiplayer.Data
         public uint playerComboBlocks;
         public float playerEnergy;
 
+        public float playerProgress;
+
         public Vector3 headPos;
         public Vector3 rightHandPos;
         public Vector3 leftHandPos;
@@ -49,7 +51,9 @@ namespace BeatSaberMultiplayer.Data
             playerComboBlocks = BitConverter.ToUInt32(data, 21 + nameLength);
             playerEnergy = BitConverter.ToSingle(data, 25 + nameLength);
 
-            byte[] avatar = data.Skip(29 + nameLength).Take(84).ToArray();
+            playerProgress = BitConverter.ToSingle(data, 29 + nameLength);
+
+            byte[] avatar = data.Skip(33 + nameLength).Take(84).ToArray();
 
             rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
             leftHandPos = Serialization.ToVector3(avatar.Skip(12).Take(12).ToArray());
@@ -75,8 +79,9 @@ namespace BeatSaberMultiplayer.Data
             buffer.AddRange(BitConverter.GetBytes(playerCutBlocks));
             buffer.AddRange(BitConverter.GetBytes(playerComboBlocks));
             buffer.AddRange(BitConverter.GetBytes(playerEnergy));
-            
-                        
+
+            buffer.AddRange(BitConverter.GetBytes(playerProgress));
+
             buffer.AddRange(Serialization.Combine(
                             Serialization.ToBytes(rightHandPos),
                             Serialization.ToBytes(leftHandPos),

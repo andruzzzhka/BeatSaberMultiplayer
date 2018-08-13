@@ -13,6 +13,7 @@ namespace BeatSaberMultiplayer {
         [SerializeField] private int[] _serverHubPorts;
         [SerializeField] private bool _showAvatarsInGame;
         [SerializeField] private bool _showAvatarsInRoom;
+        [SerializeField] private bool _spectatorMode;
 
         private static Config _instance;
         
@@ -78,11 +79,22 @@ namespace BeatSaberMultiplayer {
             }
         }
 
+        public bool SpectatorMode
+        {
+            get { return _spectatorMode; }
+            set
+            {
+                _spectatorMode = value;
+                MarkDirty();
+            }
+        }
+
         Config() {
             _serverHubIPs = new string[]{ "127.0.0.1", "87.103.199.211" };
             _serverHubPorts = new int[] { 3700, 3700 };
             _showAvatarsInGame = false;
             _showAvatarsInRoom = true;
+            _spectatorMode = false;
             MarkDirty();
         }
 
