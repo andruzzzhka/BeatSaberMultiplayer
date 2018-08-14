@@ -143,6 +143,11 @@ namespace BeatSaberMultiplayer
             receiverThread.Start();
         }
 
+        public void RemovePacketsFromQueue(CommandType type)
+        {
+            _packetsQueue = new Queue<BasePacket>(_packetsQueue.ToList().RemoveAll(x => x.commandType == type));
+        }
+
         public void Update()
         {
             while (_packetsQueue.Count > 0)

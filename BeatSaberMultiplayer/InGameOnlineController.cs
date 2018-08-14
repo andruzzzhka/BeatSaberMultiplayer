@@ -25,6 +25,7 @@ namespace BeatSaberMultiplayer
         private ScoreController _scoreController;
         private GameEnergyCounter _energyController;
         private PauseMenuManager _pauseMenuManager;
+        public AudioTimeSyncController audioTimeSync;
 
         private List<AvatarController> _avatars = new List<AvatarController>();
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
@@ -197,6 +198,11 @@ namespace BeatSaberMultiplayer
                 Client.instance.playerInfo.leftHandRot = GetXRNodeWorldPosRot(XRNode.LeftHand).Rotation;
                 Client.instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
                 Client.instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
+
+                if (_currentScene.name == "StandardLevel")
+                {
+                    Client.instance.playerInfo.playerProgress = audioTimeSync.songTime;
+                }
 
                 Client.instance.SendPlayerInfo();
             }
@@ -388,6 +394,8 @@ namespace BeatSaberMultiplayer
             Log.Info("Found energy controller");
 #endif
 
+            audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
+
             _pauseMenuManager = FindObjectsOfType<PauseMenuManager>().First();
 
             if (_pauseMenuManager != null)
@@ -405,6 +413,16 @@ namespace BeatSaberMultiplayer
 
             _pauseMenuManager.SetPrivateField("_ignoreFirstFrameVRControllerInteraction", true);
             _pauseMenuManager.GetPrivateField<GameObject>("_gameObjectsWrapper").SetActive(true);
+        }
+
+        public void PauseSong()
+        {
+            Resources.FindObjectsOfTypeAll<SongController>().First().PauseSong();
+        }
+
+        public void ResumeSong()
+        {
+            Resources.FindObjectsOfTypeAll<SongController>().First().ResumeSong();
         }
 
         private void EnergyDidChangeEvent(float energy)

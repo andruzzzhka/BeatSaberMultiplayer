@@ -51,6 +51,7 @@ namespace BeatSaberMultiplayer
 
         bool rendererEnabled = true;
         Camera _camera;
+        public bool forcePlayerInfo = false;
 
         public PosRot HeadPosRot => new PosRot(interpHeadPos, interpHeadRot);
 
@@ -121,7 +122,7 @@ namespace BeatSaberMultiplayer
         void Update()
         {
 
-            if (avatar != null)
+            if (avatar != null && !forcePlayerInfo)
             {
                 if (Client.instance.Tickrate < 88f)
                 {
@@ -234,6 +235,19 @@ namespace BeatSaberMultiplayer
                 targetLeftHandRot = _playerInfo.leftHandRot;
 
                 playerNameText.text = playerInfo.playerName;
+
+                if (forcePlayerInfo)
+                {
+                    interpHeadPos = targetHeadPos;
+                    interpLeftHandPos = targetLeftHandPos;
+                    interpRightHandPos = targetRightHandPos;
+
+                    interpHeadRot = targetHeadRot;
+                    interpLeftHandRot = targetLeftHandRot;
+                    interpRightHandRot = targetRightHandRot;
+
+                    transform.position = interpHeadPos;
+                }
 
             }
             catch (Exception e)

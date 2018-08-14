@@ -22,6 +22,8 @@ namespace BeatSaberMultiplayer
 
         float interpolationProgress;
 
+        public bool forcePlayerInfo;
+
         public OnlineVRController()
         {
             VRController original = GetComponent<VRController>();
@@ -47,27 +49,24 @@ namespace BeatSaberMultiplayer
             {
                 if(Client.instance != null && Client.instance.Connected)
                 {
-                    if (Client.instance.Tickrate < 88f)
+                    if (!forcePlayerInfo)
                     {
                         interpolationProgress += Time.deltaTime * Client.instance.Tickrate;
+
+
+                        if (interpolationProgress > 1f)
+                        {
+                            interpolationProgress = 1f;
+                        }
+
+                        interpPos = Vector3.Lerp(lastPos, targetPos, interpolationProgress);
+                        interpRot = Quaternion.Lerp(lastRot, targetRot, interpolationProgress);
+
+                        transform.position = interpPos;
+                        transform.rotation = interpRot;
+
+                        PersistentSingleton<VRPlatformHelper>.instance.AdjustPlatformSpecificControllerTransform(transform);
                     }
-                    else
-                    {
-                        interpolationProgress = 1f;
-                    }
-
-                    if (interpolationProgress > 1f)
-                    {
-                        interpolationProgress = 1f;
-                    }
-
-                    interpPos = Vector3.Lerp(lastPos, targetPos, interpolationProgress);
-                    interpRot = Quaternion.Lerp(lastRot, targetRot, interpolationProgress);
-
-                    transform.position = interpPos;
-                    transform.rotation = interpRot;
-
-                    PersistentSingleton<VRPlatformHelper>.instance.AdjustPlatformSpecificControllerTransform(transform);
                 }
                 else
                 {
@@ -95,6 +94,14 @@ namespace BeatSaberMultiplayer
 
             lastRot = targetRot;
             targetRot = (_node == XRNode.LeftHand ? _playerInfo.leftHandRot : _playerInfo.rightHandRot);
+
+            if (forcePlayerInfo)
+            {
+                transform.position = targetPos;
+                transform.rotation = targetRot;
+
+                PersistentSingleton<VRPlatformHelper>.instance.AdjustPlatformSpecificControllerTransform(transform);
+            }
         }
     }
 }
