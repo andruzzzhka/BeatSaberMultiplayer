@@ -16,6 +16,7 @@
     <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="IPAddressRange" Version="3.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="Open.Nat" Version="2.1.0" />
   </ItemGroup>

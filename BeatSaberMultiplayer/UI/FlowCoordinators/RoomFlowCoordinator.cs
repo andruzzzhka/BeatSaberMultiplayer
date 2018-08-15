@@ -147,20 +147,27 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void LeaveRoom(bool destroyRoom = false)
         {
-            if (joined)
+            try
             {
-                if (destroyRoom)
+                if (joined)
                 {
-                    Client.instance.DestroyRoom();
+                    if (destroyRoom)
+                    {
+                        Client.instance.DestroyRoom();
+                    }
+                    else
+                    {
+                        Client.instance.LeaveRoom();
+                    }
+                    Client.instance.Disconnect();
+                    joined = false;
                 }
-                else
-                {
-                    Client.instance.LeaveRoom();
-                }
-                Client.instance.Disconnect();
-                joined = false;
             }
-            
+            catch
+            {
+                Log.Info("Can't disconnect from ServerHub properly!");
+            }
+
             HideDifficultySelection();
             HideSongsList();
             HideLeaderboard();
@@ -215,22 +222,22 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             break;
                         case 1:
                             {
-                                _roomNavigationController.DisplayError("Room not found");
+                                _roomNavigationController.DisplayError("Can't join room!\n" + "Room not found");
                             }
                             break;
                         case 2:
                             {
-                                _roomNavigationController.DisplayError("Incorrect password");
+                                _roomNavigationController.DisplayError("Can't join room!\n" + "Incorrect password");
                             }
                             break;
                         case 3:
                             {
-                                _roomNavigationController.DisplayError("Too much players");
+                                _roomNavigationController.DisplayError("Can't join room!\n" + "Too much players");
                             }
                             break;
                         default:
                             {
-                                _roomNavigationController.DisplayError("Unknown error");
+                                _roomNavigationController.DisplayError("Can't join room!\n" + "Unknown error");
                             }
                             break;
 
@@ -459,6 +466,26 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 {
                                     _difficultySelectionViewController.SetPlayersReady(playersReady, playersTotal);
                                 }
+                            }
+                            break;
+                        case CommandType.Disconnect:
+                            {
+                                if (packet.additionalData != null && packet.additionalData.Length > 0)
+                                {
+                                    string reason = Encoding.UTF8.GetString(packet.additionalData, 4, BitConverter.ToInt32(packet.additionalData, 0));
+
+                                    HideLeaderboard();
+                                    HideDifficultySelection();
+                                    HideVotingList();
+                                    HideSongsList();
+
+                                    _roomNavigationController.DisplayError(reason);
+                                }
+                                else
+                                {
+                                    _roomNavigationController.DisplayError("ServerHub refused connection!");
+                                }
+
                             }
                             break;
                     }

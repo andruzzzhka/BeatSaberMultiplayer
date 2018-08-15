@@ -1,10 +1,12 @@
 ﻿using ServerHub.Data;
+using ServerHub.Hub;
 using ServerHub.Misc;
 using ServerHub.Rooms;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
@@ -36,6 +38,8 @@ namespace ServerHub.Data
         {
             try
             {
+                
+
                 BasePacket packet = this.ReceiveData(true);
 
                 if (packet.commandType == CommandType.Connect && packet.additionalData != null && packet.additionalData.Length > 0)
@@ -50,6 +54,36 @@ namespace ServerHub.Data
                     }
 
                     playerInfo = new PlayerInfo(packet.additionalData.Skip(4).ToArray());
+
+                    if (Settings.Instance.Access.WhitelistEnabled)
+                    {
+                        if (!IsWhitelisted())
+                        {
+                            List<byte> buffer = new List<byte>();
+
+                            byte[] reasonText = Encoding.UTF8.GetBytes("You are not whitelisted on this ServerHub!");
+                            buffer.AddRange(BitConverter.GetBytes(reasonText.Length));
+                            buffer.AddRange(reasonText);
+
+                            this.SendData(new BasePacket(CommandType.Disconnect, buffer.ToArray()));
+                            Logger.Instance.Warning($"Client {playerInfo.playerName}({playerInfo.playerId})@{((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address} is not whitelisted!");
+                            return false;
+                        }
+                    }
+
+                    if (IsBlacklisted())
+                    {
+                        List<byte> buffer = new List<byte>();
+
+                        byte[] reasonText = Encoding.UTF8.GetBytes("You are banned on this ServerHub!");
+                        buffer.AddRange(BitConverter.GetBytes(reasonText.Length));
+                        buffer.AddRange(reasonText);
+
+                        this.SendData(new BasePacket(CommandType.Disconnect, buffer.ToArray()));
+                        Logger.Instance.Warning($"Client {playerInfo.playerName}({playerInfo.playerId})@{((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address} is blacklisted!");
+                        return false;
+                    }
+
                     playerInfo.playerState = PlayerState.Lobby;
                     this.SendData(new BasePacket(CommandType.Connect, new byte[0]));
 
@@ -70,6 +104,20 @@ namespace ServerHub.Data
                 Logger.Instance.Warning($"Can't initialize client! Exception: {e}");
                 return false;
             }
+        }
+
+        public bool IsBlacklisted()
+        {
+            return  Program.blacklistedIPs.Any(x => x.Contains(((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address)) ||
+                    Program.blacklistedIDs.Contains(playerInfo.playerId) ||
+                    Program.blacklistedNames.Contains(playerInfo.playerName);
+        }
+
+        public bool IsWhitelisted()
+        {
+            return  Program.whitelistedIPs.Any(x => x.Contains(((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address)) ||
+                    Program.whitelistedIDs.Contains(playerInfo.playerId) ||
+                    Program.whitelistedNames.Contains(playerInfo.playerName);
         }
 
         void ClientLoop(object sender, HighResolutionTimerElapsedEventArgs e)

@@ -36,7 +36,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public void DisplayError(string error)
         {
             if(_errorText != null)
-                _errorText.text = "Can't join room!\n"+error;
+                _errorText.text = error;
         }
 
         protected override void LeftAndRightScreenViewControllers(out VRUIViewController leftScreenViewController, out VRUIViewController rightScreenViewController)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Newtonsoft.Json;
@@ -91,10 +92,66 @@ namespace ServerHub.Misc {
             }
         }
 
+        [JsonObject(MemberSerialization.OptIn)]
+        public class AccessSettings
+        {
+            private List<string> _blacklist;
+
+            private bool _whitelistEnabled;
+
+            private List<string> _whitelist;
+
+            private Action MarkDirty { get; }
+
+            [JsonProperty]
+            public List<string> Blacklist
+            {
+                get => _blacklist;
+                set
+                {
+                    _blacklist = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
+            public bool WhitelistEnabled
+            {
+                get => _whitelistEnabled;
+                set
+                {
+                    _whitelistEnabled = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
+            public List<string> Whitelist
+            {
+                get => _whitelist;
+                set
+                {
+                    _whitelist = value;
+                    MarkDirty();
+                }
+            }
+
+            public AccessSettings(Action markDirty)
+            {
+                MarkDirty = markDirty;
+                _blacklist = new List<string>();
+                _whitelistEnabled = false;
+                _whitelist = new List<string>();
+            }
+
+        }
+
         [JsonProperty]
         public ServerSettings Server { get; }
         [JsonProperty]
         public LoggerSettings Logger { get; }
+        [JsonProperty]
+        public AccessSettings Access { get; }
 
         private static Settings _instance;
 
@@ -123,6 +180,7 @@ namespace ServerHub.Misc {
         Settings() {
             Server = new ServerSettings(MarkDirty);
             Logger = new LoggerSettings(MarkDirty);
+            Access = new AccessSettings(MarkDirty);
             MarkDirty();
         }
 

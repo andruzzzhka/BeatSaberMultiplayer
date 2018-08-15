@@ -7,6 +7,8 @@ using ServerHub.Misc;
 using ServerHub.Rooms;
 using System.IO;
 using System.Collections.Generic;
+using NetTools;
+using ServerHub.Data;
 #if DEBUG
 using System.IO.Pipes;
 using System.Diagnostics;
@@ -16,6 +18,14 @@ namespace ServerHub.Hub
 {
     class Program {
         private static string IP { get; set; }
+
+        public static List<IPAddressRange> blacklistedIPs;
+        public static List<ulong> blacklistedIDs;
+        public static List<string> blacklistedNames;
+        
+        public static List<IPAddressRange> whitelistedIPs;
+        public static List<ulong> whitelistedIDs;
+        public static List<string> whitelistedNames;
 
         static void Main(string[] args) => new Program().Start(args);
 
@@ -34,6 +44,8 @@ namespace ServerHub.Hub
         void Start(string[] args) {
 
             AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
+
+            UpdateLists();
 
             if (args.Length > 0)
             {
@@ -145,13 +157,165 @@ namespace ServerHub.Hub
                 case "clients":
                     if (!exitAfterPrint)
                     {
+                        s += "Clients in Lobby:";
                         foreach (var client in HubListener.GetClientsInLobby())
                         {
                             IPEndPoint remote = (IPEndPoint)client.tcpClient.Client.RemoteEndPoint;
-                            s += $"{Environment.NewLine}[{client.playerInfo.playerState}] {client.playerInfo.playerName} @ {remote.Address}:{remote.Port}";
+                            s += $"{Environment.NewLine}[{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
                         }
-                        Logger.Instance.Log($"Clients in Lobby:{s}");
+
+                        if (RoomsController.GetRoomsList().Count > 0)
+                        {
+                            s += $"{Environment.NewLine}Clients in Rooms:";
+                            foreach (var room in RoomsController.GetRoomsList())
+                            {
+                                s += $"{Environment.NewLine}Room {room.roomId}:";
+                                if (room.roomClients.Count == 0)
+                                {
+                                    s += $"{Environment.NewLine}No Clients";
+                                }
+                                else
+                                {
+                                    foreach (var client in room.roomClients)
+                                    {
+                                        IPEndPoint remote = (IPEndPoint)client.tcpClient.Client.RemoteEndPoint;
+                                        s += $"{Environment.NewLine}[{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
+                                    }
+                                }
+                            }
+                        }
+
+
+                        Logger.Instance.Log(s);
                         
+                    }
+                    break;
+                case "blacklist":
+                    {
+                        if (comArgs.Length == 2 && !string.IsNullOrEmpty(comArgs[1]))
+                        {
+                            switch (comArgs[0])
+                            {
+                                case "add":
+                                    {
+                                        if (!Settings.Instance.Access.Blacklist.Contains(comArgs[1]))
+                                        {
+                                            Settings.Instance.Access.Blacklist.Add(comArgs[1]);
+                                            Logger.Instance.Log($"Successfully banned {comArgs[1]}", exitAfterPrint);
+                                            Settings.Instance.Save();
+                                            UpdateLists();
+                                        }
+                                        else
+                                        {
+                                            Logger.Instance.Log($"{comArgs[1]} is already blacklisted", exitAfterPrint);
+                                        }
+                                    }
+                                    break;
+                                case "remove":
+                                    {
+                                        if (Settings.Instance.Access.Blacklist.Remove(comArgs[1]))
+                                        {
+                                            Logger.Instance.Log($"Successfully unbanned {comArgs[1]}", exitAfterPrint);
+                                            Settings.Instance.Save();
+                                            UpdateLists();
+                                        }
+                                        else
+                                        {
+                                            Logger.Instance.Warning($"{comArgs[1]} is not banned", exitAfterPrint);
+                                        }
+                                    }
+                                    break;
+                                default:
+                                    {
+                                        Logger.Instance.Warning($"Command usage: blacklist [add/remove] [playerID/IP]", exitAfterPrint);
+                                    }
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            Logger.Instance.Warning($"Command usage: blacklist [add/remove] [playerID/IP]", exitAfterPrint);
+                        }
+                    }
+                    break;
+                case "whitelist":
+                    {
+                        if (comArgs.Length >= 1)
+                        {
+                            switch (comArgs[0])
+                            {
+                                case "enable":
+                                    {
+                                        Settings.Instance.Access.WhitelistEnabled = true;
+                                        Logger.Instance.Log($"Whitelist enabled", exitAfterPrint);
+                                        Settings.Instance.Save();
+                                        UpdateLists();
+                                    }
+                                    break;
+                                case "disable":
+                                    {
+                                        Settings.Instance.Access.WhitelistEnabled = false;
+                                        Logger.Instance.Log($"Whitelist disabled", exitAfterPrint);
+                                        Settings.Instance.Save();
+                                        UpdateLists();
+                                    }
+                                    break;
+                                case "add":
+                                    {
+                                        if (comArgs.Length == 2 && !string.IsNullOrEmpty(comArgs[1]))
+                                        {
+                                            if (!Settings.Instance.Access.Whitelist.Contains(comArgs[1]))
+                                            {
+                                                Settings.Instance.Access.Whitelist.Add(comArgs[1]);
+                                                Logger.Instance.Log($"Successfully whitelisted {comArgs[1]}", exitAfterPrint);
+                                                Settings.Instance.Save();
+                                                UpdateLists();
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Log($"{comArgs[1]} is already whitelisted", exitAfterPrint);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]", exitAfterPrint);
+                                        }
+                                    }
+                                    break;
+                                case "remove":
+                                    {
+                                        if (comArgs.Length == 2 && !string.IsNullOrEmpty(comArgs[1]))
+                                        {
+                                            if (Settings.Instance.Access.Whitelist.Remove(comArgs[1]))
+                                            {
+                                                Logger.Instance.Log($"Successfully removed {comArgs[1]} from whitelist", exitAfterPrint);
+                                                Settings.Instance.Save();
+                                                UpdateLists();
+                                            }
+                                            else
+                                            {
+                                                Logger.Instance.Warning($"{comArgs[1]} is not whitelisted", exitAfterPrint);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]", exitAfterPrint);
+                                        }
+                                    }
+                                    break;
+                                default:
+                                    {
+                                        Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]", exitAfterPrint);
+                                    }
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [playerID/IP]", exitAfterPrint);
+                        }
+
+
                     }
                     break;
                 case "tickrate":
@@ -183,6 +347,48 @@ namespace ServerHub.Hub
             if (exitAfterPrint)
                 Environment.Exit(0);
         }
+
+        private void UpdateLists()
+        {
+            IPAddressRange tryIp;
+            ulong tryId;
+
+            blacklistedIPs = Settings.Instance.Access.Blacklist.Where(x => IPAddressRange.TryParse(x, out tryIp)).Select(y => IPAddressRange.Parse(y)).ToList();
+            blacklistedIDs = Settings.Instance.Access.Blacklist.Where(x => ulong.TryParse(x, out tryId)).Select(y => ulong.Parse(y)).ToList();
+            blacklistedNames = Settings.Instance.Access.Blacklist.Where(x => !IPAddressRange.TryParse(x, out tryIp) && !ulong.TryParse(x, out tryId)).ToList();
+
+            whitelistedIPs = Settings.Instance.Access.Whitelist.Where(x => IPAddressRange.TryParse(x, out tryIp)).Select(y => IPAddressRange.Parse(y)).ToList();
+            whitelistedIDs = Settings.Instance.Access.Whitelist.Where(x => ulong.TryParse(x, out tryId)).Select(y => ulong.Parse(y)).ToList();
+            whitelistedNames = Settings.Instance.Access.Whitelist.Where(x => !IPAddressRange.TryParse(x, out tryIp) && !ulong.TryParse(x, out tryId)).ToList();
+            
+            foreach (var client in HubListener.GetClientsInLobby())
+            {
+                if (Settings.Instance.Access.WhitelistEnabled && !client.IsWhitelisted())
+                {
+                    client.KickClient("You are not whitelisted!");
+                }
+                if (client.IsBlacklisted())
+                {
+                    client.KickClient("You are banned!");
+                }
+            }
+
+            foreach (var room in RoomsController.GetRoomsList())
+            {
+                List<Client> clients = new List<Client>(room.roomClients);
+                foreach (var client in clients)
+                {
+                    if (Settings.Instance.Access.WhitelistEnabled && !client.IsWhitelisted())
+                    {
+                        client.KickClient("You are not whitelisted!");
+                    }
+                    if (client.IsBlacklisted())
+                    {
+                        client.KickClient("You are banned!");
+                    }
+                }
+            }
+        } 
 
         string GetPublicIPv4() {
             using (var client = new WebClient()) {
