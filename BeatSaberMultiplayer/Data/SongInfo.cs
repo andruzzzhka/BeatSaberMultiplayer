@@ -24,7 +24,14 @@ namespace BeatSaberMultiplayer.Data
                 int nameLength = BitConverter.ToInt32(data, 0);
                 songName = Encoding.UTF8.GetString(data, 4, nameLength);
 
-                levelId = BitConverter.ToString(data.Skip(4 + nameLength).Take(16).ToArray()).Replace("-","");
+                if (data.Skip(5 + nameLength).Take(15).Max() == 0)
+                {
+                    levelId = "Level" + data[4 + nameLength];
+                }
+                else
+                {
+                    levelId = BitConverter.ToString(data.Skip(4 + nameLength).Take(16).ToArray()).Replace("-", "");
+                }
 
                 songDuration = BitConverter.ToSingle(data, 20+nameLength);
             }
@@ -38,7 +45,15 @@ namespace BeatSaberMultiplayer.Data
             buffer.AddRange(BitConverter.GetBytes(nameBuffer.Length));
             buffer.AddRange(nameBuffer);
 
-            buffer.AddRange(HexConverter.ConvertHexToBytesX(levelId));
+            if (levelId.Length == 32)
+            {
+                buffer.AddRange(HexConverter.ConvertHexToBytesX(levelId));
+            }
+            else if(levelId.StartsWith("Level"))
+            {
+                buffer.Add(byte.Parse(levelId.Substring(5)));
+                buffer.AddRange(new byte[15]);
+            }
 
             buffer.AddRange(BitConverter.GetBytes(songDuration));
 

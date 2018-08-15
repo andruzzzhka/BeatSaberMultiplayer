@@ -24,8 +24,8 @@ namespace BeatSaberMultiplayer
 
         PlayerInfo[] _playerInfos;
 
-        private CustomLevel _selectedSong;
-        public CustomLevel SelectedSong { get { return _selectedSong; } set {SetSong(value);} }
+        private IStandardLevel _selectedSong;
+        public IStandardLevel SelectedSong { get { return _selectedSong; } set {SetSong(value);} }
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
@@ -80,7 +80,7 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SetSong(CustomLevel song)
+        public void SetSong(IStandardLevel song)
         {
             if (_songTableCell == null)
                 return;

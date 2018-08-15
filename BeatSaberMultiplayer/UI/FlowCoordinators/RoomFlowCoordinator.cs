@@ -51,6 +51,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         RoomManagementViewController _roomManagementViewController;
 
+        LevelCollectionsForGameplayModes _levelCollections;
+
         RoomInfo roomInfo;
 
         string ip;
@@ -245,6 +247,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
                                 if (packet.additionalData[0] == 1)
                                 {
+                                    _levelCollections = Resources.FindObjectsOfTypeAll<LevelCollectionsForGameplayModes>().First();
+
                                     int songsCount = BitConverter.ToInt32(packet.additionalData, 1);
 
                                     Dictionary<SongInfo, bool> songsBuffer = new Dictionary<SongInfo, bool>();
@@ -265,7 +269,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                         SongInfo song = new SongInfo(songInfoBytes);
 
                                         availableSongInfos.Add(song);
-                                        songsBuffer.Add(song, SongLoader.CustomLevels.Any(x => x.levelID.StartsWith(song.levelId)));
+                                        if (!songsBuffer.ContainsKey(song))
+                                        {
+                                            songsBuffer.Add(song, _levelCollections.GetLevels(GameplayMode.SoloStandard).Any(x => x.levelID.StartsWith(song.levelId)));
+                                        }
+                                        else
+                                        {
+                                            Log.Warning("Song "+song.songName+" is already listed!");
+                                        }
                                     }
 
                                     byte[] roomInfoSizeBytes = new byte[4];
@@ -341,7 +352,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     if (Client.instance.playerInfo.playerState == PlayerState.DownloadingSongs)
                                         return;
 
-                                    CustomLevel selectedLevel = SongLoader.CustomLevels.First(x => x.levelID.StartsWith(selectedSong.levelId));
+                                    IStandardLevel selectedLevel = _levelCollections.GetLevels(GameplayMode.SoloStandard).First(x => x.levelID.StartsWith(selectedSong.levelId));
                                     HideLeaderboard();
                                     HideSongsList();
                                     HideVotingList();
@@ -391,7 +402,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     }
 
                                     roomInfo.roomState = RoomState.InGame;
-                                    mainGameSceneSetupData.Init(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(songInfo.levelId)).GetDifficultyLevel((LevelDifficulty)difficulty), gameplayOptions, GameplayMode.SoloStandard, 0f);
+                                    mainGameSceneSetupData.Init(_levelCollections.GetLevels(GameplayMode.SoloStandard).First(x => x.levelID.StartsWith(songInfo.levelId)).GetDifficultyLevel((LevelDifficulty)difficulty), gameplayOptions, GameplayMode.SoloStandard, 0f);
                                     mainGameSceneSetupData.didFinishEvent += InGameOnlineController.Instance.SongFinished;
                                     mainGameSceneSetupData.TransitionToScene(0.7f);
                                     return;
@@ -494,7 +505,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         HideVotingList();
                         if (roomInfo.selectedSong != null)
                         {
-                            ShowDifficultySelection(SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                            ShowDifficultySelection(_levelCollections.GetLevels(GameplayMode.SoloStandard).First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
                             Client.instance.SendPlayerReady(Client.instance.isHost);
                         }
                     }
@@ -504,7 +515,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         HideDifficultySelection();
                         HideSongsList();
                         HideVotingList();
-                        ShowLeaderboard(new PlayerInfo[0], SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                        ShowLeaderboard(new PlayerInfo[0], _levelCollections.GetLevels(GameplayMode.SoloStandard).First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
                     }
                     break;
                 case RoomState.Results:
@@ -512,7 +523,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         HideDifficultySelection();
                         HideSongsList();
                         HideVotingList();
-                        ShowLeaderboard(new PlayerInfo[0], SongLoader.CustomLevels.First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                        ShowLeaderboard(new PlayerInfo[0], _levelCollections.GetLevels(GameplayMode.SoloStandard).First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
                     }
                     break;
             }
@@ -530,8 +541,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 _roomNavigationController.PushViewController(_songSelectionViewController, false);
 
-                List<CustomLevel> availableSongs = new List<CustomLevel>();
-                availableSongInfos.ForEach(x => availableSongs.Add(SongLoader.CustomLevels.First(y => y.levelID.StartsWith(x.levelId))));
+                List<IStandardLevel> availableSongs = new List<IStandardLevel>();
+                availableSongInfos.ForEach(x => availableSongs.Add(_levelCollections.GetLevels(GameplayMode.SoloStandard).First(y => y.levelID.StartsWith(x.levelId))));
 
                 _songSelectionViewController.SetSongs(availableSongs);
                 _songSelectionViewController.SongSelected += SongSelected;
@@ -553,12 +564,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        private void SongSelected(CustomLevel song)
+        private void SongSelected(IStandardLevel song)
         {
-            Client.instance.SetSelectedSong(new SongInfo() { songName = song.songName + " " + song.songSubName, levelId = song.levelID.Substring(0, 32) });
+            Client.instance.SetSelectedSong(new SongInfo() { songName = song.songName + " " + song.songSubName, levelId = song.levelID.Substring(0, Math.Min(32, song.levelID.Length)) });
         }
 
-        private void SongLoaded(CustomLevel song)
+        private void SongLoaded(IStandardLevel song)
         {
             if (_difficultySelectionViewController != null)
             {
@@ -567,7 +578,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             PreviewPlayer.CrossfadeTo(song.audioClip, song.previewStartTime, (song.audioClip.length - song.previewStartTime), 1f);
         }
 
-        public void ShowDifficultySelection(CustomLevel song)
+        public void ShowDifficultySelection(IStandardLevel song)
         {
             if (_difficultySelectionViewController == null)
             {
@@ -581,7 +592,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _difficultySelectionViewController.PlayPressed += PlayPressed;
                 _difficultySelectionViewController.ReadyPressed += ReadyPressed;
             }
-            SongLoader.Instance.LoadAudioClipForLevel(song, SongLoaded);
+            if (song is CustomLevel)
+            {
+                SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)song, SongLoaded);
+            }
+            else
+            {
+                _difficultySelectionViewController.SetPlayButtonInteractable(true);
+                PreviewPlayer.CrossfadeTo(song.audioClip, song.previewStartTime, (song.audioClip.length - song.previewStartTime), 1f);
+            }
             _difficultySelectionViewController.SetSelectedSong(song);
             _difficultySelectionViewController.UpdateViewController(Client.instance.isHost);
         }
@@ -591,7 +610,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             Client.instance.SendPlayerReady(ready);
         }
 
-        private void PlayPressed(CustomLevel song, LevelDifficulty difficulty)
+        private void PlayPressed(IStandardLevel song, LevelDifficulty difficulty)
         {
             Client.instance.StartLevel(song, difficulty);
         }
@@ -615,7 +634,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        public void ShowLeaderboard(PlayerInfo[] playerInfos, CustomLevel song)
+        public void ShowLeaderboard(PlayerInfo[] playerInfos, IStandardLevel song)
         {
             if (_leaderboardViewController == null)
             {
@@ -625,8 +644,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 _roomNavigationController.PushViewController(_leaderboardViewController, false);
             }
-
-            SongLoader.Instance.LoadAudioClipForLevel(song, SongLoaded);
+            if (song is CustomLevel)
+            {
+                SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)song, SongLoaded);
+            }
+            else
+            {
+                PreviewPlayer.CrossfadeTo(song.audioClip, song.previewStartTime, (song.audioClip.length - song.previewStartTime), 1f);
+            }
             _leaderboardViewController.SetLeaderboard(playerInfos);
             _leaderboardViewController.SelectedSong = song;
         }
@@ -663,8 +688,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 _roomNavigationController.PushViewController(_votingViewController, false);
 
-                List<CustomLevel> availableSongs = new List<CustomLevel>();
-                availableSongInfos.ForEach(x => availableSongs.Add(SongLoader.CustomLevels.First(y => y.levelID.StartsWith(x.levelId))));
+                List<IStandardLevel> availableSongs = new List<IStandardLevel>();
+                availableSongInfos.ForEach(x => availableSongs.Add(_levelCollections.GetLevels(GameplayMode.SoloStandard).First(y => y.levelID.StartsWith(x.levelId))));
 
                 _votingViewController.SetSongs(availableSongs);
                 _votingViewController.SongSelected += SongSelected;

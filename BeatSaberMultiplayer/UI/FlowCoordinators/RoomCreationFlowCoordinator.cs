@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using VRUI;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
@@ -16,6 +17,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         RoomCreationServerHubsListViewController _serverHubsViewController;
         MainRoomCreationViewController _mainRoomCreationViewController;
         LeftRoomCreationViewController _leftRoomCreationViewController;
+
+        LevelCollectionsForGameplayModes _levelCollections;
 
         ServerHubClient _selectedServerHub;
         RoomSettings _roomSettings;
@@ -44,10 +47,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _mainRoomCreationViewController = BeatSaberUI.CreateViewController<MainRoomCreationViewController>();
                 _mainRoomCreationViewController.CreatedRoom += CreateRoomPressed;
             }
+
+            _levelCollections = Resources.FindObjectsOfTypeAll<LevelCollectionsForGameplayModes>().First();
+
             if (_leftRoomCreationViewController == null)
             {
                 _leftRoomCreationViewController = BeatSaberUI.CreateViewController<LeftRoomCreationViewController>();
-                _leftRoomCreationViewController.SetSongs(SongLoader.CustomLevels);
+                _leftRoomCreationViewController.SetSongs(_levelCollections.GetLevels(GameplayMode.SoloStandard).Cast<IStandardLevel>().ToList());
             }
 
             _serverHubsViewController.PresentModalViewController(_mainRoomCreationViewController, null);
@@ -70,7 +76,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 return;
 
             _roomSettings = settings;
-            _roomSettings.AvailableSongs = _leftRoomCreationViewController.selectedSongs.Select(x => new SongInfo() { songName = x.songName + " " + x.songSubName, levelId = x.levelID.Substring(0, 32), songDuration = x.audioClip.length }).ToList();
+            _roomSettings.AvailableSongs = _leftRoomCreationViewController.selectedSongs.Select(x => new SongInfo() { songName = x.songName + " " + x.songSubName, levelId = x.levelID.Substring(0, Math.Min(32, x.levelID.Length)), songDuration = x.audioClip.length }).ToList();
 
             if (Client.instance == null)
             {

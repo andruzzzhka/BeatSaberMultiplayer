@@ -19,6 +19,9 @@ namespace BeatSaberMultiplayer
 {
     class InGameOnlineController : MonoBehaviour
     {
+
+        public static Quaternion oculusTouchRotOffset = Quaternion.Euler(-40f, 0f, 0f);
+        public static Vector3 oculusTouchPosOffset = new Vector3(0f, 0f, 0.055f);
         public static InGameOnlineController Instance;
 
         private GameplayManager _gameManager;
@@ -196,8 +199,21 @@ namespace BeatSaberMultiplayer
                 Client.instance.playerInfo.headRot = GetXRNodeWorldPosRot(XRNode.Head).Rotation;
                 Client.instance.playerInfo.leftHandPos = GetXRNodeWorldPosRot(XRNode.LeftHand).Position;
                 Client.instance.playerInfo.leftHandRot = GetXRNodeWorldPosRot(XRNode.LeftHand).Rotation;
+
+                if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
+                {
+                    Client.instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
+                    Client.instance.playerInfo.leftHandPos += oculusTouchPosOffset;
+                }
+
                 Client.instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
                 Client.instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
+
+                if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
+                {
+                    Client.instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
+                    Client.instance.playerInfo.leftHandPos += oculusTouchPosOffset;
+                }
 
                 if (_currentScene.name == "StandardLevel")
                 {

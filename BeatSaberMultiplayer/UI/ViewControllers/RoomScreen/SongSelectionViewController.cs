@@ -15,7 +15,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
     class SongSelectionViewController : VRUIViewController, TableView.IDataSource
     {
-        public event Action<CustomLevel> SongSelected;
+        public event Action<IStandardLevel> SongSelected;
 
         private Button _pageUpButton;
         private Button _pageDownButton;
@@ -25,7 +25,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         TableView _songsTableView;
         StandardLevelListTableCell _songTableCellInstance;
 
-        List<CustomLevel> availableSongs = new List<CustomLevel>();
+        List<IStandardLevel> availableSongs = new List<IStandardLevel>();
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
@@ -99,7 +99,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             SongSelected?.Invoke(availableSongs[row]);
         }
 
-        public void SetSongs(List<CustomLevel> levels)
+        public void SetSongs(List<IStandardLevel> levels)
         {
             availableSongs = levels;
 
@@ -127,7 +127,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             StandardLevelListTableCell cell = Instantiate(_songTableCellInstance);
 
-            CustomLevel song = availableSongs[row];
+            IStandardLevel song = availableSongs[row];
 
             cell.coverImage = song.coverImage;
             cell.songName = $"{song.songName}\n<size=80%>{song.songSubName}</size>";

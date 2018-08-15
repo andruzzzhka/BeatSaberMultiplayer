@@ -195,7 +195,7 @@ namespace ServerHub.Data
                                 Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
                                 byte difficulty = packet.additionalData[0];
                                 SongInfo song = new SongInfo(packet.additionalData.Skip(1).ToArray());
-                                song.songDuration += 5f;
+                                song.songDuration += 4f;
                                 joinedRoom.StartLevel(playerInfo, difficulty, song);
                             }
                         }

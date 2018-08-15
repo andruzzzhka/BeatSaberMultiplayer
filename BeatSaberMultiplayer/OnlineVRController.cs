@@ -99,8 +99,6 @@ namespace BeatSaberMultiplayer
             {
                 transform.position = targetPos;
                 transform.rotation = targetRot;
-
-                PersistentSingleton<VRPlatformHelper>.instance.AdjustPlatformSpecificControllerTransform(transform);
             }
         }
     }

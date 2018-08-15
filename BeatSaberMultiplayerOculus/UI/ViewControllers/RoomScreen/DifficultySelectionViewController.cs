@@ -15,12 +15,12 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
     class DifficultySelectionViewController : VRUIViewController
     {
         public event Action DiscardPressed;
-        public event Action<CustomLevel, LevelDifficulty> PlayPressed;
+        public event Action<IStandardLevel, LevelDifficulty> PlayPressed;
         public event Action<bool> ReadyPressed;
 
         StandardLevelListTableCell _selectedSongCell;
 
-        CustomLevel _selectedSong;
+        IStandardLevel _selectedSong;
         LevelDifficulty _selectedDifficulty;
 
         Button _easyButton;
@@ -141,7 +141,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _playersReadyText.text = $"{playersReady}/{playersTotal} players ready";
         }
 
-        public void SetSelectedSong(CustomLevel song)
+        public void SetSelectedSong(IStandardLevel song)
         {
             _selectedSong = song;
             _selectedDifficulty = song.difficultyBeatmaps.OrderByDescending(x => x.difficulty).First().difficulty;

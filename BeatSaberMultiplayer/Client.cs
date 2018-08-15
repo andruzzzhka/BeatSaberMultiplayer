@@ -281,7 +281,7 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void StartLevel(CustomLevel song, LevelDifficulty difficulty)
+        public void StartLevel(IStandardLevel song, LevelDifficulty difficulty)
         {
             if (Connected && tcpClient.Connected)
             {
@@ -290,7 +290,7 @@ namespace BeatSaberMultiplayer
 #endif
                 List<byte> buffer = new List<byte>();
                 buffer.Add((byte)difficulty);
-                buffer.AddRange(new SongInfo() { songName = song.songName +" "+song.songSubName, levelId = song.levelID.Substring(0, 32), songDuration = song.audioClip.length}.ToBytes(false));
+                buffer.AddRange(new SongInfo() { songName = song.songName +" "+song.songSubName, levelId = song.levelID.Substring(0, Math.Min(32, song.levelID.Length)), songDuration = song.audioClip.length}.ToBytes(false));
                 tcpClient.SendData(new BasePacket(CommandType.StartLevel, buffer.ToArray()));
             }
         }

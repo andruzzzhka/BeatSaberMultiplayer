@@ -22,8 +22,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         TableView _songsTableView;
         StandardLevelListTableCell _songTableCellInstance;
 
-        public List<CustomLevel> availableSongs;
-        public List<CustomLevel> selectedSongs { get { return _songsTableView.GetPrivateField<HashSet<int>>("_selectedRows").Select(x => availableSongs[x]).ToList(); } }
+        public List<IStandardLevel> availableSongs;
+        public List<IStandardLevel> selectedSongs { get { return (availableSongs == null || _songsTableView == null) ? null : _songsTableView.GetPrivateField<HashSet<int>>("_selectedRows").Select(x => availableSongs[x]).ToList(); } }
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -102,15 +102,17 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _songsTableView.selectionType = TableView.SelectionType.Multiple;
                 _songsTableView.didSelectRowEvent += SongsTableView_DidSelectRow;
                 _songsTableView.dataSource = this;
+                
+                _songsTableView.ScrollToRow(0, false);
             }
         }
 
         public bool CheckRequirements()
         {
-            return selectedSongs.Count > 0;
+            return selectedSongs != null && selectedSongs.Count > 0;
         }
 
-        public void SetSongs(List<CustomLevel> levels)
+        public void SetSongs(List<IStandardLevel> levels)
         {
             availableSongs = levels;
 
@@ -138,7 +140,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         {
             StandardLevelListTableCell cell = Instantiate(_songTableCellInstance);
 
-            CustomLevel song = availableSongs[row];
+            IStandardLevel song = availableSongs[row];
 
             cell.coverImage = song.coverImage;
             cell.songName = $"{song.songName}\n<size=80%>{song.songSubName}</size>";

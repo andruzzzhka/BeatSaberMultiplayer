@@ -229,8 +229,8 @@ namespace BeatSaberMultiplayer
         private void SetPositionInSong(float time)
         {
             _songAudioSource.timeSamples = Mathf.RoundToInt(Mathf.Lerp(0, _songAudioSource.clip.samples, (time / audioTimeSync.songLength)));
-            _songAudioSource.time = _songAudioSource.time - Mathf.Min(0, _songAudioSource.time);
-            SongSeekBeatmapHandler.OnSongTimeChanged(_songAudioSource.time, Mathf.Min(0, _songAudioSource.time));
+            _songAudioSource.time = _songAudioSource.time - Mathf.Min(1f, _songAudioSource.time);
+            SongSeekBeatmapHandler.OnSongTimeChanged(_songAudioSource.time, Mathf.Min(1f, _songAudioSource.time));
 
             Client.instance.RemovePacketsFromQueue(CommandType.UpdatePlayerInfo);
         }
