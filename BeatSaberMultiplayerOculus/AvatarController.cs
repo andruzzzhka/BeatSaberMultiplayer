@@ -115,8 +115,6 @@ namespace BeatSaberMultiplayer
             playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 0.25f, 0f);
             playerNameText.alignment = TextAlignmentOptions.Center;
             playerNameText.fontSize = 2.5f;
-
-            _camera = Resources.FindObjectsOfTypeAll<Camera>().FirstOrDefault(x => x.name == "Camera Plus");
         }
 
         void Update()
@@ -147,15 +145,22 @@ namespace BeatSaberMultiplayer
 
                 transform.position = interpHeadPos;
 
-                if (Config.Instance.SpectatorMode && _camera != null)
-                {
-                    playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
-                }
-                else
-                {
-                    playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
-                }
-                
+
+
+            }
+
+            if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "CameraPlus") && _camera == null)
+            {
+                _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name == "Camera Plus");
+            }
+
+            if (Config.Instance.SpectatorMode && _camera != null)
+            {
+                playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
+            }
+            else
+            {
+                playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
             }
 
         }

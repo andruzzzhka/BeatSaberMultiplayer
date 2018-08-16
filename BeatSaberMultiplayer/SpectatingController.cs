@@ -33,8 +33,7 @@ namespace BeatSaberMultiplayer
         private OnlineVRController _rightController;
         
         private bool _paused = false;
-
-        private TextMeshPro _syncText;
+        private float _offset = 0.175f;
 
         public static void OnLoad()
         {
@@ -118,6 +117,8 @@ namespace BeatSaberMultiplayer
                                 _leftController.SetPlayerInfo(_spectatedPlayer);
                                 _rightController.SetPlayerInfo(_spectatedPlayer);
                             }
+                            
+                            _spectatedPlayer.playerProgress = Math.Max(_spectatedPlayer.playerProgress-_offset, 0f);
 
                             if (_spectatedPlayer.playerProgress - audioTimeSync.songTime > 0.05f)
                             {
@@ -215,9 +216,31 @@ namespace BeatSaberMultiplayer
                     _spectatedPlayer = _playerInfos[index];
                 }
 
+                if (Input.GetKeyDown(KeyCode.KeypadMultiply))
+                {
+                    _offset += 0.025f;
+                    Log.Info("New offset: " + _offset);
+                }
+
+                if (Input.GetKeyDown(KeyCode.KeypadDivide))
+                {
+                    _offset -= 0.025f;
+                    Log.Info("New offset: "+_offset);
+                }
+
+                if (Input.GetKeyDown(KeyCode.KeypadEnter))
+                {
+#if DEBUG
+                    Log.Info($"Syncing song with a spectated player...\nOffset: {_spectatedPlayer.playerProgress - audioTimeSync.songTime}\nSpectated player: {_spectatedPlayer.playerProgress}\nActual song time: {audioTimeSync.songTime}");
+#endif
+                    SetPositionInSong(_spectatedPlayer.playerProgress + 0.3f);
+                    InGameOnlineController.Instance.PauseSong();
+                    _paused = true;
+                }
+
                 if (_paused)
                 {
-                    if(_spectatedPlayer.playerProgress - audioTimeSync.songTime < 0.025f && _spectatedPlayer.playerProgress - audioTimeSync.songTime > -0.025f)
+                    if((_spectatedPlayer.playerProgress - audioTimeSync.songTime < 0.025f && _spectatedPlayer.playerProgress - audioTimeSync.songTime > -0.025f) || _spectatedPlayer.playerProgress - audioTimeSync.songTime > 0.5f)
                     {
                         InGameOnlineController.Instance.ResumeSong();
                         _paused = false;
@@ -229,8 +252,8 @@ namespace BeatSaberMultiplayer
         private void SetPositionInSong(float time)
         {
             _songAudioSource.timeSamples = Mathf.RoundToInt(Mathf.Lerp(0, _songAudioSource.clip.samples, (time / audioTimeSync.songLength)));
-            _songAudioSource.time = _songAudioSource.time - Mathf.Min(1f, _songAudioSource.time);
-            SongSeekBeatmapHandler.OnSongTimeChanged(_songAudioSource.time, Mathf.Min(1f, _songAudioSource.time));
+            _songAudioSource.time = _songAudioSource.time - Mathf.Min(0f, _songAudioSource.time);
+            SongSeekBeatmapHandler.OnSongTimeChanged(_songAudioSource.time, Mathf.Min(0f, _songAudioSource.time));
 
             Client.instance.RemovePacketsFromQueue(CommandType.UpdatePlayerInfo);
         }
