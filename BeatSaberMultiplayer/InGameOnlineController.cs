@@ -93,7 +93,7 @@ namespace BeatSaberMultiplayer
                 }
 
                 playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene.name == "StandardLevel") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu")).OrderByDescending(x => x.playerScore).ToList();
-                
+
                 int localPlayerIndex = playerInfos.FindIndexInList(Client.instance.playerInfo);
 
                 if (ShowAvatarsInGame() || ShowAvatarsInRoom() || !Config.Instance.SpectatorMode)

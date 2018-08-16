@@ -14,6 +14,8 @@ namespace BeatSaberMultiplayer {
         [SerializeField] private bool _showAvatarsInGame;
         [SerializeField] private bool _showAvatarsInRoom;
         [SerializeField] private bool _spectatorMode;
+        [SerializeField] private bool _enableWebSocketServer;
+        [SerializeField] private int _webSocketPort;
 
         private static Config _instance;
         
@@ -89,12 +91,34 @@ namespace BeatSaberMultiplayer {
             }
         }
 
+        public bool EnableWebSocketServer
+        {
+            get { return _enableWebSocketServer; }
+            set
+            {
+                _enableWebSocketServer = value;
+                MarkDirty();
+            }
+        }
+
+        public int WebSocketPort
+        {
+            get { return _webSocketPort; }
+            set
+            {
+                _webSocketPort = value;
+                MarkDirty();
+            }
+        }
+
         Config() {
             _serverHubIPs = new string[]{ "127.0.0.1", "87.103.199.211" };
             _serverHubPorts = new int[] { 3700, 3700 };
             _showAvatarsInGame = false;
             _showAvatarsInRoom = true;
             _spectatorMode = false;
+            _enableWebSocketServer = false;
+            _webSocketPort = 3701;
             MarkDirty();
         }
 

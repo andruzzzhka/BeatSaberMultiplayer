@@ -10,9 +10,19 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using WebSocketSharp.Server;
 
 namespace BeatSaberMultiplayer
 {
+    public class Broadcast : WebSocketBehavior
+    {
+        protected override void OnOpen()
+        {
+            base.OnOpen();
+            Misc.Log.Info("WebSocket Client Connected!");
+        }
+    }
+
     class Client : MonoBehaviour, IDisposable
     {
         public static event Action ClientCreated;
@@ -28,6 +38,7 @@ namespace BeatSaberMultiplayer
 
         public bool Connected;
 
+        public WebSocketServer webSocket;
         TcpClient tcpClient;
 
         public string ip;
@@ -84,6 +95,10 @@ namespace BeatSaberMultiplayer
 
             if (!dontDestroy)
             {
+                if (webSocket != null)
+                {
+                    webSocket.Stop();
+                }
                 instance = null;
                 ClientDestroyed?.Invoke();
                 Destroy(gameObject);
@@ -141,6 +156,14 @@ namespace BeatSaberMultiplayer
             
             receiverThread = new Thread(ReceiveData) { IsBackground = true };
             receiverThread.Start();
+
+            if (Config.Instance.EnableWebSocketServer && webSocket == null)
+            {
+                webSocket = new WebSocketServer(Config.Instance.WebSocketPort);
+                webSocket.AddWebSocketService<Broadcast>("/");
+                webSocket.Start();
+                Log.Info($"WebSocket Server started at port {Config.Instance.WebSocketPort}");
+            }
         }
 
         public void RemovePacketsFromQueue(CommandType type)
@@ -182,6 +205,11 @@ namespace BeatSaberMultiplayer
                     Log.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");
 #endif
                 _packetsQueue.Enqueue(packet);
+
+                if(webSocket != null)
+                {
+                    webSocket.WebSocketServices["/"].Sessions.BroadcastAsync(packet.ToBytes(), null);
+                }
             }
         }
 
