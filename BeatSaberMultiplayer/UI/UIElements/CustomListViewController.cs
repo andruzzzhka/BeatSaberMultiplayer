@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 namespace BeatSaberMultiplayer.UI.UIElements
 {
-    public class ListViewController : MonoBehaviour
+    public class CustomListViewController : MonoBehaviour
     {
         public event Action<int> ValueChanged;
 

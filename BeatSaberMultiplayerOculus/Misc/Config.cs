@@ -141,6 +141,7 @@ namespace BeatSaberMultiplayer {
 
         void MarkDirty() {
             IsDirty = true;
+            Save();
         }
         
         void MarkClean() {

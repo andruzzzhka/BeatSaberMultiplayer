@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 namespace BeatSaberMultiplayer.UI.UIElements
 {
-    public class BoolViewController : MonoBehaviour
+    public class OnOffViewController : MonoBehaviour
     {
         public event Action<bool> ValueChanged;
 

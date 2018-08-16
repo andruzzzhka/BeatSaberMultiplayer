@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace BeatSaberMultiplayer.UI
@@ -34,11 +35,25 @@ namespace BeatSaberMultiplayer.UI
 
         public void Awake()
         {
-            instance = this;
-            GetUserInfo.UpdateUserInfo();
+            if (instance != this)
+            {
+                DontDestroyOnLoad(this);
+                instance = this;
+                GetUserInfo.UpdateUserInfo();
+                SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
+                CreateUI();
+            }
         }
 
-        public void Start()
+        private void SceneManager_activeSceneChanged(Scene prev, Scene next)
+        {
+            if(next.name == "Menu")
+            {
+                CreateUI();
+            }
+        }
+
+        public void CreateUI()
         {
             try
             {
@@ -64,6 +79,7 @@ namespace BeatSaberMultiplayer.UI
                 }
 
                 CreateOnlineButton();
+                CreateMenu();
             }
             catch (Exception e)
             {
@@ -90,6 +106,27 @@ namespace BeatSaberMultiplayer.UI
                     Log.Exception($"EXCETPION IN ONLINE BUTTON: {e}");
                 }
             });
+        }
+
+        private void CreateMenu()
+        {
+            var onlineSubMenu = SettingsUI.CreateSubMenu("Multiplayer");
+
+            var avatarsInGame = onlineSubMenu.AddBool("Show Avatars In Game");
+            avatarsInGame.GetValue += delegate { return Config.Instance.ShowAvatarsInGame; };
+            avatarsInGame.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInGame = value; };
+
+            var avatarsInRoom = onlineSubMenu.AddBool("Show Avatars In Room");
+            avatarsInRoom.GetValue += delegate { return Config.Instance.ShowAvatarsInRoom; };
+            avatarsInRoom.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInRoom = value; };
+
+            var spectatorMode = onlineSubMenu.AddBool("Spectator Mode (Beta)");
+            spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
+            spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
+
+            var webSocketServer = onlineSubMenu.AddBool("WebSocket Server");
+            webSocketServer.GetValue += delegate { return Config.Instance.EnableWebSocketServer; };
+            webSocketServer.SetValue += delegate (bool value) { Config.Instance.EnableWebSocketServer = value; };
         }
     }
 }

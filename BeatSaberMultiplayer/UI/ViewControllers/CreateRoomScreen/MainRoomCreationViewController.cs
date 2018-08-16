@@ -20,10 +20,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private Button _backButton;
         private Button _editNameButton;
         private Button _editPasswordButton;
-        private BoolViewController _usePasswordToggle;
-        private ListViewController _songSelectionList;
-        private ListViewController _maxPlayersList;
-        private BoolViewController _noFailToggle;
+        private OnOffViewController _usePasswordToggle;
+        private CustomListViewController _songSelectionList;
+        private CustomListViewController _maxPlayersList;
+        private OnOffViewController _noFailToggle;
         private TextMeshProUGUI _nameText;
         private TextMeshProUGUI _passwordText;
 
@@ -51,14 +51,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _passwordKeyboard = BeatSaberUI.CreateViewController<CustomKeyboardViewController>();
                 _passwordKeyboard.enterButtonPressed += PasswordEntered;
 
-                _usePasswordToggle = CustomSettingsHelper.AddToggleSetting<BoolViewController>(rectTransform, "Use Password");
+                _usePasswordToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "Use Password");
                 (_usePasswordToggle.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
                 (_usePasswordToggle.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
                 (_usePasswordToggle.transform as RectTransform).anchoredPosition = new Vector2(0f, 10f);
                 _usePasswordToggle.ValueChanged += UsePasswordToggle_ValueChanged;
                 _usePasswordToggle.Value = _usePassword;
 
-                _songSelectionList = CustomSettingsHelper.AddListSetting<ListViewController>(rectTransform, "Song Selection");
+                _songSelectionList = CustomSettingsHelper.AddListSetting<CustomListViewController>(rectTransform, "Song Selection");
                 (_songSelectionList.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
                 (_songSelectionList.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
                 (_songSelectionList.transform as RectTransform).anchoredPosition = new Vector2(0f, 0f);
@@ -68,7 +68,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _songSelectionList.textForValues = new string[] { "Manual", "Random", "Voting" };
                 _songSelectionList.UpdateText();
 
-                _maxPlayersList = CustomSettingsHelper.AddListSetting<ListViewController>(rectTransform, "Max Players");
+                _maxPlayersList = CustomSettingsHelper.AddListSetting<CustomListViewController>(rectTransform, "Max Players");
                 (_maxPlayersList.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
                 (_maxPlayersList.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
                 (_maxPlayersList.transform as RectTransform).anchoredPosition = new Vector2(0f, -10f);
@@ -76,7 +76,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _maxPlayersList.Value = _maxPlayers;
                 _maxPlayersList.maxValue = 16;
 
-                _noFailToggle = CustomSettingsHelper.AddToggleSetting<BoolViewController>(rectTransform, "No Fail Mode");
+                _noFailToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "No Fail Mode");
                 (_noFailToggle.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
                 (_noFailToggle.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
                 (_noFailToggle.transform as RectTransform).anchoredPosition = new Vector2(0f, -20f);

@@ -448,6 +448,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                             playerInfos.Add(new PlayerInfo(playerInfoBytes));
                                         }
+                                        playerInfos = playerInfos.Where(x => x.playerState == PlayerState.Game).ToList();
                                         UpdateLeaderboard(playerInfos.ToArray(), BitConverter.ToSingle(packet.additionalData, 0), BitConverter.ToSingle(packet.additionalData, 4), (roomInfo.roomState == RoomState.Results));
                                     }
                                     else if(roomInfo.roomState == RoomState.SelectingSong && roomInfo.songSelectionType == SongSelectionType.Voting)

@@ -96,7 +96,7 @@ namespace BeatSaberMultiplayer
 
                 int localPlayerIndex = playerInfos.FindIndexInList(Client.instance.playerInfo);
 
-                if (ShowAvatarsInGame() || ShowAvatarsInRoom() || !Config.Instance.SpectatorMode)
+                if ((ShowAvatarsInGame() && !Config.Instance.SpectatorMode) || ShowAvatarsInRoom())
                 {
                     try
                     {

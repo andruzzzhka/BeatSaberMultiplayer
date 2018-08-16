@@ -137,11 +137,12 @@
     <Compile Include="UI\FlowCoordinators\RoomFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\ServerHubFlowCoordinator.cs" />
     <Compile Include="UI\PluginUI.cs" />
-    <Compile Include="UI\UIElements\BoolViewController.cs" />
+    <Compile Include="UI\SettingsUI.cs" />
     <Compile Include="UI\UIElements\CustomSettingsHelper.cs" />
     <Compile Include="UI\UIElements\CustomUIKeyboard.cs" />
     <Compile Include="UI\UIElements\DownloadQueueTableCell.cs" />
-    <Compile Include="UI\UIElements\ListViewController.cs" />
+    <Compile Include="UI\UIElements\CustomListViewController.cs" />
+    <Compile Include="UI\UIElements\OnOffViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\LeftRoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\MainRoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
