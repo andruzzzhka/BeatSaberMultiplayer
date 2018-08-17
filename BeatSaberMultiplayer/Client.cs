@@ -4,6 +4,7 @@ using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -25,6 +26,8 @@ namespace BeatSaberMultiplayer
 
     class Client : MonoBehaviour, IDisposable
     {
+        public static FileStream packetWriter = File.Open("packetDump.dmp", FileMode.Append);
+
         public static event Action ClientCreated;
         public static event Action ClientDestroyed;
         public static Client instance;
@@ -328,6 +331,13 @@ namespace BeatSaberMultiplayer
             if (Connected && tcpClient.Connected)
             {
                 tcpClient.SendData(new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)));
+
+                if (playerInfo.playerState == PlayerState.Game)
+                {
+                    byte[] packet = new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)).ToBytes();
+                    packetWriter.Write(packet, 0, packet.Length);
+                    packetWriter.Flush();
+                }
             }
         }
 

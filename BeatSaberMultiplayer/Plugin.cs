@@ -37,7 +37,8 @@ namespace BeatSaberMultiplayer
         public void OnApplicationStart()
         {
             SceneManager.activeSceneChanged += OnActiveSceneChanged;
-            Config.Instance.Save();
+            if (Config.Load())
+                Log.Info("Loaded config!");
             Base64Sprites.ConvertSprites();
         }
 

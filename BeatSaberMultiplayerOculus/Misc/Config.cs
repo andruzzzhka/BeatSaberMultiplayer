@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using BeatSaberMultiplayer.Misc;
 using SimpleJSON;
 using UnityEngine;
 using JSON = WyrmTale.JSON;
@@ -21,19 +22,28 @@ namespace BeatSaberMultiplayer {
         
         private static FileInfo FileLocation { get; } = new FileInfo($"./UserData/{Assembly.GetExecutingAssembly().GetName().Name}.json");
 
+        public static bool Load()
+        {
+            if (_instance != null) return false;
+            try
+            {
+                FileLocation?.Directory?.Create();
+                Log.Info($"Attempting to load JSON @ {FileLocation.FullName}");
+                _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
+                _instance.MarkClean();
+            }
+            catch (Exception)
+            {
+                Log.Error($"Can't load config @ {FileLocation.FullName}");
+                return false;
+            }
+            return true;
+        }
+
         public static Config Instance {
             get {
-                if (_instance != null) return _instance;
-                try {
-                    FileLocation?.Directory?.Create();
-                    Console.WriteLine($"Attempting to load JSON @ {FileLocation.FullName}");
-                    _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
-                    _instance.MarkClean();
-                }
-                catch(Exception) {
-                    Console.WriteLine($"Can't load config @ {FileLocation.FullName}");
+                if (_instance == null)
                     _instance = new Config();
-                }
                 return _instance;
             }
         }
@@ -119,14 +129,14 @@ namespace BeatSaberMultiplayer {
             _spectatorMode = false;
             _enableWebSocketServer = false;
             _webSocketPort = 3701;
-            MarkDirty();
+            IsDirty = true;
         }
 
         public bool Save() {
             if (!IsDirty) return false;
             try {
                 using (var f = new StreamWriter(FileLocation.FullName)) {
-                    Console.WriteLine($"Writing to File @ {FileLocation.FullName}");
+                    Log.Info($"Writing to File @ {FileLocation.FullName}");
                     var json = JsonUtility.ToJson(this, true);
                     f.Write(json);
                 }
@@ -134,7 +144,7 @@ namespace BeatSaberMultiplayer {
                 return true;
             }
             catch (IOException ex) {
-                Console.WriteLine($"ERROR WRITING TO CONFIG [{ex.Message}]");
+                Log.Exception($"ERROR WRITING TO CONFIG [{ex.Message}]");
                 return false;
             }
         }
