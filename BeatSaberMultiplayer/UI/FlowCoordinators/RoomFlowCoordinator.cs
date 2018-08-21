@@ -26,12 +26,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 if (_songPreviewPlayer == null)
                 {
-                    ObjectProvider[] providers = Resources.FindObjectsOfTypeAll<ObjectProvider>().Where(x => x.name == "SongPreviewPlayerProvider").ToArray();
-
-                    if (providers.Length > 0)
-                    {
-                        _songPreviewPlayer = providers[0].GetProvidedObject<SongPreviewPlayer>();
-                    }
+                    _songPreviewPlayer = Resources.FindObjectsOfTypeAll<SongPreviewPlayer>().FirstOrDefault();
                 }
 
                 return _songPreviewPlayer;
@@ -78,7 +73,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void DestroyRoomPressed()
         {
-            LeaveRoom(true);
+            if (joined)
+            {
+                Client.instance.DestroyRoom();
+            }
         }
 
         public void ReturnToRoom(ServerHubNavigationController serverHubNavCon)
@@ -145,22 +143,18 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        public void LeaveRoom(bool destroyRoom = false)
+        public void LeaveRoom()
         {
             try
             {
                 if (joined)
                 {
-                    if (destroyRoom)
-                    {
-                        Client.instance.DestroyRoom();
-                    }
-                    else
-                    {
-                        Client.instance.LeaveRoom();
-                    }
-                    Client.instance.Disconnect();
+                    Client.instance.LeaveRoom();
                     joined = false;
+                }
+                if (Client.instance.Connected)
+                {
+                    Client.instance.Disconnect();
                 }
             }
             catch
@@ -171,6 +165,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             HideDifficultySelection();
             HideSongsList();
             HideLeaderboard();
+            HideVotingList();
             PluginUI.instance.downloadFlowCoordinator.HideQueue();
             InGameOnlineController.Instance.DestroyAvatars();
             PreviewPlayer.CrossfadeToDefault();
@@ -448,7 +443,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                             playerInfos.Add(new PlayerInfo(playerInfoBytes));
                                         }
-                                        playerInfos = playerInfos.Where(x => x.playerState == PlayerState.Game).ToList();
+                                        playerInfos = playerInfos.Where(x => x.playerScore > 0 || x.playerState == PlayerState.Game).ToList();
                                         UpdateLeaderboard(playerInfos.ToArray(), BitConverter.ToSingle(packet.additionalData, 0), BitConverter.ToSingle(packet.additionalData, 4), (roomInfo.roomState == RoomState.Results));
                                     }
                                     else if(roomInfo.roomState == RoomState.SelectingSong && roomInfo.songSelectionType == SongSelectionType.Voting)
@@ -474,11 +469,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 if (packet.additionalData != null && packet.additionalData.Length > 0)
                                 {
                                     string reason = Encoding.UTF8.GetString(packet.additionalData, 4, BitConverter.ToInt32(packet.additionalData, 0));
-
+                                    
                                     HideLeaderboard();
                                     HideDifficultySelection();
                                     HideVotingList();
                                     HideSongsList();
+                                    PluginUI.instance.downloadFlowCoordinator.HideQueue();
+                                    InGameOnlineController.Instance.DestroyAvatars();
+                                    PreviewPlayer.CrossfadeToDefault();
+                                    joined = false;
 
                                     _roomNavigationController.DisplayError(reason);
                                 }

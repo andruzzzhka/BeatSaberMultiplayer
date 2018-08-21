@@ -9,7 +9,7 @@ namespace BeatSaberMultiplayer.Misc
     static class ClientHelper
     {
 
-        public static BasePacket ReceiveData(this TcpClient client, bool waitForData = true)
+        public static BasePacket ReceiveData(this Socket client, bool waitForData = true)
         {
             if (client == null || !client.Connected)
                 return null;
@@ -18,7 +18,7 @@ namespace BeatSaberMultiplayer.Misc
                 return null;
 
             byte[] lengthBuffer = new byte[4];
-            client.GetStream().Read(lengthBuffer, 0, 4);
+            client.Receive(lengthBuffer, 0, 4, SocketFlags.None);
             int length = BitConverter.ToInt32(lengthBuffer, 0);
 
             byte[] dataBuffer = new byte[length];
@@ -29,7 +29,7 @@ namespace BeatSaberMultiplayer.Misc
             while (nDataRead < length)
             {
 
-                int nBytesRead = client.Client.Receive(dataBuffer, nStartIndex, length - nStartIndex, SocketFlags.None);
+                int nBytesRead = client.Receive(dataBuffer, nStartIndex, length - nStartIndex, SocketFlags.None);
 
                 nDataRead += nBytesRead;
                 nStartIndex += nBytesRead;
@@ -38,13 +38,13 @@ namespace BeatSaberMultiplayer.Misc
             return new BasePacket(dataBuffer);            
         }
 
-        public static void SendData(this TcpClient client, BasePacket packet)
+        public static void SendData(this Socket client, BasePacket packet)
         {
             if (client == null || !client.Connected)
                 return;
 
             byte[] buffer = packet.ToBytes();
-            client.GetStream().Write(buffer, 0, buffer.Length);
+            client.Send(buffer, 0, buffer.Length, SocketFlags.None);
         }
 
     }

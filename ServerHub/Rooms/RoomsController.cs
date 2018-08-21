@@ -24,7 +24,7 @@ namespace ServerHub.Rooms
             return room.roomId;
         }
 
-        public static void DestroyRoom(PlayerInfo sender, uint roomId)
+        public static bool DestroyRoom(uint roomId)
         {
 #if DEBUG
             Logger.Instance.Log("Destroying room " + roomId);
@@ -33,8 +33,20 @@ namespace ServerHub.Rooms
             {
                 Room room = rooms.First(x => x.roomId == roomId);
                 room.StopRoom();
-                room.BroadcastPacket(new BasePacket(CommandType.LeaveRoom, new byte[0]));
+
+                List<byte> buffer = new List<byte>();
+                byte[] reasonText = Encoding.UTF8.GetBytes("Room destroyed!");
+                buffer.AddRange(BitConverter.GetBytes(reasonText.Length));
+                buffer.AddRange(reasonText);
+
+                room.BroadcastPacket(new BasePacket(CommandType.Disconnect, buffer.ToArray()));
                 rooms.Remove(room);
+
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
 

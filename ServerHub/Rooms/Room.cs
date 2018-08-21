@@ -242,6 +242,10 @@ namespace ServerHub.Rooms
                     _votes.Remove(sender);
                     _votes.Add(sender, song);
                 }
+                else
+                {
+                    Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to select song, but he is not the host");
+                }
             }
         }
 
@@ -261,6 +265,10 @@ namespace ServerHub.Rooms
                 roomState = RoomState.InGame;
                 _songStartTime = DateTime.Now;
             }
+            else
+            {
+                Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to start the level, but he is not the host");
+            }
         }
 
         public void TransferHost(PlayerInfo sender, PlayerInfo newHost)
@@ -269,6 +277,10 @@ namespace ServerHub.Rooms
             {
                 roomHost = newHost;
                 BroadcastPacket(new BasePacket(CommandType.TransferHost, roomHost.ToBytes(false)));
+            }
+            else
+            {
+                Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to transfer host, but he is not the host");
             }
         }
 
@@ -290,6 +302,18 @@ namespace ServerHub.Rooms
             buffer.AddRange(BitConverter.GetBytes(_readyPlayers.Count));
             buffer.AddRange(BitConverter.GetBytes(roomClients.Count));
             BroadcastPacket(new BasePacket(CommandType.PlayerReady, buffer.ToArray()));
+        }
+
+        public void DestroyRoom(PlayerInfo sender)
+        {
+            if (roomHost.Equals(sender))
+            {
+                RoomsController.DestroyRoom(roomId);
+            }
+            else
+            {
+                Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to destroy the room, but he is not the host");
+            }
         }
     }
 }

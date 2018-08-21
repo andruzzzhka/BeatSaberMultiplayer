@@ -4,7 +4,6 @@ using System.Reflection;
 using BeatSaberMultiplayer.Misc;
 using SimpleJSON;
 using UnityEngine;
-using JSON = WyrmTale.JSON;
 
 namespace BeatSaberMultiplayer {
     [Serializable]

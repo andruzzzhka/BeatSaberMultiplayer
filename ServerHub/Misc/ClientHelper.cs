@@ -13,12 +13,11 @@ namespace ServerHub.Misc
 
         public static BasePacket ReceiveData(this Client client, bool waitForData = true)
         {
-            TcpClient tcpClient = client.tcpClient;
 
-            if (tcpClient == null || !tcpClient.Connected)
+            if (client.socket == null || !client.socket.Connected)
                 return null;
 
-            if (!waitForData && tcpClient.Available == 0)
+            if (!waitForData && client.socket.Available == 0)
                 return null;
 
             byte[] dataBuffer = null;
@@ -26,7 +25,7 @@ namespace ServerHub.Misc
             try
             {
                 byte[] lengthBuffer = new byte[4];
-                tcpClient.GetStream().Read(lengthBuffer, 0, 4);
+                client.socket.Receive(lengthBuffer, 0, 4, SocketFlags.None);
                 int length = BitConverter.ToInt32(lengthBuffer, 0);
 
                 dataBuffer = new byte[length];
@@ -37,7 +36,7 @@ namespace ServerHub.Misc
                 while (nDataRead < length)
                 {
 
-                    int nBytesRead = tcpClient.Client.Receive(dataBuffer, nStartIndex, length - nStartIndex, SocketFlags.None);
+                    int nBytesRead = client.socket.Receive(dataBuffer, nStartIndex, length - nStartIndex, SocketFlags.None);
 
                     nDataRead += nBytesRead;
                     nStartIndex += nBytesRead;
@@ -76,16 +75,14 @@ namespace ServerHub.Misc
 
         public static void SendData(this Client client, BasePacket packet)
         {
-            TcpClient tcpClient = client.tcpClient;
-
-            if (tcpClient == null || !tcpClient.Connected)
+            if (client.socket == null || !client.socket.Connected)
                 return;
 
             byte[] buffer = packet.ToBytes();
 
             try
             {
-                tcpClient.Client.Send(buffer);
+                client.socket.Send(buffer);
 #if DEBUG
                 if (packet.commandType != CommandType.UpdatePlayerInfo)
                     Logger.Instance.Log($"Sent {packet.commandType} to {client.playerInfo.playerName}");

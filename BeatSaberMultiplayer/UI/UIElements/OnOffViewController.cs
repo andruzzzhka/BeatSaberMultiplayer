@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BeatSaberMultiplayer.Misc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,7 +25,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         public void OnEnable()
         {
-            _incButton = GetComponentsInChildren<Button>().First(x => x.name == "UpButton");
+            _incButton = GetComponentsInChildren<Button>().First(x => x.name == "IncButton");
             _incButton.onClick.RemoveAllListeners();
             _incButton.onClick.AddListener(delegate ()
             {
@@ -34,8 +35,8 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 UpdateButtons();
                 _valueText.text = _value ? "ON" : "OFF";
             });
-
-            _decButton = GetComponentsInChildren<Button>().First(x => x.name == "DownButton");
+            
+            _decButton = GetComponentsInChildren<Button>().First(x => x.name == "DecButton");
             _decButton.onClick.RemoveAllListeners();
             _decButton.onClick.AddListener(delegate ()
             {
@@ -45,9 +46,10 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 UpdateButtons();
                 _valueText.text = _value ? "ON" : "OFF";
             });
-
+            
             _valueText = GetComponentsInChildren<TextMeshProUGUI>().First(x => x.name == "ValueText");
             _valueText.text = _value ? "ON" : "OFF";
+            
             UpdateButtons();
         }
 

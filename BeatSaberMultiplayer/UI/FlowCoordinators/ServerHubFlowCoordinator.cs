@@ -129,7 +129,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
     class ServerHubClient
     {
-        private TcpClient tcpClient;
+        private Socket socket;
         
         public string ip;
         public int port;
@@ -145,14 +145,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             ip = IP;
             port = Port;
-            tcpClient = new TcpClient();
+            socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
         }
 
         public void GetRooms()
         {
             try
             {
-                tcpClient.BeginConnect(ip, port, new AsyncCallback(ConnectedToServerHub), null);
+                socket.BeginConnect(ip, port, new AsyncCallback(ConnectedToServerHub), null);
             }catch(Exception e)
             {
                 ServerHubException?.Invoke(this, e);
@@ -161,15 +161,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void ConnectedToServerHub(IAsyncResult ar)
         {
-            tcpClient.EndConnect(ar);
+            socket.EndConnect(ar);
 
             try
             {
                 List<byte> buffer = new List<byte>();
                 buffer.AddRange(BitConverter.GetBytes(Plugin.pluginVersion));
                 buffer.AddRange(new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).ToBytes(false));
-                tcpClient.SendData(new BasePacket(CommandType.Connect, buffer.ToArray()));
-                BasePacket response = tcpClient.ReceiveData();
+                socket.SendData(new BasePacket(CommandType.Connect, buffer.ToArray()));
+                BasePacket response = socket.ReceiveData();
 
                 if (response.commandType != CommandType.Connect)
                 {
@@ -200,11 +200,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 serverHubAvailable = true;
 
-                tcpClient.SendData(new BasePacket(CommandType.GetRooms, new byte[0]));
-                response = tcpClient.ReceiveData();
+                socket.SendData(new BasePacket(CommandType.GetRooms, new byte[0]));
+                response = socket.ReceiveData();
 
-                tcpClient.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
-                tcpClient.Close();
+                socket.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
+                socket.Close();
 
                 if (response.commandType == CommandType.GetRooms)
                 {
@@ -243,9 +243,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void Abort()
         {
-            if (tcpClient != null)
+            if (socket != null)
             {
-                tcpClient.Close();
+                socket.Close();
             }
             availableRooms.Clear();
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -34,7 +35,6 @@ namespace BeatSaberMultiplayer
         private OnlineVRController _rightController;
         
         private bool _paused = false;
-        //private float _offset = 0.175f;
 
         public static void OnLoad()
         {
@@ -50,10 +50,52 @@ namespace BeatSaberMultiplayer
                 Instance = this;
                 DontDestroyOnLoad(this);
 
-                SceneManager.activeSceneChanged += OnActiveSceneChanged;
+                SceneManager.sceneLoaded += OnSceneLoaded;
                 Client.ClientCreated += ClientCreated;
                 _currentScene = SceneManager.GetActiveScene();
             }
+        }
+
+        private void OnSceneLoaded(Scene next, LoadSceneMode loadMode)
+        {
+            try
+            {
+                if (next.name == "StandardLevel" || next.name == "Menu")
+                {
+                    _currentScene = next;
+                    if (Config.Instance.SpectatorMode)
+                    {
+                        if (_currentScene.name == "StandardLevel")
+                        {
+                            TogglePlayerAvatar(!(Client.instance != null && Client.instance.Connected));
+                            DestroyAvatar();
+                            StartCoroutine(WaitForControllers());
+                        }
+                        else if (_currentScene.name == "Menu")
+                        {
+                            TogglePlayerAvatar(true);
+                            DestroyAvatar();
+                        }
+                    }
+                }
+            }catch(Exception e)
+            {
+                Log.Exception($"Exception on {_currentScene.name} scene load! {e}");
+            }
+        }
+
+        IEnumerator WaitForControllers()
+        {
+            Log.Info("Waiting for controllers...");
+            yield return new WaitWhile(delegate() { return Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().Any(); });
+            Log.Info("Found controllers!");
+
+            audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
+            _songAudioSource = audioTimeSync.GetPrivateField<AudioSource>("_audioSource");
+            _leftController = FindObjectsOfType<VRController>().First(x => x.node == XRNode.LeftHand).gameObject.AddComponent<OnlineVRController>();
+            _leftController.forcePlayerInfo = true;
+            _rightController = FindObjectsOfType<VRController>().First(x => x.node == XRNode.RightHand).gameObject.AddComponent<OnlineVRController>();
+            _rightController.forcePlayerInfo = true;
         }
 
         private void ClientCreated()
@@ -115,7 +157,9 @@ namespace BeatSaberMultiplayer
                     {
                         float minOffset = _playerInfos[_spectatedPlayer].Min(x => Math.Abs(x.playerProgress - 0.125f - audioTimeSync.songTime));
                         _spectatedPlayer = _playerInfos[_spectatedPlayer].FirstOrDefault(x => Math.Abs(x.playerProgress - 0.125f - audioTimeSync.songTime) == minOffset);
+#if DEBUG
                         Log.Info("Min offset:"+minOffset );
+#endif
                         if (_spectatedPlayer != null)
                         {
                             if (_spectatedPlayerAvatar == null)
@@ -177,30 +221,6 @@ namespace BeatSaberMultiplayer
             foreach (Renderer rend in rends)
             {
                 rend.enabled = enabled;
-            }
-        }
-
-        private void OnActiveSceneChanged(Scene prev, Scene next)
-        {
-            _currentScene = next;
-            if (Config.Instance.SpectatorMode)
-            {
-                if (_currentScene.name == "StandardLevel")
-                {
-                    TogglePlayerAvatar(!(Client.instance != null && Client.instance.Connected));
-                    DestroyAvatar();
-                    audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
-                    _songAudioSource = audioTimeSync.GetPrivateField<AudioSource>("_audioSource");
-                    _leftController = FindObjectsOfType<VRController>().First(x => x.node == XRNode.LeftHand).gameObject.AddComponent<OnlineVRController>();
-                    _leftController.forcePlayerInfo = true;
-                    _rightController = FindObjectsOfType<VRController>().First(x => x.node == XRNode.RightHand).gameObject.AddComponent<OnlineVRController>();
-                    _rightController.forcePlayerInfo = true;
-                }
-                else if (_currentScene.name == "Menu")
-                {
-                    TogglePlayerAvatar(true);
-                    DestroyAvatar();
-                }
             }
         }
 
@@ -267,11 +287,13 @@ namespace BeatSaberMultiplayer
 
         private void SetPositionInSong(float time)
         {
+            /*
             _songAudioSource.timeSamples = Mathf.RoundToInt(Mathf.Lerp(0, _songAudioSource.clip.samples, (time / audioTimeSync.songLength)));
             _songAudioSource.time = _songAudioSource.time - Mathf.Min(0f, _songAudioSource.time);
             SongSeekBeatmapHandler.OnSongTimeChanged(_songAudioSource.time, Mathf.Min(0f, _songAudioSource.time));
 
-            Client.instance.RemovePacketsFromQueue(CommandType.UpdatePlayerInfo);
+            Client.instance.RemovePacketsFromQueue(CommandType.UpdatePlayerInfo);*/
+            Log.Warning("NOT IMPLEMENTED YET");
         }
     }
 }

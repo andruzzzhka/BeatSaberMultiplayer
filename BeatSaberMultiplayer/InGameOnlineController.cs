@@ -22,6 +22,8 @@ namespace BeatSaberMultiplayer
 
         public static Quaternion oculusTouchRotOffset = Quaternion.Euler(-40f, 0f, 0f);
         public static Vector3 oculusTouchPosOffset = new Vector3(0f, 0f, 0.055f);
+        public static Quaternion openVrRotOffset = Quaternion.Euler(-4.3f, 0f, 0f);
+        public static Vector3 openVrPosOffset = new Vector3(0f, -0.008f, 0f);
         public static InGameOnlineController Instance;
 
         private GameplayManager _gameManager;
@@ -35,6 +37,8 @@ namespace BeatSaberMultiplayer
         private GameObject _scoreScreen;
 
         private Scene _currentScene;
+
+        private bool loaded;
 
         public static void OnLoad()
         {
@@ -50,9 +54,41 @@ namespace BeatSaberMultiplayer
                 Instance = this;
                 DontDestroyOnLoad(this);
 
-                SceneManager.activeSceneChanged += OnActiveSceneChanged;
+                SceneManager.sceneLoaded += OnSceneLoaded;
                 Client.ClientCreated += ClientCreated;
                 _currentScene = SceneManager.GetActiveScene();
+            }
+        }
+
+        private void OnSceneLoaded(Scene next, LoadSceneMode loadMode)
+        {
+            try
+            {
+                if (next.name == "StandardLevel" || next.name == "Menu")
+                {
+                    _currentScene = next;
+                    if (_currentScene.name == "StandardLevel")
+                    {
+                        DestroyAvatars();
+                        DestroyScoreScreens();
+                        if (Client.instance != null && Client.instance.Connected)
+                        {
+                            StartCoroutine(WaitForControllers());
+                        }
+                    }
+                    else if (_currentScene.name == "Menu")
+                    {
+                        DestroyAvatars();
+                        if (Client.instance != null && Client.instance.Connected)
+                        {
+                            StartCoroutine(ReturnToRoom());
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Exception($"Exception on {_currentScene.name} scene load! {e}");
             }
         }
 
@@ -96,7 +132,7 @@ namespace BeatSaberMultiplayer
 
                 int localPlayerIndex = playerInfos.FindIndexInList(Client.instance.playerInfo);
 
-                if ((ShowAvatarsInGame() && !Config.Instance.SpectatorMode) || ShowAvatarsInRoom())
+                if ((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom())
                 {
                     try
                     {
@@ -137,7 +173,7 @@ namespace BeatSaberMultiplayer
                     }
                 }
 
-                if (_currentScene.name == "StandardLevel")
+                if (_currentScene.name == "StandardLevel" && loaded)
                 {
                     if (_scoreDisplays.Count < 5)
                     {
@@ -214,10 +250,19 @@ namespace BeatSaberMultiplayer
                     Client.instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
                     Client.instance.playerInfo.leftHandPos += oculusTouchPosOffset;
                 }
+                else if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
+                {
+                    Client.instance.playerInfo.leftHandRot *= openVrRotOffset;
+                    Client.instance.playerInfo.leftHandPos += openVrPosOffset;
+                }
 
-                if (_currentScene.name == "StandardLevel")
+                if (_currentScene.name == "StandardLevel" && loaded)
                 {
                     Client.instance.playerInfo.playerProgress = audioTimeSync.songTime;
+                }
+                else
+                {
+                    Client.instance.playerInfo.playerProgress = 0;
                 }
 
                 Client.instance.SendPlayerInfo();
@@ -281,34 +326,6 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        private void OnActiveSceneChanged(Scene prev, Scene next)
-        {
-            try
-            {
-                _currentScene = next;
-                if (_currentScene.name == "StandardLevel")
-                {
-                    DestroyAvatars();
-                    DestroyScoreScreens();
-                    if (Client.instance != null && Client.instance.Connected)
-                    {
-                        StartCoroutine(FindControllers());
-                    }
-                }
-                else if (_currentScene.name == "Menu")
-                {
-                    DestroyAvatars();
-                    if (Client.instance != null && Client.instance.Connected)
-                    {
-                        StartCoroutine(ReturnToRoom());
-                    }
-                }
-            }catch(Exception e)
-            {
-                Log.Exception($"Exception on {_currentScene.name} scene load! {e}");
-            }
-        }
-
         public void SongFinished(MainGameSceneSetupData sender, LevelCompletionResults result)
         {
             sender.didFinishEvent -= SongFinished;
@@ -354,7 +371,7 @@ namespace BeatSaberMultiplayer
 
         }
 
-        IEnumerator FindControllers()
+        IEnumerator WaitForControllers()
         {
 #if DEBUG
             Log.Info("Waiting for game controllers...");
@@ -421,6 +438,12 @@ namespace BeatSaberMultiplayer
                 _pauseMenuManager.SetPrivateField("_resumePauseAnimationController", _pauseAnim);
                 _pauseMenuManager.GetPrivateField<GameObject>("_gameObjectsWrapper").GetComponentsInChildren<Button>().First(x => x.name == "RestartButton").interactable = false;
             }
+
+#if DEBUG
+            Log.Info("Found pause manager");
+#endif
+
+            loaded = true;
         }
 
         private void ShowMenu()

@@ -23,15 +23,15 @@ namespace ServerHub.Data
         public event Action<Client, uint, string> clientJoinedRoom;
         public event Action<Client> clientLeftRoom;
 
-        public TcpClient tcpClient;
+        public Socket socket;
         public PlayerInfo playerInfo;
 
         public uint joinedRoomID;
 
-        public Client(TcpClient tcp)
+        public Client(Socket tcp)
         {
-            tcpClient = tcp;
-            tcpClient.NoDelay = true;
+            socket = tcp;
+            socket.NoDelay = true;
         }
 
         public bool InitializeClient()
@@ -66,7 +66,7 @@ namespace ServerHub.Data
                             buffer.AddRange(reasonText);
 
                             this.SendData(new BasePacket(CommandType.Disconnect, buffer.ToArray()));
-                            Logger.Instance.Warning($"Client {playerInfo.playerName}({playerInfo.playerId})@{((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address} is not whitelisted!");
+                            Logger.Instance.Warning($"Client {playerInfo.playerName}({playerInfo.playerId})@{((IPEndPoint)socket.RemoteEndPoint).Address} is not whitelisted!");
                             return false;
                         }
                     }
@@ -80,7 +80,7 @@ namespace ServerHub.Data
                         buffer.AddRange(reasonText);
 
                         this.SendData(new BasePacket(CommandType.Disconnect, buffer.ToArray()));
-                        Logger.Instance.Warning($"Client {playerInfo.playerName}({playerInfo.playerId})@{((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address} is blacklisted!");
+                        Logger.Instance.Warning($"Client {playerInfo.playerName}({playerInfo.playerId})@{((IPEndPoint)socket.RemoteEndPoint).Address} is blacklisted!");
                         return false;
                     }
 
@@ -108,14 +108,14 @@ namespace ServerHub.Data
 
         public bool IsBlacklisted()
         {
-            return  Program.blacklistedIPs.Any(x => x.Contains(((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address)) ||
+            return  Program.blacklistedIPs.Any(x => x.Contains(((IPEndPoint)socket.RemoteEndPoint).Address)) ||
                     Program.blacklistedIDs.Contains(playerInfo.playerId) ||
                     Program.blacklistedNames.Contains(playerInfo.playerName);
         }
 
         public bool IsWhitelisted()
         {
-            return  Program.whitelistedIPs.Any(x => x.Contains(((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address)) ||
+            return  Program.whitelistedIPs.Any(x => x.Contains(((IPEndPoint)socket.RemoteEndPoint).Address)) ||
                     Program.whitelistedIDs.Contains(playerInfo.playerId) ||
                     Program.whitelistedNames.Contains(playerInfo.playerName);
         }
@@ -123,7 +123,7 @@ namespace ServerHub.Data
         void ClientLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
 
-            if(tcpClient == null || !tcpClient.Connected)
+            if(socket == null || !socket.Connected)
             {
                 DestroyClient();
             }
@@ -210,12 +210,15 @@ namespace ServerHub.Data
 #endif
                             if (joinedRoomID != 0)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
-                                List<byte> buffer = new List<byte>();
-                                buffer.Add(1);
-                                buffer.AddRange(joinedRoom.GetSongInfos());
-                                buffer.AddRange(joinedRoom.GetRoomInfo().ToBytes());
-                                this.SendData(new BasePacket(CommandType.GetRoomInfo, buffer.ToArray()));
+                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                                if (joinedRoom != null)
+                                {
+                                    List<byte> buffer = new List<byte>();
+                                    buffer.Add(1);
+                                    buffer.AddRange(joinedRoom.GetSongInfos());
+                                    buffer.AddRange(joinedRoom.GetRoomInfo().ToBytes());
+                                    this.SendData(new BasePacket(CommandType.GetRoomInfo, buffer.ToArray()));
+                                }
                             }
 
                         }
@@ -224,14 +227,17 @@ namespace ServerHub.Data
                         {
                             if (joinedRoomID != 0)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
-                                if (packet.additionalData == null || packet.additionalData.Length == 0)
+                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                                if (joinedRoom != null)
                                 {
-                                    joinedRoom.SetSelectedSong(playerInfo, null);
-                                }
-                                else
-                                {
-                                    joinedRoom.SetSelectedSong(playerInfo, new SongInfo(packet.additionalData));
+                                    if (packet.additionalData == null || packet.additionalData.Length == 0)
+                                    {
+                                        joinedRoom.SetSelectedSong(playerInfo, null);
+                                    }
+                                    else
+                                    {
+                                        joinedRoom.SetSelectedSong(playerInfo, new SongInfo(packet.additionalData));
+                                    }
                                 }
                             }
                         }
@@ -240,11 +246,14 @@ namespace ServerHub.Data
                         {
                             if (joinedRoomID != 0)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
-                                byte difficulty = packet.additionalData[0];
-                                SongInfo song = new SongInfo(packet.additionalData.Skip(1).ToArray());
-                                song.songDuration += 4f;
-                                joinedRoom.StartLevel(playerInfo, difficulty, song);
+                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                                if (joinedRoom != null)
+                                {
+                                    byte difficulty = packet.additionalData[0];
+                                    SongInfo song = new SongInfo(packet.additionalData.Skip(1).ToArray());
+                                    song.songDuration += 2.5f;
+                                    joinedRoom.StartLevel(playerInfo, difficulty, song);
+                                }
                             }
                         }
                         break;
@@ -252,7 +261,11 @@ namespace ServerHub.Data
                         {
                             if (joinedRoomID != 0)
                             {
-                                RoomsController.DestroyRoom(playerInfo, joinedRoomID);
+                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                                if(joinedRoom != null)
+                                {
+                                    joinedRoom.DestroyRoom(playerInfo);
+                                }
                             }
                         }
                         break;
@@ -260,8 +273,11 @@ namespace ServerHub.Data
                         {
                             if (joinedRoomID != 0)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
-                                joinedRoom.TransferHost(playerInfo, new PlayerInfo(packet.additionalData));
+                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                                if (joinedRoom != null)
+                                {
+                                    joinedRoom.TransferHost(playerInfo, new PlayerInfo(packet.additionalData));
+                                }
                             }
                         }
                         break;
@@ -269,8 +285,11 @@ namespace ServerHub.Data
                         {
                             if (joinedRoomID != 0)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().First(x => x.roomId == joinedRoomID);
-                                joinedRoom.ReadyStateChanged(playerInfo, (packet.additionalData[0] == 0) ? false : true);
+                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                                if (joinedRoom != null)
+                                {
+                                    joinedRoom.ReadyStateChanged(playerInfo, (packet.additionalData[0] == 0) ? false : true);
+                                }
                             }
                         }
                         break;
@@ -291,9 +310,9 @@ namespace ServerHub.Data
             {
                 Logger.Instance.Log($"Client disconnected!");
             }
-            if (tcpClient != null)
+            if (socket != null)
             {
-                tcpClient.Close();
+                socket.Close();
             }
             HighResolutionTimer.LoopTimer.Elapsed -= ClientLoop;
             clientDisconnected.Invoke(this);
@@ -301,7 +320,7 @@ namespace ServerHub.Data
 
         public void KickClient()
         {
-            if (tcpClient != null)
+            if (socket != null)
             {
                 try
                 {
@@ -316,7 +335,7 @@ namespace ServerHub.Data
 
         public void KickClient(string reason)
         {
-            if (tcpClient != null)
+            if (socket != null)
             {
                 try
                 {

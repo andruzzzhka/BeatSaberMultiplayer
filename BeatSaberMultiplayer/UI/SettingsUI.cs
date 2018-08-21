@@ -11,7 +11,7 @@ using VRUIControls;
 using TMPro;
 using IllusionPlugin;
 
-namespace BeatSaberMultiplayer
+namespace BeatSaberMultiplayer.UI
 {
     public class ListViewController : ListSettingsController
     {
@@ -156,9 +156,6 @@ namespace BeatSaberMultiplayer
 
     public class SettingsUI : MonoBehaviour
     {
-        public const int MainScene = 1;
-        public const int GameScene = 5;
-
         public static SettingsUI Instance = null;
         MainMenuViewController _mainMenuViewController = null;
         SimpleDialogPromptViewController prompt = null;
@@ -169,6 +166,16 @@ namespace BeatSaberMultiplayer
         {
             if (Instance != null) return;
             new GameObject("SettingsUI").AddComponent<SettingsUI>();
+        }
+
+        public static bool isMenuScene(Scene scene)
+        {
+            return (scene.name == "Menu");
+        }
+
+        public static bool isGameScene(Scene scene)
+        {
+            return (scene.name == "StandardLevel");
         }
 
         public void Awake()
@@ -187,7 +194,7 @@ namespace BeatSaberMultiplayer
 
         public void SceneManagerOnActiveSceneChanged(Scene arg0, Scene scene)
         {
-            if (scene.buildIndex == MainScene)
+            if (isMenuScene(scene))
             {
                 _mainMenuViewController = Resources.FindObjectsOfTypeAll<MainMenuViewController>().First();
                 var _menuMasterViewController = Resources.FindObjectsOfTypeAll<StandardLevelSelectionFlowCoordinator>().First();
@@ -195,9 +202,27 @@ namespace BeatSaberMultiplayer
             }
         }
 
+        public static void LogComponents(Transform t, string prefix = "=", bool includeScipts = false)
+        {
+            Console.WriteLine(prefix + ">" + t.name);
+
+            if (includeScipts)
+            {
+                foreach (var comp in t.GetComponents<MonoBehaviour>())
+                {
+                    Console.WriteLine(prefix + "-->" + comp.GetType());
+                }
+            }
+
+            foreach (Transform child in t)
+            {
+                LogComponents(child, prefix + "=", includeScipts);
+            }
+        }
+
         public static SubMenu CreateSubMenu(string name)
         {
-            if (SceneManager.GetActiveScene().buildIndex != MainScene)
+            if (!isMenuScene(SceneManager.GetActiveScene()))
             {
                 Console.WriteLine("Cannot create settings menu when no in the main scene.");
                 return null;
@@ -210,8 +235,9 @@ namespace BeatSaberMultiplayer
                 var text = tableCell.GetPrivateField<TextMeshProUGUI>("_settingsSubMenuText");
             }
 
-            var temp = Resources.FindObjectsOfTypeAll<SettingsViewController>().FirstOrDefault();
-            var others = temp.transform.Find("SubSettingsViewControllers").Find("Others");
+            var temp = Resources.FindObjectsOfTypeAll<SettingsNavigationController>().FirstOrDefault();
+
+            var others = temp.transform.Find("Others");
             var tweakSettingsObject = Instantiate(others.gameObject, others.transform.parent);
             Transform mainContainer = CleanScreen(tweakSettingsObject.transform);
 
@@ -224,15 +250,13 @@ namespace BeatSaberMultiplayer
             subMenus.Add(tweaksSubMenu);
             mainSettingsMenu.SetPrivateField("_settingsSubMenuInfos", subMenus.ToArray());
 
-            // Find the table view and if page buttons don't exist add them
-
             SubMenu menu = new SubMenu(mainContainer);
             return menu;
         }
 
         static Transform CleanScreen(Transform screen)
         {
-            var container = screen.Find("SettingsContainer");
+            var container = screen.Find("Content").Find("SettingsContainer");
             var tempList = container.Cast<Transform>().ToList();
             foreach (var child in tempList)
             {

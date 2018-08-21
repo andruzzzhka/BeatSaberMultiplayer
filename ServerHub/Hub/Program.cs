@@ -37,7 +37,9 @@ namespace ServerHub.Hub
         private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Logger.Instance.Exception(e.ExceptionObject.ToString());
+#if DEBUG
             Environment.FailFast("UnhadledException", e.ExceptionObject as Exception);
+#endif
         }
 
         private void OnShutdown(ShutdownEventArgs obj) {
@@ -169,7 +171,7 @@ namespace ServerHub.Hub
                         {
                             foreach (var client in HubListener.GetClientsInLobby())
                             {
-                                IPEndPoint remote = (IPEndPoint)client.tcpClient.Client.RemoteEndPoint;
+                                IPEndPoint remote = (IPEndPoint)client.socket.RemoteEndPoint;
                                 s += $"{Environment.NewLine}[{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
                             }
                         }
@@ -188,7 +190,7 @@ namespace ServerHub.Hub
                                 {
                                     foreach (var client in room.roomClients)
                                     {
-                                        IPEndPoint remote = (IPEndPoint)client.tcpClient.Client.RemoteEndPoint;
+                                        IPEndPoint remote = (IPEndPoint)client.socket.RemoteEndPoint;
                                         s += $"{Environment.NewLine}[{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
                                     }
                                 }
@@ -482,6 +484,32 @@ namespace ServerHub.Hub
                             else
                             {
                                 Logger.Instance.Warning($"Command usage: cloneroom [roomId]");
+                            }
+                        }
+                    }
+                    break;
+                case "destroyroom":
+                    {
+                        if (!exitAfterPrint)
+                        {
+                            if (comArgs.Length == 1)
+                            {
+                                uint roomId;
+                                if (uint.TryParse(comArgs[0], out roomId))
+                                {
+                                    if(RoomsController.DestroyRoom(roomId))
+                                        Logger.Instance.Log("Destroyed room " + roomId);
+                                    else
+                                        Logger.Instance.Warning("Room with ID "+ roomId + " not found!");
+                                }
+                                else
+                                {
+                                    Logger.Instance.Warning($"Command usage: destroyroom [roomId]");
+                                }
+                            }
+                            else
+                            {
+                                Logger.Instance.Warning($"Command usage: destroyroom [roomId]");
                             }
                         }
                     }

@@ -118,10 +118,10 @@ namespace ServerHub.Hub
 #if DEBUG
             Logger.Instance.Log("Waiting for a connection...");
 #endif
-            TcpClient client;
+            Socket client;
             try
             {
-                client = await listener.AcceptTcpClientAsync();
+                client = await listener.AcceptSocketAsync();
             }
             catch (Exception)
             {
