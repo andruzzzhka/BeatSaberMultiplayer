@@ -57,7 +57,7 @@ namespace BeatSaberMultiplayer.UI
         public static Button CreateUIButton(RectTransform parent, string buttonTemplate)
         {
             Button btn = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == buttonTemplate)), parent, false);
-            DestroyImmediate(btn.GetComponent<GameEventOnUIButtonClick>());
+            DestroyImmediate(btn.GetComponent<SignalOnUIButtonClick>());
             btn.onClick = new Button.ButtonClickedEvent();
             btn.name = "CustomUIButton";
 
@@ -72,7 +72,7 @@ namespace BeatSaberMultiplayer.UI
             }
 
             Button btn = Instantiate(_instance._backButtonInstance, parent, false);
-            DestroyImmediate(btn.GetComponent<GameEventOnUIButtonClick>());
+            DestroyImmediate(btn.GetComponent<SignalOnUIButtonClick>());
             btn.onClick = new Button.ButtonClickedEvent();
             btn.name = "CustomUIButton";
 

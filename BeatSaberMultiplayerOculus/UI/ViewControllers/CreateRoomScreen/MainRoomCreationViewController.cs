@@ -87,10 +87,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _nameText = BeatSaberUI.CreateText(rectTransform, _roomName, new Vector2(-15f, -14.5f));
                 _nameText.fontSize = 5f;
 
-                _editNameButton = BeatSaberUI.CreateUIButton(rectTransform, "ApplyButton");
+                _editNameButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
                 BeatSaberUI.SetButtonText(_editNameButton, "EDIT NAME");
                 (_editNameButton.transform as RectTransform).sizeDelta = new Vector2(34f, 8f);
-                (_editNameButton.transform as RectTransform).anchoredPosition = new Vector2(11f, 63f);
+                (_editNameButton.transform as RectTransform).anchoredPosition = new Vector2(-37.5f, 63f);
                 _editNameButton.onClick.RemoveAllListeners();
                 _editNameButton.onClick.AddListener(delegate ()
                 {
@@ -102,10 +102,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _passwordText = BeatSaberUI.CreateText(rectTransform, "ENTER PASSWORD", new Vector2(-15f, -25.5f));
                 _passwordText.fontSize = 5f;
 
-                _editPasswordButton = BeatSaberUI.CreateUIButton(rectTransform, "ApplyButton");
+                _editPasswordButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
                 BeatSaberUI.SetButtonText(_editPasswordButton, "EDIT PASS");
                 (_editPasswordButton.transform as RectTransform).sizeDelta = new Vector2(34f, 8f);
-                (_editPasswordButton.transform as RectTransform).anchoredPosition = new Vector2(11f, 53f);
+                (_editPasswordButton.transform as RectTransform).anchoredPosition = new Vector2(-37.5f, 53f);
                 _editPasswordButton.onClick.RemoveAllListeners();
                 _editPasswordButton.onClick.AddListener(delegate ()
                 {

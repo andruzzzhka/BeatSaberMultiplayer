@@ -57,11 +57,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 });
                 _pageDownButton.interactable = false;
 
-                _createRoom = BeatSaberUI.CreateUIButton(rectTransform, "ApplyButton");
+                _createRoom = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
                 BeatSaberUI.SetButtonText(_createRoom, "Create room");
                 BeatSaberUI.SetButtonTextSize(_createRoom, 3f);
                 (_createRoom.transform as RectTransform).sizeDelta = new Vector2(38f, 6f);
-                (_createRoom.transform as RectTransform).anchoredPosition = new Vector2(-19f, 73f);
+                (_createRoom.transform as RectTransform).anchoredPosition = new Vector2(-60f, 73f);
                 _createRoom.onClick.RemoveAllListeners();
                 _createRoom.onClick.AddListener(delegate ()
                 {

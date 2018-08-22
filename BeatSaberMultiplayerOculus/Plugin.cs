@@ -16,30 +16,30 @@ namespace BeatSaberMultiplayer
         public string Version => "0.5.0.0";
         public static uint pluginVersion = 500;
 
-        public void OnActiveSceneChanged(Scene prevScene, Scene nextScene)
-        {
-#if DEBUG
-            Log.Info("Loading scene " + nextScene.name);
-#endif
-            if (nextScene.name == "Menu")
-            {
-                BeatSaberUI.OnLoad();
-                PluginUI.OnLoad();
-                InGameOnlineController.OnLoad();
-                SpectatingController.OnLoad();
-            }
-        }
-
         public void OnApplicationQuit()
         {
         }
 
         public void OnApplicationStart()
         {
-            SceneManager.activeSceneChanged += OnActiveSceneChanged;
+            SceneManager.sceneLoaded += SceneLoaded;
             if (Config.Load())
                 Log.Info("Loaded config!");
             Base64Sprites.ConvertSprites();
+        }
+
+        private void SceneLoaded(Scene nextScene, LoadSceneMode loadMode)
+        {
+#if DEBUG
+            Log.Info("Loaded scene " + nextScene.name);
+#endif
+            if (nextScene.name == "Menu")
+            {
+                BeatSaberUI.OnLoad();
+                PluginUI.OnLoad();
+                InGameOnlineController.OnLoad();
+                //SpectatingController.OnLoad(); //Broken
+            }
         }
 
         public void OnFixedUpdate()
