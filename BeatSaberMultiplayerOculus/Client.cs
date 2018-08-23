@@ -42,7 +42,7 @@ namespace BeatSaberMultiplayer
         public bool Connected;
 
         public WebSocketServer webSocket;
-        TcpClient tcpClient;
+        Socket socket;
 
         public string ip;
         public int port;
@@ -82,13 +82,13 @@ namespace BeatSaberMultiplayer
 
         public void Disconnect(bool dontDestroy = false)
         {
-            if (tcpClient != null && tcpClient.Connected)
+            if (socket != null && socket.Connected)
             {
                 try
                 {
-                    tcpClient.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
+                    socket.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
                     Thread.Sleep(150);
-                    tcpClient.Close();
+                    socket.Close();
                 }
                 catch (Exception)
                 {
@@ -113,21 +113,21 @@ namespace BeatSaberMultiplayer
             ip = IP;
             port = Port;
 
-            tcpClient = new TcpClient();
-            tcpClient.NoDelay = true;
-            tcpClient.BeginConnect(ip, port, new AsyncCallback(ConnectedCallback), null);
+            socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            socket.NoDelay = true;
+            socket.BeginConnect(ip, port, new AsyncCallback(ConnectedCallback), null);
         }
 
         private void ConnectedCallback(IAsyncResult ar)
         {
-            tcpClient.EndConnect(ar);
+            socket.EndConnect(ar);
             _lastPacketTime = DateTime.Now;
 
             List<byte> buffer = new List<byte>();
             buffer.AddRange(BitConverter.GetBytes(Plugin.pluginVersion));
             buffer.AddRange(playerInfo.ToBytes(false));
-            tcpClient.SendData(new BasePacket(CommandType.Connect, buffer.ToArray()));
-            BasePacket response = tcpClient.ReceiveData();
+            socket.SendData(new BasePacket(CommandType.Connect, buffer.ToArray()));
+            BasePacket response = socket.ReceiveData();
 
             if (response.commandType != CommandType.Connect)
             {
@@ -194,9 +194,9 @@ namespace BeatSaberMultiplayer
 
         public void ReceiveData()
         {
-            while (tcpClient.Connected && receiverThread.IsAlive)
+            while (socket.Connected && receiverThread.IsAlive)
             {
-                BasePacket packet = tcpClient.ReceiveData();
+                BasePacket packet = socket.ReceiveData();
                 if (_averagePacketTimes.Count > 119)
                     _averagePacketTimes.RemoveAt(0);
                 _averagePacketTimes.Add((float)DateTime.Now.Subtract(_lastPacketTime).TotalMilliseconds);
@@ -218,18 +218,18 @@ namespace BeatSaberMultiplayer
 
         public void JoinRoom(uint roomId)
         {
-            if (Connected && tcpClient.Connected)
+            if (Connected && socket.Connected)
             {
 #if DEBUG
                 Log.Info("Joining room " + roomId);
 #endif
-                tcpClient.SendData(new BasePacket(CommandType.JoinRoom, BitConverter.GetBytes(roomId)));
+                socket.SendData(new BasePacket(CommandType.JoinRoom, BitConverter.GetBytes(roomId)));
             }
         }
 
         public void JoinRoom(uint roomId, string password)
         {
-            if (Connected && tcpClient.Connected)
+            if (Connected && socket.Connected)
             {
 #if DEBUG
                 Log.Info("Joining room " + roomId+" with password "+password);
@@ -241,15 +241,15 @@ namespace BeatSaberMultiplayer
                 buffer.AddRange(BitConverter.GetBytes(passBytes.Length));
                 buffer.AddRange(passBytes);
 
-                tcpClient.SendData(new BasePacket(CommandType.JoinRoom, buffer.ToArray()));
+                socket.SendData(new BasePacket(CommandType.JoinRoom, buffer.ToArray()));
             }
         }
 
         public void CreateRoom(RoomSettings settings)
         {
-            if(Connected && tcpClient.Connected)
+            if(Connected && socket.Connected)
             {
-                tcpClient.SendData(new BasePacket(CommandType.CreateRoom, settings.ToBytes(false)));
+                socket.SendData(new BasePacket(CommandType.CreateRoom, settings.ToBytes(false)));
 #if DEBUG
                 Log.Info("Creating room...");
 #endif
@@ -258,9 +258,9 @@ namespace BeatSaberMultiplayer
 
         public void LeaveRoom()
         {
-            if (Connected && tcpClient.Connected)
+            if (Connected && socket.Connected)
             {
-                tcpClient.SendData(new BasePacket(CommandType.LeaveRoom, new byte[0]));
+                socket.SendData(new BasePacket(CommandType.LeaveRoom, new byte[0]));
 #if DEBUG
                 Log.Info("Leaving room...");
 #endif
@@ -272,9 +272,9 @@ namespace BeatSaberMultiplayer
 
         public void DestroyRoom()
         {
-            if (Connected && tcpClient.Connected)
+            if (Connected && socket.Connected)
             {
-                tcpClient.SendData(new BasePacket(CommandType.DestroyRoom, new byte[0]));
+                socket.SendData(new BasePacket(CommandType.DestroyRoom, new byte[0]));
 #if DEBUG
                 Log.Info("Destroying room...");
 #endif
@@ -285,9 +285,9 @@ namespace BeatSaberMultiplayer
 
         public void RequestRoomInfo()
         {
-            if (Connected && tcpClient.Connected)
+            if (Connected && socket.Connected)
             {
-                tcpClient.SendData(new BasePacket(CommandType.GetRoomInfo, new byte[0]));
+                socket.SendData(new BasePacket(CommandType.GetRoomInfo, new byte[0]));
 #if DEBUG
                 Log.Info("Requested RoomInfo...");
 #endif
@@ -296,15 +296,15 @@ namespace BeatSaberMultiplayer
 
         public void SetSelectedSong(SongInfo song)
         {
-            if (Connected && tcpClient.Connected)
+            if (Connected && socket.Connected)
             {
                 if (song == null)
                 {
-                    tcpClient.SendData(new BasePacket(CommandType.SetSelectedSong, new byte[0]));
+                    socket.SendData(new BasePacket(CommandType.SetSelectedSong, new byte[0]));
                 }
                 else
                 {
-                    tcpClient.SendData(new BasePacket(CommandType.SetSelectedSong, song.ToBytes(false)));
+                    socket.SendData(new BasePacket(CommandType.SetSelectedSong, song.ToBytes(false)));
                 }
 #if DEBUG
                 Log.Info("Sending SongInfo for selected song...");
@@ -314,7 +314,7 @@ namespace BeatSaberMultiplayer
 
         public void StartLevel(IStandardLevel song, LevelDifficulty difficulty)
         {
-            if (Connected && tcpClient.Connected)
+            if (Connected && socket.Connected)
             {
 #if DEBUG
                 Log.Info("Starting level...");
@@ -322,15 +322,15 @@ namespace BeatSaberMultiplayer
                 List<byte> buffer = new List<byte>();
                 buffer.Add((byte)difficulty);
                 buffer.AddRange(new SongInfo() { songName = song.songName +" "+song.songSubName, levelId = song.levelID.Substring(0, Math.Min(32, song.levelID.Length)), songDuration = song.audioClip.length}.ToBytes(false));
-                tcpClient.SendData(new BasePacket(CommandType.StartLevel, buffer.ToArray()));
+                socket.SendData(new BasePacket(CommandType.StartLevel, buffer.ToArray()));
             }
         }
 
         public void SendPlayerInfo()
         {
-            if (Connected && tcpClient.Connected)
+            if (Connected && socket.Connected)
             {
-                tcpClient.SendData(new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)));
+                socket.SendData(new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)));
 
                 if (playerInfo.playerState == PlayerState.Game)
                 {
@@ -343,16 +343,16 @@ namespace BeatSaberMultiplayer
 
         public void SendPlayerReady(bool ready)
         {
-            if (Connected && tcpClient.Connected)
+            if (Connected && socket.Connected)
             {
-                tcpClient.SendData(new BasePacket(CommandType.PlayerReady, new byte[1] { (byte)(ready ? 1 : 0) }));
+                socket.SendData(new BasePacket(CommandType.PlayerReady, new byte[1] { (byte)(ready ? 1 : 0) }));
             }
         }
 
         public void Dispose()
         {
             receiverThread.Abort();
-            tcpClient.Dispose();
+            socket.Dispose();
             _packetsQueue.Clear();
         }
     }

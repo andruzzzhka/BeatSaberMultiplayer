@@ -31,7 +31,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
         {
             textForValues = new string[0];
 
-            _incButton = GetComponentsInChildren<Button>().First(x => x.name == "UpButton");
+            _incButton = GetComponentsInChildren<Button>().First(x => x.name == "IncButton");
             _incButton.onClick.RemoveAllListeners();
             _incButton.onClick.AddListener(delegate()
             {
@@ -42,7 +42,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 _valueText.text = (textForValues.Length > _value) ? textForValues[_value] : _value.ToString();
             });
 
-            _decButton = GetComponentsInChildren<Button>().First(x => x.name == "DownButton");
+            _decButton = GetComponentsInChildren<Button>().First(x => x.name == "DecButton");
             _decButton.onClick.RemoveAllListeners();
             _decButton.onClick.AddListener(delegate ()
             {

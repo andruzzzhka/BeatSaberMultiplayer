@@ -26,12 +26,6 @@ namespace BeatSaberMultiplayer.Data
             jsonPath = difficultyLevel.jsonPath;
         }
 
-        public DifficultyLevel(CustomLevelInfo.DifficultyLevelInfo difficultyLevel)
-        {
-            difficulty = difficultyLevel.difficulty;
-            difficultyRank = difficultyLevel.difficultyRank;
-        }
-
         public DifficultyLevel(string Difficulty, int DifficultyRank, string JsonPath, int Offset = 0)
         {
             difficulty = Difficulty;
