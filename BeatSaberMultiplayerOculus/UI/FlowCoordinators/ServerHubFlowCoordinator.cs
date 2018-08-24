@@ -130,7 +130,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
     class ServerHubClient
     {
         private Socket socket;
-
+        
         public string ip;
         public int port;
 
@@ -153,8 +153,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             try
             {
                 socket.BeginConnect(ip, port, new AsyncCallback(ConnectedToServerHub), null);
-            }
-            catch(Exception e)
+            }catch(Exception e)
             {
                 ServerHubException?.Invoke(this, e);
             }

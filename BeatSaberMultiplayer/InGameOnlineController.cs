@@ -236,12 +236,6 @@ namespace BeatSaberMultiplayer
                 Client.instance.playerInfo.leftHandPos = GetXRNodeWorldPosRot(XRNode.LeftHand).Position;
                 Client.instance.playerInfo.leftHandRot = GetXRNodeWorldPosRot(XRNode.LeftHand).Rotation;
 
-                if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
-                {
-                    Client.instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
-                    Client.instance.playerInfo.leftHandPos += oculusTouchPosOffset;
-                }
-
                 Client.instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
                 Client.instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
 
@@ -263,6 +257,14 @@ namespace BeatSaberMultiplayer
                 else
                 {
                     Client.instance.playerInfo.playerProgress = 0;
+                }
+
+                if (Config.Instance.SpectatorMode)
+                {
+                    Client.instance.playerInfo.playerScore = 0;
+                    Client.instance.playerInfo.playerEnergy = 0f;
+                    Client.instance.playerInfo.playerCutBlocks = 0;
+                    Client.instance.playerInfo.playerComboBlocks = 0;
                 }
 
                 Client.instance.SendPlayerInfo();

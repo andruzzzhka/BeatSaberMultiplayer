@@ -236,12 +236,6 @@ namespace BeatSaberMultiplayer
                 Client.instance.playerInfo.leftHandPos = GetXRNodeWorldPosRot(XRNode.LeftHand).Position;
                 Client.instance.playerInfo.leftHandRot = GetXRNodeWorldPosRot(XRNode.LeftHand).Rotation;
 
-                if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
-                {
-                    Client.instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
-                    Client.instance.playerInfo.leftHandPos += oculusTouchPosOffset;
-                }
-
                 Client.instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
                 Client.instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
 
@@ -250,7 +244,6 @@ namespace BeatSaberMultiplayer
                     Client.instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
                     Client.instance.playerInfo.leftHandPos += oculusTouchPosOffset;
                 }
-
                 else if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
                 {
                     Client.instance.playerInfo.leftHandRot *= openVrRotOffset;
@@ -261,10 +254,17 @@ namespace BeatSaberMultiplayer
                 {
                     Client.instance.playerInfo.playerProgress = audioTimeSync.songTime;
                 }
-
                 else
                 {
                     Client.instance.playerInfo.playerProgress = 0;
+                }
+
+                if (Config.Instance.SpectatorMode)
+                {
+                    Client.instance.playerInfo.playerScore = 0;
+                    Client.instance.playerInfo.playerEnergy = 0f;
+                    Client.instance.playerInfo.playerCutBlocks = 0;
+                    Client.instance.playerInfo.playerComboBlocks = 0;
                 }
 
                 Client.instance.SendPlayerInfo();
@@ -380,7 +380,7 @@ namespace BeatSaberMultiplayer
 #endif
             yield return new WaitUntil(delegate () { return FindObjectOfType<ScoreController>() != null; });
 #if DEBUG
-            Log.Info("Controllers found!");
+            Log.Info("Game controllers found!");
 #endif
             _gameManager = Resources.FindObjectsOfTypeAll<GameplayManager>().First();
 
@@ -444,8 +444,8 @@ namespace BeatSaberMultiplayer
 #if DEBUG
             Log.Info("Found pause manager");
 #endif
-            loaded = true;
 
+            loaded = true;
         }
 
         private void ShowMenu()

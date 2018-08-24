@@ -63,10 +63,14 @@ namespace BeatSaberMultiplayer
         {
             if (avatarInstance == null)
             {
+#if DEBUG
                 CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().ForEach(x => Log.Info(x.FullPath));
+#endif
                 avatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.Contains("TemplateFullBody"));
             }
+#if DEBUG
             Log.Info($"Found avatar, isLoaded={avatarInstance.IsLoaded}");
+#endif
             if (!avatarInstance.IsLoaded)
             {
                 avatarInstance.Load(AvatarLoaded);

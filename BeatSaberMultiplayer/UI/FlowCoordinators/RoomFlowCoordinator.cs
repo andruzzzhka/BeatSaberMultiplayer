@@ -443,7 +443,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                             playerInfos.Add(new PlayerInfo(playerInfoBytes));
                                         }
-                                        playerInfos = playerInfos.Where(x => x.playerScore > 0 || x.playerState == PlayerState.Game).ToList();
+
+                                        if (roomInfo.roomState == RoomState.InGame)
+                                        {
+                                            playerInfos = playerInfos.Where(x => x.playerScore > 0 && x.playerState == PlayerState.Game).ToList();
+                                        }else if(roomInfo.roomState == RoomState.Results)
+                                        {
+                                            playerInfos = playerInfos.Where(x => x.playerScore > 0 && (x.playerState == PlayerState.Game || x.playerState == PlayerState.Room)).ToList();
+                                        }
+
                                         UpdateLeaderboard(playerInfos.ToArray(), BitConverter.ToSingle(packet.additionalData, 0), BitConverter.ToSingle(packet.additionalData, 4), (roomInfo.roomState == RoomState.Results));
                                     }
                                     else if(roomInfo.roomState == RoomState.SelectingSong && roomInfo.songSelectionType == SongSelectionType.Voting)

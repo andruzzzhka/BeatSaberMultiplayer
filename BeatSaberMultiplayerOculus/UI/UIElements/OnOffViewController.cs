@@ -35,7 +35,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 UpdateButtons();
                 _valueText.text = _value ? "ON" : "OFF";
             });
-
+            
             _decButton = GetComponentsInChildren<Button>().First(x => x.name == "DecButton");
             _decButton.onClick.RemoveAllListeners();
             _decButton.onClick.AddListener(delegate ()
@@ -46,10 +46,10 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 UpdateButtons();
                 _valueText.text = _value ? "ON" : "OFF";
             });
-
+            
             _valueText = GetComponentsInChildren<TextMeshProUGUI>().First(x => x.name == "ValueText");
             _valueText.text = _value ? "ON" : "OFF";
-
+            
             UpdateButtons();
         }
 

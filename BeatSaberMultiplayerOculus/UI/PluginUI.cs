@@ -1,6 +1,8 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.ViewControllers;
+using SongLoaderPlugin;
+using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +26,8 @@ namespace BeatSaberMultiplayer.UI
         public RoomFlowCoordinator roomFlowCoordinator;
         public DownloadFlowCoordinator downloadFlowCoordinator;
 
+        private Button _multiplayerButton;
+
         public static void OnLoad()
         {
             if (instance != null)
@@ -41,6 +45,7 @@ namespace BeatSaberMultiplayer.UI
                 instance = this;
                 GetUserInfo.UpdateUserInfo();
                 SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
+                SongLoader.SongsLoadedEvent += SongsLoaded;
                 CreateUI();
             }
         }
@@ -48,6 +53,19 @@ namespace BeatSaberMultiplayer.UI
         private void SceneManager_activeSceneChanged(Scene prev, Scene next)
         {
             if(next.name == "Menu")
+            {
+                CreateUI();
+                
+            }
+        }
+
+        public void SongsLoaded(SongLoader sender, List<CustomLevel> levels)
+        {
+            if (_multiplayerButton != null)
+            {
+                _multiplayerButton.interactable = true;
+            }
+            else
             {
                 CreateUI();
             }
@@ -79,6 +97,8 @@ namespace BeatSaberMultiplayer.UI
                 }
 
                 CreateOnlineButton();
+                _multiplayerButton.interactable = SongLoader.AreSongsLoaded;
+
                 CreateMenu();
             }
             catch (Exception e)
@@ -89,7 +109,7 @@ namespace BeatSaberMultiplayer.UI
 
         private void CreateOnlineButton()
         {
-            Button _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "PartyButton");
+            _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "PartyButton");
             _multiplayerButton.transform.SetParent(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "SoloButton").transform.parent);
 
             BeatSaberUI.SetButtonText(_multiplayerButton, "Online");
@@ -120,9 +140,9 @@ namespace BeatSaberMultiplayer.UI
             avatarsInRoom.GetValue += delegate { return Config.Instance.ShowAvatarsInRoom; };
             avatarsInRoom.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInRoom = value; };
 
-            //var spectatorMode = onlineSubMenu.AddBool("Spectator Mode (Beta)");
-            //spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
-            //spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
+            var spectatorMode = onlineSubMenu.AddBool("Spectator Mode (Beta)");
+            spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
+            spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
 
             var webSocketServer = onlineSubMenu.AddBool("WebSocket Server");
             webSocketServer.GetValue += delegate { return Config.Instance.EnableWebSocketServer; };
