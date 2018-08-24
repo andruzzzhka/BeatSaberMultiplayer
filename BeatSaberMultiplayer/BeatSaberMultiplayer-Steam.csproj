@@ -107,6 +107,10 @@
     <Reference Include="UnityEngine.WebModule">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.WebModule.dll</HintPath>
     </Reference>
+    <Reference Include="Zenject, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Zenject.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AvatarController.cs" />
@@ -127,6 +131,7 @@
     <Compile Include="Misc\LoadScripts.cs" />
     <Compile Include="Misc\Log.cs" />
     <Compile Include="Misc\ReflectionUtil.cs" />
+    <Compile Include="Misc\SceneEvents.cs" />
     <Compile Include="Misc\Serialization.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />

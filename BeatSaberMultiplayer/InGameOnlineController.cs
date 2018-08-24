@@ -378,7 +378,7 @@ namespace BeatSaberMultiplayer
 #endif
             yield return new WaitUntil(delegate () { return FindObjectOfType<ScoreController>() != null; });
 #if DEBUG
-            Log.Info("Controllers found!");
+            Log.Info("Game controllers found!");
 #endif
             _gameManager = Resources.FindObjectsOfTypeAll<GameplayManager>().First();
 

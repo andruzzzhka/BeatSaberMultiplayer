@@ -120,9 +120,9 @@ namespace BeatSaberMultiplayer.UI
             avatarsInRoom.GetValue += delegate { return Config.Instance.ShowAvatarsInRoom; };
             avatarsInRoom.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInRoom = value; };
 
-            //var spectatorMode = onlineSubMenu.AddBool("Spectator Mode (Beta)");
-            //spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
-            //spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
+            var spectatorMode = onlineSubMenu.AddBool("Spectator Mode (Beta)");
+            spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
+            spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
 
             var webSocketServer = onlineSubMenu.AddBool("WebSocket Server");
             webSocketServer.GetValue += delegate { return Config.Instance.EnableWebSocketServer; };

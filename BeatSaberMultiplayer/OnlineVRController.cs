@@ -1,5 +1,7 @@
 ﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -34,9 +36,6 @@ namespace BeatSaberMultiplayer
             }
 
             Destroy(original);
-
-            Saber saber = GetComponentInChildren<Saber>();
-            saber.SetPrivateField("_vrController", this);
         }
 
         public override void Update()

@@ -33,7 +33,8 @@ namespace BeatSaberMultiplayer
 
         private OnlineVRController _leftController;
         private OnlineVRController _rightController;
-        
+
+        private float _offset = 0f;
         private bool _paused = false;
 
         public static void OnLoad()
@@ -50,52 +51,48 @@ namespace BeatSaberMultiplayer
                 Instance = this;
                 DontDestroyOnLoad(this);
 
-                SceneManager.sceneLoaded += OnSceneLoaded;
+                SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
                 Client.ClientCreated += ClientCreated;
                 _currentScene = SceneManager.GetActiveScene();
             }
         }
 
-        private void OnSceneLoaded(Scene next, LoadSceneMode loadMode)
+        private void SceneManager_activeSceneChanged(Scene prev, Scene next)
         {
-            try
+            if (next.name.EndsWith("Environment"))
             {
-                if (next.name == "StandardLevel" || next.name == "Menu")
-                {
-                    _currentScene = next;
-                    if (Config.Instance.SpectatorMode)
-                    {
-                        if (_currentScene.name == "StandardLevel")
-                        {
-                            TogglePlayerAvatar(!(Client.instance != null && Client.instance.Connected));
-                            DestroyAvatar();
-                            StartCoroutine(WaitForControllers());
-                        }
-                        else if (_currentScene.name == "Menu")
-                        {
-                            TogglePlayerAvatar(true);
-                            DestroyAvatar();
-                        }
-                    }
-                }
-            }catch(Exception e)
+                _currentScene = next;
+                TogglePlayerAvatar(!(Client.instance != null && Client.instance.Connected));
+                DestroyAvatar();
+                StartCoroutine(WaitForControllers());
+            }
+            else if(next.name == "Menu")
             {
-                Log.Exception($"Exception on {_currentScene.name} scene load! {e}");
+                _currentScene = next;
+                TogglePlayerAvatar(true);
+                DestroyAvatar();
             }
         }
 
         IEnumerator WaitForControllers()
         {
             Log.Info("Waiting for controllers...");
-            yield return new WaitWhile(delegate() { return Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().Any(); });
-            Log.Info("Found controllers!");
+            yield return new WaitWhile(delegate() { return !Resources.FindObjectsOfTypeAll<Saber>().Any(); });
 
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
             _songAudioSource = audioTimeSync.GetPrivateField<AudioSource>("_audioSource");
-            _leftController = FindObjectsOfType<VRController>().First(x => x.node == XRNode.LeftHand).gameObject.AddComponent<OnlineVRController>();
+
+            var saberB = Resources.FindObjectsOfTypeAll<Saber>().First(x => x.saberType == Saber.SaberType.SaberB);
+            _leftController = saberB.GetPrivateField<VRController>("_vrController").gameObject.AddComponent<OnlineVRController>();
             _leftController.forcePlayerInfo = true;
-            _rightController = FindObjectsOfType<VRController>().First(x => x.node == XRNode.RightHand).gameObject.AddComponent<OnlineVRController>();
+            saberB.SetPrivateField("_vrController", _leftController);
+
+            var saberA = Resources.FindObjectsOfTypeAll<Saber>().First(x => x.saberType == Saber.SaberType.SaberA);
+            _rightController = saberA.GetPrivateField<VRController>("_vrController").gameObject.AddComponent<OnlineVRController>();
             _rightController.forcePlayerInfo = true;
+            saberA.SetPrivateField("_vrController", _rightController);
+
+            Log.Info("Controllers found!");
         }
 
         private void ClientCreated()
@@ -105,7 +102,7 @@ namespace BeatSaberMultiplayer
 
         private void PacketReceived(BasePacket packet)
         {
-            if (Config.Instance.SpectatorMode && _currentScene.name == "StandardLevel")
+            if (Config.Instance.SpectatorMode && _currentScene.name.EndsWith("Environment"))
             {
                 if (packet.commandType == CommandType.UpdatePlayerInfo)
                 {
@@ -147,19 +144,18 @@ namespace BeatSaberMultiplayer
                         }
                     }
 
+
                     if (_playerInfos.Count > 1 && _spectatedPlayer == null)
                     {
                         _spectatedPlayer = _playerInfos.First(x => !x.Key.Equals(Client.instance.playerInfo)).Value.Last();
                         Log.Info("Spectating " + _spectatedPlayer.playerName);
                     }
-
-                    if(_spectatedPlayer != null)
+                    
+                    if (_spectatedPlayer != null)
                     {
-                        float minOffset = _playerInfos[_spectatedPlayer].Min(x => Math.Abs(x.playerProgress - 0.125f - audioTimeSync.songTime));
-                        _spectatedPlayer = _playerInfos[_spectatedPlayer].FirstOrDefault(x => Math.Abs(x.playerProgress - 0.125f - audioTimeSync.songTime) == minOffset);
-#if DEBUG
-                        Log.Info("Min offset:"+minOffset );
-#endif
+                        float minOffset = _playerInfos[_spectatedPlayer].Min(x => Math.Abs(x.playerProgress + _offset - audioTimeSync.songTime));
+                        _spectatedPlayer = _playerInfos[_spectatedPlayer].FirstOrDefault(x => Math.Abs(x.playerProgress + _offset - audioTimeSync.songTime) == minOffset);
+                        
                         if (_spectatedPlayer != null)
                         {
                             if (_spectatedPlayerAvatar == null)
@@ -169,18 +165,18 @@ namespace BeatSaberMultiplayer
                             }
 
                             _spectatedPlayerAvatar.SetPlayerInfo(_spectatedPlayer, 0f, false);
-
+                            
                             if (_leftController != null && _rightController != null)
                             {
                                 _leftController.SetPlayerInfo(_spectatedPlayer);
                                 _rightController.SetPlayerInfo(_spectatedPlayer);
                             }
 
-
                             if (_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime > 2.5f)
                             {
 #if DEBUG
-                                Log.Info($"Syncing song with a spectated player...\nOffset: {_spectatedPlayer.playerProgress - audioTimeSync.songTime}\nSpectated player: {_spectatedPlayer.playerProgress}\nActual song time: {audioTimeSync.songTime}");
+                                if(_playerInfos[_spectatedPlayer].Last().playerProgress > 2f)
+                                    Log.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
 #endif
                                 SetPositionInSong(_playerInfos[_spectatedPlayer].Last().playerProgress - 1f);
                                 InGameOnlineController.Instance.PauseSong();
@@ -190,12 +186,12 @@ namespace BeatSaberMultiplayer
                             if (_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime < 1.5f && (audioTimeSync.songLength - audioTimeSync.songTime) > 3f)
                             {
 #if DEBUG
-                                Log.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}\nSpectated player: {_playerInfos[_spectatedPlayer].Last().playerProgress}\nActual song time: {audioTimeSync.songTime}");
+                                if (_playerInfos[_spectatedPlayer].Last().playerProgress > 2f)
+                                    Log.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
 #endif
                                 InGameOnlineController.Instance.PauseSong();
                                 _paused = true;
                             }
-
                         }
                     }
                 }
@@ -228,7 +224,7 @@ namespace BeatSaberMultiplayer
         {
             if (Config.Instance.SpectatorMode)
             {
-                if (Input.GetKeyDown(KeyCode.KeypadPlus))
+                if (Input.GetKeyDown(KeyCode.KeypadMultiply))
                 {
                     int index = _playerInfos.Keys.ToList().FindIndexInList(_spectatedPlayer);
                     if (index >= _playerInfos.Count - 1)
@@ -239,7 +235,7 @@ namespace BeatSaberMultiplayer
                     _spectatedPlayer = _playerInfos.Keys.ElementAt(index);
                 }
 
-                if (Input.GetKeyDown(KeyCode.KeypadMinus))
+                if (Input.GetKeyDown(KeyCode.KeypadDivide))
                 {
                     int index = _playerInfos.Keys.ToList().FindIndexInList(_spectatedPlayer);
                     if (index <= 0)
@@ -250,28 +246,17 @@ namespace BeatSaberMultiplayer
                     _spectatedPlayer = _playerInfos.Keys.ElementAt(index);
                 }
 
-                /*
-                if (Input.GetKeyDown(KeyCode.KeypadMultiply))
+                if (Input.GetKeyDown(KeyCode.KeypadPlus))
                 {
                     _offset += 0.025f;
                     Log.Info("New offset: " + _offset);
                 }
 
-                if (Input.GetKeyDown(KeyCode.KeypadDivide))
+                if (Input.GetKeyDown(KeyCode.KeypadMinus))
                 {
                     _offset -= 0.025f;
                     Log.Info("New offset: "+_offset);
                 }
-
-                if (Input.GetKeyDown(KeyCode.KeypadEnter))
-                {
-#if DEBUG
-                    Log.Info($"Syncing song with a spectated player...\nOffset: {_spectatedPlayer.playerProgress - audioTimeSync.songTime}\nSpectated player: {_spectatedPlayer.playerProgress}\nActual song time: {audioTimeSync.songTime}");
-#endif
-                    SetPositionInSong(_spectatedPlayer.playerProgress + 0.3f);
-                    InGameOnlineController.Instance.PauseSong();
-                    _paused = true;
-                }*/
 
                 if (_paused)
                 {
@@ -287,13 +272,11 @@ namespace BeatSaberMultiplayer
 
         private void SetPositionInSong(float time)
         {
-            /*
             _songAudioSource.timeSamples = Mathf.RoundToInt(Mathf.Lerp(0, _songAudioSource.clip.samples, (time / audioTimeSync.songLength)));
             _songAudioSource.time = _songAudioSource.time - Mathf.Min(0f, _songAudioSource.time);
             SongSeekBeatmapHandler.OnSongTimeChanged(_songAudioSource.time, Mathf.Min(0f, _songAudioSource.time));
 
-            Client.instance.RemovePacketsFromQueue(CommandType.UpdatePlayerInfo);*/
-            Log.Warning("NOT IMPLEMENTED YET");
+            Client.instance.RemovePacketsFromQueue(CommandType.UpdatePlayerInfo);
         }
     }
 }

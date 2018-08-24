@@ -38,7 +38,7 @@ namespace BeatSaberMultiplayer
                 BeatSaberUI.OnLoad();
                 PluginUI.OnLoad();
                 InGameOnlineController.OnLoad();
-                //SpectatingController.OnLoad(); //Broken
+                SpectatingController.OnLoad();
             }
         }
 
