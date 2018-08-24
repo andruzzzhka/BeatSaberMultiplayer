@@ -35,4 +35,10 @@
     </None>
     <None Remove="Properties\**" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="Websocket-sharp\doc\.gitignore" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Websocket-sharp\doc\.gitignore" />
+  </ItemGroup>
 </Project>
