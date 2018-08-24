@@ -39,6 +39,23 @@ namespace BeatSaberMultiplayer {
             return true;
         }
 
+        public static bool Create()
+        {
+            if (_instance != null) return false;
+            try
+            {
+                FileLocation?.Directory?.Create();
+                Log.Info($"Creating new config @ {FileLocation.FullName}");
+                Instance.Save();
+            }
+            catch (Exception)
+            {
+                Log.Error($"Can't create new config @ {FileLocation.FullName}");
+                return false;
+            }
+            return true;
+        }
+
         public static Config Instance {
             get {
                 if (_instance == null)

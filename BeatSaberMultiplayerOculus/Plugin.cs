@@ -25,6 +25,8 @@ namespace BeatSaberMultiplayer
             SceneManager.sceneLoaded += SceneLoaded;
             if (Config.Load())
                 Log.Info("Loaded config!");
+            else
+                Config.Create();
             Base64Sprites.ConvertSprites();
         }
 

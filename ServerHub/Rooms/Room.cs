@@ -94,6 +94,10 @@ namespace ServerHub.Rooms
                             roomState = RoomState.SelectingSong;
                             selectedSong = null;
                             BroadcastPacket(new BasePacket(CommandType.SetSelectedSong, new byte[0]));
+                            if(roomSettings.SelectionType == SongSelectionType.Voting)
+                            {
+                                _votingStartTime = DateTime.Now;
+                            }
                         }
                     }
                     break;
@@ -126,6 +130,7 @@ namespace ServerHub.Rooms
                                         }
                                         BroadcastPacket(new BasePacket(CommandType.SetSelectedSong, selectedSong.ToBytes(false)));
                                         ReadyStateChanged(roomHost, true);
+                                        _votes.Clear();
                                     }
                                 }
                                 break;
@@ -133,7 +138,6 @@ namespace ServerHub.Rooms
                     }
                     break;
             }
-
 
             List<byte> buffer = new List<byte>();
             switch (roomState)
@@ -198,6 +202,7 @@ namespace ServerHub.Rooms
                 {
                     switch (roomSettings.SelectionType)
                     {
+                        case SongSelectionType.Voting:
                         case SongSelectionType.Manual:
                             {
 
