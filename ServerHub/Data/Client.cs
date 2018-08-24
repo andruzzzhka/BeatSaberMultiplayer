@@ -38,8 +38,6 @@ namespace ServerHub.Data
         {
             try
             {
-                
-
                 BasePacket packet = this.ReceiveData(true);
 
                 if (packet.commandType == CommandType.Connect && packet.additionalData != null && packet.additionalData.Length > 0)

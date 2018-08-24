@@ -1,4 +1,5 @@
-﻿using ServerHub.Data;
+using ServerHub.Hub;
+using ServerHub.Data;
 using ServerHub.Misc;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,7 @@ namespace ServerHub.Rooms
             Room room = new Room(GetNextFreeID(), settings, host);
             rooms.Add(room);
             room.StartRoom();
+            WebSocketListener.AddRoom(room);
 #if DEBUG
             Logger.Instance.Log($"New room created! Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, noFail={settings.NoFail}, songSelecionType={settings.SelectionType}, songsCount={settings.AvailableSongs.Count}");
 #endif
@@ -33,6 +35,7 @@ namespace ServerHub.Rooms
             {
                 Room room = rooms.First(x => x.roomId == roomId);
                 room.StopRoom();
+                WebSocketListener.DestroyRoom(room);
 
                 List<byte> buffer = new List<byte>();
                 byte[] reasonText = Encoding.UTF8.GetBytes("Room destroyed!");
