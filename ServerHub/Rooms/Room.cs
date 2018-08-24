@@ -1,4 +1,5 @@
-﻿using ServerHub.Data;
+﻿using ServerHub.Hub;
+using ServerHub.Data;
 using ServerHub.Misc;
 using System;
 using System.Collections.Generic;
@@ -189,6 +190,16 @@ namespace ServerHub.Rooms
                 catch (Exception e)
                 {
                     Logger.Instance.Warning($"Can't send packet to {client.playerInfo.playerName}! Exception: {e}");
+                }
+
+                try
+                {
+                    var service = WebSocketListener.Server.WebSocketServices[$"/room/{roomId}"];
+                    service.Sessions.BroadcastAsync(packet.ToBytes(), null);
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"Can't send WebSocket packet! Exception: {e}");
                 }
             }
         }
