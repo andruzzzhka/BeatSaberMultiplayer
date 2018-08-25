@@ -15,11 +15,9 @@ namespace ServerHub.Hub
         protected override void OnOpen()
         {
             base.OnOpen();
-            
+
             List<string> paths = WebSocketListener.Server.WebSocketServices.Paths.ToList<string>();
             Send(JsonConvert.SerializeObject(paths));
-
-            Close();
         }
     }
 
@@ -47,14 +45,23 @@ namespace ServerHub.Hub
             Server.Start();
         }
 
-        public static void AddRoom (Room room)
+        public static void BroadcastState()
         {
-            Server.AddWebSocketService<Broadcast>($"/room/{room.roomId}");
+            List<string> paths = Server.WebSocketServices.Paths.ToList<string>();
+            string data = JsonConvert.SerializeObject(paths);
+            Server.WebSocketServices["/"].Sessions.BroadcastAsync(data, null);
         }
 
-        public static void DestroyRoom (Room room)
+        public static void AddRoom(Room room)
+        {
+            Server.AddWebSocketService<Broadcast>($"/room/{room.roomId}");
+            BroadcastState();
+        }
+
+        public static void DestroyRoom(Room room)
         {
             Server.RemoveWebSocketService($"/room/{room.roomId}");
+            BroadcastState();
         }
     }
 }
