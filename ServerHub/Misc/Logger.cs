@@ -85,6 +85,7 @@ namespace ServerHub.Misc {
             Console.WriteLine(msg.Message);
             if (msg.PrintToLog)
                 LogWriter.WriteLine(msg.Message);
+            Console.ResetColor();
         }
 
         FileInfo GetPath() {
