@@ -82,7 +82,8 @@ namespace ServerHub.Misc
 
             try
             {
-                client.socket.Send(buffer);
+                StateObject state = new StateObject(buffer.Length) { workSocket = client.socket};
+                client.socket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, SendCallback, state);
 #if DEBUG
                 if (packet.commandType != CommandType.UpdatePlayerInfo)
                     Logger.Instance.Log($"Sent {packet.commandType} to {client.playerInfo.playerName}");
@@ -99,5 +100,24 @@ namespace ServerHub.Misc
             
         }
 
+        private static void SendCallback(IAsyncResult ar)
+        {
+            StateObject recState = (StateObject)ar.AsyncState;
+            Socket client = recState.workSocket;
+
+            try
+            {
+                SocketError error;
+                client.EndSend(ar, out error);
+
+                if (error != SocketError.Success)
+                {
+                    Logger.Instance.Warning("Socket error occurred! " + error);
+                }
+            }catch (Exception e)
+            {
+                Logger.Instance.Warning("Socket exception occurred! " + e);
+            }
+        }
     }
 }

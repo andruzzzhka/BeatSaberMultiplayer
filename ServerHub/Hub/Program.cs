@@ -147,7 +147,7 @@ namespace ServerHub.Hub
             switch (comName.ToLower())
             {
                 case "help":
-                    foreach (var com in new[] { "help", "version", "quit", "clients", "blacklist [add/remove] [nick/playerID/IP]", "whitelist [enable/disable/add/remove] [nick/playerID/IP]", "tickrate", "createroom", "cloneroom [roomId]" })
+                    foreach (var com in new[] { "help", "version", "quit", "clients", "blacklist [add/remove] [nick/playerID/IP]", "whitelist [enable/disable/add/remove] [nick/playerID/IP]", "tickrate", "createroom", "cloneroom [roomId]", "destroyroom [roomId]" })
                     {
                         s += $"{Environment.NewLine}> {com}";
                     }
@@ -335,7 +335,9 @@ namespace ServerHub.Hub
                         int tickrate = 30;
                         if (int.TryParse(comArgs[0], out tickrate))
                         {
+#if !DEBUG
                             tickrate = Misc.Math.Clamp(tickrate, 5, 150);
+#endif
                             Settings.Instance.Server.Tickrate = tickrate;
                             HighResolutionTimer.LoopTimer.Interval = 1000f / tickrate;
                         }

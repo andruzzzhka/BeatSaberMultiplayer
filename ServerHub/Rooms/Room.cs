@@ -180,15 +180,15 @@ namespace ServerHub.Rooms
 
         public void BroadcastPacket(BasePacket packet)
         {
-            foreach (Client client in roomClients)
+            for (int i = 0; i < roomClients.Count; i++)
             {
                 try
                 {
-                    client.SendData(packet);
+                    roomClients[i].SendData(packet);
                 }
                 catch (Exception e)
                 {
-                    Logger.Instance.Warning($"Can't send packet to {client.playerInfo.playerName}! Exception: {e}");
+                    Logger.Instance.Warning($"Can't send packet to {roomClients[i].playerInfo.playerName}! Exception: {e}");
                 }
             }
         }

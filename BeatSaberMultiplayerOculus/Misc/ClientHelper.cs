@@ -8,7 +8,6 @@ namespace BeatSaberMultiplayer.Misc
 {
     static class ClientHelper
     {
-
         public static BasePacket ReceiveData(this Socket client, bool waitForData = true)
         {
             if (client == null || !client.Connected)
@@ -44,8 +43,16 @@ namespace BeatSaberMultiplayer.Misc
                 return;
 
             byte[] buffer = packet.ToBytes();
-            client.Send(buffer, 0, buffer.Length, SocketFlags.None);
+            StateObject state = new StateObject(buffer.Length) { workSocket = client};
+            client.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, SendCallback, state);
         }
 
+        private static void SendCallback(IAsyncResult ar)
+        {
+            StateObject recState = (StateObject)ar.AsyncState;
+            Socket client = recState.workSocket;
+
+            client.EndSend(ar);
+        }
     }
 }

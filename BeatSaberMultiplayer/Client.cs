@@ -24,10 +24,22 @@ namespace BeatSaberMultiplayer
         }
     }
 
+    public class StateObject
+    {
+        public Socket workSocket = null;
+        public byte[] buffer;
+
+        public StateObject(int BufferSize)
+        {
+            buffer = new byte[BufferSize];
+        }
+    }
+
     class Client : MonoBehaviour, IDisposable
     {
+#if DEBUG
         public static FileStream packetWriter = File.Open("packetDump.dmp", FileMode.Append);
-
+#endif
         public static event Action ClientCreated;
         public static event Action ClientDestroyed;
         public static Client instance;
@@ -36,8 +48,6 @@ namespace BeatSaberMultiplayer
         public event Action<Exception> ServerHubException;
 
         public event Action<BasePacket> PacketReceived;
-
-        Thread receiverThread;
 
         public bool Connected;
 
@@ -156,9 +166,11 @@ namespace BeatSaberMultiplayer
             playerInfo.playerState = PlayerState.Lobby;
             Connected = true;
             ConnectedToServerHub?.Invoke();
-            
-            receiverThread = new Thread(ReceiveData) { IsBackground = true };
-            receiverThread.Start();
+
+            StateObject state = new StateObject(4);
+            state.workSocket = socket;
+
+            socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, new AsyncCallback(ReceiveHeader), state);
 
             if (Config.Instance.EnableWebSocketServer && webSocket == null)
             {
@@ -192,11 +204,34 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void ReceiveData()
+        public void ReceiveHeader(IAsyncResult ar)
         {
-            while (socket.Connected && receiverThread.IsAlive)
+
+            StateObject recState = (StateObject)ar.AsyncState;
+            Socket client = recState.workSocket;
+
+            int bytesRead = client.EndReceive(ar);
+
+            if (bytesRead == recState.buffer.Length)
             {
-                BasePacket packet = socket.ReceiveData();
+                int bytesToReceive = BitConverter.ToInt32(recState.buffer, 0);
+
+                StateObject state = new StateObject(bytesToReceive) { workSocket = client};
+                client.BeginReceive(state.buffer, 0, bytesToReceive, SocketFlags.None, new AsyncCallback(ReceiveCallback), state);
+            }
+        }
+
+        private void ReceiveCallback(IAsyncResult ar)
+        {
+            StateObject recState = (StateObject)ar.AsyncState;
+            Socket client = recState.workSocket;
+            
+            int bytesRead = client.EndReceive(ar);
+            
+            if (bytesRead == recState.buffer.Length)
+            {
+                BasePacket packet = new BasePacket(recState.buffer);
+
                 if (_averagePacketTimes.Count > 119)
                     _averagePacketTimes.RemoveAt(0);
                 _averagePacketTimes.Add((float)DateTime.Now.Subtract(_lastPacketTime).TotalMilliseconds);
@@ -209,9 +244,15 @@ namespace BeatSaberMultiplayer
 #endif
                 _packetsQueue.Enqueue(packet);
 
-                if(webSocket != null)
+                if (webSocket != null)
                 {
                     webSocket.WebSocketServices["/"].Sessions.BroadcastAsync(packet.ToBytes(), null);
+                }
+
+                if (client.Connected)
+                {
+                    StateObject state = new StateObject(4) { workSocket = client };
+                    client.BeginReceive(state.buffer, 0, 4, SocketFlags.None, new AsyncCallback(ReceiveHeader), state);
                 }
             }
         }
@@ -332,12 +373,14 @@ namespace BeatSaberMultiplayer
             {
                 socket.SendData(new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)));
 
+#if DEBUG
                 if (playerInfo.playerState == PlayerState.Game)
                 {
                     byte[] packet = new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)).ToBytes();
                     packetWriter.Write(packet, 0, packet.Length);
                     packetWriter.Flush();
                 }
+#endif
             }
         }
 
@@ -351,7 +394,6 @@ namespace BeatSaberMultiplayer
 
         public void Dispose()
         {
-            receiverThread.Abort();
             socket.Dispose();
             _packetsQueue.Clear();
         }

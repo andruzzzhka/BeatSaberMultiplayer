@@ -43,7 +43,7 @@ namespace ServerHub.Misc
 
             assets.AddRange(latestRelease.assets.Select(x => x.name));
 
-            bool newTag = (latestRelease.tag_name.StartsWith(Assembly.GetEntryAssembly().GetName().Version.ToString()));
+            bool newTag = (!latestRelease.tag_name.StartsWith(Assembly.GetEntryAssembly().GetName().Version.ToString()));
             bool platformUpdated = newTag && (assets.Any(x => x.Contains(Assembly.GetEntryAssembly().GetName().Name)));
 
             if (platformUpdated)

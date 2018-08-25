@@ -15,6 +15,17 @@ using System.Timers;
 
 namespace ServerHub.Data
 {
+    public class StateObject
+    {
+        public Socket workSocket = null;
+        public byte[] buffer;
+
+        public StateObject(int BufferSize)
+        {
+            buffer = new byte[BufferSize];
+        }
+    }
+
     class Client
     {
         Stopwatch timeoutTimer;
@@ -38,8 +49,6 @@ namespace ServerHub.Data
         {
             try
             {
-                
-
                 BasePacket packet = this.ReceiveData(true);
 
                 if (packet.commandType == CommandType.Connect && packet.additionalData != null && packet.additionalData.Length > 0)
@@ -92,6 +101,9 @@ namespace ServerHub.Data
                     timeoutTimer = new Stopwatch();
                     HighResolutionTimer.LoopTimer.Elapsed += ClientLoop;
 
+                    StateObject state = new StateObject(4) { workSocket = socket};
+                    socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, ReceiveHeader, state);
+
                     return true;
                 }
                 else
@@ -143,161 +155,222 @@ namespace ServerHub.Data
                 Logger.Instance.Log($"Kicked {playerInfo.playerName} for inactivity");
                 KickClient();
             }
+        }
 
-            BasePacket packet = this.ReceiveData(false);
-            
-            while (packet != null)
+        public void ReceiveHeader(IAsyncResult ar)
+        {
+
+            StateObject recState = (StateObject)ar.AsyncState;
+            Socket client = recState.workSocket;
+
+            try
             {
+                SocketError error;
+                int bytesRead = client.EndReceive(ar, out error);
+
+                if (error != SocketError.Success)
+                {
+                    Logger.Instance.Warning("Socket error occurred! " + error);
+                }
+
+                if (bytesRead == recState.buffer.Length)
+                {
+                    int bytesToReceive = BitConverter.ToInt32(recState.buffer, 0);
+
+                    StateObject state = new StateObject(bytesToReceive) { workSocket = client };
+                    client.BeginReceive(state.buffer, 0, bytesToReceive, SocketFlags.None, new AsyncCallback(ReceiveCallback), state);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.Warning("Socket exception occurred! " + e);
+                DestroyClient();
+            }
+        }
+
+        private void ReceiveCallback(IAsyncResult ar)
+        {
+            StateObject recState = (StateObject)ar.AsyncState;
+            Socket client = recState.workSocket;
+
+            try {
+                SocketError error;
+                int bytesRead = client.EndReceive(ar, out error);
+
+                if (error != SocketError.Success)
+                {
+                    Logger.Instance.Warning("Socket error occurred! " + error);
+                }
+
+                if (bytesRead == recState.buffer.Length)
+                {
+                    BasePacket packet = new BasePacket(recState.buffer);
+
 #if DEBUG
                 if (packet.commandType != CommandType.UpdatePlayerInfo)
                     Logger.Instance.Log($"Received packet from client: type={packet.commandType}");
 #endif
-                switch (packet.commandType)
-                {
-                    case CommandType.Connect:
-                        {
-                            if (packet.additionalData == null || packet.additionalData.Length == 0 || !packet.additionalData.Any(x => x != 0))
-                            {
-                                DestroyClient();
-                            }
-                        }
-                        break;
-                    case CommandType.Disconnect:
+
+                    ProcessPacket(packet);
+
+                    if (client.Connected)
+                    {
+                        StateObject state = new StateObject(4) { workSocket = client };
+                        client.BeginReceive(state.buffer, 0, 4, SocketFlags.None, new AsyncCallback(ReceiveHeader), state);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.Warning("Socket exception occurred! " + e);
+                DestroyClient();
+            }            
+        }
+
+        public void ProcessPacket(BasePacket packet)
+        {
+            switch (packet.commandType)
+            {
+                case CommandType.Connect:
+                    {
+                        if (packet.additionalData == null || packet.additionalData.Length == 0 || !packet.additionalData.Any(x => x != 0))
                         {
                             DestroyClient();
                         }
-                        break;
-                    case CommandType.UpdatePlayerInfo:
+                    }
+                    break;
+                case CommandType.Disconnect:
+                    {
+                        DestroyClient();
+                    }
+                    break;
+                case CommandType.UpdatePlayerInfo:
+                    {
+                        playerInfo = new PlayerInfo(packet.additionalData);
+                        timeoutTimer.Restart();
+                    }
+                    break;
+                case CommandType.JoinRoom:
+                    {
+                        uint roomId = BitConverter.ToUInt32(packet.additionalData, 0);
+                        if (RoomsController.GetRoomInfosList().Any(x => x.roomId == roomId && x.usePassword))
                         {
-                            playerInfo = new PlayerInfo(packet.additionalData);
-                            timeoutTimer.Restart();
+                            clientJoinedRoom?.Invoke(this, roomId, Encoding.UTF8.GetString(packet.additionalData, 8, BitConverter.ToInt32(packet.additionalData, 4)));
                         }
-                        break;
-                    case CommandType.JoinRoom:
+                        else
                         {
-                            uint roomId = BitConverter.ToUInt32(packet.additionalData, 0);
-                            if (RoomsController.GetRoomInfosList().Any(x => x.roomId == roomId && x.usePassword))
-                            {
-                                clientJoinedRoom?.Invoke(this, roomId, Encoding.UTF8.GetString(packet.additionalData, 8, BitConverter.ToInt32(packet.additionalData, 4)));
-                            }
-                            else
-                            {
-                                clientJoinedRoom?.Invoke(this, roomId, "");
-                            }
+                            clientJoinedRoom?.Invoke(this, roomId, "");
                         }
-                        break;
-                    case CommandType.LeaveRoom:
-                        {
-                            clientLeftRoom?.Invoke(this);
-                            playerInfo.playerState = PlayerState.Lobby;
-                        }
-                        break;
-                    case CommandType.GetRooms:
-                        {
-                            this.SendData(new BasePacket(CommandType.GetRooms, RoomsController.GetRoomsListInBytes()));
-                        }
-                        break;
-                    case CommandType.CreateRoom:
-                        {
-                            uint roomId = RoomsController.CreateRoom(new RoomSettings(packet.additionalData), playerInfo);
-                            this.SendData(new BasePacket(CommandType.CreateRoom, BitConverter.GetBytes(roomId)));
-                        }
-                        break;
-                    case CommandType.GetRoomInfo:
-                        {
+                    }
+                    break;
+                case CommandType.LeaveRoom:
+                    {
+                        clientLeftRoom?.Invoke(this);
+                        playerInfo.playerState = PlayerState.Lobby;
+                    }
+                    break;
+                case CommandType.GetRooms:
+                    {
+                        this.SendData(new BasePacket(CommandType.GetRooms, RoomsController.GetRoomsListInBytes()));
+                    }
+                    break;
+                case CommandType.CreateRoom:
+                    {
+                        uint roomId = RoomsController.CreateRoom(new RoomSettings(packet.additionalData), playerInfo);
+                        this.SendData(new BasePacket(CommandType.CreateRoom, BitConverter.GetBytes(roomId)));
+                    }
+                    break;
+                case CommandType.GetRoomInfo:
+                    {
 #if DEBUG
                             Logger.Instance.Log("Client room: " + joinedRoomID);
 #endif
-                            if (joinedRoomID != 0)
+                        if (joinedRoomID != 0)
+                        {
+                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            if (joinedRoom != null)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
-                                if (joinedRoom != null)
-                                {
-                                    List<byte> buffer = new List<byte>();
-                                    buffer.Add(1);
-                                    buffer.AddRange(joinedRoom.GetSongInfos());
-                                    buffer.AddRange(joinedRoom.GetRoomInfo().ToBytes());
-                                    this.SendData(new BasePacket(CommandType.GetRoomInfo, buffer.ToArray()));
-                                }
+                                List<byte> buffer = new List<byte>();
+                                buffer.Add(1);
+                                buffer.AddRange(joinedRoom.GetSongInfos());
+                                buffer.AddRange(joinedRoom.GetRoomInfo().ToBytes());
+                                this.SendData(new BasePacket(CommandType.GetRoomInfo, buffer.ToArray()));
                             }
+                        }
 
-                        }
-                        break;
-                    case CommandType.SetSelectedSong:
+                    }
+                    break;
+                case CommandType.SetSelectedSong:
+                    {
+                        if (joinedRoomID != 0)
                         {
-                            if (joinedRoomID != 0)
+                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            if (joinedRoom != null)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
-                                if (joinedRoom != null)
+                                if (packet.additionalData == null || packet.additionalData.Length == 0)
                                 {
-                                    if (packet.additionalData == null || packet.additionalData.Length == 0)
-                                    {
-                                        joinedRoom.SetSelectedSong(playerInfo, null);
-                                    }
-                                    else
-                                    {
-                                        joinedRoom.SetSelectedSong(playerInfo, new SongInfo(packet.additionalData));
-                                    }
+                                    joinedRoom.SetSelectedSong(playerInfo, null);
+                                }
+                                else
+                                {
+                                    joinedRoom.SetSelectedSong(playerInfo, new SongInfo(packet.additionalData));
                                 }
                             }
                         }
-                        break;
-                    case CommandType.StartLevel:
+                    }
+                    break;
+                case CommandType.StartLevel:
+                    {
+                        if (joinedRoomID != 0)
                         {
-                            if (joinedRoomID != 0)
+                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            if (joinedRoom != null)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
-                                if (joinedRoom != null)
-                                {
-                                    byte difficulty = packet.additionalData[0];
-                                    SongInfo song = new SongInfo(packet.additionalData.Skip(1).ToArray());
-                                    song.songDuration += 2.5f;
-                                    joinedRoom.StartLevel(playerInfo, difficulty, song);
-                                }
+                                byte difficulty = packet.additionalData[0];
+                                SongInfo song = new SongInfo(packet.additionalData.Skip(1).ToArray());
+                                song.songDuration += 2.5f;
+                                joinedRoom.StartLevel(playerInfo, difficulty, song);
                             }
                         }
-                        break;
-                    case CommandType.DestroyRoom:
+                    }
+                    break;
+                case CommandType.DestroyRoom:
+                    {
+                        if (joinedRoomID != 0)
                         {
-                            if (joinedRoomID != 0)
+                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            if (joinedRoom != null)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
-                                if(joinedRoom != null)
-                                {
-                                    joinedRoom.DestroyRoom(playerInfo);
-                                }
+                                joinedRoom.DestroyRoom(playerInfo);
                             }
                         }
-                        break;
-                    case CommandType.TransferHost:
+                    }
+                    break;
+                case CommandType.TransferHost:
+                    {
+                        if (joinedRoomID != 0)
                         {
-                            if (joinedRoomID != 0)
+                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            if (joinedRoom != null)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
-                                if (joinedRoom != null)
-                                {
-                                    joinedRoom.TransferHost(playerInfo, new PlayerInfo(packet.additionalData));
-                                }
+                                joinedRoom.TransferHost(playerInfo, new PlayerInfo(packet.additionalData));
                             }
                         }
-                        break;
-                    case CommandType.PlayerReady:
+                    }
+                    break;
+                case CommandType.PlayerReady:
+                    {
+                        if (joinedRoomID != 0)
                         {
-                            if (joinedRoomID != 0)
+                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            if (joinedRoom != null)
                             {
-                                Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
-                                if (joinedRoom != null)
-                                {
-                                    joinedRoom.ReadyStateChanged(playerInfo, (packet.additionalData[0] == 0) ? false : true);
-                                }
+                                joinedRoom.ReadyStateChanged(playerInfo, (packet.additionalData[0] == 0) ? false : true);
                             }
                         }
-                        break;
-                }
-                
-                packet = this.ReceiveData(false);
+                    }
+                    break;
             }
-
         }
 
         public void DestroyClient()

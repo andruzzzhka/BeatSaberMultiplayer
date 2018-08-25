@@ -164,12 +164,8 @@ namespace ServerHub.Misc
 
                     if (diff < 1f)
                         Thread.SpinWait(10);
-                    else if (diff < 5f)
-                        Thread.SpinWait(200);
-                    else if (diff < 15f)
-                        Thread.Sleep(5);
                     else
-                        Thread.Sleep(10);
+                        Thread.Sleep(Math.Floor(diff));
 
                     if (!_isRunning)
                         return;
