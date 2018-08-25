@@ -577,7 +577,7 @@ namespace ServerHub.Hub
             }
         } 
 
-        string GetPublicIPv4() {
+        public static string GetPublicIPv4() {
             using (var client = new WebClient()) {
                 return client.DownloadString("https://api.ipify.org");
             }

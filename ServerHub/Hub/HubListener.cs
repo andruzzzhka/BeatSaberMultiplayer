@@ -1,4 +1,4 @@
-﻿using Open.Nat;
+using Open.Nat;
 using ServerHub.Data;
 using ServerHub.Misc;
 using ServerHub.Rooms;
@@ -32,6 +32,11 @@ namespace ServerHub.Hub
             if (Settings.Instance.Server.TryUPnP)
             {
                 OpenPort();
+            }
+
+            if (Settings.Instance.Server.EnableWebSocketServer)
+            {
+                WebSocketListener.Init();
             }
 
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;

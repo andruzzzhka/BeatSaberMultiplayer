@@ -13,6 +13,8 @@ namespace ServerHub.Misc {
             private int _port;
             private int _tickrate;
             private bool _tryUPnP;
+            private bool _enableWebSocketServer;
+            private int _webSocketPort;
 
             private Action MarkDirty { get; }
 
@@ -61,11 +63,41 @@ namespace ServerHub.Misc {
                 }
             }
 
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool EnableWebSocketServer
+            {
+                get => _enableWebSocketServer;
+                set
+                {
+                    _enableWebSocketServer = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public int WebSocketPort
+            {
+                get => _webSocketPort;
+                set
+                {
+                    _webSocketPort = value;
+                    MarkDirty();
+                }
+            }
+
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
                 _tickrate = 30;
                 _tryUPnP = true;
+                _enableWebSocketServer = false;
+                _webSocketPort = 3701;
             }
         }
         [JsonObject(MemberSerialization.OptIn)]
