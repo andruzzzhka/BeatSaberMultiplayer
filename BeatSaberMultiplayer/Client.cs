@@ -27,6 +27,7 @@ namespace BeatSaberMultiplayer
     public class StateObject
     {
         public Socket workSocket = null;
+        public BasePacket packet;
         public byte[] buffer;
 
         public StateObject(int BufferSize)
@@ -97,8 +98,6 @@ namespace BeatSaberMultiplayer
                 try
                 {
                     socket.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
-                    Thread.Sleep(150);
-                    socket.Close();
                 }
                 catch (Exception)
                 {

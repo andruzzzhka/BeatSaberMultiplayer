@@ -23,7 +23,7 @@ namespace ServerHub.Hub
 
         static public bool Listen;
 
-        static List<Client> hubClients = new List<Client>();
+        public static List<Client> hubClients = new List<Client>();
 
         public static void Start()
         {
@@ -116,6 +116,9 @@ namespace ServerHub.Hub
         {
             RoomsController.ClientLeftRoom(sender);
             hubClients.Remove(sender);
+            sender.clientDisconnected -= ClientDisconnected;
+            sender.clientJoinedRoom -= ClientJoinedRoom;
+            sender.clientLeftRoom -= RoomsController.ClientLeftRoom;
         }
 
         static async Task<Client> AcceptClient()
@@ -134,11 +137,6 @@ namespace ServerHub.Hub
             }
             Client newClient = new Client(client);
             return newClient;
-        }
-
-        public static List<Client> GetClientsInLobby()
-        {
-            return hubClients;
         }
 
     }

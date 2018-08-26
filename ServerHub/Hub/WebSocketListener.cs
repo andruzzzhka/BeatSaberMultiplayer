@@ -47,21 +47,30 @@ namespace ServerHub.Hub
 
         public static void BroadcastState()
         {
-            List<string> paths = Server.WebSocketServices.Paths.ToList<string>();
-            string data = JsonConvert.SerializeObject(paths);
-            Server.WebSocketServices["/"].Sessions.BroadcastAsync(data, null);
+            if (Server != null)
+            {
+                List<string> paths = Server.WebSocketServices.Paths.ToList<string>();
+                string data = JsonConvert.SerializeObject(paths);
+                Server.WebSocketServices["/"].Sessions.BroadcastAsync(data, null);
+            }
         }
 
         public static void AddRoom(Room room)
         {
-            Server.AddWebSocketService<Broadcast>($"/room/{room.roomId}");
-            BroadcastState();
+            if (Server != null)
+            {
+                Server.AddWebSocketService<Broadcast>($"/room/{room.roomId}");
+                BroadcastState();
+            }
         }
 
         public static void DestroyRoom(Room room)
         {
-            Server.RemoveWebSocketService($"/room/{room.roomId}");
-            BroadcastState();
+            if (Server != null)
+            {
+                Server.RemoveWebSocketService($"/room/{room.roomId}");
+                BroadcastState();
+            }
         }
     }
 }

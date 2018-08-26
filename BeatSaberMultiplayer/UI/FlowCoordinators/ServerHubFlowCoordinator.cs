@@ -204,7 +204,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 response = socket.ReceiveData();
 
                 socket.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
-                socket.Close();
 
                 if (response.commandType == CommandType.GetRooms)
                 {

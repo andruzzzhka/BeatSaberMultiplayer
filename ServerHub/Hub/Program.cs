@@ -34,22 +34,21 @@ namespace ServerHub.Hub
 
         private Thread listenerThread { get; set; }
 
+#if !DEBUG
         private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Logger.Instance.Exception(e.ExceptionObject.ToString());
-#if DEBUG
-            Environment.FailFast("UnhadledException", e.ExceptionObject as Exception);
-#endif
         }
+#endif
 
         private void OnShutdown(ShutdownEventArgs obj) {
             HubListener.Stop();
         }
 
         void Start(string[] args) {
-
+#if !DEBUG
             AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
-
+#endif
             UpdateLists();
 
             if (args.Length > 0)
@@ -163,13 +162,13 @@ namespace ServerHub.Hub
                     if (!exitAfterPrint)
                     {
                         s += "Clients in Lobby:";
-                        if (HubListener.GetClientsInLobby().Count == 0)
+                        if (HubListener.hubClients.Count == 0)
                         {
                             s += $"{Environment.NewLine}No Clients";
                         }
                         else
                         {
-                            foreach (var client in HubListener.GetClientsInLobby())
+                            foreach (var client in HubListener.hubClients)
                             {
                                 IPEndPoint remote = (IPEndPoint)client.socket.RemoteEndPoint;
                                 s += $"{Environment.NewLine}[{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
@@ -547,8 +546,15 @@ namespace ServerHub.Hub
             whitelistedIPs = Settings.Instance.Access.Whitelist.Where(x => IPAddressRange.TryParse(x, out tryIp)).Select(y => IPAddressRange.Parse(y)).ToList();
             whitelistedIDs = Settings.Instance.Access.Whitelist.Where(x => ulong.TryParse(x, out tryId)).Select(y => ulong.Parse(y)).ToList();
             whitelistedNames = Settings.Instance.Access.Whitelist.Where(x => !IPAddressRange.TryParse(x, out tryIp) && !ulong.TryParse(x, out tryId)).ToList();
-            
-            foreach (var client in HubListener.GetClientsInLobby())
+
+            List<Client> clientsToKick = new List<Client>();
+            clientsToKick.AddRange(HubListener.hubClients);
+            foreach (var room in RoomsController.GetRoomsList())
+            {
+                clientsToKick.AddRange(room.roomClients);
+            }
+
+            foreach (var client in clientsToKick)
             {
                 if (Settings.Instance.Access.WhitelistEnabled && !client.IsWhitelisted())
                 {
@@ -559,23 +565,7 @@ namespace ServerHub.Hub
                     client.KickClient("You are banned!");
                 }
             }
-
-            foreach (var room in RoomsController.GetRoomsList())
-            {
-                List<Client> clients = new List<Client>(room.roomClients);
-                foreach (var client in clients)
-                {
-                    if (Settings.Instance.Access.WhitelistEnabled && !client.IsWhitelisted())
-                    {
-                        client.KickClient("You are not whitelisted!");
-                    }
-                    if (client.IsBlacklisted())
-                    {
-                        client.KickClient("You are banned!");
-                    }
-                }
-            }
-        } 
+        }
 
         public static string GetPublicIPv4() {
             using (var client = new WebClient()) {

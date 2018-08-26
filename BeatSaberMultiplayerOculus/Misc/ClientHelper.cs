@@ -43,7 +43,7 @@ namespace BeatSaberMultiplayer.Misc
                 return;
 
             byte[] buffer = packet.ToBytes();
-            StateObject state = new StateObject(buffer.Length) { workSocket = client};
+            StateObject state = new StateObject(buffer.Length) { workSocket = client, packet = packet};
             client.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, SendCallback, state);
         }
 
@@ -53,6 +53,10 @@ namespace BeatSaberMultiplayer.Misc
             Socket client = recState.workSocket;
 
             client.EndSend(ar);
+            if(recState.packet.commandType == CommandType.Disconnect)
+            {
+                client.Close();
+            }
         }
     }
 }

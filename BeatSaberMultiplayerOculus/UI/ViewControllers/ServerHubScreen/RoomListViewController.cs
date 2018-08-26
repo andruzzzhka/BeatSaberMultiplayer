@@ -126,6 +126,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
         public TableCell CellForRow(int row)
         {
             StandardLevelListTableCell cell = Instantiate(_serverTableCellInstance);
+            cell.reuseIdentifier = "ServerTableCell";
 
             RoomInfo room = availableRooms[row];
             

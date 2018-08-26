@@ -17,7 +17,7 @@ namespace ServerHub.Data
 {
     public class StateObject
     {
-        public Socket workSocket = null;
+        public Client client;
         public byte[] buffer;
 
         public StateObject(int BufferSize)
@@ -26,7 +26,7 @@ namespace ServerHub.Data
         }
     }
 
-    class Client
+    public class Client
     {
         Stopwatch timeoutTimer;
 
@@ -51,7 +51,10 @@ namespace ServerHub.Data
             {
                 BasePacket packet = this.ReceiveData(true);
 
-                if (packet.commandType == CommandType.Connect && packet.additionalData != null && packet.additionalData.Length > 0)
+                if (packet.additionalData == null)
+                    return false;
+
+                if (packet.commandType == CommandType.Connect && packet.additionalData.Length > 0)
                 {
                     uint version = BitConverter.ToUInt32(packet.additionalData, 0);
 
@@ -101,14 +104,14 @@ namespace ServerHub.Data
                     timeoutTimer = new Stopwatch();
                     HighResolutionTimer.LoopTimer.Elapsed += ClientLoop;
 
-                    StateObject state = new StateObject(4) { workSocket = socket};
+                    StateObject state = new StateObject(4) { client = this};
                     socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, ReceiveHeader, state);
 
                     return true;
                 }
                 else
                 {
-                    throw new Exception("Wrong command received!");
+                    throw new Exception($"Wrong command received!");
                 }
             }
             catch (Exception e)
@@ -161,7 +164,7 @@ namespace ServerHub.Data
         {
 
             StateObject recState = (StateObject)ar.AsyncState;
-            Socket client = recState.workSocket;
+            Socket client = recState.client.socket;
 
             try
             {
@@ -177,7 +180,7 @@ namespace ServerHub.Data
                 {
                     int bytesToReceive = BitConverter.ToInt32(recState.buffer, 0);
 
-                    StateObject state = new StateObject(bytesToReceive) { workSocket = client };
+                    StateObject state = new StateObject(bytesToReceive) { client = this };
                     client.BeginReceive(state.buffer, 0, bytesToReceive, SocketFlags.None, new AsyncCallback(ReceiveCallback), state);
                 }
             }
@@ -191,7 +194,7 @@ namespace ServerHub.Data
         private void ReceiveCallback(IAsyncResult ar)
         {
             StateObject recState = (StateObject)ar.AsyncState;
-            Socket client = recState.workSocket;
+            Socket client = recState.client.socket;
 
             try {
                 SocketError error;
@@ -200,6 +203,7 @@ namespace ServerHub.Data
                 if (error != SocketError.Success)
                 {
                     Logger.Instance.Warning("Socket error occurred! " + error);
+                    DestroyClient();
                 }
 
                 if (bytesRead == recState.buffer.Length)
@@ -207,15 +211,15 @@ namespace ServerHub.Data
                     BasePacket packet = new BasePacket(recState.buffer);
 
 #if DEBUG
-                if (packet.commandType != CommandType.UpdatePlayerInfo)
-                    Logger.Instance.Log($"Received packet from client: type={packet.commandType}");
+                    if (packet.commandType != CommandType.UpdatePlayerInfo)
+                        Logger.Instance.Log($"Received packet from client: type={packet.commandType}");
 #endif
 
                     ProcessPacket(packet);
 
-                    if (client.Connected)
+                    if (client.Connected && packet.commandType != CommandType.Disconnect)
                     {
-                        StateObject state = new StateObject(4) { workSocket = client };
+                        StateObject state = new StateObject(4) { client = this };
                         client.BeginReceive(state.buffer, 0, 4, SocketFlags.None, new AsyncCallback(ReceiveHeader), state);
                     }
                 }
@@ -388,7 +392,7 @@ namespace ServerHub.Data
                 socket.Close();
             }
             HighResolutionTimer.LoopTimer.Elapsed -= ClientLoop;
-            clientDisconnected.Invoke(this);
+            clientDisconnected?.Invoke(this);
         }
 
         public void KickClient()

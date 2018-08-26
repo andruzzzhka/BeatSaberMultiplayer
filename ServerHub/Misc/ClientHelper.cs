@@ -44,26 +44,7 @@ namespace ServerHub.Misc
             }
             catch(IOException e)
             {
-#if DEBUG
-                if (client.playerInfo != null)
-                {
-                    Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}: {e}");
-                }
-                else
-                {
-                    Logger.Instance.Log($"Lost connection to the client: {e}");
-                }
-#else
-                if (client.playerInfo != null)
-                {
-                    Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}.");
-                }
-                else
-                {
-                    Logger.Instance.Log($"Lost connection to the client.");
-                }
-#endif
-                LostConnection?.Invoke(client);
+                LostConnectionInvoke(client);
             }
             catch (Exception)
             {
@@ -82,7 +63,7 @@ namespace ServerHub.Misc
 
             try
             {
-                StateObject state = new StateObject(buffer.Length) { workSocket = client.socket};
+                StateObject state = new StateObject(buffer.Length) { client = client};
                 client.socket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, SendCallback, state);
 #if DEBUG
                 if (packet.commandType != CommandType.UpdatePlayerInfo)
@@ -90,12 +71,7 @@ namespace ServerHub.Misc
 #endif
             }catch(IOException e)
             {
-#if DEBUG
-                Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}: {e}");
-#else
-                Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}.");
-#endif
-                LostConnection?.Invoke(client);
+                LostConnectionInvoke(client);
             }
             
         }
@@ -103,7 +79,7 @@ namespace ServerHub.Misc
         private static void SendCallback(IAsyncResult ar)
         {
             StateObject recState = (StateObject)ar.AsyncState;
-            Socket client = recState.workSocket;
+            Socket client = recState.client.socket;
 
             try
             {
@@ -113,11 +89,26 @@ namespace ServerHub.Misc
                 if (error != SocketError.Success)
                 {
                     Logger.Instance.Warning("Socket error occurred! " + error);
+                    LostConnectionInvoke(recState.client);
                 }
             }catch (Exception e)
             {
                 Logger.Instance.Warning("Socket exception occurred! " + e);
+                LostConnectionInvoke(recState.client);
             }
+        }
+
+        private static void LostConnectionInvoke(Client client)
+        {
+            if (client.playerInfo != null)
+            {
+                Logger.Instance.Log($"Lost connection to the {client.playerInfo.playerName}.");
+            }
+            else
+            {
+                Logger.Instance.Log($"Lost connection to the client.");
+            }
+            LostConnection?.Invoke(client);
         }
     }
 }
