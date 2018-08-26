@@ -55,7 +55,8 @@ namespace ServerHub.Hub
             {
                 if (args[0].StartsWith("--"))
                 {
-                    ProcessCommand(args[0].TrimStart('-'), args.Skip(1).ToArray(), true);
+                    string command = string.Join(" ", args);
+                    Logger.Instance.Log(ProcessCommand(command.TrimStart('-')), true);
                 }
                 else
                 {
@@ -89,12 +90,8 @@ namespace ServerHub.Hub
             {
                 var x = Console.ReadLine();
                 if (x == string.Empty) continue;
-                var comParts = x?.Split(' ');
-                string comName = comParts[0];
-                string[] comArgs = comParts.Skip(1).ToArray();
 
-                ProcessCommand(comName, comArgs, false);
-
+                Logger.Instance.Log(ProcessCommand(x));
             }
             
         }
@@ -140,65 +137,79 @@ namespace ServerHub.Hub
             }
         }
 #endif
-        void ProcessCommand(string comName, string[] comArgs, bool exitAfterPrint)
+        string ProcessCommand(string command)
         {
+            var comParts = command?.Split(' ');
+            string comName = comParts[0];
+            string[] comArgs = comParts.Skip(1).ToArray();
+
             string s = string.Empty;
             switch (comName.ToLower())
             {
                 case "help":
-                    foreach (var com in new[] { "help", "version", "quit", "clients", "blacklist [add/remove] [nick/playerID/IP]", "whitelist [enable/disable/add/remove] [nick/playerID/IP]", "tickrate", "createroom", "cloneroom [roomId]", "destroyroom [roomId]" })
+                    foreach (var com in new[] {
+                        "help",
+                        "version",
+                        "quit",
+                        "clients",
+                        "blacklist [add/remove] [nick/playerID/IP]",
+                        "whitelist [enable/disable/add/remove] [nick/playerID/IP]",
+                        "tickrate [5-150]",
+                        //"createroom",
+                        "cloneroom [roomId]",
+                        "destroyroom [roomId]" })
                     {
                         s += $"{Environment.NewLine}> {com}";
                     }
-                    Logger.Instance.Log($"Commands:{s}", exitAfterPrint);
-                    break;
+                    return $"Commands:{s}";
                 case "version":
-                    Logger.Instance.Log($"{Assembly.GetEntryAssembly().GetName().Version}", exitAfterPrint);
-                    break;
+                    return $"{Assembly.GetEntryAssembly().GetName().Version}";
                 case "quit":
                     Environment.Exit(0);
-                    return;
+                    return "";
                 case "clients":
-                    if (!exitAfterPrint)
+                    if (HubListener.Listen)
                     {
-                        s += "Clients in Lobby:";
-                        if (HubListener.hubClients.Count == 0)
+                        s += $"{Environment.NewLine}┌─Lobby:";
+                        if (HubListener.hubClients.Where(x => x.socket != null && x.socket.Connected).Count() == 0)
                         {
-                            s += $"{Environment.NewLine}No Clients";
+                            s += $"{Environment.NewLine}│ No Clients";
                         }
                         else
                         {
-                            foreach (var client in HubListener.hubClients)
+                            List<Client> clients = new List<Client>(HubListener.hubClients.Where(x => x.socket != null && x.socket.Connected));
+                            foreach (var client in clients)
                             {
                                 IPEndPoint remote = (IPEndPoint)client.socket.RemoteEndPoint;
-                                s += $"{Environment.NewLine}[{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
+                                s += $"{Environment.NewLine}│ [{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
                             }
                         }
 
                         if (RoomsController.GetRoomsList().Count > 0)
                         {
-                            s += $"{Environment.NewLine}Clients in Rooms:";
                             foreach (var room in RoomsController.GetRoomsList())
                             {
-                                s += $"{Environment.NewLine}Room {room.roomId} \"{room.roomSettings.Name}\":";
+                                s += $"{Environment.NewLine}├─Room {room.roomId} \"{room.roomSettings.Name}\":";
                                 if (room.roomClients.Count == 0)
                                 {
-                                    s += $"{Environment.NewLine}No Clients";
+                                    s += $"{Environment.NewLine}│ No Clients";
                                 }
                                 else
                                 {
-                                    foreach (var client in room.roomClients)
+                                    List<Client> clients = new List<Client>(room.roomClients);
+                                    foreach (var client in clients)
                                     {
                                         IPEndPoint remote = (IPEndPoint)client.socket.RemoteEndPoint;
-                                        s += $"{Environment.NewLine}[{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
+                                        s += $"{Environment.NewLine}│ [{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
                                     }
                                 }
                             }
                         }
 
-
-                        Logger.Instance.Log(s);
+                        s += $"{Environment.NewLine}└";
                         
+                        return s;
+
                     }
                     break;
                 case "blacklist":
@@ -212,43 +223,40 @@ namespace ServerHub.Hub
                                         if (!Settings.Instance.Access.Blacklist.Contains(comArgs[1]))
                                         {
                                             Settings.Instance.Access.Blacklist.Add(comArgs[1]);
-                                            Logger.Instance.Log($"Successfully banned {comArgs[1]}", exitAfterPrint);
                                             Settings.Instance.Save();
                                             UpdateLists();
+
+                                            return $"Successfully banned {comArgs[1]}";
                                         }
                                         else
                                         {
-                                            Logger.Instance.Log($"{comArgs[1]} is already blacklisted", exitAfterPrint);
+                                            return $"{comArgs[1]} is already blacklisted";
                                         }
                                     }
-                                    break;
                                 case "remove":
                                     {
                                         if (Settings.Instance.Access.Blacklist.Remove(comArgs[1]))
                                         {
-                                            Logger.Instance.Log($"Successfully unbanned {comArgs[1]}", exitAfterPrint);
                                             Settings.Instance.Save();
                                             UpdateLists();
+                                            return $"Successfully unbanned {comArgs[1]}";
                                         }
                                         else
                                         {
-                                            Logger.Instance.Warning($"{comArgs[1]} is not banned", exitAfterPrint);
+                                            return $"{comArgs[1]} is not banned";
                                         }
                                     }
-                                    break;
                                 default:
                                     {
-                                        Logger.Instance.Warning($"Command usage: blacklist [add/remove] [nick/playerID/IP]", exitAfterPrint);
+                                        return $"Command usage: blacklist [add/remove] [nick/playerID/IP]";
                                     }
-                                    break;
                             }
                         }
                         else
                         {
-                            Logger.Instance.Warning($"Command usage: blacklist [add/remove] [nick/playerID/IP]", exitAfterPrint);
+                            return $"Command usage: blacklist [add/remove] [nick/playerID/IP]";
                         }
                     }
-                    break;
                 case "whitelist":
                     {
                         if (comArgs.Length >= 1)
@@ -258,19 +266,17 @@ namespace ServerHub.Hub
                                 case "enable":
                                     {
                                         Settings.Instance.Access.WhitelistEnabled = true;
-                                        Logger.Instance.Log($"Whitelist enabled", exitAfterPrint);
                                         Settings.Instance.Save();
                                         UpdateLists();
+                                        return $"Whitelist enabled";
                                     }
-                                    break;
                                 case "disable":
                                     {
                                         Settings.Instance.Access.WhitelistEnabled = false;
-                                        Logger.Instance.Log($"Whitelist disabled", exitAfterPrint);
                                         Settings.Instance.Save();
                                         UpdateLists();
+                                        return $"Whitelist disabled";
                                     }
-                                    break;
                                 case "add":
                                     {
                                         if (comArgs.Length == 2 && !string.IsNullOrEmpty(comArgs[1]))
@@ -278,57 +284,51 @@ namespace ServerHub.Hub
                                             if (!Settings.Instance.Access.Whitelist.Contains(comArgs[1]))
                                             {
                                                 Settings.Instance.Access.Whitelist.Add(comArgs[1]);
-                                                Logger.Instance.Log($"Successfully whitelisted {comArgs[1]}", exitAfterPrint);
                                                 Settings.Instance.Save();
                                                 UpdateLists();
+                                                return $"Successfully whitelisted {comArgs[1]}";
                                             }
                                             else
                                             {
-                                                Logger.Instance.Log($"{comArgs[1]} is already whitelisted", exitAfterPrint);
+                                                return $"{comArgs[1]} is already whitelisted";
                                             }
                                         }
                                         else
                                         {
-                                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [nick/playerID/IP]", exitAfterPrint);
+                                            return $"Command usage: whitelist [enable/disable/add/remove] [nick/playerID/IP]";
                                         }
                                     }
-                                    break;
                                 case "remove":
                                     {
                                         if (comArgs.Length == 2 && !string.IsNullOrEmpty(comArgs[1]))
                                         {
                                             if (Settings.Instance.Access.Whitelist.Remove(comArgs[1]))
                                             {
-                                                Logger.Instance.Log($"Successfully removed {comArgs[1]} from whitelist", exitAfterPrint);
                                                 Settings.Instance.Save();
                                                 UpdateLists();
+                                                return $"Successfully removed {comArgs[1]} from whitelist";
                                             }
                                             else
                                             {
-                                                Logger.Instance.Warning($"{comArgs[1]} is not whitelisted", exitAfterPrint);
+                                                return $"{comArgs[1]} is not whitelisted";
                                             }
                                         }
                                         else
                                         {
-                                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [nick/playerID/IP]", exitAfterPrint);
+                                            return $"Command usage: whitelist [enable/disable/add/remove] [nick/playerID/IP]";
                                         }
                                     }
-                                    break;
                                 default:
                                     {
-                                        Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [nick/playerID/IP]", exitAfterPrint);
+                                        return $"Command usage: whitelist [enable/disable/add/remove] [nick/playerID/IP]";
                                     }
-                                    break;
                             }
                         }
                         else
                         {
-                            Logger.Instance.Warning($"Command usage: whitelist [enable/disable/add/remove] [nick/playerID/IP]", exitAfterPrint);
+                            return $"Command usage: whitelist [enable/disable/add/remove] [nick/playerID/IP]";
                         }
-
-
                     }
-                    break;
                 case "tickrate":
                     {
                         int tickrate = 30;
@@ -339,9 +339,15 @@ namespace ServerHub.Hub
 #endif
                             Settings.Instance.Server.Tickrate = tickrate;
                             HighResolutionTimer.LoopTimer.Interval = 1000f / tickrate;
+
+                            return $"Set tickrate to {Settings.Instance.Server.Tickrate}";
+                        }
+                        else
+                        {
+                            return $"Command usage: tickrate [5-150]";
                         }
                     }
-                    break;
+                    /*
                 case "createroom":
                     {
                         if (!exitAfterPrint)
@@ -369,7 +375,7 @@ namespace ServerHub.Hub
 
                             Logger.Instance.Log("Name:");
                             string roomName = Console.ReadLine();
-                            if(string.IsNullOrEmpty(roomName))
+                            if (string.IsNullOrEmpty(roomName))
                             {
                                 Logger.Instance.Error($"Room name can't be empty!");
                                 return;
@@ -378,7 +384,7 @@ namespace ServerHub.Hub
                             Logger.Instance.Log("Password (blank = no password): ");
                             string roomPass = Console.ReadLine();
                             bool usePassword = !string.IsNullOrEmpty(roomPass);
-                            
+
                             Logger.Instance.Log("Song selection type (Manual, Random, Voting):");
                             SongSelectionType roomSongSelectionType;
                             buffer = Console.ReadLine();
@@ -387,7 +393,7 @@ namespace ServerHub.Hub
                                 Logger.Instance.Error($"Can't parse \"{buffer}\"!");
                                 return;
                             }
-                            
+
                             Logger.Instance.Log("Max players:");
                             int roomMaxPlayers;
                             buffer = Console.ReadLine();
@@ -407,7 +413,7 @@ namespace ServerHub.Hub
                             }
 
                             Logger.Instance.Log("Songs (BeatDrop Playlist Path):");
-                            
+
                             buffer = Console.ReadLine();
                             if (!buffer.EndsWith(".json"))
                                 buffer += ".json";
@@ -445,10 +451,10 @@ namespace ServerHub.Hub
                                 }
                                 Logger.Instance.Log($"Creating room...");
 
-                                RoomSettings settings = new RoomSettings() { Name = roomName, UsePassword = usePassword, Password = roomPass, SelectionType = roomSongSelectionType, NoFail = roomNoFail, MaxPlayers = roomMaxPlayers, AvailableSongs = songs};
+                                RoomSettings settings = new RoomSettings() { Name = roomName, UsePassword = usePassword, Password = roomPass, SelectionType = roomSongSelectionType, NoFail = roomNoFail, MaxPlayers = roomMaxPlayers, AvailableSongs = songs };
                                 uint roomId = RoomsController.CreateRoom(settings, roomHost);
 
-                                Logger.Instance.Log($"Done! New room ID is "+ roomId);
+                                Logger.Instance.Log($"Done! New room ID is " + roomId);
 
                             }
                             else
@@ -458,9 +464,10 @@ namespace ServerHub.Hub
                         }
                     }
                     break;
+                    */
                 case "cloneroom":
                     {
-                        if (!exitAfterPrint)
+                        if (HubListener.Listen)
                         {
                             if (comArgs.Length == 1)
                             {
@@ -468,49 +475,50 @@ namespace ServerHub.Hub
                                 if (uint.TryParse(comArgs[0], out roomId))
                                 {
                                     Room room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
-                                    if (room != null) {
+                                    if (room != null)
+                                    {
                                         uint newRoomId = RoomsController.CreateRoom(room.roomSettings, room.roomHost);
-                                        Logger.Instance.Log("Cloned room roomId is "+newRoomId);
+                                        return "Cloned room roomId is " + newRoomId;
                                     }
                                     else
                                     {
-                                        Logger.Instance.Warning($"Command usage: cloneroom [roomId]");
+                                        return $"Command usage: cloneroom [roomId]";
                                     }
                                 }
                                 else
                                 {
-                                    Logger.Instance.Warning($"Command usage: cloneroom [roomId]");
+                                    return $"Command usage: cloneroom [roomId]";
                                 }
                             }
                             else
                             {
-                                Logger.Instance.Warning($"Command usage: cloneroom [roomId]");
+                                return $"Command usage: cloneroom [roomId]";
                             }
                         }
                     }
                     break;
                 case "destroyroom":
                     {
-                        if (!exitAfterPrint)
+                        if (HubListener.Listen)
                         {
                             if (comArgs.Length == 1)
                             {
                                 uint roomId;
                                 if (uint.TryParse(comArgs[0], out roomId))
                                 {
-                                    if(RoomsController.DestroyRoom(roomId))
-                                        Logger.Instance.Log("Destroyed room " + roomId);
+                                    if (RoomsController.DestroyRoom(roomId))
+                                        return "Destroyed room " + roomId;
                                     else
-                                        Logger.Instance.Warning("Room with ID "+ roomId + " not found!");
+                                        return "Room with ID " + roomId + " not found!";
                                 }
                                 else
                                 {
-                                    Logger.Instance.Warning($"Command usage: destroyroom [roomId]");
+                                    return $"Command usage: destroyroom [roomId]";
                                 }
                             }
                             else
                             {
-                                Logger.Instance.Warning($"Command usage: destroyroom [roomId]");
+                                return $"Command usage: destroyroom [roomId]";
                             }
                         }
                     }
@@ -526,12 +534,10 @@ namespace ServerHub.Hub
                         RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = false, Password = "test", NoFail = false, MaxPlayers = 4, SelectionType = Data.SongSelectionType.Manual, AvailableSongs = new System.Collections.Generic.List<Data.SongInfo>() { new Data.SongInfo() { levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "451ffd065cf0e6adc01b2c3eda375794".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "97b35d13bac139c089a0c9d9306c9d76".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a0d040d1a4fe833d5f9838d35777d302".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "61e3b11c1a4cd9185db46b1f7bb7ea54".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e2d35a81fc0c54c326b09892c8d5c038".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a8f8f95869b90a288a9ce4bdc260fa17".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "7dce2ba59bc69ec59e6ac455b98f3761".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "fbd77e71ce31329e5ebacde40c7401e0".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "7014f67926d216a6e2df026fa67017b0".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "51d0e56ecea0a98637c0323e7a3af7cf".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "9d1e4315971f6644ac94babdbd20e36a".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "9812c675def22f7405e0bf3422134756".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "1d46797ccb24acb86d0403828533df61".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "6ffccb03d75106c5911dd876dfd5f054".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e3a97c826fab2ce5993dc2e71443b9aa".ToUpper(), songName = "" } } }, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
                     }
                     break;
-                
 #endif
             }
 
-            if (exitAfterPrint)
-                Environment.Exit(0);
+            return "";
         }
 
         private void UpdateLists()

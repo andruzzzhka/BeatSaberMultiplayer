@@ -100,7 +100,8 @@ namespace ServerHub.Hub
                     client.clientDisconnected += ClientDisconnected;
                     client.clientJoinedRoom += ClientJoinedRoom;
                     client.clientLeftRoom += RoomsController.ClientLeftRoom;
-                }                
+                    client.ClientAccepted();
+                }
             }
         }
 

@@ -96,17 +96,6 @@ namespace ServerHub.Data
                         return false;
                     }
 
-                    playerInfo.playerState = PlayerState.Lobby;
-                    this.SendData(new BasePacket(CommandType.Connect, new byte[0]));
-
-                    Logger.Instance.Log($"{playerInfo.playerName} connected!");
-
-                    timeoutTimer = new Stopwatch();
-                    HighResolutionTimer.LoopTimer.Elapsed += ClientLoop;
-
-                    StateObject state = new StateObject(4) { client = this};
-                    socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, ReceiveHeader, state);
-
                     return true;
                 }
                 else
@@ -119,6 +108,20 @@ namespace ServerHub.Data
                 Logger.Instance.Warning($"Can't initialize client! Exception: {e}");
                 return false;
             }
+        }
+
+        public void ClientAccepted()
+        {
+            playerInfo.playerState = PlayerState.Lobby;
+            this.SendData(new BasePacket(CommandType.Connect, new byte[0]));
+
+            Logger.Instance.Log($"{playerInfo.playerName} connected!");
+
+            timeoutTimer = new Stopwatch();
+            HighResolutionTimer.LoopTimer.Elapsed += ClientLoop;
+
+            StateObject state = new StateObject(4) { client = this };
+            socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, ReceiveHeader, state);
         }
 
         public bool IsBlacklisted()
