@@ -7,7 +7,7 @@ namespace System.Linq {
         public static ConsoleColor GetColour(this Logger.LogMessage message) {
             switch (message.Level) {
                 case Logger.LoggerLevel.Info:
-                    return ConsoleColor.Blue;
+                    return ConsoleColor.Green;
                 case Logger.LoggerLevel.Warning:
                     return ConsoleColor.Magenta;
                 case Logger.LoggerLevel.Exception:

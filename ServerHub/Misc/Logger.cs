@@ -51,28 +51,28 @@ namespace ServerHub.Misc {
 
         public void Log(object msg, bool hideHeader = false) {
             if(!hideHeader)
-                PrintLogMessage(new LogMessage($"[LOG @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Info));
+                PrintLogMessage(new LogMessage($"[LOG       -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Info));
             else
                 PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Info, false));
         }
 
         public void Error(object msg, bool hideHeader = false) {
             if (!hideHeader)
-                PrintLogMessage(new LogMessage($"[ERROR @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Error));
+                PrintLogMessage(new LogMessage($"[ERROR     -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Error));
             else
                 PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Error, false));
         }
 
         public void Exception(object msg, bool hideHeader = false) {
             if (!hideHeader)
-                PrintLogMessage(new LogMessage($"[EXCEPTION @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Exception));
+                PrintLogMessage(new LogMessage($"[EXCEPTION -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Exception));
             else
                 PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Exception, false));
         }
 
         public void Warning(object msg, bool hideHeader = false) {
             if (!hideHeader)
-                PrintLogMessage(new LogMessage($"[Warning @ {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Warning));
+                PrintLogMessage(new LogMessage($"[WARNING   -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Warning));
             else
                 PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Warning, false));
         }
@@ -85,6 +85,7 @@ namespace ServerHub.Misc {
             Console.WriteLine(msg.Message);
             if (msg.PrintToLog)
                 LogWriter.WriteLine(msg.Message);
+            Console.ResetColor();
         }
 
         FileInfo GetPath() {
