@@ -28,6 +28,7 @@ namespace BeatSaberMultiplayer
     {
         public Socket workSocket = null;
         public BasePacket packet;
+        public int offset;
         public byte[] buffer;
 
         public StateObject(int BufferSize)
@@ -227,7 +228,7 @@ namespace BeatSaberMultiplayer
             
             int bytesRead = client.EndReceive(ar);
             
-            if (bytesRead == recState.buffer.Length)
+            if (bytesRead == recState.buffer.Length-recState.offset)
             {
                 BasePacket packet = new BasePacket(recState.buffer);
 
@@ -253,6 +254,11 @@ namespace BeatSaberMultiplayer
                     StateObject state = new StateObject(4) { workSocket = client };
                     client.BeginReceive(state.buffer, 0, 4, SocketFlags.None, new AsyncCallback(ReceiveHeader), state);
                 }
+            }
+            else if (bytesRead < recState.buffer.Length - recState.offset)
+            {
+                recState.offset += bytesRead;
+                client.BeginReceive(recState.buffer, recState.offset, recState.buffer.Length-recState.offset, SocketFlags.None, new AsyncCallback(ReceiveCallback), recState);
             }
         }
 

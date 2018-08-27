@@ -18,6 +18,7 @@ namespace ServerHub.Data
     public class StateObject
     {
         public Client client;
+        public int offset;
         public byte[] buffer;
 
         public StateObject(int BufferSize)
@@ -209,7 +210,7 @@ namespace ServerHub.Data
                     DestroyClient();
                 }
 
-                if (bytesRead == recState.buffer.Length)
+                if (bytesRead == recState.buffer.Length - recState.offset)
                 {
                     BasePacket packet = new BasePacket(recState.buffer);
 
@@ -225,6 +226,11 @@ namespace ServerHub.Data
                         StateObject state = new StateObject(4) { client = this };
                         client.BeginReceive(state.buffer, 0, 4, SocketFlags.None, new AsyncCallback(ReceiveHeader), state);
                     }
+                }
+                else if (bytesRead < recState.buffer.Length - recState.offset)
+                {
+                    recState.offset += bytesRead;
+                    client.BeginReceive(recState.buffer, recState.offset, recState.buffer.Length - recState.offset, SocketFlags.None, new AsyncCallback(ReceiveCallback), recState);
                 }
             }
             catch (Exception e)

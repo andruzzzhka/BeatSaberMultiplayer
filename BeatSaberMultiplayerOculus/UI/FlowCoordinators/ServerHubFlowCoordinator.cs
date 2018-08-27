@@ -76,9 +76,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void UpdateRoomsList()
         {
-#if DEBUG
             Log.Info("Updating rooms list...");
-#endif
             _serverHubClients.ForEach(x =>
             {
                 x.Abort();
@@ -104,16 +102,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _serverHubNavigationController.roomListViewController.SetRooms(null);
             _serverHubNavigationController.SetLoadingState(true);
             _serverHubClients.ForEach(x => x.GetRooms());
-#if DEBUG
+
             Log.Info("Requested rooms lists from ServerHubs...");
-#endif
         }
 
         private void ReceivedRoomsList(ServerHubClient sender, List<RoomInfo> rooms)
         {
-#if DEBUG
             Log.Info($"Received {rooms.Count} rooms from {sender.ip}:{sender.port}");
-#endif
             _serverHubNavigationController.roomListViewController.SetRooms(_serverHubClients);
             _serverHubNavigationController.SetLoadingState(false);
         }
