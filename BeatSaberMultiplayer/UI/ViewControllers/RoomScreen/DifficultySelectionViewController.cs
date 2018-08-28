@@ -29,7 +29,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         Button _expertButton;
         Button _expertPlusButton;
 
-        Button _discardButton;
+        Button _cancelButton;
         Button _playButton;
         Button _readyButton;
 
@@ -60,13 +60,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _playersReadyText.alignment = TextAlignmentOptions.Center;
                 _playersReadyText.fontSize = 5.5f;
 
-                _discardButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
-                (_discardButton.transform as RectTransform).anchoredPosition = new Vector2(-105f, 10f);
-                (_discardButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
-                BeatSaberUI.SetButtonText(_discardButton, "DISCARD");
-                BeatSaberUI.SetButtonTextSize(_discardButton, 5.5f);
-                _discardButton.onClick.AddListener(delegate () { DiscardPressed?.Invoke(); });
-                _discardButton.gameObject.SetActive(isHost);
+                _cancelButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
+                (_cancelButton.transform as RectTransform).anchoredPosition = new Vector2(-105f, 10f);
+                (_cancelButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
+                BeatSaberUI.SetButtonText(_cancelButton, "CANCEL");
+                BeatSaberUI.SetButtonTextSize(_cancelButton, 5.5f);
+                _cancelButton.onClick.AddListener(delegate () { DiscardPressed?.Invoke(); });
+                _cancelButton.gameObject.SetActive(isHost);
 
                 _playButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
                 (_playButton.transform as RectTransform).anchoredPosition = new Vector2(-25f, 10f);
@@ -219,7 +219,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _hardButton.gameObject.SetActive(isHost);
             _expertButton.gameObject.SetActive(isHost);
             _expertPlusButton.gameObject.SetActive(isHost);
-            _discardButton.gameObject.SetActive(isHost);
+            _cancelButton.gameObject.SetActive(isHost);
             _playButton.gameObject.SetActive(isHost);
             _selectDifficultyText.gameObject.SetActive(isHost);
             _readyButton.gameObject.SetActive(!isHost);
