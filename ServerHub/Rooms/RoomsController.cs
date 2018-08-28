@@ -119,15 +119,7 @@ namespace ServerHub.Rooms
             Room room = rooms.Find(x => x.roomClients.Contains(client));
             if (room != null)
             {
-                room.roomClients.Remove(client);
-                if(room.roomClients.Count > 0)
-                {
-                    room.TransferHost(room.roomClients.Random().playerInfo);
-                }
-                else
-                {
-                    DestroyRoom(room.roomId);
-                }
+                room.PlayerLeft(client);
             }
             client.joinedRoomID = 0;
         }

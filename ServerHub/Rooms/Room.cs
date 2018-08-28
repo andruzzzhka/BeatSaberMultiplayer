@@ -74,6 +74,24 @@ namespace ServerHub.Rooms
             return buffer.ToArray();
         }
 
+        public void PlayerLeft(Client player)
+        {
+            _votes.Remove(player.playerInfo);
+            _readyPlayers.Remove(player.playerInfo);
+            UpdatePlayersReady();
+
+            roomClients.Remove(player);
+            if (roomClients.Count > 0)
+            {
+                if(player.playerInfo == roomHost)
+                    TransferHost(player.playerInfo, roomClients.Random().playerInfo);
+            }
+            else
+            {
+                DestroyRoom(player.playerInfo);
+            }
+        }
+
         private void RoomLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
             switch (roomState)
@@ -342,12 +360,6 @@ namespace ServerHub.Rooms
             }
         }
 
-        public void TransferHost(PlayerInfo newHost)
-        {
-            roomHost = newHost;
-            BroadcastPacket(new BasePacket(CommandType.TransferHost, roomHost.ToBytes(false)));
-        }
-
         struct ReadyPlayers
         {
             public int readyPlayers, roomClients;
@@ -373,6 +385,11 @@ namespace ServerHub.Rooms
                 _readyPlayers.Remove(sender);
             }
 
+            UpdatePlayersReady();
+        }
+
+        private void UpdatePlayersReady()
+        {
             List<byte> buffer = new List<byte>();
             buffer.AddRange(BitConverter.GetBytes(_readyPlayers.Count));
             buffer.AddRange(BitConverter.GetBytes(roomClients.Count));
