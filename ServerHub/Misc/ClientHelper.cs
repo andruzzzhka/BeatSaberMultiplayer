@@ -42,13 +42,14 @@ namespace ServerHub.Misc
                     nStartIndex += nBytesRead;
                 }
             }
-            catch(IOException e)
+            catch(IOException)
             {
-                LostConnectionInvoke(client);
+                if(client.active)
+                    LostConnectionInvoke(client);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-
+                Logger.Instance.Warning($"ReceiveData: {e}");
             }
 
             return new BasePacket(dataBuffer);            
@@ -63,17 +64,23 @@ namespace ServerHub.Misc
 
             try
             {
-                StateObject state = new StateObject(buffer.Length) { client = client};
+                StateObject state = new StateObject(buffer.Length) { client = client };
                 client.socket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, SendCallback, state);
 #if DEBUG
                 if (packet.commandType != CommandType.UpdatePlayerInfo)
                     Logger.Instance.Log($"Sent {packet.commandType} to {client.playerInfo.playerName}");
 #endif
-            }catch(IOException e)
-            {
-                LostConnectionInvoke(client);
             }
-            
+            catch (IOException)
+            {
+                if (client.active)
+                    LostConnectionInvoke(client);
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.Warning($"SendData: {e}");
+            }
+
         }
 
         private static void SendCallback(IAsyncResult ar)
@@ -88,13 +95,19 @@ namespace ServerHub.Misc
 
                 if (error != SocketError.Success)
                 {
-                    Logger.Instance.Warning("Socket error occurred! " + error);
-                    LostConnectionInvoke(recState.client);
+                    if (recState.client.active)
+                    {
+                        Logger.Instance.Warning("Socket error occurred! " + error);
+                        LostConnectionInvoke(recState.client);
+                    }
                 }
             }catch (Exception e)
             {
-                Logger.Instance.Warning("Socket exception occurred! " + e);
-                LostConnectionInvoke(recState.client);
+                if (recState.client.active)
+                {
+                    Logger.Instance.Warning("Socket exception occurred! " + e);
+                    LostConnectionInvoke(recState.client);
+                }
             }
         }
 

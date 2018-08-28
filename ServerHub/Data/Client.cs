@@ -40,6 +40,8 @@ namespace ServerHub.Data
 
         public uint joinedRoomID;
 
+        public bool active;
+
         public Client(Socket tcp)
         {
             socket = tcp;
@@ -120,6 +122,8 @@ namespace ServerHub.Data
 
             timeoutTimer = new Stopwatch();
             HighResolutionTimer.LoopTimer.Elapsed += ClientLoop;
+
+            active = true;
 
             StateObject state = new StateObject(4) { client = this };
             socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, ReceiveHeader, state);
@@ -232,6 +236,10 @@ namespace ServerHub.Data
                     recState.offset += bytesRead;
                     client.BeginReceive(recState.buffer, recState.offset, recState.buffer.Length - recState.offset, SocketFlags.None, new AsyncCallback(ReceiveCallback), recState);
                 }
+            }
+            catch (ObjectDisposedException)
+            {
+                DestroyClient();
             }
             catch (Exception e)
             {
@@ -401,6 +409,7 @@ namespace ServerHub.Data
                 socket.Close();
             }
             HighResolutionTimer.LoopTimer.Elapsed -= ClientLoop;
+            active = false;
             clientDisconnected?.Invoke(this);
         }
 

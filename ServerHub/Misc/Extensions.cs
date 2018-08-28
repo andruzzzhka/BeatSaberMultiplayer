@@ -1,6 +1,7 @@
 ﻿// ReSharper disable once CheckNamespace
 
 using ServerHub.Misc;
+using System.Collections.Generic;
 
 namespace System.Linq {
     public static class Extensions {
@@ -26,6 +27,13 @@ namespace System.Linq {
             a *= b < c0 ? c0 : b < c1 ? c1 : b < c2 ? c2 : b < c3 ? c3 :
                  b < c4 ? c4 : b < c5 ? c5 : b < c6 ? c6 : b < c7 ? c7 : c8;
             return a + b;
+        }
+
+        static Random rnd = new Random();
+
+        public static T Random<T>(this List<T> list)
+        {
+            return list[rnd.Next(list.Count)];
         }
     }
 

@@ -342,6 +342,12 @@ namespace ServerHub.Rooms
             }
         }
 
+        public void TransferHost(PlayerInfo newHost)
+        {
+            roomHost = newHost;
+            BroadcastPacket(new BasePacket(CommandType.TransferHost, roomHost.ToBytes(false)));
+        }
+
         struct ReadyPlayers
         {
             public int readyPlayers, roomClients;

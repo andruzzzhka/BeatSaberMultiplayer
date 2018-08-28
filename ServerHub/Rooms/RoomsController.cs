@@ -71,6 +71,18 @@ namespace ServerHub.Rooms
                         {
                             client.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.Success }));
                             client.joinedRoomID = room.roomId;
+                            if (room.roomClients.Any(x => x.playerInfo == client.playerInfo))
+                            {
+                                Client loggedIn = room.roomClients.Find(x => x.playerInfo == client.playerInfo);
+                                if (loggedIn.socket.RemoteEndPoint != client.socket.RemoteEndPoint)
+                                {
+                                    loggedIn.KickClient("You logged in from another location");
+                                }
+                                else
+                                {
+                                    room.roomClients.Remove(loggedIn);
+                                }
+                            }
                             room.roomClients.Add(client);
                             return true;
                         }
@@ -108,6 +120,14 @@ namespace ServerHub.Rooms
             if (room != null)
             {
                 room.roomClients.Remove(client);
+                if(room.roomClients.Count > 0)
+                {
+                    room.TransferHost(room.roomClients.Random().playerInfo);
+                }
+                else
+                {
+                    DestroyRoom(room.roomId);
+                }
             }
             client.joinedRoomID = 0;
         }
