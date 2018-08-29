@@ -66,6 +66,8 @@ namespace ServerHub.Data
                     if (version != serverVersion)
                     {
                         KickClient("Plugin version mismatch:\nServer: " + serverVersion + "\nClient: " + version);
+                        Logger.Instance.Log($"Client version v{version} tried to connect");
+                        return false;
                     }
 
                     playerInfo = new PlayerInfo(packet.additionalData.Skip(4).ToArray());
