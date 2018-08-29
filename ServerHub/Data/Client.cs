@@ -115,18 +115,25 @@ namespace ServerHub.Data
 
         public void ClientAccepted()
         {
-            playerInfo.playerState = PlayerState.Lobby;
-            this.SendData(new BasePacket(CommandType.Connect, new byte[0]));
+            try
+            {
+                playerInfo.playerState = PlayerState.Lobby;
+                this.SendData(new BasePacket(CommandType.Connect, new byte[0]));
 
-            Logger.Instance.Log($"{playerInfo.playerName} connected!");
+                Logger.Instance.Log($"{playerInfo.playerName} connected!");
 
-            timeoutTimer = new Stopwatch();
-            HighResolutionTimer.LoopTimer.Elapsed += ClientLoop;
+                timeoutTimer = new Stopwatch();
+                HighResolutionTimer.LoopTimer.Elapsed += ClientLoop;
 
-            active = true;
+                active = true;
 
-            StateObject state = new StateObject(4) { client = this };
-            socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, ReceiveHeader, state);
+                StateObject state = new StateObject(4) { client = this };
+                socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, ReceiveHeader, state);
+            }catch(Exception e)
+            {
+                Logger.Instance.Warning($"Can't initialize client! Exception: {e}");
+                clientDisconnected?.Invoke(this);
+            }
         }
 
         public bool IsBlacklisted()
