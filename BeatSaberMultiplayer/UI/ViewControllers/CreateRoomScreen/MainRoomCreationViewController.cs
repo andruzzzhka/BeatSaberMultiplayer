@@ -132,7 +132,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _songSelectionList.UpdateText();
                 _noFailToggle.Value = _noFailMode;
                 _maxPlayersList.Value = _maxPlayers;
-                
+                _createRoomButton.interactable = true;
+
                 CheckRequirements();
             }
 
@@ -181,6 +182,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         public void Update()
         {
             _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
+        }
+
+        public void CreateButtonInteractable(bool interactable)
+        {
+            _createRoomButton.interactable = interactable;
         }
 
         public bool CheckRequirements()

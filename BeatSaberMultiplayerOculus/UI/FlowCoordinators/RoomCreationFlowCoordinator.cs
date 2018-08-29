@@ -78,6 +78,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _roomSettings = settings;
             _roomSettings.AvailableSongs = _leftRoomCreationViewController.selectedSongs.Select(x => new SongInfo() { songName = x.songName + " " + x.songSubName, levelId = x.levelID.Substring(0, Math.Min(32, x.levelID.Length)), songDuration = x.audioClip.length }).ToList();
 
+            _mainRoomCreationViewController.CreateButtonInteractable(false);
+
             if (Client.instance == null)
             {
                 Client.CreateClient();
@@ -106,6 +108,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             if(packet.commandType == CommandType.CreateRoom)
             {
+                _mainRoomCreationViewController.CreateButtonInteractable(true);
 
                 Client.instance.PacketReceived -= PacketReceived;
                 _createdRoomId = BitConverter.ToUInt32(packet.additionalData, 0);
