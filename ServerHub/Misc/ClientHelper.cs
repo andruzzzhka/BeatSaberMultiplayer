@@ -67,7 +67,7 @@ namespace ServerHub.Misc
                 StateObject state = new StateObject(buffer.Length) { client = client };
                 client.socket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, SendCallback, state);
 #if DEBUG
-                if (packet.commandType != CommandType.UpdatePlayerInfo)
+                if (packet.commandType != CommandType.UpdatePlayerInfo && client.playerInfo != null)
                     Logger.Instance.Log($"Sent {packet.commandType} to {client.playerInfo.playerName}");
 #endif
             }
