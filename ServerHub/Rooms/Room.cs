@@ -83,7 +83,7 @@ namespace ServerHub.Rooms
             roomClients.Remove(player);
             if (roomClients.Count > 0)
             {
-                if(player.playerInfo == roomHost)
+                if(player.playerInfo.Equals(roomHost))
                     TransferHost(player.playerInfo, roomClients.Random().playerInfo);
             }
             else

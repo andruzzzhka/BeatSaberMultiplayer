@@ -34,7 +34,8 @@ namespace BeatSaberMultiplayer
         private OnlineVRController _leftController;
         private OnlineVRController _rightController;
 
-        private float _offset = 0f;
+        private PlayerController _playerController;
+        
         private bool _paused = false;
 
         public static void OnLoad()
@@ -91,6 +92,8 @@ namespace BeatSaberMultiplayer
             _rightController = saberA.GetPrivateField<VRController>("_vrController").gameObject.AddComponent<OnlineVRController>();
             _rightController.forcePlayerInfo = true;
             saberA.SetPrivateField("_vrController", _rightController);
+
+            _playerController = Resources.FindObjectsOfTypeAll<PlayerController>().First();
 
             Log.Info("Controllers found!");
         }
@@ -153,11 +156,35 @@ namespace BeatSaberMultiplayer
                     
                     if (_spectatedPlayer != null)
                     {
-                        float minOffset = _playerInfos[_spectatedPlayer].Min(x => Math.Abs(x.playerProgress + _offset - audioTimeSync.songTime));
-                        _spectatedPlayer = _playerInfos[_spectatedPlayer].FirstOrDefault(x => Math.Abs(x.playerProgress + _offset - audioTimeSync.songTime) == minOffset);
+                        float minOffset = _playerInfos[_spectatedPlayer].Min(x => Math.Abs(x.playerProgress - audioTimeSync.songTime));
+                        
+                        int index = _playerInfos[_spectatedPlayer].FindIndex(x => Math.Abs(x.playerProgress - audioTimeSync.songTime) == minOffset);
+                        PlayerInfo lerpTo;
+                        float lerpProgress;
+                        
+                        if(_playerInfos[_spectatedPlayer][index].playerProgress - audioTimeSync.songTime > 0f)
+                        {
+                            _spectatedPlayer = _playerInfos[_spectatedPlayer][index];
+                            lerpTo = _playerInfos[_spectatedPlayer][index - 1];
+
+                            lerpProgress = Remap(audioTimeSync.songTime, lerpTo.playerProgress, _spectatedPlayer.playerProgress, 0f, 1f);
+                        }
+                        else
+                        {
+                            _spectatedPlayer = _playerInfos[_spectatedPlayer][index + 1];
+                            lerpTo = _playerInfos[_spectatedPlayer][index];
+
+                            lerpProgress = Remap(audioTimeSync.songTime, lerpTo.playerProgress, _spectatedPlayer.playerProgress, 0f, 1f);
+                        }
                         
                         if (_spectatedPlayer != null)
                         {
+                            _spectatedPlayer.leftHandPos = Vector3.Lerp(_spectatedPlayer.leftHandPos, lerpTo.leftHandPos, 0);
+                            _spectatedPlayer.rightHandPos = Vector3.Lerp(_spectatedPlayer.rightHandPos, lerpTo.rightHandPos, 0);
+
+                            _spectatedPlayer.leftHandRot = Quaternion.Lerp(_spectatedPlayer.leftHandRot, lerpTo.leftHandRot, 0);
+                            _spectatedPlayer.rightHandRot = Quaternion.Lerp(_spectatedPlayer.rightHandRot, lerpTo.rightHandRot, 0);
+
                             if (_spectatedPlayerAvatar == null)
                             {
                                 _spectatedPlayerAvatar = new GameObject("Avatar").AddComponent<AvatarController>();
@@ -170,6 +197,11 @@ namespace BeatSaberMultiplayer
                             {
                                 _leftController.SetPlayerInfo(_spectatedPlayer);
                                 _rightController.SetPlayerInfo(_spectatedPlayer);
+                            }
+
+                            if(_playerController != null)
+                            {
+                                _playerController.OverrideHeadPos(_spectatedPlayer.headPos);
                             }
 
                             if (_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime > 2.5f)
@@ -246,18 +278,6 @@ namespace BeatSaberMultiplayer
                     _spectatedPlayer = _playerInfos.Keys.ElementAt(index);
                 }
 
-                if (Input.GetKeyDown(KeyCode.KeypadPlus))
-                {
-                    _offset += 0.025f;
-                    Log.Info("New offset: " + _offset);
-                }
-
-                if (Input.GetKeyDown(KeyCode.KeypadMinus))
-                {
-                    _offset -= 0.025f;
-                    Log.Info("New offset: "+_offset);
-                }
-
                 if (_paused)
                 {
                     if(_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime > 1.9f)
@@ -277,6 +297,11 @@ namespace BeatSaberMultiplayer
             SongSeekBeatmapHandler.OnSongTimeChanged(_songAudioSource.time, Mathf.Min(0f, _songAudioSource.time));
 
             Client.instance.RemovePacketsFromQueue(CommandType.UpdatePlayerInfo);
+        }
+
+        public float Remap(float value, float from1, float to1, float from2, float to2)
+        {
+            return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
         }
     }
 }

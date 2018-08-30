@@ -28,7 +28,11 @@ namespace BeatSaberMultiplayer
                 progress += Time.deltaTime * Client.instance.Tickrate;
                 uint score = (uint)Mathf.Lerp(previousScore, currentScore, Mathf.Clamp01(progress));
 
+#if DEBUG
+                playerScoreText.text = string.Format("{0} {2} {3}", score, _playerInfo.playerEnergy, _playerInfo.playerCutBlocks, _playerInfo.playerComboBlocks);
+#else
                 playerScoreText.text = string.Format("{0}", score, _playerInfo.playerEnergy, _playerInfo.playerCutBlocks, _playerInfo.playerComboBlocks);
+#endif
             }
         }
 
