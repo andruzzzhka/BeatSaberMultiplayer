@@ -60,10 +60,9 @@ namespace ServerHub.Data
                 if (packet.commandType == CommandType.Connect && packet.additionalData.Length > 0)
                 {
                     uint version = BitConverter.ToUInt32(packet.additionalData, 0);
-
                     uint serverVersion = ((uint)Assembly.GetEntryAssembly().GetName().Version.Major).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Minor).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Build).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Revision);
 
-                    if (version != serverVersion)
+                    if (CompareVersions(version, serverVersion))
                     {
                         KickClient("Plugin version mismatch:\nServer: " + serverVersion + "\nClient: " + version);
                         Logger.Instance.Log($"Client version v{version} tried to connect");
@@ -136,6 +135,14 @@ namespace ServerHub.Data
                 Logger.Instance.Warning($"Can't initialize client! Exception: {e}");
                 clientDisconnected?.Invoke(this);
             }
+        }
+
+        private bool CompareVersions(uint clientVersion, uint serverVersion)
+        {
+            string client = clientVersion.ToString();
+            string server = serverVersion.ToString();
+
+            return (client.Substring(0, client.Length - 1)) != (server.Substring(0, server.Length - 1));
         }
 
         public bool IsBlacklisted()
