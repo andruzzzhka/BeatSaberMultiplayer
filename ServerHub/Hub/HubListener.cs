@@ -36,7 +36,7 @@ namespace ServerHub.Hub
 
             if (Settings.Instance.Server.EnableWebSocketServer)
             {
-                WebSocketListener.Init();
+                WebSocketListener.Start();
             }
 
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
@@ -54,7 +54,9 @@ namespace ServerHub.Hub
 
         public static void Stop()
         {
-
+            listener.Stop();
+            Listen = false;
+            WebSocketListener.Stop();
         }
 
         private static void HubLoop(object sender, HighResolutionTimerElapsedEventArgs e)
@@ -75,7 +77,7 @@ namespace ServerHub.Hub
             try
             {
                 NatDiscoverer discoverer = new NatDiscoverer();
-                CancellationTokenSource cts = new CancellationTokenSource(2500);
+                CancellationTokenSource cts = new CancellationTokenSource(3000);
                 NatDevice device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
 
                 await device.CreatePortMapAsync(new Mapping(Protocol.Tcp, Settings.Instance.Server.Port, Settings.Instance.Server.Port, "BeatSaber Multiplayer ServerHub"));
@@ -84,7 +86,7 @@ namespace ServerHub.Hub
             }
             catch (Exception)
             {
-                Logger.Instance.Warning($"Can't open port {Settings.Instance.Server.Port} using UPnP!");
+                Logger.Instance.Warning($"Unable to open port {Settings.Instance.Server.Port} using UPnP!");
             }
         }
 

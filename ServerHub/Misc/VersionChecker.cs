@@ -27,7 +27,7 @@ namespace ServerHub.Misc
             }
             catch (Exception e)
             {
-                Logger.Instance.Warning($"Can't check for updates! Exception: {e}");
+                Logger.Instance.Warning($"Unable to check for updates! Exception: {e}");
             }
         }
 

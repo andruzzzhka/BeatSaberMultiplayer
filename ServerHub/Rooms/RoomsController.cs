@@ -26,7 +26,7 @@ namespace ServerHub.Rooms
             return room.roomId;
         }
 
-        public static bool DestroyRoom(uint roomId)
+        public static bool DestroyRoom(uint roomId, string reason = "")
         {
 #if DEBUG
             Logger.Instance.Log("Destroying room " + roomId);
@@ -38,7 +38,11 @@ namespace ServerHub.Rooms
                 WebSocketListener.DestroyRoom(room);
 
                 List<byte> buffer = new List<byte>();
-                byte[] reasonText = Encoding.UTF8.GetBytes("Room destroyed!");
+                byte[] reasonText;
+                if (string.IsNullOrEmpty(reason))
+                    reasonText = Encoding.UTF8.GetBytes("Room destroyed!");
+                else
+                    reasonText = Encoding.UTF8.GetBytes(reason);
                 buffer.AddRange(BitConverter.GetBytes(reasonText.Length));
                 buffer.AddRange(reasonText);
 

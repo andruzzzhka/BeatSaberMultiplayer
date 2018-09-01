@@ -196,7 +196,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
                 catch (Exception e)
                 {
-                    Log.Exception($"Can't extract ZIP! Exception: {e}");
+                    Log.Exception($"Unable to extract ZIP! Exception: {e}");
                 }
 
                 songInfo.path = Directory.GetDirectories(customSongsPath).FirstOrDefault();
@@ -207,7 +207,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
                 catch (IOException e)
                 {
-                    Log.Warning($"Can't delete zip! Exception: {e}");
+                    Log.Warning($"Unable to delete zip! Exception: {e}");
                 }
 
                 songInfo.songQueueState = SongQueueState.Downloaded;

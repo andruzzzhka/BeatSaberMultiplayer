@@ -13,6 +13,41 @@ using Newtonsoft.Json;
 
 namespace ServerHub.Rooms
 {
+    struct WebSocketPacket
+    {
+        public string commandType;
+        public object data;
+
+        public WebSocketPacket(CommandType command, object d)
+        {
+            commandType = command.ToString();
+            data = d;
+        }
+    }
+
+    struct ReadyPlayers
+    {
+        public int readyPlayers, roomClients;
+
+        public ReadyPlayers(int ready, int clients)
+        {
+            readyPlayers = ready;
+            roomClients = clients;
+        }
+    }
+
+    struct SongWithDifficulty
+    {
+        public SongInfo song;
+        public byte difficulty;
+
+        public SongWithDifficulty(SongInfo songInfo, byte diff)
+        {
+            song = songInfo;
+            difficulty = diff;
+        }
+    }
+    
     class Room
     {
         public uint roomId;
@@ -217,22 +252,11 @@ namespace ServerHub.Rooms
                 }
                 catch (Exception e)
                 {
-                    Logger.Instance.Warning($"Can't send packet to {roomClients[i].playerInfo.playerName}! Exception: {e}");
+                    Logger.Instance.Warning($"Unable to send packet to {roomClients[i].playerInfo.playerName}! Exception: {e}");
                 }
             }
         }
 
-        struct WebSocketPacket
-        {
-            public string commandType;
-            public object data;
-
-            public WebSocketPacket(CommandType command, object d)
-            {
-                commandType = command.ToString();
-                data = d;
-            }
-        }
 
         public void BroadcastWebSocket(CommandType commandType, object data)
         {
@@ -310,18 +334,6 @@ namespace ServerHub.Rooms
             }
         }
 
-        struct SongWithDifficulty
-        {
-            public SongInfo song;
-            public byte difficulty;
-
-            public SongWithDifficulty(SongInfo songInfo, byte diff)
-            {
-                song = songInfo;
-                difficulty = diff;
-            }
-        }
-
         public void StartLevel(PlayerInfo sender, byte difficulty, SongInfo song)
         {
             if (sender.Equals(roomHost))
@@ -340,6 +352,7 @@ namespace ServerHub.Rooms
 
                 roomState = RoomState.InGame;
                 _songStartTime = DateTime.Now;
+                _readyPlayers.Clear();
             }
             else
             {
@@ -357,17 +370,6 @@ namespace ServerHub.Rooms
             else
             {
                 Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to transfer host, but he is not the host");
-            }
-        }
-
-        struct ReadyPlayers
-        {
-            public int readyPlayers, roomClients;
-
-            public ReadyPlayers(int ready, int clients)
-            {
-                readyPlayers = ready;
-                roomClients = clients;
             }
         }
 

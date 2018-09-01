@@ -123,7 +123,7 @@ namespace BeatSaberMultiplayer
                     catch (Exception e)
                     {
 #if DEBUG
-                        Log.Exception($"Can't parse PlayerInfo! Excpetion: {e}");
+                        Log.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
 #endif
                     }
                 }
@@ -306,7 +306,7 @@ namespace BeatSaberMultiplayer
                 _avatars.Clear();
             }catch(Exception e)
             {
-                Log.Exception($"Can't destroy avatars! Exception: {e}");
+                Log.Exception($"Unable to destroy avatars! Exception: {e}");
             }
         }
 
@@ -324,7 +324,7 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Log.Exception($"Can't destroy score screens! Exception: {e}");
+                Log.Exception($"Unable to destroy score screens! Exception: {e}");
             }
         }
 

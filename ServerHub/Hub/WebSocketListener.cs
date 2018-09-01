@@ -34,7 +34,7 @@ namespace ServerHub.Hub
     {
         public static WebSocketServer Server;
 
-        public static void Init()
+        public static void Start()
         {
             int webSocketPort = Settings.Instance.Server.WebSocketPort;
             Server = new WebSocketServer(webSocketPort);
@@ -43,6 +43,12 @@ namespace ServerHub.Hub
 
             Server.AddWebSocketService<ListServices>("/");
             Server.Start();
+        }
+
+        public static void Stop()
+        {
+            if(Server != null)
+                Server.Stop();
         }
 
         public static void BroadcastState()
