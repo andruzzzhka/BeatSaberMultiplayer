@@ -88,6 +88,7 @@ namespace ServerHub.Rooms
             }
             else
             {
+                if (!Settings.Instance.TournamentMode.Enabled)
                 DestroyRoom(player.playerInfo);
             }
         }
