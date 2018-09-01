@@ -83,7 +83,7 @@ namespace ServerHub.Rooms
                                     room.roomClients.Remove(loggedIn);
                                 }
                             }
-                            room.roomClients.Add(client);
+                            AddClient(room, client);
                             return true;
                         }
                         else
@@ -97,7 +97,7 @@ namespace ServerHub.Rooms
                     {
                         client.SendData(new BasePacket(CommandType.JoinRoom, new byte[1] { (byte)JoinResult.Success }));
                         client.joinedRoomID = room.roomId;
-                        room.roomClients.Add(client);
+                        AddClient(room, client);
                         return true;
                     }
                 }
@@ -113,6 +113,14 @@ namespace ServerHub.Rooms
                 return false;
             }
         } 
+
+        public static void AddClient(Room room, Client client)
+        {
+            if (room.GetRoomInfo().players == 0 && Settings.Instance.TournamentMode.Enabled)
+                room.ForceTransferHost(client.playerInfo);
+
+            room.roomClients.Add(client);
+        }
 
         public static void ClientLeftRoom(Client client)
         {

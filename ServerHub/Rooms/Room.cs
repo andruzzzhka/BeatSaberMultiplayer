@@ -84,12 +84,12 @@ namespace ServerHub.Rooms
             if (roomClients.Count > 0)
             {
                 if(player.playerInfo.Equals(roomHost))
-                    TransferHost(player.playerInfo, roomClients.Random().playerInfo);
+                        TransferHost(player.playerInfo, roomClients.Random().playerInfo);
             }
             else
             {
                 if (!Settings.Instance.TournamentMode.Enabled)
-                DestroyRoom(player.playerInfo);
+                    DestroyRoom(player.playerInfo);
             }
         }
 
@@ -359,6 +359,12 @@ namespace ServerHub.Rooms
             {
                 Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to transfer host, but he is not the host");
             }
+        }
+
+        public void ForceTransferHost(PlayerInfo newHost)
+        {
+            roomHost = newHost;
+            BroadcastPacket(new BasePacket(CommandType.TransferHost, roomHost.ToBytes(false)));
         }
 
         struct ReadyPlayers
