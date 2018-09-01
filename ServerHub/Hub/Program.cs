@@ -85,6 +85,9 @@ namespace ServerHub.Hub
 
             HubListener.Start();
 
+            if (Settings.Instance.TournamentMode.Enabled)
+                CreateTournamentRooms();
+
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
             
@@ -97,7 +100,6 @@ namespace ServerHub.Hub
 
                 Logger.Instance.Log(ProcessCommand(parsedArgs[0], parsedArgs.Skip(1).ToArray()));
             }
-            
         }
 
 #if DEBUG
@@ -142,6 +144,32 @@ namespace ServerHub.Hub
             }
         }
 #endif
+        private void CreateTournamentRooms()
+        {
+            Console.WriteLine(Settings.Instance.TournamentMode.Rooms);
+
+            for (int i = 0; i < Settings.Instance.TournamentMode.Rooms; i++)
+            {
+                List<SongInfo> songs = Settings.Instance.TournamentMode.SongHashes.ConvertAll(x => new SongInfo() { levelId = x.ToUpper(), songName = "" });
+
+                RoomSettings settings = new RoomSettings()
+                {
+                    Name = $"Tournament Room {i + 1}",
+                    UsePassword = false,
+                    Password = "",
+                    NoFail = true,
+                    MaxPlayers = 0,
+                    SelectionType = Data.SongSelectionType.Manual,
+                    AvailableSongs = songs,
+                };
+
+                PlayerInfo host = new PlayerInfo("server", 76561198047255564);
+                uint id = RoomsController.CreateRoom(settings, host);
+
+                Logger.Instance.Log("Created tournament room with ID " + id);
+            }
+        }
+
         string ProcessCommand(string comName, string[] comArgs)
         {
             switch (comName.ToLower())
