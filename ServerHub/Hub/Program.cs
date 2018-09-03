@@ -153,8 +153,8 @@ namespace ServerHub.Hub
                 RoomSettings settings = new RoomSettings()
                 {
                     Name = $"Tournament Room {i + 1}",
-                    UsePassword = false,
-                    Password = "",
+                    UsePassword = Settings.Instance.TournamentMode.Password != "",
+                    Password = Settings.Instance.TournamentMode.Password,
                     NoFail = true,
                     MaxPlayers = 0,
                     SelectionType = Data.SongSelectionType.Manual,
