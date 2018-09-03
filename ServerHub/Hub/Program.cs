@@ -148,7 +148,7 @@ namespace ServerHub.Hub
         {
             for (int i = 0; i < Settings.Instance.TournamentMode.Rooms; i++)
             {
-                List<SongInfo> songs = Settings.Instance.TournamentMode.SongHashes.ConvertAll(x => new SongInfo() { levelId = x.ToUpper(), songName = "" });
+                List<SongInfo> songs = BeatSaver.ConvertSongIDs(Settings.Instance.TournamentMode.SongIDs);
 
                 RoomSettings settings = new RoomSettings()
                 {

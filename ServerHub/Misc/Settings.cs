@@ -185,7 +185,7 @@ namespace ServerHub.Misc {
             private bool _enabled;
             private int _rooms;
             private string _password;
-            private List<string> _songHashes;
+            private List<string> _songIDs;
 
             private Action MarkDirty { get; }
 
@@ -235,12 +235,12 @@ namespace ServerHub.Misc {
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
-            public List<string> SongHashes
+            public List<string> SongIDs
             {
-                get => _songHashes;
+                get => _songIDs;
                 set
                 {
-                    _songHashes = value;
+                    _songIDs = value;
                     MarkDirty();
                 }
             }
@@ -251,7 +251,7 @@ namespace ServerHub.Misc {
                 _enabled = false;
                 _rooms = 4;
                 _password = "";
-                _songHashes = new List<string>();
+                _songIDs = new List<string>();
             }
         }
 
