@@ -94,15 +94,21 @@ namespace ServerHub.Hub
         {
             while (Listen)
             {
-                Client client = await AcceptClient();
-
-                if (client.InitializeClient())
+                try
                 {
-                    hubClients.Add(client);
-                    client.clientDisconnected += ClientDisconnected;
-                    client.clientJoinedRoom += ClientJoinedRoom;
-                    client.clientLeftRoom += RoomsController.ClientLeftRoom;
-                    client.ClientAccepted();
+                    Client client = await AcceptClient();
+
+                    if (client.InitializeClient())
+                    {
+                        hubClients.Add(client);
+                        client.clientDisconnected += ClientDisconnected;
+                        client.clientJoinedRoom += ClientJoinedRoom;
+                        client.clientLeftRoom += RoomsController.ClientLeftRoom;
+                        client.ClientAccepted();
+                    }
+                }catch(Exception e)
+                {
+                    Logger.Instance.Warning($"Unable to accept client! Exception: {e}");
                 }
             }
         }

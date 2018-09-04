@@ -21,6 +21,19 @@ namespace ServerHub.Rooms
             room.StartRoom();
             WebSocketListener.AddRoom(room);
 #if DEBUG
+            Logger.Instance.Log($"New room created! Host={host.playerName}({host.playerId}) Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, noFail={settings.NoFail}, songSelecionType={settings.SelectionType}, songsCount={settings.AvailableSongs.Count}");
+#endif
+            return room.roomId;
+        }
+
+        public static uint CreateRoom(RoomSettings settings)
+        {
+            Room room = new Room(GetNextFreeID(), settings, new PlayerInfo("server", long.MaxValue));
+            room.firstPlayerHost = true;
+            rooms.Add(room);
+            room.StartRoom();
+            WebSocketListener.AddRoom(room);
+#if DEBUG
             Logger.Instance.Log($"New room created! Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, noFail={settings.NoFail}, songSelecionType={settings.SelectionType}, songsCount={settings.AvailableSongs.Count}");
 #endif
             return room.roomId;
@@ -120,7 +133,7 @@ namespace ServerHub.Rooms
 
         public static void AddClient(Room room, Client client)
         {
-            if (room.GetRoomInfo().players == 0 && Settings.Instance.TournamentMode.Enabled)
+            if (room.GetRoomInfo().players == 0 && room.firstPlayerHost)
                 room.ForceTransferHost(client.playerInfo);
 
             room.roomClients.Add(client);

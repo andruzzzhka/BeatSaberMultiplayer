@@ -60,6 +60,7 @@ namespace ServerHub.Rooms
         public RoomSettings roomSettings;
         public RoomState roomState;
 
+        public bool firstPlayerHost;
         public PlayerInfo roomHost;
 
         public SongInfo selectedSong;

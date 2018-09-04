@@ -16,6 +16,7 @@ namespace ServerHub.Data
         public int MaxPlayers;
         public bool NoFail;
 
+        [NonSerialized]
         public List<SongInfo> AvailableSongs;
 
         public RoomSettings()

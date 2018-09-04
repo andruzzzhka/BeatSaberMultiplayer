@@ -183,6 +183,7 @@ namespace ServerHub.Misc {
         public class TournamentModeSettings
         {
             private bool _enabled;
+            private string _roomNameTemplate;
             private int _rooms;
             private string _password;
             private List<string> _songIDs;
@@ -199,6 +200,20 @@ namespace ServerHub.Misc {
                 set
                 {
                     _enabled = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string RoomNameTemplate
+            {
+                get => _roomNameTemplate;
+                set
+                {
+                    _roomNameTemplate = value;
                     MarkDirty();
                 }
             }
@@ -249,6 +264,7 @@ namespace ServerHub.Misc {
             {
                 MarkDirty = markDirty;
                 _enabled = false;
+                _roomNameTemplate = "Tournament Room {0}";
                 _rooms = 4;
                 _password = "";
                 _songIDs = new List<string>();

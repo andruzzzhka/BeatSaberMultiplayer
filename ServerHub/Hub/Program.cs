@@ -19,7 +19,6 @@ using System.Diagnostics;
 namespace ServerHub.Hub
 {
     class Program {
-        private static string BeatSaverURL = "https://beatsaver.com";
         private static string IP { get; set; }
 
         public static List<IPAddressRange> blacklistedIPs;
@@ -66,6 +65,18 @@ namespace ServerHub.Hub
             }
 
             ShutdownEventCatcher.Shutdown += OnShutdown;
+
+            if (!Directory.Exists("RoomPresets"))
+            {
+                try
+                {
+                    Directory.CreateDirectory("RoomPresets");
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Exception($"Unable to create RoomPresets folder! Exception: {e}");
+                }
+            }
 
             Settings.Instance.Server.Tickrate = Misc.Math.Clamp(Settings.Instance.Server.Tickrate, 5, 150);
             HighResolutionTimer.LoopTimer.Interval = 1000/Settings.Instance.Server.Tickrate;
@@ -152,23 +163,23 @@ namespace ServerHub.Hub
 #endif
         private void CreateTournamentRooms()
         {
+            List<SongInfo> songs = BeatSaver.ConvertSongIDs(Settings.Instance.TournamentMode.SongIDs);
+            
             for (int i = 0; i < Settings.Instance.TournamentMode.Rooms; i++)
             {
-                List<SongInfo> songs = BeatSaver.ConvertSongIDs(Settings.Instance.TournamentMode.SongIDs);
 
                 RoomSettings settings = new RoomSettings()
                 {
-                    Name = $"Tournament Room {i + 1}",
+                    Name = string.Format(Settings.Instance.TournamentMode.RoomNameTemplate, i + 1),
                     UsePassword = Settings.Instance.TournamentMode.Password != "",
                     Password = Settings.Instance.TournamentMode.Password,
                     NoFail = true,
                     MaxPlayers = 0,
-                    SelectionType = Data.SongSelectionType.Manual,
+                    SelectionType = SongSelectionType.Manual,
                     AvailableSongs = songs,
                 };
-
-                PlayerInfo host = new PlayerInfo("server", 76561198047255564);
-                uint id = RoomsController.CreateRoom(settings, host);
+                
+                uint id = RoomsController.CreateRoom(settings);
 
                 Logger.Instance.Log("Created tournament room with ID " + id);
             }
@@ -191,7 +202,8 @@ namespace ServerHub.Hub
                         "blacklist [add/remove] [nick/playerID/IP]",
                         "whitelist [enable/disable/add/remove] [nick/playerID/IP]",
                         "tickrate [5-150]",
-                        //"createroom",
+                        "createroom [presetname]",
+                        "saveroom [roomId] [presetname]",
                         "cloneroom [roomId]",
                         "destroyroom [roomId]" ,
                         "destroyempty"})
@@ -207,7 +219,8 @@ namespace ServerHub.Hub
                             if (HubListener.Listen)
                             {
                                 Logger.Instance.Log("Shutting down...");
-                                foreach (Room room in RoomsController.GetRoomsList())
+                                List<Room> rooms = new List<Room>(RoomsController.GetRoomsList());
+                                foreach (Room room in rooms)
                                 {
                                     RoomsController.DestroyRoom(room.roomId, "ServerHub is shutting down...");
                                     HubListener.Stop();
@@ -398,124 +411,88 @@ namespace ServerHub.Hub
                                 return $"Command usage: tickrate [5-150]";
                             }
                         }
-                    /*
-                case "createroom":
-                    {
-                        if (!exitAfterPrint)
+                    case "createroom":
                         {
-                            Logger.Instance.Log("Creating new room:");
-
-                            Logger.Instance.Log("Host Nickname:");
-                            string roomHostName = Console.ReadLine();
-                            if (string.IsNullOrEmpty(roomHostName))
+                            if (HubListener.Listen)
                             {
-                                Logger.Instance.Error($"Room host nickname can't be empty!");
-                                return;
-                            }
-
-                            Logger.Instance.Log("Host SteamID/OculusID:");
-                            ulong roomHostID;
-                            string buffer = Console.ReadLine();
-                            if (!ulong.TryParse(buffer, out roomHostID))
-                            {
-                                Logger.Instance.Error($"Unable to parse \"{buffer}\"!");
-                                return;
-                            }
-
-                            PlayerInfo roomHost = new PlayerInfo(roomHostName, roomHostID);
-
-                            Logger.Instance.Log("Name:");
-                            string roomName = Console.ReadLine();
-                            if (string.IsNullOrEmpty(roomName))
-                            {
-                                Logger.Instance.Error($"Room name can't be empty!");
-                                return;
-                            }
-
-                            Logger.Instance.Log("Password (blank = no password): ");
-                            string roomPass = Console.ReadLine();
-                            bool usePassword = !string.IsNullOrEmpty(roomPass);
-
-                            Logger.Instance.Log("Song selection type (Manual, Random, Voting):");
-                            SongSelectionType roomSongSelectionType;
-                            buffer = Console.ReadLine();
-                            if (!Enum.TryParse(buffer, true, out roomSongSelectionType))
-                            {
-                                Logger.Instance.Error($"Unable to parse \"{buffer}\"!");
-                                return;
-                            }
-
-                            Logger.Instance.Log("Max players:");
-                            int roomMaxPlayers;
-                            buffer = Console.ReadLine();
-                            if (!int.TryParse(buffer, out roomMaxPlayers))
-                            {
-                                Logger.Instance.Error($"Unable parse \"{buffer}\"!");
-                                return;
-                            }
-
-                            Logger.Instance.Log("No Fail mode (true, false):");
-                            bool roomNoFail;
-                            buffer = Console.ReadLine();
-                            if (!bool.TryParse(buffer, out roomNoFail))
-                            {
-                                Logger.Instance.Error($"Unable parse \"{buffer}\"!");
-                                return;
-                            }
-
-                            Logger.Instance.Log("Songs (BeatDrop Playlist Path):");
-
-                            buffer = Console.ReadLine();
-                            if (!buffer.EndsWith(".json"))
-                                buffer += ".json";
-
-                            if (File.Exists(buffer))
-                            {
-                                Logger.Instance.Log("Loading playlist...");
-                                string playlistString = File.ReadAllText(buffer);
-                                Playlist playlist = JsonConvert.DeserializeObject<Playlist>(playlistString);
-
-                                Logger.Instance.Log($"Loaded playlist: \"{playlist.playlistTitle}\" by {playlist.playlistAuthor}:");
-                                Logger.Instance.Log($"{playlist.songs.Count} songs");
-
-                                List<SongInfo> songs = new List<SongInfo>();
-
-                                using (WebClient client = new WebClient())
+                                if (comArgs.Length == 1)
                                 {
-                                    client.Headers.Add("user-agent", $"BeatSaberMultiplayerServer-{Assembly.GetEntryAssembly().GetName().Version}");
-
-                                    foreach (PlaylistSong song in playlist.songs)
+                                    string path = comArgs[0];
+                                    if (!path.EndsWith(".json"))
                                     {
-                                        Logger.Instance.Log($"Trying to get levelId for {song.key} \"{song.songName}\"");
-                                        try
-                                        {
-                                            string response = client.DownloadString(BeatSaverURL + "/api/songs/detail/" + song.key);
+                                        path += ".json";
+                                    }
 
-                                            JObject parsedObject = JObject.Parse(response);
-                                            songs.Add(new SongInfo() { levelId = parsedObject["song"]["hashMd5"].ToString().ToUpper(), songName = song.songName, songDuration = 0f });
-                                        }
-                                        catch
-                                        {
-                                            Logger.Instance.Exception($"Unable to get info for song \"{song.songName}\"!");
-                                        }
+                                    if (!path.ToLower().StartsWith("roompresets\\"))
+                                    {
+                                        path = "RoomPresets\\" + path;
+                                    }
+
+                                    if (File.Exists(path))
+                                    {
+                                        string json = File.ReadAllText(path);
+
+                                        RoomPreset preset = JsonConvert.DeserializeObject<RoomPreset>(json);
+
+                                        uint roomId = RoomsController.CreateRoom(preset.GetRoomSettings());
+                                        
+                                        return "Created room with ID "+ roomId;
+                                    }
+                                    else
+                                    {
+                                        return $"Unable to create room! File not found: {Path.GetFullPath(path)}";
                                     }
                                 }
-                                Logger.Instance.Log($"Creating room...");
-
-                                RoomSettings settings = new RoomSettings() { Name = roomName, UsePassword = usePassword, Password = roomPass, SelectionType = roomSongSelectionType, NoFail = roomNoFail, MaxPlayers = roomMaxPlayers, AvailableSongs = songs };
-                                uint roomId = RoomsController.CreateRoom(settings, roomHost);
-
-                                Logger.Instance.Log($"Done! New room ID is " + roomId);
-
-                            }
-                            else
-                            {
-                                Logger.Instance.Error($"File \"{buffer}\" doesn't exists!");
+                                else
+                                {
+                                    return $"Command usage: createroom [presetname]";
+                                }
                             }
                         }
-                    }
-                    break;
-                    */
+                        break;
+                    case "saveroom":
+                        {
+                            if (HubListener.Listen)
+                            {
+                                if (comArgs.Length == 2)
+                                {
+                                    uint roomId;
+                                    if (uint.TryParse(comArgs[0], out roomId))
+                                    {
+                                        Room room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
+                                        if (room != null)
+                                        {
+                                            string path = comArgs[1];
+                                            if (!path.EndsWith(".json"))
+                                            {
+                                                path += ".json";
+                                            }
+
+                                            if (!path.ToLower().StartsWith("roompresets\\"))
+                                            {
+                                                path = "RoomPresets\\" + path;
+                                            }
+
+                                            Logger.Instance.Log("Saving room...");
+
+                                            File.WriteAllText(Path.GetFullPath(path), JsonConvert.SerializeObject(new RoomPreset(room), Formatting.Indented));
+
+                                            return "Saved room with ID " + roomId;
+                                        }
+                                        else
+                                        {
+                                            return "Room with ID " + roomId + " not found!";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        return $"Command usage: saveroom [roomId] [presetname]";
+                                    }
+
+                                }
+                            }
+                        }
+                        break;
                     case "cloneroom":
                         {
                             if (HubListener.Listen)
@@ -607,7 +584,8 @@ namespace ServerHub.Hub
                 {
                     return $"command not found";
                 }
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 return $"Unable to process command! Exception: {e}";
             }
