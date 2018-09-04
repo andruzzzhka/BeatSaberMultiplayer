@@ -119,11 +119,12 @@ namespace ServerHub.Rooms
             if (roomClients.Count > 0)
             {
                 if(player.playerInfo.Equals(roomHost))
-                    TransferHost(player.playerInfo, roomClients.Random().playerInfo);
+                        TransferHost(player.playerInfo, roomClients.Random().playerInfo);
             }
             else
             {
-                DestroyRoom(player.playerInfo);
+                if (!Settings.Instance.TournamentMode.Enabled)
+                    DestroyRoom(player.playerInfo);
             }
         }
 
@@ -373,6 +374,12 @@ namespace ServerHub.Rooms
             }
         }
 
+        public void ForceTransferHost(PlayerInfo newHost)
+        {
+            roomHost = newHost;
+            BroadcastPacket(new BasePacket(CommandType.TransferHost, roomHost.ToBytes(false)));
+        }
+      
         public void ReadyStateChanged(PlayerInfo sender, bool ready)
         {
             if (ready)

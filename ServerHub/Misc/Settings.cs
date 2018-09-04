@@ -100,6 +100,7 @@ namespace ServerHub.Misc {
                 _webSocketPort = 3701;
             }
         }
+
         [JsonObject(MemberSerialization.OptIn)]
         public class LoggerSettings {
             private string _logsDir;
@@ -178,12 +179,90 @@ namespace ServerHub.Misc {
 
         }
 
+        [JsonObject(MemberSerialization.OptIn)]
+        public class TournamentModeSettings
+        {
+            private bool _enabled;
+            private int _rooms;
+            private string _password;
+            private List<string> _songIDs;
+
+            private Action MarkDirty { get; }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool Enabled
+            {
+                get => _enabled;
+                set
+                {
+                    _enabled = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public int Rooms
+            {
+                get => _rooms;
+                set
+                {
+                    _rooms = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string Password
+            {
+                get => _password;
+                set
+                {
+                    _password = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public List<string> SongIDs
+            {
+                get => _songIDs;
+                set
+                {
+                    _songIDs = value;
+                    MarkDirty();
+                }
+            }
+
+            public TournamentModeSettings(Action markDirty)
+            {
+                MarkDirty = markDirty;
+                _enabled = false;
+                _rooms = 4;
+                _password = "";
+                _songIDs = new List<string>();
+            }
+        }
+
         [JsonProperty]
         public ServerSettings Server { get; }
         [JsonProperty]
         public LoggerSettings Logger { get; }
         [JsonProperty]
         public AccessSettings Access { get; }
+        [JsonProperty]
+        public TournamentModeSettings TournamentMode { get; }
 
         private static Settings _instance;
 
@@ -213,6 +292,7 @@ namespace ServerHub.Misc {
             Server = new ServerSettings(MarkDirty);
             Logger = new LoggerSettings(MarkDirty);
             Access = new AccessSettings(MarkDirty);
+            TournamentMode = new TournamentModeSettings(MarkDirty);
             MarkDirty();
         }
 

@@ -91,6 +91,9 @@ namespace ServerHub.Hub
 
             HubListener.Start();
 
+            if (Settings.Instance.TournamentMode.Enabled)
+                CreateTournamentRooms();
+
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
             
@@ -103,7 +106,6 @@ namespace ServerHub.Hub
 
                 Logger.Instance.Log(ProcessCommand(parsedArgs[0], parsedArgs.Skip(1).ToArray()));
             }
-            
         }
 
 #if DEBUG
@@ -148,6 +150,30 @@ namespace ServerHub.Hub
             }
         }
 #endif
+        private void CreateTournamentRooms()
+        {
+            for (int i = 0; i < Settings.Instance.TournamentMode.Rooms; i++)
+            {
+                List<SongInfo> songs = BeatSaver.ConvertSongIDs(Settings.Instance.TournamentMode.SongIDs);
+
+                RoomSettings settings = new RoomSettings()
+                {
+                    Name = $"Tournament Room {i + 1}",
+                    UsePassword = Settings.Instance.TournamentMode.Password != "",
+                    Password = Settings.Instance.TournamentMode.Password,
+                    NoFail = true,
+                    MaxPlayers = 0,
+                    SelectionType = Data.SongSelectionType.Manual,
+                    AvailableSongs = songs,
+                };
+
+                PlayerInfo host = new PlayerInfo("server", 76561198047255564);
+                uint id = RoomsController.CreateRoom(settings, host);
+
+                Logger.Instance.Log("Created tournament room with ID " + id);
+            }
+        }
+
         string ProcessCommand(string comName, string[] comArgs)
         {
             try
