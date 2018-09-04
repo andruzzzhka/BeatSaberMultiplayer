@@ -434,6 +434,8 @@ namespace ServerHub.Hub
 
                                         RoomPreset preset = JsonConvert.DeserializeObject<RoomPreset>(json);
 
+                                        preset.Update();
+
                                         uint roomId = RoomsController.CreateRoom(preset.GetRoomSettings());
                                         
                                         return "Created room with ID "+ roomId;

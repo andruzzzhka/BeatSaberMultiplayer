@@ -2,6 +2,7 @@
 using ServerHub.Rooms;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using static ServerHub.Misc.BeatSaver;
 
@@ -29,6 +30,11 @@ namespace ServerHub.Data
             settings.AvailableSongs = songs.ConvertAll(x => new SongInfo() { levelId = x.HashMD5, songName = x.Name });
 
             return settings;
+        }
+
+        public void Update()
+        {
+            songs.Where(x => string.IsNullOrEmpty(x.HashMD5)).AsParallel().WithDegreeOfParallelism(4).ForAll(y => y.HashMD5 = FetchByID(y.Key).HashMD5);
         }
     }
 }
