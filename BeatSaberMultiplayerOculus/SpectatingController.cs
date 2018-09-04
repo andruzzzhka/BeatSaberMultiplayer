@@ -142,7 +142,7 @@ namespace BeatSaberMultiplayer
                         catch (Exception e)
                         {
 #if DEBUG
-                            Log.Exception($"Can't parse PlayerInfo! Excpetion: {e}");
+                            Log.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
 #endif
                         }
                     }

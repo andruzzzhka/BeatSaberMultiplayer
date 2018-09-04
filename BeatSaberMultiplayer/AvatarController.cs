@@ -92,7 +92,7 @@ namespace BeatSaberMultiplayer
             }
             else
             {
-                Log.Error($"Can't load avatar! Error: {result}");
+                Log.Error($"Unable to load avatar! Error: {result}");
             }
         }
 

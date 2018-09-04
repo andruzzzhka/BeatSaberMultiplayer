@@ -159,7 +159,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             catch
             {
-                Log.Info("Can't disconnect from ServerHub properly!");
+                Log.Info("Unable to disconnect from ServerHub properly!");
             }
 
             HideDifficultySelection();
@@ -217,22 +217,22 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             break;
                         case 1:
                             {
-                                _roomNavigationController.DisplayError("Can't join room!\n" + "Room not found");
+                                _roomNavigationController.DisplayError("Unable to join room!\n" + "Room not found");
                             }
                             break;
                         case 2:
                             {
-                                _roomNavigationController.DisplayError("Can't join room!\n" + "Incorrect password");
+                                _roomNavigationController.DisplayError("Unable to join room!\n" + "Incorrect password");
                             }
                             break;
                         case 3:
                             {
-                                _roomNavigationController.DisplayError("Can't join room!\n" + "Too much players");
+                                _roomNavigationController.DisplayError("Unable to join room!\n" + "Too much players");
                             }
                             break;
                         default:
                             {
-                                _roomNavigationController.DisplayError("Can't join room!\n" + "Unknown error");
+                                _roomNavigationController.DisplayError("Unable to join room!\n" + "Unknown error");
                             }
                             break;
 
@@ -499,7 +499,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     }
                 }catch(Exception e)
                 {
-                    Log.Exception("Can't parse packet!");
+                    Log.Exception("Unable to parse packet!");
                     if (packet != null)
                     {
                         Log.Exception($"Packet={packet.commandType}, DataLength={packet.additionalData.Length}");

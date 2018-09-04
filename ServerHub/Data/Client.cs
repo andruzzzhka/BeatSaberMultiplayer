@@ -109,7 +109,7 @@ namespace ServerHub.Data
             }
             catch (Exception e)
             {
-                Logger.Instance.Warning($"Can't initialize client! Exception: {e}");
+                Logger.Instance.Warning($"Unable to initialize client! Exception: {e}");
                 return false;
             }
         }
@@ -132,7 +132,7 @@ namespace ServerHub.Data
                 socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, ReceiveHeader, state);
             }catch(Exception e)
             {
-                Logger.Instance.Warning($"Can't initialize client! Exception: {e}");
+                Logger.Instance.Warning($"Unable to initialize client! Exception: {e}");
                 clientDisconnected?.Invoke(this);
             }
         }
@@ -423,6 +423,9 @@ namespace ServerHub.Data
             if (socket != null)
             {
                 socket.Close();
+#if DEBUG
+                Logger.Instance.Warning("Closed client socket");
+#endif
             }
             HighResolutionTimer.LoopTimer.Elapsed -= ClientLoop;
             active = false;

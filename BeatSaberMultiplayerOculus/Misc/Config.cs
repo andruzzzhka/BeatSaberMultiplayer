@@ -33,7 +33,7 @@ namespace BeatSaberMultiplayer {
             }
             catch (Exception)
             {
-                Log.Error($"Can't load config @ {FileLocation.FullName}");
+                Log.Error($"Unable to load config @ {FileLocation.FullName}");
                 return false;
             }
             return true;
@@ -50,7 +50,7 @@ namespace BeatSaberMultiplayer {
             }
             catch (Exception)
             {
-                Log.Error($"Can't create new config @ {FileLocation.FullName}");
+                Log.Error($"Unable to create new config @ {FileLocation.FullName}");
                 return false;
             }
             return true;
