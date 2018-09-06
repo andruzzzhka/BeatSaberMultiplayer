@@ -10,14 +10,34 @@ using WebSocketSharp.Server;
 
 namespace ServerHub.Hub
 {
+    public struct WSRoomInfo
+    {
+        public string Path;
+        public string RoomName;
+
+        public WSRoomInfo(string _path)
+        {
+            Path = _path;
+
+            string[] split = _path.Split('/');
+            int _id = Convert.ToInt32(split[split.Length - 1]);
+
+            Room _room = RoomsController.GetRoomsList().Find(room => room.roomId == _id);
+            RoomName = _room.roomSettings.Name;
+        }
+    }
+
     public class ListServices : WebSocketBehavior
     {
         protected override void OnOpen()
         {
             base.OnOpen();
 
-            List<string> paths = WebSocketListener.Server.WebSocketServices.Paths.ToList<string>();
-            Send(JsonConvert.SerializeObject(paths));
+            List<string> paths = WebSocketListener.Server.WebSocketServices.Paths.ToList();
+            paths.Remove("/");
+
+            List<WSRoomInfo> rooms = paths.ConvertAll(x => new WSRoomInfo(x));
+            Send(JsonConvert.SerializeObject(rooms));
         }
     }
 
@@ -55,8 +75,12 @@ namespace ServerHub.Hub
         {
             if (Server != null)
             {
-                List<string> paths = Server.WebSocketServices.Paths.ToList<string>();
-                string data = JsonConvert.SerializeObject(paths);
+                List<string> paths = WebSocketListener.Server.WebSocketServices.Paths.ToList();
+                paths.Remove("/");
+
+                List<WSRoomInfo> rooms = paths.ConvertAll(x => new WSRoomInfo(x));
+                string data = JsonConvert.SerializeObject(rooms);
+
                 Server.WebSocketServices["/"].Sessions.BroadcastAsync(data, null);
             }
         }
