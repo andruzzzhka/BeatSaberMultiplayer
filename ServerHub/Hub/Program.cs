@@ -11,6 +11,8 @@ using NetTools;
 using ServerHub.Data;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using static ServerHub.Hub.RCONStructs;
+using static ServerHub.Misc.Logger;
 #if DEBUG
 using System.IO.Pipes;
 using System.Diagnostics;
@@ -18,8 +20,18 @@ using System.Diagnostics;
 
 namespace ServerHub.Hub
 {
-    class Program {
+    static class Program {
         private static string IP { get; set; }
+
+        public static DateTime serverStartTime;
+
+        public static long networkBytesInNow;
+        public static long networkBytesOutNow;
+
+        private static long networkBytesInLast;
+        private static long networkBytesOutLast;
+
+        private static DateTime lastNetworkStatsReset;
 
         public static List<IPAddressRange> blacklistedIPs;
         public static List<ulong> blacklistedIDs;
@@ -29,9 +41,9 @@ namespace ServerHub.Hub
         public static List<ulong> whitelistedIDs;
         public static List<string> whitelistedNames;
 
-        static void Main(string[] args) => new Program().Start(args);
-        
-        private Thread listenerThread { get; set; }
+        static void Main(string[] args) => Start(args);
+
+        static private Thread listenerThread { get; set; }
 
 #if !DEBUG
         private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -40,11 +52,11 @@ namespace ServerHub.Hub
         }
 #endif
 
-        private void OnShutdown(ShutdownEventArgs obj) {
+        static private void OnShutdown(ShutdownEventArgs obj) {
             HubListener.Stop();
         }
 
-        void Start(string[] args) {
+        static void Start(string[] args) {
 #if !DEBUG
             AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
 #endif
@@ -80,12 +92,12 @@ namespace ServerHub.Hub
 
             Settings.Instance.Server.Tickrate = Misc.Math.Clamp(Settings.Instance.Server.Tickrate, 5, 150);
             HighResolutionTimer.LoopTimer.Interval = 1000/Settings.Instance.Server.Tickrate;
+            HighResolutionTimer.LoopTimer.Elapsed += ProgramLoop;
             HighResolutionTimer.LoopTimer.Start();
 #if DEBUG
             try
             {
                 InitializePipe();
-                HighResolutionTimer.LoopTimer.Elapsed += LoopTimer_Elapsed;
             }catch(Exception e)
             {
                 Logger.Instance.Warning($"Unable to initialize statistics pipe! Exception: {e}");
@@ -99,6 +111,7 @@ namespace ServerHub.Hub
             VersionChecker.CheckForUpdates();
 
             Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
+            serverStartTime = DateTime.Now;
 
             HubListener.Start();
 
@@ -119,13 +132,47 @@ namespace ServerHub.Hub
             }
         }
 
+        static void ProgramLoop(object sender, HighResolutionTimerElapsedEventArgs e)
+        {
+
+            if(DateTime.Now.Subtract(lastNetworkStatsReset).TotalSeconds > 1f)
+            {
+                lastNetworkStatsReset = DateTime.Now;
+                networkBytesInLast = networkBytesInNow;
+                networkBytesInNow = 0;
+                networkBytesOutLast = networkBytesOutNow;
+                networkBytesOutNow = 0;
+            }
+
 #if DEBUG
-        DateTime lastTick;
+            if (pipeServer.IsConnected)
+            {
+                try
+                {
+                    float milliseconds = (DateTime.Now.Subtract(lastTick).Ticks) / TimeSpan.TicksPerMillisecond;
+                    lastTick = DateTime.Now;
+                    List<byte> buffer = new List<byte>();
+                    buffer.AddRange(BitConverter.GetBytes(milliseconds));
+                    buffer.AddRange(BitConverter.GetBytes((float)e.Delay));
+                    pipeWriter.BaseStream.Write(buffer.ToArray(), 0, buffer.Count);
+                }
+                catch (Exception)
+                {
+                    pipeServer.Dispose();
 
-        NamedPipeServerStream pipeServer;
-        StreamWriter pipeWriter;
+                    InitializePipe();
+                }
+            }
+#endif
+        }
 
-        private async void InitializePipe()
+#if DEBUG
+        static DateTime lastTick;
+
+        static NamedPipeServerStream pipeServer;
+        static StreamWriter pipeWriter;
+
+        private static async void InitializePipe()
         {
             if (pipeServer != null)
             {
@@ -137,31 +184,9 @@ namespace ServerHub.Hub
             pipeWriter = new StreamWriter(pipeServer);
             pipeWriter.AutoFlush = true;
             lastTick = DateTime.Now;
-
-        }
-
-        private void LoopTimer_Elapsed(object sender, HighResolutionTimerElapsedEventArgs e)
-        {
-            if (pipeServer.IsConnected)
-            {
-                try
-                {
-                    float milliseconds = (DateTime.Now.Subtract(lastTick).Ticks) / TimeSpan.TicksPerMillisecond;
-                    lastTick = DateTime.Now;
-                    List<byte> buffer = new List<byte>();
-                    buffer.AddRange(BitConverter.GetBytes(milliseconds));
-                    buffer.AddRange(BitConverter.GetBytes((float)e.Delay));
-                    pipeWriter.BaseStream.Write(buffer.ToArray(), 0, buffer.Count);
-                }catch(Exception)
-                {
-                    pipeServer.Dispose();
-
-                    InitializePipe();
-                }
-            }
         }
 #endif
-        private void CreateTournamentRooms()
+        private static void CreateTournamentRooms()
         {
             List<SongInfo> songs = BeatSaver.ConvertSongIDs(Settings.Instance.TournamentMode.SongIDs);
             
@@ -185,12 +210,13 @@ namespace ServerHub.Hub
             }
         }
 
-        string ProcessCommand(string comName, string[] comArgs)
+        public static string ProcessCommand(string comName, string[] comArgs)
         {
             try
             {
                 switch (comName.ToLower())
                 {
+                    #region Console commands
                     case "help":
                         {
                             string commands = "";
@@ -564,7 +590,47 @@ namespace ServerHub.Hub
                             }
                         }
                         break;
+                    #endregion
+
+                    #region RCON Commands
+                    case "serverinfo":
+                        {
+                            ServerInfo info = new ServerInfo()
+                            {
+                                Hostname = IP + ":" + Settings.Instance.Server.Port,
+                                Framerate = System.Math.Round(HubListener.Tickrate, 1),
+                                Memory = (int)(Process.GetCurrentProcess().WorkingSet64 / 1024 / 1024),
+                                Players = HubListener.hubClients.Count + RoomsController.GetRoomsList().Sum(x => x.roomClients.Count),
+                                Uptime = (int)DateTime.Now.Subtract(serverStartTime).TotalSeconds,
+                                EntityCount = RoomsController.GetRoomsCount(),
+                                MaxPlayers = 99,
+                                NetworkIn = (int)networkBytesInLast,
+                                NetworkOut = (int)networkBytesOutLast
+                            };
+
+                            return JsonConvert.SerializeObject(info);
+                        }
+                    case "console.tail":
+                        {
+                            int historySize = int.Parse(comArgs[0]);
+                            int skip = Misc.Math.Max(Logger.Instance.logHistory.Count - historySize, 0);
+                            int take = Misc.Math.Min(historySize, Logger.Instance.logHistory.Count);
+                            List<LogMessage> msgs = Logger.Instance.logHistory.Skip(skip).Take(take).ToList();
+
+
+                            return JsonConvert.SerializeObject(msgs);
+                        }
+                    case "playerlist":
+                        {
+                            List<RCONPlayerInfo> clients = new List<RCONPlayerInfo>();
+
+                            RoomsController.GetRoomsList().ForEach(x => clients.AddRange(x.roomClients.Select(y => new RCONPlayerInfo(y.playerInfo))));
+                            
+                            return JsonConvert.SerializeObject(clients);
+                        }
+                    #endregion
 #if DEBUG
+                    #region Debug commands
                     case "testroom":
                         {
                             uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "test", NoFail = true, MaxPlayers = 4, SelectionType = Data.SongSelectionType.Manual, AvailableSongs = new System.Collections.Generic.List<Data.SongInfo>() { new Data.SongInfo() { levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "451ffd065cf0e6adc01b2c3eda375794".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "97b35d13bac139c089a0c9d9306c9d76".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a0d040d1a4fe833d5f9838d35777d302".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "61e3b11c1a4cd9185db46b1f7bb7ea54".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e2d35a81fc0c54c326b09892c8d5c038".ToUpper(), songName = "" } } }, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
@@ -575,6 +641,7 @@ namespace ServerHub.Hub
                             uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = false, Password = "test", NoFail = false, MaxPlayers = 4, SelectionType = Data.SongSelectionType.Manual, AvailableSongs = new System.Collections.Generic.List<Data.SongInfo>() { new Data.SongInfo() { levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "451ffd065cf0e6adc01b2c3eda375794".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "97b35d13bac139c089a0c9d9306c9d76".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a0d040d1a4fe833d5f9838d35777d302".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "61e3b11c1a4cd9185db46b1f7bb7ea54".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e2d35a81fc0c54c326b09892c8d5c038".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a8f8f95869b90a288a9ce4bdc260fa17".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "7dce2ba59bc69ec59e6ac455b98f3761".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "fbd77e71ce31329e5ebacde40c7401e0".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "7014f67926d216a6e2df026fa67017b0".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "51d0e56ecea0a98637c0323e7a3af7cf".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "9d1e4315971f6644ac94babdbd20e36a".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "9812c675def22f7405e0bf3422134756".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "1d46797ccb24acb86d0403828533df61".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "6ffccb03d75106c5911dd876dfd5f054".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e3a97c826fab2ce5993dc2e71443b9aa".ToUpper(), songName = "" } } }, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
                             return "Created room with ID " + id;
                         }
+                        #endregion
 #endif
                 }
 
@@ -593,7 +660,7 @@ namespace ServerHub.Hub
             }
         }
 
-        public static IList<string> ParseLine(string line)
+        public static List<string> ParseLine(string line)
         {
             var args = new List<string>();
             var quote = false;
@@ -615,7 +682,7 @@ namespace ServerHub.Hub
             return args;
         }
 
-        private void UpdateLists()
+        static private void UpdateLists()
         {
             IPAddressRange tryIp;
             ulong tryId;

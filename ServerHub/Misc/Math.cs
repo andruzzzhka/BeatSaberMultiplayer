@@ -16,8 +16,14 @@ namespace ServerHub.Misc {
             return (int)MathCore.Floor(a);
         }
 
-        public static int Max(int a, int b) {
+        public static int Max(int a, int b)
+        {
             return MathCore.Max(a, b);
+        }
+
+        public static int Min(int a, int b)
+        {
+            return MathCore.Min(a, b);
         }
     }
 }

@@ -19,6 +19,12 @@ namespace ServerHub.Hub
         private static List<float> _ticksLength = new List<float>();
         private static DateTime _lastTick;
 
+        public static float Tickrate {
+            get {
+                return (1000 / (_ticksLength.Sum() / _ticksLength.Count));
+            }
+        }
+
         static TcpListener listener = new TcpListener(IPAddress.Any, Settings.Instance.Server.Port);
 
         static public bool Listen;
@@ -68,7 +74,7 @@ namespace ServerHub.Hub
             _ticksLength.Add(DateTime.Now.Subtract(_lastTick).Ticks/TimeSpan.TicksPerMillisecond);
             _lastTick = DateTime.Now;
             List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
-            Console.Title = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total, {(1000/(_ticksLength.Sum()/_ticksLength.Count)).ToString("0.0")} tickrate";
+            Console.Title = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total, {Tickrate.ToString("0.0")} tickrate";
         }
 
         async static void OpenPort()

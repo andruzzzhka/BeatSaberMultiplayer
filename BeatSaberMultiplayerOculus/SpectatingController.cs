@@ -27,7 +27,8 @@ namespace BeatSaberMultiplayer
 
         private PlayerInfo _spectatedPlayer;
         private AvatarController _spectatedPlayerAvatar;
-
+        
+        private ScoreController _scoreController;
         public AudioTimeSyncController audioTimeSync;
         private AudioSource _songAudioSource;
 
@@ -96,6 +97,10 @@ namespace BeatSaberMultiplayer
             _playerController = Resources.FindObjectsOfTypeAll<PlayerController>().First();
 
             Log.Info("Controllers found!");
+
+            _scoreController = FindObjectOfType<ScoreController>();
+
+            Log.Info("Score controller found!");
         }
 
         private void ClientCreated()
@@ -197,6 +202,13 @@ namespace BeatSaberMultiplayer
                             {
                                 _leftController.SetPlayerInfo(_spectatedPlayer);
                                 _rightController.SetPlayerInfo(_spectatedPlayer);
+                            }
+
+                            if(_scoreController != null)
+                            {
+                                _scoreController.SetPrivateField("_prevFrameScore", (int)_spectatedPlayer.playerScore);
+                                _scoreController.SetPrivateField("_baseScore", (int)lerpTo.playerScore);
+                                _scoreController.SetPrivateField("_combo", (int)lerpTo.playerComboBlocks);
                             }
 
                             if(_playerController != null)

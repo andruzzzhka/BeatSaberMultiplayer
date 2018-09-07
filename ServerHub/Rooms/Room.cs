@@ -259,10 +259,38 @@ namespace ServerHub.Rooms
             }
         }
 
+        public void OnOpenWebSocket()
+        {
+            if (WebSocketListener.Server == null || !Settings.Instance.Server.EnableWebSocketRoomInfo)
+                return;
+
+            var service = WebSocketListener.Server.WebSocketServices[$"/room/{roomId}"];
+
+            try
+            {
+                RoomInfo roomInfo = GetRoomInfo();
+
+                WebSocketPacket packet = new WebSocketPacket(CommandType.GetRoomInfo, roomInfo);
+                string serialized = JsonConvert.SerializeObject(packet);
+                service.Sessions.BroadcastAsync(serialized, null);
+
+                if (roomInfo.roomState == RoomState.Preparing)
+                {
+                    ReadyPlayers readyPlayers = new ReadyPlayers(_readyPlayers.Count, roomClients.Count);
+
+                    packet = new WebSocketPacket(CommandType.PlayerReady, readyPlayers);
+                    serialized = JsonConvert.SerializeObject(packet);
+                    service.Sessions.BroadcastAsync(serialized, null);
+                }
+            }catch(Exception e)
+            {
+                Logger.Instance.Warning("Unable to send RoomInfo to WebSocket client! Exception: " + e);
+            }
+        }
 
         public void BroadcastWebSocket(CommandType commandType, object data)
         {
-            if (WebSocketListener.Server == null)
+            if (WebSocketListener.Server == null || !Settings.Instance.Server.EnableWebSocketRoomInfo)
                 return;
 
             WebSocketPacket packet = new WebSocketPacket(commandType, data);

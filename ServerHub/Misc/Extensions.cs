@@ -6,8 +6,8 @@ using System.Collections.Generic;
 namespace System.Linq {
     public static class Extensions {
         public static ConsoleColor GetColour(this Logger.LogMessage message) {
-            switch (message.Level) {
-                case Logger.LoggerLevel.Info:
+            switch (Enum.Parse(typeof(Logger.LoggerLevel), message.Type)) {
+                case Logger.LoggerLevel.Log:
                     return ConsoleColor.Green;
                 case Logger.LoggerLevel.Warning:
                     return ConsoleColor.Magenta;

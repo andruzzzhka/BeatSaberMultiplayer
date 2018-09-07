@@ -17,7 +17,7 @@ namespace ServerHub.Misc {
         }
 
         public enum LoggerLevel {
-            Info,
+            Log,
             Warning,
             Exception,
             Error
@@ -25,21 +25,27 @@ namespace ServerHub.Misc {
 
         public struct LogMessage {
             public string Message { get; set; }
-            public LoggerLevel Level { get; set; }
-            public bool PrintToLog { get; set; }
+            public string Type { get; set; }
+            public long Time { get; set; }
 
-            public LogMessage(string msg, LoggerLevel lvl, bool log = true) {
+            public LogMessage(string msg, LoggerLevel lvl) {
                 Message = msg;
-                Level = lvl;
-                PrintToLog = log;
+                Type = lvl.ToString();
+                Time = DateTime.Now.Ticks/TimeSpan.TicksPerSecond;
             }
         }
-        
+
+        public List<LogMessage> logHistory;
+        public int logHistorySize;
+
         private FileInfo LogFile { get; }
 
         private StreamWriter LogWriter;
 
         Logger() {
+            logHistorySize = 128;
+            logHistory = new List<LogMessage>();
+
             LogFile = GetPath();
             LogFile.Create().Close();
 
@@ -50,41 +56,34 @@ namespace ServerHub.Misc {
         #region Log Functions
 
         public void Log(object msg, bool hideHeader = false) {
-            if(!hideHeader)
-                PrintLogMessage(new LogMessage($"[LOG       -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Info));
-            else
-                PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Info, false));
+            PrintLogMessage(new LogMessage($"[LOG       -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Log));
         }
 
         public void Error(object msg, bool hideHeader = false) {
-            if (!hideHeader)
-                PrintLogMessage(new LogMessage($"[ERROR     -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Error));
-            else
-                PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Error, false));
+             PrintLogMessage(new LogMessage($"[ERROR     -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Error));
         }
 
         public void Exception(object msg, bool hideHeader = false) {
-            if (!hideHeader)
-                PrintLogMessage(new LogMessage($"[EXCEPTION -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Exception));
-            else
-                PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Exception, false));
+            PrintLogMessage(new LogMessage($"[EXCEPTION -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Exception));
         }
 
         public void Warning(object msg, bool hideHeader = false) {
-            if (!hideHeader)
-                PrintLogMessage(new LogMessage($"[WARNING   -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Warning));
-            else
-                PrintLogMessage(new LogMessage($"{msg}", LoggerLevel.Warning, false));
+            PrintLogMessage(new LogMessage($"[WARNING   -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Warning));
         }
 
         #endregion
         
         void PrintLogMessage(LogMessage msg)
         {
+            logHistory.Add(msg);
+            if(logHistory.Count > logHistorySize)
+            {
+                logHistory.RemoveAt(0);
+            }
+
             Console.ForegroundColor = msg.GetColour();
             Console.WriteLine(msg.Message);
-            if (msg.PrintToLog)
-                LogWriter.WriteLine(msg.Message);
+            LogWriter.WriteLine(msg.Message);
             Console.ResetColor();
         }
 

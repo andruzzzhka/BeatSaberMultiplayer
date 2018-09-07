@@ -1,4 +1,5 @@
 ﻿using ServerHub.Data;
+using ServerHub.Hub;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,6 +42,8 @@ namespace ServerHub.Misc
                     nDataRead += nBytesRead;
                     nStartIndex += nBytesRead;
                 }
+
+                Program.networkBytesInNow += nDataRead;
             }
             catch(IOException)
             {
@@ -91,7 +94,9 @@ namespace ServerHub.Misc
             try
             {
                 SocketError error;
-                client.EndSend(ar, out error);
+                int sentBytes = client.EndSend(ar, out error);
+
+                Program.networkBytesOutNow += sentBytes; 
 
                 if (error != SocketError.Success)
                 {

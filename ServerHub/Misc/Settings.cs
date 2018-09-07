@@ -14,6 +14,9 @@ namespace ServerHub.Misc {
             private int _tickrate;
             private bool _tryUPnP;
             private bool _enableWebSocketServer;
+            private bool _enableWebSocketRoomInfo;
+            private bool _enableWebSocketRCON;
+            private string _rconPassword;
             private int _webSocketPort;
 
             private Action MarkDirty { get; }
@@ -81,6 +84,48 @@ namespace ServerHub.Misc {
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
+            public bool EnableWebSocketRoomInfo
+            {
+                get => _enableWebSocketRoomInfo;
+                set
+                {
+                    _enableWebSocketRoomInfo = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool EnableWebSocketRCON
+            {
+                get => _enableWebSocketRCON;
+                set
+                {
+                    _enableWebSocketRCON = value;
+                    MarkDirty();
+                }
+            }
+            
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string RCONPassword
+            {
+                get => _rconPassword;
+                set
+                {
+                    _rconPassword = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
             public int WebSocketPort
             {
                 get => _webSocketPort;
@@ -97,6 +142,9 @@ namespace ServerHub.Misc {
                 _tickrate = 30;
                 _tryUPnP = true;
                 _enableWebSocketServer = false;
+                _enableWebSocketRoomInfo = false;
+                _enableWebSocketRCON = false;
+                _rconPassword = "changeme";
                 _webSocketPort = 3701;
             }
         }

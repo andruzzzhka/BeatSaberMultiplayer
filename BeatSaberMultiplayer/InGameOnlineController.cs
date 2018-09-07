@@ -412,8 +412,8 @@ namespace BeatSaberMultiplayer
             if (_scoreController != null)
             {
                 _scoreController.scoreDidChangeEvent += ScoreChanged;
-                _scoreController.noteWasCutEvent += noteWasCutEvent;
-                _scoreController.comboDidChangeEvent += comboDidChangeEvent;
+                _scoreController.noteWasCutEvent += NoteWasCutEvent;
+                _scoreController.comboDidChangeEvent += ComboDidChangeEvent;
             }
 #if DEBUG
             Log.Info("Found score controller");
@@ -471,12 +471,12 @@ namespace BeatSaberMultiplayer
             Client.instance.playerInfo.playerEnergy = (int)Math.Round(energy * 100);
         }
 
-        private void comboDidChangeEvent(int obj)
+        private void ComboDidChangeEvent(int obj)
         {
             Client.instance.playerInfo.playerComboBlocks = (uint)obj;
         }
 
-        private void noteWasCutEvent(NoteData arg1, NoteCutInfo arg2, int score)
+        private void NoteWasCutEvent(NoteData arg1, NoteCutInfo arg2, int score)
         {
             if (arg2.allIsOK)
                 Client.instance.playerInfo.playerCutBlocks++;

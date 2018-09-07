@@ -202,6 +202,8 @@ namespace ServerHub.Data
 
                 if (bytesRead == recState.buffer.Length)
                 {
+                    Program.networkBytesInNow += recState.buffer.Length;
+
                     int bytesToReceive = BitConverter.ToInt32(recState.buffer, 0);
 
                     StateObject state = new StateObject(bytesToReceive) { client = this };
@@ -232,6 +234,8 @@ namespace ServerHub.Data
 
                 if (bytesRead == recState.buffer.Length - recState.offset)
                 {
+                    Program.networkBytesInNow += recState.buffer.Length;
+
                     BasePacket packet = new BasePacket(recState.buffer);
 
 #if DEBUG
