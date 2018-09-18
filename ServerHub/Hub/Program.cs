@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using static ServerHub.Hub.RCONStructs;
 using static ServerHub.Misc.Logger;
+using System.Diagnostics;
 #if DEBUG
 using System.IO.Pipes;
 using System.Diagnostics;
