@@ -13,8 +13,8 @@ namespace BeatSaberMultiplayer
     {
         public string Name => "Beat Saber Multiplayer";
 
-        public string Version => "0.5.1.3";
-        public static uint pluginVersion = 513;
+        public string Version => "0.5.1.4";
+        public static uint pluginVersion = 514;
 
         public void OnApplicationQuit()
         {
