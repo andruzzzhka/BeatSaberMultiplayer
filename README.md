@@ -1,27 +1,18 @@
-# Latest version: 0.4.5.3
+# Latest version: 0.5.1.4 Beta
 # [Plugin Releases](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/)
-## Client 0.4.5.3:
+## Client 0.5.1.4 Beta:
 [Guide](https://bs.assistant.moe/Multiplayer/#Install) by Assistant#8431
 
-[Oculus](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.3/BeatSaberMultiplayer-Oculus.zip)
+[Oculus](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.5.1.4-beta/BeatSaberMultiplayer-Oculus.zip)
 
-[Steam](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.3/BeatSaberMultiplayer-Steam.zip)
+[Steam](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.5.1.4-beta/BeatSaberMultiplayer-Steam.zip)
 
-## Server 0.4.5.3:
-[Guide](https://bs.assistant.moe/Multiplayer/#Server) by Assistant#8431
-
-[Windows](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.3/MultiplayerServer_win-64.zip)
-
-[Linux-64bit](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.3/MultiplayerServer_linux-64.zip)
-
-[Linux-Arm](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.3/MultiplayerServer_linux-arm.zip)
-
-## ServerHub 0.4.5.3:
+## ServerHub 0.5.1.4 Beta:
 [Guide](https://bs.assistant.moe/Multiplayer/#Hub) by Assistant#8431
 
-[Windows](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.3/ServerHub_win-64.zip)
+[Windows](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.5.1.4-beta/ServerHub_win-64.zip)
 
-[Linux-64bit](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.3/ServerHub_linux-64.zip)
+[Linux-64bit](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.5.1.4-beta/ServerHub_linux-64.zip)
 
-[Linux-Arm](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.4.5.3/ServerHub_linux-arm.zip)
+[Linux-Arm](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.5.1.4-beta/ServerHub_linux-arm.zip)
 
