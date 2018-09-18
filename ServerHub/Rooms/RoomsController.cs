@@ -141,7 +141,7 @@ namespace ServerHub.Rooms
 
         public static void ClientLeftRoom(Client client)
         {
-            Room room = rooms.Find(x => x.roomClients.Contains(client));
+            Room room = rooms.Find(x => x.roomId == client.joinedRoomID);
             if (room != null)
             {
                 room.PlayerLeft(client);

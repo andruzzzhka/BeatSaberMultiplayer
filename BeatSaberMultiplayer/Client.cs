@@ -11,18 +11,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-using WebSocketSharp.Server;
 
 namespace BeatSaberMultiplayer
 {
-    public class Broadcast : WebSocketBehavior
-    {
-        protected override void OnOpen()
-        {
-            base.OnOpen();
-            Misc.Log.Info("WebSocket Client Connected!");
-        }
-    }
 
     public class StateObject
     {
@@ -52,8 +43,7 @@ namespace BeatSaberMultiplayer
         public event Action<BasePacket> PacketReceived;
 
         public bool Connected;
-
-        public WebSocketServer webSocket;
+        
         Socket socket;
 
         public string ip;
@@ -99,6 +89,8 @@ namespace BeatSaberMultiplayer
                 try
                 {
                     socket.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
+                    socket.Shutdown(SocketShutdown.Both);
+                    socket.Close(5);
                 }
                 catch (Exception)
                 {
@@ -108,10 +100,6 @@ namespace BeatSaberMultiplayer
 
             if (!dontDestroy)
             {
-                if (webSocket != null)
-                {
-                    webSocket.Stop();
-                }
                 instance = null;
                 ClientDestroyed?.Invoke();
                 Destroy(gameObject);
@@ -171,14 +159,6 @@ namespace BeatSaberMultiplayer
             state.workSocket = socket;
 
             socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, new AsyncCallback(ReceiveHeader), state);
-
-            if (Config.Instance.EnableWebSocketServer && webSocket == null)
-            {
-                webSocket = new WebSocketServer(Config.Instance.WebSocketPort);
-                webSocket.AddWebSocketService<Broadcast>("/");
-                webSocket.Start();
-                Log.Info($"WebSocket Server started at port {Config.Instance.WebSocketPort}");
-            }
         }
 
         public void RemovePacketsFromQueue(CommandType type)
@@ -230,23 +210,24 @@ namespace BeatSaberMultiplayer
             
             if (bytesRead == recState.buffer.Length-recState.offset)
             {
-                BasePacket packet = new BasePacket(recState.buffer);
-
-                if (_averagePacketTimes.Count > 119)
-                    _averagePacketTimes.RemoveAt(0);
-                _averagePacketTimes.Add((float)DateTime.Now.Subtract(_lastPacketTime).TotalMilliseconds);
-                _lastPacketTime = DateTime.Now;
-
-                Tickrate = 1000f / (_averagePacketTimes.Sum() / _averagePacketTimes.Count);
-#if DEBUG
-                if (packet.commandType != CommandType.UpdatePlayerInfo)
-                    Log.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");
-#endif
-                _packetsQueue.Enqueue(packet);
-
-                if (webSocket != null)
+                try
                 {
-                    webSocket.WebSocketServices["/"].Sessions.BroadcastAsync(packet.ToBytes(), null);
+                    BasePacket packet = new BasePacket(recState.buffer);
+
+                    if (_averagePacketTimes.Count > 119)
+                        _averagePacketTimes.RemoveAt(0);
+                    _averagePacketTimes.Add((float)DateTime.Now.Subtract(_lastPacketTime).TotalMilliseconds);
+                    _lastPacketTime = DateTime.Now;
+
+                    Tickrate = 1000f / (_averagePacketTimes.Sum() / _averagePacketTimes.Count);
+#if DEBUG
+                    if (packet.commandType != CommandType.UpdatePlayerInfo)
+                        Log.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");
+#endif
+                    _packetsQueue.Enqueue(packet);
+                }catch(Exception e)
+                {
+                    Log.Warning("Unable to parse packet from ServerHub! Exception: "+e);
                 }
 
                 if (client.Connected)

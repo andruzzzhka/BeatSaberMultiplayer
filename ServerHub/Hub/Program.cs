@@ -70,10 +70,6 @@ namespace ServerHub.Hub
                     string[] comArgs = args.Skip(1).ToArray();
                     Logger.Instance.Log(ProcessCommand(comName, comArgs), true);
                 }
-                else
-                {
-
-                }
             }
 
             ShutdownEventCatcher.Shutdown += OnShutdown;
@@ -109,11 +105,15 @@ namespace ServerHub.Hub
             Logger.Instance.Log($"Beat Saber Multiplayer ServerHub v{Assembly.GetEntryAssembly().GetName().Version}");
 
             VersionChecker.CheckForUpdates();
-
+            
             Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
             serverStartTime = DateTime.Now;
 
-            HubListener.Start();
+
+            listenerThread = new Thread(HubListener.Start);
+
+            listenerThread.Start();
+            HubListener.Listen = true;
 
             if (Settings.Instance.TournamentMode.Enabled)
                 CreateTournamentRooms();
@@ -145,23 +145,30 @@ namespace ServerHub.Hub
             }
 
 #if DEBUG
-            if (pipeServer.IsConnected)
+            try
             {
-                try
+                if (pipeServer.IsConnected)
                 {
-                    float milliseconds = (DateTime.Now.Subtract(lastTick).Ticks) / TimeSpan.TicksPerMillisecond;
-                    lastTick = DateTime.Now;
-                    List<byte> buffer = new List<byte>();
-                    buffer.AddRange(BitConverter.GetBytes(milliseconds));
-                    buffer.AddRange(BitConverter.GetBytes((float)e.Delay));
-                    pipeWriter.BaseStream.Write(buffer.ToArray(), 0, buffer.Count);
-                }
-                catch (Exception)
-                {
-                    pipeServer.Dispose();
+                    try
+                    {
+                        float milliseconds = (DateTime.Now.Subtract(lastTick).Ticks) / TimeSpan.TicksPerMillisecond;
+                        lastTick = DateTime.Now;
+                        List<byte> buffer = new List<byte>();
+                        buffer.AddRange(BitConverter.GetBytes(milliseconds));
+                        buffer.AddRange(BitConverter.GetBytes((float)e.Delay));
+                        pipeWriter.BaseStream.Write(buffer.ToArray(), 0, buffer.Count);
+                    }
+                    catch (Exception)
+                    {
+                        pipeServer.Dispose();
 
-                    InitializePipe();
+                        InitializePipe();
+                    }
                 }
+            }
+            catch (Exception)
+            {
+
             }
 #endif
         }
@@ -583,9 +590,10 @@ namespace ServerHub.Hub
                         {
                             if (HubListener.Listen)
                             {
-                                foreach (Room room in RoomsController.GetRoomsList().Where(x => x.roomClients.Count == 0))
+                                List<uint> emptyRooms = RoomsController.GetRoomsList().Where(x => x.roomClients.Count == 0).Select(y => y.roomId).ToList();
+                                foreach (uint roomId in emptyRooms)
                                 {
-                                    RoomsController.DestroyRoom(room.roomId);
+                                    RoomsController.DestroyRoom(roomId);
                                 }
                             }
                         }

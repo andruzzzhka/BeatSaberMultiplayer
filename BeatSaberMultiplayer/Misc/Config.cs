@@ -139,13 +139,11 @@ namespace BeatSaberMultiplayer {
 
         Config()
         {
-            _serverHubIPs = new string[] { "127.0.0.1", "87.103.199.211", "soupwhale.com", "hub.assistant.moe" };
-            _serverHubPorts = new int[] { 3700, 3700, 3700, 3700 };
+            _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "auros.host", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org" };
+            _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700 };
             _showAvatarsInGame = false;
             _showAvatarsInRoom = true;
             _spectatorMode = false;
-            _enableWebSocketServer = false;
-            _webSocketPort = 3701;
             IsDirty = true;
         }
 

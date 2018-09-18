@@ -25,7 +25,11 @@ namespace ServerHub.Hub
             }
         }
 
-        static TcpListener listener = new TcpListener(IPAddress.Any, Settings.Instance.Server.Port);
+        public static Timer pingTimer;
+        
+        static Socket listener = new Socket(SocketType.Stream, ProtocolType.Tcp);
+        
+        public static ManualResetEvent clientAccepted = new ManualResetEvent(false);
 
         static public bool Listen;
 
@@ -33,8 +37,6 @@ namespace ServerHub.Hub
 
         public static void Start()
         {
-            Listen = true;
-
             if (Settings.Instance.Server.TryUPnP)
             {
                 OpenPort();
@@ -45,10 +47,12 @@ namespace ServerHub.Hub
                 WebSocketListener.Start();
             }
 
+            pingTimer = new Timer(PingTimerCallback, null, 7500, 5000);
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
             _lastTick = DateTime.Now;
-
-            listener.Start();
+            
+            listener.Bind(new IPEndPoint(IPAddress.Any, Settings.Instance.Server.Port));
+            listener.Listen(25);
             ClientHelper.LostConnection += ClientHelper_LostConnection;
             BeginListening();
         }
@@ -60,7 +64,7 @@ namespace ServerHub.Hub
 
         public static void Stop()
         {
-            listener.Stop();
+            listener.Close(2);
             Listen = false;
             WebSocketListener.Stop();
         }
@@ -75,6 +79,29 @@ namespace ServerHub.Hub
             _lastTick = DateTime.Now;
             List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
             Console.Title = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total, {Tickrate.ToString("0.0")} tickrate";
+
+        }
+        
+        private static void PingTimerCallback(object state)
+        {
+            try
+            {
+                foreach (Client client in hubClients)
+                {
+                    if (!client.socket.IsSocketConnected())
+                    {
+                        client.DestroyClient();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public static bool IsSocketConnected(this Socket s)
+        {
+            return !((s.Poll(1000, SelectMode.SelectRead) && (s.Available == 0)) || !s.Connected);
         }
 
         async static void OpenPort()
@@ -96,26 +123,15 @@ namespace ServerHub.Hub
             }
         }
 
-        async static void BeginListening()
+        static void BeginListening()
         {
             while (Listen)
             {
-                try
-                {
-                    Client client = await AcceptClient();
+                clientAccepted.Reset();
 
-                    if (client.InitializeClient())
-                    {
-                        hubClients.Add(client);
-                        client.clientDisconnected += ClientDisconnected;
-                        client.clientJoinedRoom += ClientJoinedRoom;
-                        client.clientLeftRoom += RoomsController.ClientLeftRoom;
-                        client.ClientAccepted();
-                    }
-                }catch(Exception e)
-                {
-                    Logger.Instance.Warning($"Unable to accept client! Exception: {e}");
-                }
+                listener.BeginAccept(new AsyncCallback(AcceptClient), listener);
+
+                clientAccepted.WaitOne();
             }
         }
 
@@ -123,35 +139,45 @@ namespace ServerHub.Hub
         {
             if(RoomsController.ClientJoined(sender, room, password))
             {
-                hubClients.Remove(sender);
+                if (hubClients.Contains(sender))
+                    hubClients.Remove(sender);
             }
         }
 
         private static void ClientDisconnected(Client sender)
         {
             RoomsController.ClientLeftRoom(sender);
-            hubClients.Remove(sender);
+            if(hubClients.Contains(sender))
+                hubClients.Remove(sender);
             sender.clientDisconnected -= ClientDisconnected;
             sender.clientJoinedRoom -= ClientJoinedRoom;
             sender.clientLeftRoom -= RoomsController.ClientLeftRoom;
         }
 
-        static async Task<Client> AcceptClient()
+        static void AcceptClient(IAsyncResult ar)
         {
 #if DEBUG
             Logger.Instance.Log("Waiting for a connection...");
 #endif
-            Socket client;
             try
             {
-                client = await listener.AcceptSocketAsync();
+                Client client = new Client(((Socket)ar.AsyncState).EndAccept(ar));
+
+                if (client.InitializeClient())
+                {
+                    hubClients.Add(client);
+                    client.clientDisconnected += ClientDisconnected;
+                    client.clientJoinedRoom += ClientJoinedRoom;
+                    client.clientLeftRoom += RoomsController.ClientLeftRoom;
+                    client.ClientAccepted();
+                }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                client = null;
+                Logger.Instance.Warning($"Unable to accept client! Exception: {e}");
             }
-            Client newClient = new Client(client);
-            return newClient;
+
+            clientAccepted.Set();
         }
 
     }

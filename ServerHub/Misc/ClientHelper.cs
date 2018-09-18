@@ -100,9 +100,9 @@ namespace ServerHub.Misc
 
                 if (error != SocketError.Success)
                 {
+                    Logger.Instance.Warning("Socket error occurred! " + error);
                     if (recState.client.active)
                     {
-                        Logger.Instance.Warning("Socket error occurred! " + error);
                         LostConnectionInvoke(recState.client);
                     }
                 }

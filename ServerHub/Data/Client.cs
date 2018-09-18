@@ -416,24 +416,27 @@ namespace ServerHub.Data
 
         public void DestroyClient()
         {
-            if (playerInfo != null)
+            if (active)
             {
-                Logger.Instance.Log($"{playerInfo.playerName} disconnected!");
-            }
-            else
-            {
-                Logger.Instance.Log($"Client disconnected!");
-            }
-            if (socket != null)
-            {
-                socket.Close();
+                if (playerInfo != null)
+                {
+                    Logger.Instance.Log($"{playerInfo.playerName} disconnected!");
+                }
+                else
+                {
+                    Logger.Instance.Log($"Client disconnected!");
+                }
+                if (socket != null)
+                {
+                    socket.Close(1);
 #if DEBUG
-                Logger.Instance.Warning("Closed client socket");
+                    Logger.Instance.Warning("Closed client socket");
 #endif
+                }
+                HighResolutionTimer.LoopTimer.Elapsed -= ClientLoop;
+                active = false;
+                clientDisconnected?.Invoke(this);
             }
-            HighResolutionTimer.LoopTimer.Elapsed -= ClientLoop;
-            active = false;
-            clientDisconnected?.Invoke(this);
         }
 
         public void KickClient()
