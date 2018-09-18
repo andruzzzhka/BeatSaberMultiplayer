@@ -46,7 +46,7 @@ namespace ServerHub.Hub
         static private Thread listenerThread { get; set; }
 
 #if !DEBUG
-        private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        static private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Logger.Instance.Exception(e.ExceptionObject.ToString());
         }
