@@ -1,4 +1,6 @@
-﻿using IllusionPlugin;
+﻿using BeatSaberMultiplayer.Misc;
+using BeatSaberMultiplayer.UI;
+using IllusionPlugin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,11 +13,8 @@ namespace BeatSaberMultiplayer
     {
         public string Name => "Beat Saber Multiplayer";
 
-        public string Version => "0.4.5.4";
-
-        public void OnActiveSceneChanged(Scene prevScene, Scene nextScene)
-        {
-        }
+        public string Version => "0.5.1.4";
+        public static uint pluginVersion = 514;
 
         public void OnApplicationQuit()
         {
@@ -23,6 +22,26 @@ namespace BeatSaberMultiplayer
 
         public void OnApplicationStart()
         {
+            SceneManager.sceneLoaded += SceneLoaded;
+            if (Config.Load())
+                Log.Info("Loaded config!");
+            else
+                Config.Create();
+            Base64Sprites.ConvertSprites();
+        }
+
+        private void SceneLoaded(Scene nextScene, LoadSceneMode loadMode)
+        {
+#if DEBUG
+            Log.Info("Loaded scene " + nextScene.name);
+#endif
+            if (nextScene.name == "Menu")
+            {
+                BeatSaberUI.OnLoad();
+                PluginUI.OnLoad();
+                InGameOnlineController.OnLoad();
+                SpectatingController.OnLoad();
+            }
         }
 
         public void OnFixedUpdate()
@@ -35,16 +54,6 @@ namespace BeatSaberMultiplayer
 
         public void OnLevelWasLoaded(int level)
         {
-            Console.WriteLine("Loading scene " + level);
-            if (level == 1) {
-                Config.Instance.Save();
-                BSMultiplayerUI.OnLoad();
-                BSMultiplayerClient.OnLoad(level, Version);
-            }
-            else if (level > 1)
-            {
-                BSMultiplayerClient.OnLoad(level, Version);
-            }
         }
 
         public void OnUpdate()

@@ -1,15 +1,15 @@
-﻿using System;
+﻿using SimpleJSON;
+using SongLoaderPlugin;
+using SongLoaderPlugin.OverrideClasses;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using SimpleJSON;
-using SongLoaderPlugin;
-using SongLoaderPlugin.OverrideClasses;
+using System.Threading.Tasks;
 
-namespace BeatSaberMultiplayer
+namespace BeatSaberMultiplayer.Data
 {
-
-    public enum SongQueueState { Available, Queued, Downloading, Downloaded, Error }; 
+    public enum SongQueueState { Available, Queued, Downloading, Downloaded, Error };
 
     [Serializable]
     public class DifficultyLevel
@@ -59,6 +59,10 @@ namespace BeatSaberMultiplayer
         public string hash;
 
         public string path;
+
+        public SongQueueState songQueueState = SongQueueState.Available;
+
+        public float downloadingProgress = 0f;
 
         public Song()
         {
@@ -112,11 +116,11 @@ namespace BeatSaberMultiplayer
             buffer.coverUrl = mainNode["coverUrl"];
             buffer.downloadUrl = mainNode["downloadUrl"];
             buffer.hash = mainNode["hashMd5"];
-            
+
             var difficultyNode = mainNode["difficulties"];
 
             buffer.difficultyLevels = new DifficultyLevel[difficultyNode.Count];
-            
+
             for (int i = 0; i < difficultyNode.Count; i++)
             {
                 buffer.difficultyLevels[i] = new DifficultyLevel(difficultyNode[i]["difficulty"], difficultyNode[i]["difficultyRank"], difficultyNode[i]["audioPath"], difficultyNode[i]["jsonPath"]);
@@ -127,7 +131,7 @@ namespace BeatSaberMultiplayer
 
         public Song(JSONNode jsonNode, JSONNode difficultyNode)
         {
-            
+
             id = jsonNode["key"];
             beatname = jsonNode["name"];
             ownerid = jsonNode["uploaderId"];
@@ -180,6 +184,7 @@ namespace BeatSaberMultiplayer
             songSubName = _data.songSubName;
             authorName = _data.songAuthorName;
             difficultyLevels = ConvertDifficultyLevels(_data.difficultyBeatmaps);
+            path = _data.customSongInfo.path;
         }
 
         public Song(CustomSongInfo _song)
@@ -211,6 +216,7 @@ namespace BeatSaberMultiplayer
                 return null;
             }
         }
+
 
         public DifficultyLevel[] ConvertDifficultyLevels(IStandardLevelDifficultyBeatmap[] _difficultyLevels)
         {

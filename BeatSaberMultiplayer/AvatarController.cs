@@ -1,4 +1,7 @@
-﻿using CustomAvatar;
+﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
+using BeatSaberMultiplayer.UI;
+using CustomAvatar;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,123 +13,180 @@ using UnityEngine.XR;
 
 namespace BeatSaberMultiplayer
 {
-    class AvatarController : MonoBehaviour
+    class AvatarController : MonoBehaviour, IAvatarInput
     {
+        static CustomAvatar.CustomAvatar avatarInstance;
+
         PlayerInfo playerInfo;
 
-        AvatarScript avatar;
-        AvatarBodyManager bodyManager;
+        SpawnedAvatar avatar;
 
         TextMeshPro playerNameText;
 
         Vector3 targetHeadPos;
+        Vector3 interpHeadPos;
         Vector3 lastHeadPos;
 
         Vector3 targetLeftHandPos;
+        Vector3 interpLeftHandPos;
         Vector3 lastLeftHandPos;
 
         Vector3 targetRightHandPos;
+        Vector3 interpRightHandPos;
         Vector3 lastRightHandPos;
 
         Quaternion targetHeadRot;
+        Quaternion interpHeadRot;
         Quaternion lastHeadRot;
 
         Quaternion targetLeftHandRot;
+        Quaternion interpLeftHandRot;
         Quaternion lastLeftHandRot;
 
         Quaternion targetRightHandRot;
+        Quaternion interpRightHandRot;
         Quaternion lastRightHandRot;
 
         float interpolationProgress = 0f;
 
         bool rendererEnabled = true;
+        Camera _camera;
+        public bool forcePlayerInfo = false;
+
+        public PosRot HeadPosRot => new PosRot(interpHeadPos, interpHeadRot);
+
+        public PosRot LeftPosRot => new PosRot(interpLeftHandPos, interpLeftHandRot);
+
+        public PosRot RightPosRot => new PosRot(interpRightHandPos, interpRightHandRot);
+
+        public static void LoadAvatar()
+        {
+            if (avatarInstance == null)
+            {
+#if DEBUG
+                CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().ForEach(x => Log.Info(x.FullPath));
+#endif
+                avatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.Contains("TemplateFullBody"));
+            }
+#if DEBUG
+            Log.Info($"Found avatar, isLoaded={avatarInstance.IsLoaded}");
+#endif
+            if (!avatarInstance.IsLoaded)
+            {
+                avatarInstance.Load(AvatarLoaded);
+            }
+        }
 
         public AvatarController()
         {
-            CreateGameObjects();
+            StartCoroutine(InitializeAvatarController());
         }
 
-        void CreateGameObjects()
+        private static void AvatarLoaded(CustomAvatar.CustomAvatar avatar, AvatarLoadResult result)
         {
+            if (result == AvatarLoadResult.Completed)
+            {
+#if DEBUG
+                Log.Info("Loaded avatar");
+#endif
+            }
+            else
+            {
+                Log.Error($"Unable to load avatar! Error: {result}");
+            }
+        }
+
+        IEnumerator InitializeAvatarController()
+        {
+            if (!avatarInstance.IsLoaded)
+            {
+#if DEBUG
+                Log.Info("Waiting for avatar to load");
+#endif
+                yield return new WaitWhile(delegate () { return !avatarInstance.IsLoaded; });
+            }
+            else
+            {
+                yield return null;
+            }
+
+#if DEBUG
+            Log.Info("Spawning avatar");
+#endif
+            avatar = AvatarSpawner.SpawnAvatar(avatarInstance, this);
             
-            if (avatar == null)
-            {
-                Console.WriteLine("Spawning avatar");
-                avatar = AvatarScript.SpawnAvatar(".\\CustomAvatars\\TemplateFullBody.avatar", true);
-                
-                StartCoroutine(WaitForAvatar());
-            }
-        }
-
-        private IEnumerator WaitForAvatar()
-        {
-            yield return new WaitUntil(delegate () { return avatar.getInstance() != null; });
-
-            AvatarLoaded();
-
-        }
-
-        private void AvatarLoaded()
-        {
-
-            if (bodyManager == null)
-            {
-                bodyManager = avatar.GetBodyManager();
-            }
-
-            if (ReflectionUtil.GetPrivateField<GameObject>(avatar, "_fpsAvatarInstance") != null)
-            {
-                Destroy(ReflectionUtil.GetPrivateField<GameObject>(avatar, "_fpsAvatarInstance"));
-                Console.WriteLine("Destroyed fps avatar instance");
-            }
-
-            if (playerNameText == null)
-            {
-                playerNameText = BSMultiplayerUI._instance.CreateWorldText(bodyManager.GetHeadTransform(), "INVALID");
-                playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 0.25f, 0f);
-                playerNameText.alignment = TextAlignmentOptions.Center;
-                playerNameText.fontSize = 2.5f;
-            }
-
-            Console.WriteLine("Avatar loaded");
-
+            playerNameText = BeatSaberUI.CreateWorldText(transform, "INVALID");
+            playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 0.25f, 0f);
+            playerNameText.alignment = TextAlignmentOptions.Center;
+            playerNameText.fontSize = 2.5f;
         }
 
         void Update()
         {
 
-            if (playerNameText != null)
+            if (avatar != null && !forcePlayerInfo)
             {
-                interpolationProgress += Time.deltaTime * 20;
+                if (Client.instance.Tickrate < 88f)
+                {
+                    interpolationProgress += Time.deltaTime * Client.instance.Tickrate;
+                }
+                else
+                {
+                    interpolationProgress = 1f;
+                }
                 if (interpolationProgress > 1f)
                 {
                     interpolationProgress = 1f;
                 }
 
-                bodyManager.SetHeadPosRot(Vector3.Lerp(lastHeadPos, targetHeadPos, interpolationProgress), Quaternion.Lerp(lastHeadRot, targetHeadRot, interpolationProgress));
-                bodyManager.SetLeftHandPosRot(Vector3.Lerp(lastLeftHandPos, targetLeftHandPos, interpolationProgress), Quaternion.Lerp(lastLeftHandRot, targetLeftHandRot, interpolationProgress));
-                bodyManager.SetRightHandPosRot(Vector3.Lerp(lastRightHandPos, targetRightHandPos, interpolationProgress), Quaternion.Lerp(lastRightHandRot, targetRightHandRot, interpolationProgress));
+                interpHeadPos = Vector3.Lerp(lastHeadPos, targetHeadPos, interpolationProgress);
+                interpLeftHandPos = Vector3.Lerp(lastLeftHandPos, targetLeftHandPos, interpolationProgress);
+                interpRightHandPos = Vector3.Lerp(lastRightHandPos, targetRightHandPos, interpolationProgress);
 
-                playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InputTracking.GetLocalPosition(XRNode.Head));
+                interpHeadRot = Quaternion.Lerp(lastHeadRot, targetHeadRot, interpolationProgress);
+                interpLeftHandRot = Quaternion.Lerp(lastLeftHandRot, targetLeftHandRot, interpolationProgress);
+                interpRightHandRot = Quaternion.Lerp(lastRightHandRot, targetRightHandRot, interpolationProgress);
+
+                transform.position = interpHeadPos;
+
+
+
+            }
+
+            if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "CameraPlus") && _camera == null)
+            {
+                _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name == "Camera Plus");
+            }
+
+            if (Config.Instance.SpectatorMode && _camera != null)
+            {
+                playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
+            }
+            else
+            {
+                playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
             }
 
         }
 
         void OnDestroy()
         {
-
-            Destroy(avatar.getInstance());
-            Destroy(avatar.gameObject);
-
+#if DEBUG
+            Log.Info("Destroying avatar");
+#endif
+            Destroy(avatar.GameObject);
         }
 
         public void SetPlayerInfo(PlayerInfo _playerInfo, float offset, bool isLocal)
         {
-
-
             if (_playerInfo == null)
             {
-                Destroy(gameObject);
+                playerNameText.gameObject.SetActive(false);
+                if (rendererEnabled)
+                {
+                    SetRendererInChilds(avatar.GameObject.transform, false);
+                    rendererEnabled = false;
+                }
                 return;
             }
 
@@ -135,7 +195,7 @@ namespace BeatSaberMultiplayer
 
                 playerInfo = _playerInfo;
 
-                if (playerNameText == null || avatar == null || bodyManager == null)
+                if (playerNameText == null || avatar == null)
                 {
                     return;
                 }
@@ -143,32 +203,36 @@ namespace BeatSaberMultiplayer
                 if (isLocal)
                 {
                     playerNameText.gameObject.SetActive(false);
+#if !DEBUG
                     if (rendererEnabled)
                     {
-                        SetRendererInChilds(avatar.getInstance().transform, false);
+                        SetRendererInChilds(avatar.GameObject.transform, false);
                         rendererEnabled = false;
                     }
+#endif
                 }
                 else
                 {
                     playerNameText.gameObject.SetActive(true);
                     if (!rendererEnabled)
                     {
-                        SetRendererInChilds(avatar.getInstance().transform, true);
+                        SetRendererInChilds(avatar.GameObject.transform, true);
                         rendererEnabled = true;
                     }
                 }
 
                 interpolationProgress = 0f;
 
+                Vector3 offsetVector = new Vector3(offset, 0f, 0f);
+
                 lastHeadPos = targetHeadPos;
-                targetHeadPos = _playerInfo.headPos + (new Vector3(offset, 0f, 0f) + BSMultiplayerClient._instance.roomPositionOffset);
+                targetHeadPos = _playerInfo.headPos + offsetVector;
 
                 lastRightHandPos = targetRightHandPos;
-                targetRightHandPos = _playerInfo.rightHandPos + (new Vector3(offset, 0f, 0f) + BSMultiplayerClient._instance.roomPositionOffset);
+                targetRightHandPos = _playerInfo.rightHandPos + offsetVector;
 
                 lastLeftHandPos = targetLeftHandPos;
-                targetLeftHandPos = _playerInfo.leftHandPos + (new Vector3(offset, 0f, 0f) + BSMultiplayerClient._instance.roomPositionOffset);
+                targetLeftHandPos = _playerInfo.leftHandPos + offsetVector;
 
                 lastHeadRot = targetHeadRot;
                 targetHeadRot = _playerInfo.headRot;
@@ -181,10 +245,23 @@ namespace BeatSaberMultiplayer
 
                 playerNameText.text = playerInfo.playerName;
 
+                if (forcePlayerInfo)
+                {
+                    interpHeadPos = targetHeadPos;
+                    interpLeftHandPos = targetLeftHandPos;
+                    interpRightHandPos = targetRightHandPos;
+
+                    interpHeadRot = targetHeadRot;
+                    interpLeftHandRot = targetLeftHandRot;
+                    interpRightHandRot = targetRightHandRot;
+
+                    transform.position = interpHeadPos;
+                }
+
             }
             catch (Exception e)
             {
-                Console.WriteLine($"AVATAR EXCEPTION: {_playerInfo.playerName}: {e}");
+                Log.Exception($"AVATAR EXCEPTION: {_playerInfo.playerName}: {e}");
             }
 
         }

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.UI;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,36 +16,38 @@ namespace BeatSaberMultiplayer
         public TextMeshPro playerNameText;
         public TextMeshPro playerScoreText;
         public TextMeshPro playerPlaceText;
-        
-        private int previousScore;
-        private int currentScore;
+
+        private uint previousScore;
+        private uint currentScore;
         private float progress;
 
         void Update()
         {
             if (_playerInfo != null)
             {
-                progress += Time.deltaTime * 20;
-                int score = (int)Mathf.Lerp(previousScore, currentScore, Mathf.Clamp01(progress));
+                progress += Time.deltaTime * Client.instance.Tickrate;
+                uint score = (uint)Mathf.Lerp(previousScore, currentScore, Mathf.Clamp01(progress));
 
-                playerScoreText.text = string.Format(BSMultiplayerClient._instance.scoreboardScoreFormat, score, _playerInfo.playerEnergy, _playerInfo.playerCutBlocks, _playerInfo.playerComboBlocks);
+#if DEBUG
+                playerScoreText.text = string.Format("{0} {2} {3}", score, _playerInfo.playerEnergy, _playerInfo.playerCutBlocks, _playerInfo.playerComboBlocks);
+#else
+                playerScoreText.text = string.Format("{0}", score, _playerInfo.playerEnergy, _playerInfo.playerCutBlocks, _playerInfo.playerComboBlocks);
+#endif
             }
         }
 
         void Awake()
         {
-            BSMultiplayerUI ui = BSMultiplayerUI._instance;
-
-            playerPlaceText = ui.CreateWorldText(transform, "");
+            playerPlaceText = BeatSaberUI.CreateWorldText(transform, "");
             playerPlaceText.rectTransform.anchoredPosition = new Vector2(2.5f, 0f);
             playerPlaceText.fontSize = 8f;
 
-            playerNameText = ui.CreateWorldText(transform, "");
-            playerNameText.rectTransform.anchoredPosition = new Vector2(4f,0f);
+            playerNameText = BeatSaberUI.CreateWorldText(transform, "");
+            playerNameText.rectTransform.anchoredPosition = new Vector2(4f, 0f);
             playerNameText.fontSize = 7f;
 
-            playerScoreText = ui.CreateWorldText(transform, "");
-            playerScoreText.rectTransform.anchoredPosition = new Vector2(15f,0f);
+            playerScoreText = BeatSaberUI.CreateWorldText(transform, "");
+            playerScoreText.rectTransform.anchoredPosition = new Vector2(15f, 0f);
             playerScoreText.fontSize = 8f;
         }
 

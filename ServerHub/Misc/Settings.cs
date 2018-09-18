@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Newtonsoft.Json;
@@ -10,18 +11,40 @@ namespace ServerHub.Misc {
         [JsonObject(MemberSerialization.OptIn)]
         public class ServerSettings {
             private int _port;
+            private int _tickrate;
             private bool _tryUPnP;
+            private bool _enableWebSocketServer;
+            private bool _enableWebSocketRoomInfo;
+            private bool _enableWebSocketRCON;
+            private string _rconPassword;
+            private int _webSocketPort;
 
             private Action MarkDirty { get; }
-        
+
             /// <summary>
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
-            public int Port {
+            public int Port
+            {
                 get => _port;
-                set {
+                set
+                {
                     _port = value;
+                    MarkDirty();
+                }
+            }
+            
+            /// <summary>
+             /// Remember to Save after changing the value
+             /// </summary>
+            [JsonProperty]
+            public int Tickrate
+            {
+                get => _tickrate;
+                set
+                {
+                    _tickrate = value;
                     MarkDirty();
                 }
             }
@@ -43,12 +66,89 @@ namespace ServerHub.Misc {
                 }
             }
 
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool EnableWebSocketServer
+            {
+                get => _enableWebSocketServer;
+                set
+                {
+                    _enableWebSocketServer = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool EnableWebSocketRoomInfo
+            {
+                get => _enableWebSocketRoomInfo;
+                set
+                {
+                    _enableWebSocketRoomInfo = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool EnableWebSocketRCON
+            {
+                get => _enableWebSocketRCON;
+                set
+                {
+                    _enableWebSocketRCON = value;
+                    MarkDirty();
+                }
+            }
+            
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string RCONPassword
+            {
+                get => _rconPassword;
+                set
+                {
+                    _rconPassword = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public int WebSocketPort
+            {
+                get => _webSocketPort;
+                set
+                {
+                    _webSocketPort = value;
+                    MarkDirty();
+                }
+            }
+
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
+                _tickrate = 30;
                 _tryUPnP = true;
+                _enableWebSocketServer = false;
+                _enableWebSocketRoomInfo = false;
+                _enableWebSocketRCON = false;
+                _rconPassword = "changeme";
+                _webSocketPort = 3701;
             }
         }
+
         [JsonObject(MemberSerialization.OptIn)]
         public class LoggerSettings {
             private string _logsDir;
@@ -73,10 +173,160 @@ namespace ServerHub.Misc {
             }
         }
 
+        [JsonObject(MemberSerialization.OptIn)]
+        public class AccessSettings
+        {
+            private List<string> _blacklist;
+
+            private bool _whitelistEnabled;
+
+            private List<string> _whitelist;
+
+            private Action MarkDirty { get; }
+
+            [JsonProperty]
+            public List<string> Blacklist
+            {
+                get => _blacklist;
+                set
+                {
+                    _blacklist = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
+            public bool WhitelistEnabled
+            {
+                get => _whitelistEnabled;
+                set
+                {
+                    _whitelistEnabled = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
+            public List<string> Whitelist
+            {
+                get => _whitelist;
+                set
+                {
+                    _whitelist = value;
+                    MarkDirty();
+                }
+            }
+
+            public AccessSettings(Action markDirty)
+            {
+                MarkDirty = markDirty;
+                _blacklist = new List<string>();
+                _whitelistEnabled = false;
+                _whitelist = new List<string>();
+            }
+
+        }
+
+        [JsonObject(MemberSerialization.OptIn)]
+        public class TournamentModeSettings
+        {
+            private bool _enabled;
+            private string _roomNameTemplate;
+            private int _rooms;
+            private string _password;
+            private List<string> _songIDs;
+
+            private Action MarkDirty { get; }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool Enabled
+            {
+                get => _enabled;
+                set
+                {
+                    _enabled = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string RoomNameTemplate
+            {
+                get => _roomNameTemplate;
+                set
+                {
+                    _roomNameTemplate = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public int Rooms
+            {
+                get => _rooms;
+                set
+                {
+                    _rooms = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string Password
+            {
+                get => _password;
+                set
+                {
+                    _password = value;
+                    MarkDirty();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public List<string> SongIDs
+            {
+                get => _songIDs;
+                set
+                {
+                    _songIDs = value;
+                    MarkDirty();
+                }
+            }
+
+            public TournamentModeSettings(Action markDirty)
+            {
+                MarkDirty = markDirty;
+                _enabled = false;
+                _roomNameTemplate = "Tournament Room {0}";
+                _rooms = 4;
+                _password = "";
+                _songIDs = new List<string>();
+            }
+        }
+
         [JsonProperty]
         public ServerSettings Server { get; }
         [JsonProperty]
         public LoggerSettings Logger { get; }
+        [JsonProperty]
+        public AccessSettings Access { get; }
+        [JsonProperty]
+        public TournamentModeSettings TournamentMode { get; }
 
         private static Settings _instance;
 
@@ -93,7 +343,7 @@ namespace ServerHub.Misc {
                 catch (Exception ex) {
                     _instance = new Settings();
                     _instance.Save();
-                    ServerCommons.Misc.Logger.Instance.Exception(ex.Message);
+                    Misc.Logger.Instance.Exception(ex.Message);
                 }
 
                 return _instance;
@@ -105,6 +355,8 @@ namespace ServerHub.Misc {
         Settings() {
             Server = new ServerSettings(MarkDirty);
             Logger = new LoggerSettings(MarkDirty);
+            Access = new AccessSettings(MarkDirty);
+            TournamentMode = new TournamentModeSettings(MarkDirty);
             MarkDirty();
         }
 
@@ -126,6 +378,7 @@ namespace ServerHub.Misc {
 
         void MarkDirty() {
             IsDirty = true;
+            Save();
         }
 
         void MarkClean() {

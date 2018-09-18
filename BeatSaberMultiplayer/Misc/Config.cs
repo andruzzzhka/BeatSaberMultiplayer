@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using BeatSaberMultiplayer.Misc;
 using SimpleJSON;
 using UnityEngine;
-using JSON = WyrmTale.JSON;
 
 namespace BeatSaberMultiplayer {
     [Serializable]
@@ -12,25 +12,54 @@ namespace BeatSaberMultiplayer {
         [SerializeField] private string[] _serverHubIPs;
         [SerializeField] private int[] _serverHubPorts;
         [SerializeField] private bool _showAvatarsInGame;
-        [SerializeField] private bool _showAvatarsInLobby;
+        [SerializeField] private bool _showAvatarsInRoom;
+        [SerializeField] private bool _spectatorMode;
+        [SerializeField] private bool _enableWebSocketServer;
+        [SerializeField] private int _webSocketPort;
 
         private static Config _instance;
         
-        private static FileInfo FileLocation { get; } = new FileInfo($"./Config/{Assembly.GetExecutingAssembly().GetName().Name}.json");
+        private static FileInfo FileLocation { get; } = new FileInfo($"./UserData/{Assembly.GetExecutingAssembly().GetName().Name}.json");
+
+        public static bool Load()
+        {
+            if (_instance != null) return false;
+            try
+            {
+                FileLocation?.Directory?.Create();
+                Log.Info($"Attempting to load JSON @ {FileLocation.FullName}");
+                _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
+                _instance.MarkClean();
+            }
+            catch (Exception)
+            {
+                Log.Error($"Unable to load config @ {FileLocation.FullName}");
+                return false;
+            }
+            return true;
+        }
+
+        public static bool Create()
+        {
+            if (_instance != null) return false;
+            try
+            {
+                FileLocation?.Directory?.Create();
+                Log.Info($"Creating new config @ {FileLocation.FullName}");
+                Instance.Save();
+            }
+            catch (Exception)
+            {
+                Log.Error($"Unable to create new config @ {FileLocation.FullName}");
+                return false;
+            }
+            return true;
+        }
 
         public static Config Instance {
             get {
-                if (_instance != null) return _instance;
-                try {
-                    FileLocation?.Directory?.Create();
-                    Console.WriteLine($"Attempting to load JSON @ {FileLocation.FullName}");
-                    _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
-                    _instance.MarkClean();
-                }
-                catch(Exception) {
-                    Console.WriteLine($"Can't load config @ {FileLocation.FullName}");
+                if (_instance == null)
                     _instance = new Config();
-                }
                 return _instance;
             }
         }
@@ -68,29 +97,61 @@ namespace BeatSaberMultiplayer {
             }
         }
 
-        public bool ShowAvatarsInLobby
+        public bool ShowAvatarsInRoom
         {
-            get { return _showAvatarsInLobby; }
+            get { return _showAvatarsInRoom; }
             set
             {
-                _showAvatarsInLobby = value;
+                _showAvatarsInRoom = value;
                 MarkDirty();
             }
         }
 
-        Config() {
-            _serverHubIPs = new string[]{"hub.assistant.moe", "soupwhale.com", "minemalox.me", "beatsaber.weebvr.com", "178.62.239.103", "beatsaber.jaddie.co.uk" };
-            _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700 };
+        public bool SpectatorMode
+        {
+            get { return _spectatorMode; }
+            set
+            {
+                _spectatorMode = value;
+                MarkDirty();
+            }
+        }
+
+        public bool EnableWebSocketServer
+        {
+            get { return _enableWebSocketServer; }
+            set
+            {
+                _enableWebSocketServer = value;
+                MarkDirty();
+            }
+        }
+
+        public int WebSocketPort
+        {
+            get { return _webSocketPort; }
+            set
+            {
+                _webSocketPort = value;
+                MarkDirty();
+            }
+        }
+
+        Config()
+        {
+            _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "auros.host", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org" };
+            _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700 };
             _showAvatarsInGame = false;
-            _showAvatarsInLobby = true;
-            MarkDirty();
+            _showAvatarsInRoom = true;
+            _spectatorMode = false;
+            IsDirty = true;
         }
 
         public bool Save() {
             if (!IsDirty) return false;
             try {
                 using (var f = new StreamWriter(FileLocation.FullName)) {
-                    Console.WriteLine($"Writing to File @ {FileLocation.FullName}");
+                    Log.Info($"Writing to File @ {FileLocation.FullName}");
                     var json = JsonUtility.ToJson(this, true);
                     f.Write(json);
                 }
@@ -98,13 +159,14 @@ namespace BeatSaberMultiplayer {
                 return true;
             }
             catch (IOException ex) {
-                Console.WriteLine($"ERROR WRITING TO CONFIG [{ex.Message}]");
+                Log.Exception($"ERROR WRITING TO CONFIG [{ex.Message}]");
                 return false;
             }
         }
 
         void MarkDirty() {
             IsDirty = true;
+            Save();
         }
         
         void MarkClean() {
