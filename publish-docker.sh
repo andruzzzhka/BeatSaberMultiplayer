@@ -13,7 +13,7 @@ then
   exit 1
 fi
 
-docker build -t andruzzzhka/serverhub:latest -f core.Dockerfile .
+docker build -t andruzzzhka/serverhub:latest .
 
 # Tag This Build
 docker tag andruzzzhka/serverhub andruzzzhka/serverhub:$tag
