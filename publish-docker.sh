@@ -13,10 +13,11 @@ then
   exit 1
 fi
 
+# Build Docker Image
 docker build -t andruzzzhka/serverhub:latest .
 
-# Tag This Build
+# Tag with Version Number
 docker tag andruzzzhka/serverhub andruzzzhka/serverhub:$tag
 
-# Push Core
+# Push Image
 docker push andruzzzhka/serverhub:latest
