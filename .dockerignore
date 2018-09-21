@@ -1,7 +1,7 @@
 bin/
 obj/
 output/
-*.Dockerfile
+Dockerfile
 .git/
 docker-compose.yml
 publish-docker.sh

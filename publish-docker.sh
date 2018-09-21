@@ -13,21 +13,11 @@ then
   exit 1
 fi
 
-docker build -t andruzzzhka/bsmultiplayer-core:latest -f core.Dockerfile .
-docker build -t andruzzzhka/bsmultiplayer-hub:latest -f hub.Dockerfile .
-docker build -t andruzzzhka/bsmultiplayer-server:latest -f server.Dockerfile .
+# Build Docker Image
+docker build -t andruzzzhka/serverhub:latest .
 
-# Tag This Build
-docker tag andruzzzhka/bsmultiplayer-hub andruzzzhka/bsmultiplayer-hub:$tag
-docker tag andruzzzhka/bsmultiplayer-server andruzzzhka/bsmultiplayer-server:$tag
+# Tag with Version Number
+docker tag andruzzzhka/serverhub andruzzzhka/serverhub:$tag
 
-# Push Core
-docker push andruzzzhka/bsmultiplayer-core:latest
-
-# Push Hub
-docker push andruzzzhka/bsmultiplayer-hub:latest
-docker push andruzzzhka/bsmultiplayer-hub:$tag
-
-# Push Server
-docker push andruzzzhka/bsmultiplayer-server:latest
-docker push andruzzzhka/bsmultiplayer-server:$tag
+# Push Image
+docker push andruzzzhka/serverhub:latest
