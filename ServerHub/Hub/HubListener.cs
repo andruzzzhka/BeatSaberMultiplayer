@@ -47,7 +47,7 @@ namespace ServerHub.Hub
                 WebSocketListener.Start();
             }
 
-            pingTimer = new Timer(PingTimerCallback, null, 7500, 5000);
+            pingTimer = new Timer(PingTimerCallback, null, 7500, 10000);
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
             _lastTick = DateTime.Now;
             
@@ -93,9 +93,24 @@ namespace ServerHub.Hub
                         client.DestroyClient();
                     }
                 }
+
+                List<uint> emptyRooms = RoomsController.GetRoomsList().Where(x => x.roomClients.Count == 0).Select(y => y.roomId).ToList();
+                if (emptyRooms.Count > 0 && !Settings.Instance.TournamentMode.Enabled)
+                {
+                    Logger.Instance.Log("Destroying empty rooms...");
+                    foreach (uint roomId in emptyRooms)
+                    {
+                        RoomsController.DestroyRoom(roomId);
+                        Logger.Instance.Log($"Destroyed room {roomId}!");
+                    }
+                }
+
             }
-            catch (Exception)
+            catch (Exception e)
             {
+#if DEBUG
+                Logger.Instance.Warning("PingTimerCallback Exception: "+e);
+#endif
             }
         }
 

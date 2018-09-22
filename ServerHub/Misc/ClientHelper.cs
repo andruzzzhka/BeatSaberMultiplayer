@@ -81,7 +81,8 @@ namespace ServerHub.Misc
             }
             catch (Exception e)
             {
-                Logger.Instance.Warning($"SendData: {e}");
+                if(client.active)
+                    Logger.Instance.Warning($"SendData: {e}");
             }
 
         }

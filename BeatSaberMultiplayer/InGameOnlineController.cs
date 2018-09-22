@@ -88,7 +88,7 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Log.Exception($"Exception on {_currentScene.name} scene load! {e}");
+                Log.Exception($"(Main) Exception on {_currentScene.name} scene load! {e}");
             }
         }
 

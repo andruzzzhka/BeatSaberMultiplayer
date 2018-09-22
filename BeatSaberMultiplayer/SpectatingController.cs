@@ -61,18 +61,24 @@ namespace BeatSaberMultiplayer
 
         private void SceneManager_activeSceneChanged(Scene prev, Scene next)
         {
-            if (next.name.EndsWith("Environment"))
+            try
             {
-                _currentScene = next;
-                TogglePlayerAvatar(!(Client.instance != null && Client.instance.Connected));
-                DestroyAvatar();
-                StartCoroutine(WaitForControllers());
-            }
-            else if(next.name == "Menu")
+                if (next.name.EndsWith("Environment"))
+                {
+                    _currentScene = next;
+                    TogglePlayerAvatar(!(Client.instance != null && Client.instance.Connected));
+                    DestroyAvatar();
+                    StartCoroutine(WaitForControllers());
+                }
+                else if (next.name == "Menu")
+                {
+                    _currentScene = next;
+                    TogglePlayerAvatar(true);
+                    DestroyAvatar();
+                }
+            }catch(Exception e)
             {
-                _currentScene = next;
-                TogglePlayerAvatar(true);
-                DestroyAvatar();
+                Log.Warning($"(Spectator) Exception on {next.name} scene load! {e}");
             }
         }
 

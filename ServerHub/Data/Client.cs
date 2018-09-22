@@ -31,6 +31,8 @@ namespace ServerHub.Data
     {
         Stopwatch timeoutTimer;
 
+        int inactivityKickTime = 45000;
+
         public event Action<Client> clientDisconnected;
         public event Action<Client, uint, string> clientJoinedRoom;
         public event Action<Client> clientLeftRoom;
@@ -177,7 +179,7 @@ namespace ServerHub.Data
                 timeoutTimer.Reset();
             }
 
-            if (timeoutTimer.ElapsedMilliseconds > 6000)
+            if (timeoutTimer.ElapsedMilliseconds > inactivityKickTime)
             {
                 Logger.Instance.Log($"Kicked {playerInfo.playerName} for inactivity");
                 KickClient();

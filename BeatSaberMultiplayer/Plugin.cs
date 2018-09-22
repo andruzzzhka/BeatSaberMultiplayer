@@ -13,8 +13,10 @@ namespace BeatSaberMultiplayer
     {
         public string Name => "Beat Saber Multiplayer";
 
-        public string Version => "0.5.1.4";
-        public static uint pluginVersion = 514;
+        public string Version => "0.5.1.5";
+        public static uint pluginVersion = 515;
+
+        public static Plugin instance;
 
         public void OnApplicationQuit()
         {
@@ -22,6 +24,8 @@ namespace BeatSaberMultiplayer
 
         public void OnApplicationStart()
         {
+            instance = this;
+
             SceneManager.sceneLoaded += SceneLoaded;
             if (Config.Load())
                 Log.Info("Loaded config!");
