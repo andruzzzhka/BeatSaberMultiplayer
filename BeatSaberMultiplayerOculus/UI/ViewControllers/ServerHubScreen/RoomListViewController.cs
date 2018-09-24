@@ -103,7 +103,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             }
             else
             {
-                availableRooms = serverHubs.SelectMany(x => x.availableRooms).ToList();
+                availableRooms = serverHubs.SelectMany(x => x.availableRooms).OrderByDescending(y => y.players).ToList();
             }
 
             if (_serverTableView.dataSource != this)
