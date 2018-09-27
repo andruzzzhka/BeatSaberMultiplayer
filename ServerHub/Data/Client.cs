@@ -33,9 +33,9 @@ namespace ServerHub.Data
 
         int inactivityKickTime = 45000;
 
-        public event Action<Client> clientDisconnected;
-        public event Action<Client, uint, string> clientJoinedRoom;
-        public event Action<Client> clientLeftRoom;
+        public event Action<Client> ClientDisconnected;
+        public event Action<Client, uint, string> ClientJoinedRoom;
+        public event Action<Client> ClientLeftRoom;
 
         public Socket socket;
         public PlayerInfo playerInfo;
@@ -135,7 +135,7 @@ namespace ServerHub.Data
             }catch(Exception e)
             {
                 Logger.Instance.Warning($"Unable to initialize client! Exception: {e}");
-                clientDisconnected?.Invoke(this);
+                ClientDisconnected?.Invoke(this);
             }
         }
 
@@ -194,8 +194,7 @@ namespace ServerHub.Data
 
             try
             {
-                SocketError error;
-                int bytesRead = client.EndReceive(ar, out error);
+                int bytesRead = client.EndReceive(ar, out SocketError error);
 
                 if (error != SocketError.Success)
                 {
@@ -225,8 +224,7 @@ namespace ServerHub.Data
             Socket client = recState.client.socket;
 
             try {
-                SocketError error;
-                int bytesRead = client.EndReceive(ar, out error);
+                int bytesRead = client.EndReceive(ar, out SocketError error);
 
                 if (error != SocketError.Success)
                 {
@@ -298,17 +296,17 @@ namespace ServerHub.Data
                         uint roomId = BitConverter.ToUInt32(packet.additionalData, 0);
                         if (RoomsController.GetRoomInfosList().Any(x => x.roomId == roomId && x.usePassword))
                         {
-                            clientJoinedRoom?.Invoke(this, roomId, Encoding.UTF8.GetString(packet.additionalData, 8, BitConverter.ToInt32(packet.additionalData, 4)));
+                            ClientJoinedRoom?.Invoke(this, roomId, Encoding.UTF8.GetString(packet.additionalData, 8, BitConverter.ToInt32(packet.additionalData, 4)));
                         }
                         else
                         {
-                            clientJoinedRoom?.Invoke(this, roomId, "");
+                            ClientJoinedRoom?.Invoke(this, roomId, "");
                         }
                     }
                     break;
                 case CommandType.LeaveRoom:
                     {
-                        clientLeftRoom?.Invoke(this);
+                        ClientLeftRoom?.Invoke(this);
                         playerInfo.playerState = PlayerState.Lobby;
                     }
                     break;
@@ -326,7 +324,7 @@ namespace ServerHub.Data
                 case CommandType.GetRoomInfo:
                     {
 #if DEBUG
-                            Logger.Instance.Log("Client room: " + joinedRoomID);
+                        Logger.Instance.Log("GetRoomInfo: Client room=" + joinedRoomID+", IncludeSongList="+(packet.additionalData.Length == 1 && packet.additionalData[0] == 1));
 #endif
                         if (joinedRoomID != 0)
                         {
@@ -334,8 +332,15 @@ namespace ServerHub.Data
                             if (joinedRoom != null)
                             {
                                 List<byte> buffer = new List<byte>();
-                                buffer.Add(1);
-                                buffer.AddRange(joinedRoom.GetSongInfos());
+                                if (packet.additionalData.Length == 1 && packet.additionalData[0] == 1)
+                                {
+                                    buffer.Add(1);
+                                    buffer.AddRange(joinedRoom.GetSongInfos());
+                                }
+                                else
+                                {
+                                    buffer.Add(0);
+                                }
                                 buffer.AddRange(joinedRoom.GetRoomInfo().ToBytes());
                                 this.SendData(new BasePacket(CommandType.GetRoomInfo, buffer.ToArray()));
                             }
@@ -364,6 +369,10 @@ namespace ServerHub.Data
                     break;
                 case CommandType.StartLevel:
                     {
+#if DEBUG
+                        Logger.Instance.Log("Received command StartLevel");
+#endif
+
                         if (joinedRoomID != 0)
                         {
                             Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
@@ -437,7 +446,7 @@ namespace ServerHub.Data
                 }
                 HighResolutionTimer.LoopTimer.Elapsed -= ClientLoop;
                 active = false;
-                clientDisconnected?.Invoke(this);
+                ClientDisconnected?.Invoke(this);
             }
         }
 

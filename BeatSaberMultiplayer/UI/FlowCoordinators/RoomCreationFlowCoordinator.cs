@@ -101,6 +101,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             Client.instance.ConnectedToServerHub -= ConnectedToServerHub;
             Client.instance.CreateRoom(_roomSettings);
+            Client.instance.PacketReceived -= PacketReceived;
             Client.instance.PacketReceived += PacketReceived;
         }
 

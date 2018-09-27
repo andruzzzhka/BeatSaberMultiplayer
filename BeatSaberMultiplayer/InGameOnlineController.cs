@@ -94,6 +94,7 @@ namespace BeatSaberMultiplayer
 
         private void ClientCreated()
         {
+            Client.instance.PacketReceived -= PacketReceived;
             Client.instance.PacketReceived += PacketReceived;
         }
 

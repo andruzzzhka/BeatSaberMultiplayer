@@ -108,9 +108,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void ReceivedRoomsList(ServerHubClient sender, List<RoomInfo> rooms)
         {
-            Log.Info($"Received {rooms.Count} rooms from {sender.ip}:{sender.port}");
-            _serverHubNavigationController.roomListViewController.SetRooms(_serverHubClients);
-            _serverHubNavigationController.SetLoadingState(false);
+            HMMainThreadDispatcher.instance.Enqueue(delegate ()
+            {
+                Log.Info($"Received {rooms.Count} rooms from {sender.ip}:{sender.port}");
+                _serverHubNavigationController.roomListViewController.SetRooms(_serverHubClients);
+                _serverHubNavigationController.SetLoadingState(false);
+            });
         }
 
         public void ServerHubException(ServerHubClient sender, Exception e)

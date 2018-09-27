@@ -114,7 +114,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             _songsTableView.ScrollToRow(0, false);
         }
-        
+
+        public void ScrollToLevel(string levelId)
+        {
+            if (availableSongs.Any(x => x.levelID == levelId))
+            {
+                int row = availableSongs.FindIndex(x => x.levelID == levelId);
+                _songsTableView.ScrollToRow(row, false);
+            }
+        }
+
         public void UpdateViewController(bool isHost)
         {
             _songsTableView.gameObject.SetActive(isHost);

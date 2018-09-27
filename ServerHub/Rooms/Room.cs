@@ -140,10 +140,6 @@ namespace ServerHub.Rooms
                         {
                             roomState = RoomState.Results;
                             _resultsStartTime = DateTime.Now;
-                            List<byte> roomInfoBuffer = new List<byte>();
-                            roomInfoBuffer.Add(0);
-                            roomInfoBuffer.AddRange(GetRoomInfo().ToBytes(false));
-                            BroadcastPacket(new BasePacket(CommandType.GetRoomInfo, roomInfoBuffer.ToArray()));
                         }
                     }
                     break;

@@ -310,11 +310,11 @@ namespace BeatSaberMultiplayer
             playerInfo.playerState = PlayerState.Lobby;
         }
 
-        public void RequestRoomInfo()
+        public void RequestRoomInfo(bool requestSongList = true)
         {
             if (Connected && socket.Connected)
             {
-                socket.SendData(new BasePacket(CommandType.GetRoomInfo, new byte[0]));
+                socket.SendData(new BasePacket(CommandType.GetRoomInfo, new byte[1] { (byte)(requestSongList ? 1 : 0) }));
 #if DEBUG
                 Log.Info("Requested RoomInfo...");
 #endif

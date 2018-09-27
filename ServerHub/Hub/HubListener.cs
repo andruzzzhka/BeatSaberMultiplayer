@@ -164,9 +164,9 @@ namespace ServerHub.Hub
             RoomsController.ClientLeftRoom(sender);
             if(hubClients.Contains(sender))
                 hubClients.Remove(sender);
-            sender.clientDisconnected -= ClientDisconnected;
-            sender.clientJoinedRoom -= ClientJoinedRoom;
-            sender.clientLeftRoom -= RoomsController.ClientLeftRoom;
+            sender.ClientDisconnected -= ClientDisconnected;
+            sender.ClientJoinedRoom -= ClientJoinedRoom;
+            sender.ClientLeftRoom -= RoomsController.ClientLeftRoom;
         }
 
         static void AcceptClient(IAsyncResult ar)
@@ -181,9 +181,9 @@ namespace ServerHub.Hub
                 if (client.InitializeClient())
                 {
                     hubClients.Add(client);
-                    client.clientDisconnected += ClientDisconnected;
-                    client.clientJoinedRoom += ClientJoinedRoom;
-                    client.clientLeftRoom += RoomsController.ClientLeftRoom;
+                    client.ClientDisconnected += ClientDisconnected;
+                    client.ClientJoinedRoom += ClientJoinedRoom;
+                    client.ClientLeftRoom += RoomsController.ClientLeftRoom;
                     client.ClientAccepted();
                 }
             }

@@ -94,7 +94,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         public void SetServerHubs(List<ServerHubClient> serverHubClients)
         {
-            _serverHubClients = serverHubClients.OrderBy(x => x.availableRooms).ToList();
+            _serverHubClients = serverHubClients.OrderBy(x => x.availableRooms.Count).ToList();
 
             if (_serverHubsTableView.dataSource != this)
             {
