@@ -26,6 +26,10 @@ namespace BeatSaberMultiplayer
         {
             instance = this;
 
+#if DEBUG
+            DebugForm.OnLoad();
+#endif
+
             SceneManager.sceneLoaded += SceneLoaded;
             if (Config.Load())
                 Log.Info("Loaded config!");

@@ -326,6 +326,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 else
                                 {
                                     _levelCollections = Resources.FindObjectsOfTypeAll<LevelCollectionsForGameplayModes>().First();
+                                    
+                                    Client.instance.playerInfo.playerState = PlayerState.Room;
 
                                     if (BitConverter.ToInt32(packet.additionalData, 1) == packet.additionalData.Length - 5)
                                     {

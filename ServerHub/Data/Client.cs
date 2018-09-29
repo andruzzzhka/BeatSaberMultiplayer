@@ -332,7 +332,7 @@ namespace ServerHub.Data
                             if (joinedRoom != null)
                             {
                                 List<byte> buffer = new List<byte>();
-                                if (packet.additionalData.Length == 1 && packet.additionalData[0] == 1)
+                                if ((packet.additionalData.Length == 1 && packet.additionalData[0] == 1) || packet.additionalData.Length == 0)
                                 {
                                     buffer.Add(1);
                                     buffer.AddRange(joinedRoom.GetSongInfos());

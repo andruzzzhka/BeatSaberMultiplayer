@@ -116,6 +116,7 @@
     <Compile Include="Data\RoomInfo.cs" />
     <Compile Include="Data\RoomSettings.cs" />
     <Compile Include="Data\SongInfo.cs" />
+    <Compile Include="DebugForm.cs" />
     <Compile Include="InGameOnlineController.cs" />
     <Compile Include="Misc\Base64Sprites.cs" />
     <Compile Include="Misc\ClientHelper.cs" />
