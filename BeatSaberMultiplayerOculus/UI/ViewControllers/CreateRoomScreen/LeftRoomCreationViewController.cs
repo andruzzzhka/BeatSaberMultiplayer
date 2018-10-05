@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using HMUI;
+using SongLoaderPlugin;
 using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,18 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 {
     class LeftRoomCreationViewController : VRUIViewController, TableView.IDataSource
     {
+		private SongPreviewPlayer _songPreviewPlayer;
+        public SongPreviewPlayer PreviewPlayer {
+            get {
+                if (_songPreviewPlayer == null) {
+                    _songPreviewPlayer = Resources.FindObjectsOfTypeAll<SongPreviewPlayer>().FirstOrDefault();
+                }
+
+                return _songPreviewPlayer;
+            }
+            private set { _songPreviewPlayer = value; }
+        }
+		
         private Button _pageUpButton;
         private Button _pageDownButton;
         private Button _checkAllButton;
@@ -133,7 +146,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         private void SongsTableView_DidSelectRow(TableView sender, int row)
         {
+            if (availableSongs[row] is CustomLevel) SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)availableSongs[row], SongLoaded);
+            else SongLoaded(availableSongs[row]);
+        }
 
+        private void SongLoaded(IStandardLevel song) 
+		{
+            PreviewPlayer.CrossfadeTo(song.audioClip, song.previewStartTime, song.previewDuration, 1f);
         }
 
         public TableCell CellForRow(int row)
