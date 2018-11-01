@@ -66,14 +66,12 @@ namespace BeatSaberMultiplayer
                 if (next.name.EndsWith("Environment"))
                 {
                     _currentScene = next;
-                    TogglePlayerAvatar(!(Client.instance != null && Client.instance.Connected));
                     DestroyAvatar();
                     StartCoroutine(WaitForControllers());
                 }
                 else if (next.name == "Menu")
                 {
                     _currentScene = next;
-                    TogglePlayerAvatar(true);
                     DestroyAvatar();
                 }
             }catch(Exception e)
@@ -254,20 +252,6 @@ namespace BeatSaberMultiplayer
             if(_spectatedPlayerAvatar != null && _spectatedPlayerAvatar.gameObject != null)
             {
                 Destroy(_spectatedPlayerAvatar.gameObject);
-            }
-        }
-
-        public void TogglePlayerAvatar(bool enabled)
-        {
-            SetRendererInChilds(CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetPrivateField<SpawnedAvatar>("_currentSpawnedPlayerAvatar").GameObject.transform, enabled);
-        }
-
-        private void SetRendererInChilds(Transform origin, bool enabled)
-        {
-            Renderer[] rends = origin.gameObject.GetComponentsInChildren<Renderer>();
-            foreach (Renderer rend in rends)
-            {
-                rend.enabled = enabled;
             }
         }
 
