@@ -29,7 +29,7 @@ namespace ServerHub.Rooms
         public static uint CreateRoom(RoomSettings settings)
         {
             Room room = new Room(GetNextFreeID(), settings, new PlayerInfo("server", long.MaxValue));
-            room.firstPlayerHost = true;
+            room.noHost = true;
             rooms.Add(room);
             room.StartRoom();
             WebSocketListener.AddRoom(room);
@@ -133,7 +133,7 @@ namespace ServerHub.Rooms
 
         public static void AddClient(Room room, Client client)
         {
-            if (room.GetRoomInfo().players == 0 && room.firstPlayerHost)
+            if (room.GetRoomInfo().players == 0 && room.noHost)
                 room.ForceTransferHost(client.playerInfo);
 
             room.roomClients.Add(client);

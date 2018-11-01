@@ -94,7 +94,7 @@ namespace ServerHub.Hub
                     }
                 }
 
-                List<uint> emptyRooms = RoomsController.GetRoomsList().Where(x => x.roomClients.Count == 0).Select(y => y.roomId).ToList();
+                List<uint> emptyRooms = RoomsController.GetRoomsList().Where(x => x.roomClients.Count == 0 && !x.noHost).Select(y => y.roomId).ToList();
                 if (emptyRooms.Count > 0 && !Settings.Instance.TournamentMode.Enabled)
                 {
                     Logger.Instance.Log("Destroying empty rooms...");
