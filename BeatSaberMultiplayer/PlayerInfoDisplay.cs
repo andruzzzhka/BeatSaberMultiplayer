@@ -1,4 +1,5 @@
 ﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using System;
 using System.Collections.Generic;
@@ -38,15 +39,15 @@ namespace BeatSaberMultiplayer
 
         void Awake()
         {
-            playerPlaceText = BeatSaberUI.CreateWorldText(transform, "");
+            playerPlaceText = CustomExtensions.CreateWorldText(transform, "");
             playerPlaceText.rectTransform.anchoredPosition = new Vector2(2.5f, 0f);
             playerPlaceText.fontSize = 8f;
 
-            playerNameText = BeatSaberUI.CreateWorldText(transform, "");
+            playerNameText = CustomExtensions.CreateWorldText(transform, "");
             playerNameText.rectTransform.anchoredPosition = new Vector2(4f, 0f);
             playerNameText.fontSize = 7f;
 
-            playerScoreText = BeatSaberUI.CreateWorldText(transform, "");
+            playerScoreText = CustomExtensions.CreateWorldText(transform, "");
             playerScoreText.rectTransform.anchoredPosition = new Vector2(15f, 0f);
             playerScoreText.fontSize = 8f;
         }

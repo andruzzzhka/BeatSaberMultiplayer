@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using BeatSaberMultiplayer.Misc;
+using IllusionPlugin;
 using SimpleJSON;
 using UnityEngine;
 
@@ -14,8 +15,9 @@ namespace BeatSaberMultiplayer {
         [SerializeField] private bool _showAvatarsInGame;
         [SerializeField] private bool _showAvatarsInRoom;
         [SerializeField] private bool _spectatorMode;
-        [SerializeField] private bool _enableWebSocketServer;
-        [SerializeField] private int _webSocketPort;
+        [SerializeField] private int _maxSimultaneousDownloads;
+        [SerializeField] private string _beatSaverURL;
+
 
         private static Config _instance;
         
@@ -27,13 +29,13 @@ namespace BeatSaberMultiplayer {
             try
             {
                 FileLocation?.Directory?.Create();
-                Log.Info($"Attempting to load JSON @ {FileLocation.FullName}");
+                Misc.Logger.Info($"Attempting to load JSON @ {FileLocation.FullName}");
                 _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
                 _instance.MarkClean();
             }
             catch (Exception)
             {
-                Log.Error($"Unable to load config @ {FileLocation.FullName}");
+                Misc.Logger.Error($"Unable to load config @ {FileLocation.FullName}");
                 return false;
             }
             return true;
@@ -45,12 +47,12 @@ namespace BeatSaberMultiplayer {
             try
             {
                 FileLocation?.Directory?.Create();
-                Log.Info($"Creating new config @ {FileLocation.FullName}");
+                Misc.Logger.Info($"Creating new config @ {FileLocation.FullName}");
                 Instance.Save();
             }
             catch (Exception)
             {
-                Log.Error($"Unable to create new config @ {FileLocation.FullName}");
+                Misc.Logger.Error($"Unable to create new config @ {FileLocation.FullName}");
                 return false;
             }
             return true;
@@ -117,22 +119,22 @@ namespace BeatSaberMultiplayer {
             }
         }
 
-        public bool EnableWebSocketServer
+        public int MaxSimultaneousDownloads
         {
-            get { return _enableWebSocketServer; }
+            get { return _maxSimultaneousDownloads; }
             set
             {
-                _enableWebSocketServer = value;
+                _maxSimultaneousDownloads = value;
                 MarkDirty();
             }
         }
 
-        public int WebSocketPort
+        public string BeatSaverURL
         {
-            get { return _webSocketPort; }
+            get { return _beatSaverURL; }
             set
             {
-                _webSocketPort = value;
+                _beatSaverURL = value;
                 MarkDirty();
             }
         }
@@ -144,6 +146,8 @@ namespace BeatSaberMultiplayer {
             _showAvatarsInGame = false;
             _showAvatarsInRoom = true;
             _spectatorMode = false;
+            _maxSimultaneousDownloads = ModPrefs.GetInt("BeatSaverDownloader", "maxSimultaneousDownloads", 3);
+            _beatSaverURL = ModPrefs.GetString("BeatSaverDownloader", "beatsaverURL", "https://beatsaver.com");
             IsDirty = true;
         }
 
@@ -151,7 +155,7 @@ namespace BeatSaberMultiplayer {
             if (!IsDirty) return false;
             try {
                 using (var f = new StreamWriter(FileLocation.FullName)) {
-                    Log.Info($"Writing to File @ {FileLocation.FullName}");
+                    Misc.Logger.Info($"Writing to File @ {FileLocation.FullName}");
                     var json = JsonUtility.ToJson(this, true);
                     f.Write(json);
                 }
@@ -159,7 +163,7 @@ namespace BeatSaberMultiplayer {
                 return true;
             }
             catch (IOException ex) {
-                Log.Exception($"ERROR WRITING TO CONFIG [{ex.Message}]");
+                Misc.Logger.Exception($"ERROR WRITING TO CONFIG [{ex.Message}]");
                 return false;
             }
         }

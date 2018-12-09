@@ -64,7 +64,7 @@ namespace BeatSaberMultiplayer
         {
             if(instance != null)
             {
-                Log.Error("Client Instance already exists!");
+                Misc.Logger.Error("Client Instance already exists!");
                 return;
             }
 
@@ -227,7 +227,7 @@ namespace BeatSaberMultiplayer
                     _packetsQueue.Enqueue(packet);
                 }catch(Exception e)
                 {
-                    Log.Warning("Unable to parse packet from ServerHub! Exception: "+e);
+                    Misc.Logger.Warning("Unable to parse packet from ServerHub! Exception: "+ e);
                 }
 
                 if (client.Connected)
@@ -338,8 +338,8 @@ namespace BeatSaberMultiplayer
 #endif
             }
         }
-
-        public void StartLevel(IStandardLevel song, LevelDifficulty difficulty)
+        
+        public void StartLevel(LevelSO song, BeatmapDifficulty difficulty)
         {
             if (Connected && socket.Connected)
             {

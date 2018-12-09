@@ -1,6 +1,9 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.ViewControllers;
+using CustomUI.BeatSaber;
+using CustomUI.Settings;
+using CustomUI.Utilities;
 using SimpleJSON;
 using SongLoaderPlugin;
 using SongLoaderPlugin.OverrideClasses;
@@ -28,7 +31,6 @@ namespace BeatSaberMultiplayer.UI
         public ServerHubFlowCoordinator serverHubFlowCoordinator;
         public RoomCreationFlowCoordinator roomCreationFlowCoordinator;
         public RoomFlowCoordinator roomFlowCoordinator;
-        public DownloadFlowCoordinator downloadFlowCoordinator;
 
         private TextMeshProUGUI _newVersionText;
         private Button _multiplayerButton;
@@ -37,6 +39,7 @@ namespace BeatSaberMultiplayer.UI
         {
             if (instance != null)
             {
+                instance.CreateUI();
                 return;
             }
             new GameObject("Multiplayer Plugin").AddComponent<PluginUI>();
@@ -49,18 +52,8 @@ namespace BeatSaberMultiplayer.UI
                 DontDestroyOnLoad(this);
                 instance = this;
                 GetUserInfo.UpdateUserInfo();
-                SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
                 SongLoader.SongsLoadedEvent += SongsLoaded;
                 CreateUI();
-            }
-        }
-
-        private void SceneManager_activeSceneChanged(Scene prev, Scene next)
-        {
-            if(next.name == "Menu")
-            {
-                CreateUI();
-                
             }
         }
 
@@ -86,7 +79,6 @@ namespace BeatSaberMultiplayer.UI
                 if (serverHubFlowCoordinator == null)
                 {
                     serverHubFlowCoordinator = new GameObject("ServerHubFlow").AddComponent<ServerHubFlowCoordinator>();
-                    serverHubFlowCoordinator.mainMenuViewController = _mainMenuViewController;
                 }
                 if (roomCreationFlowCoordinator == null)
                 {
@@ -95,10 +87,6 @@ namespace BeatSaberMultiplayer.UI
                 if (roomFlowCoordinator == null)
                 {
                     roomFlowCoordinator = new GameObject("RoomFlow").AddComponent<RoomFlowCoordinator>();
-                }
-                if (downloadFlowCoordinator == null)
-                {
-                    downloadFlowCoordinator = new GameObject("DownloadFlow").AddComponent<DownloadFlowCoordinator>();
                 }
 
                 CreateOnlineButton();
@@ -110,7 +98,7 @@ namespace BeatSaberMultiplayer.UI
             }
             catch (Exception e)
             {
-                Log.Exception($"EXCEPTION ON AWAKE(TRY CREATE BUTTON): {e}");
+                Misc.Logger.Exception($"Unable to create UI! Exception: {e}");
             }
         }
 
@@ -121,23 +109,24 @@ namespace BeatSaberMultiplayer.UI
             _newVersionText.alignment = TextAlignmentOptions.Center;
             _newVersionText.gameObject.SetActive(false);
 
-            Console.WriteLine("Text name = "+ _newVersionText.name);
+            _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "SoloFreePlayButton");
+            _multiplayerButton.transform.SetParent(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "SoloFreePlayButton").transform.parent);
+            _multiplayerButton.transform.SetSiblingIndex(2);
 
-            _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "PartyButton");
-            _multiplayerButton.transform.SetParent(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "SoloButton").transform.parent);
-
-            BeatSaberUI.SetButtonText(_multiplayerButton, "Online");
-            BeatSaberUI.SetButtonIcon(_multiplayerButton, Base64Sprites.onlineIcon);
+            _multiplayerButton.SetButtonText("Online");
+            _multiplayerButton.SetButtonIcon(Base64Sprites.onlineIcon);
 
             _multiplayerButton.onClick.AddListener(delegate ()
             {
                 try
                 {
-                    serverHubFlowCoordinator.OnlineButtonPressed();
+                    MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
+
+                    mainFlow.InvokeMethod("PresentFlowCoordinator", serverHubFlowCoordinator, null, false, false);
                 }
                 catch (Exception e)
                 {
-                    Log.Exception($"EXCETPION IN ONLINE BUTTON: {e}");
+                    Misc.Logger.Exception($"Unable to present flow coordinator! Exception: {e}");
                 }
             });
         }
@@ -162,7 +151,7 @@ namespace BeatSaberMultiplayer.UI
         IEnumerator CheckVersion()
         {
 
-            Log.Info("Checking for updates...");
+            Misc.Logger.Info("Checking for updates...");
 
             UnityWebRequest www = UnityWebRequest.Get($"https://api.github.com/repos/andruzzzhka/BeatSaberMultiplayer/releases");
             www.timeout = 10;
@@ -179,7 +168,7 @@ namespace BeatSaberMultiplayer.UI
 
                 if (newTag)
                 {
-                    Log.Info($"A new version of the mod is available!\nNew version: {(string)latestRelease["tag_name"]}\nCurrent version: {Plugin.instance.Version}");
+                    Misc.Logger.Info($"A new version of the mod is available!\nNew version: {(string)latestRelease["tag_name"]}\nCurrent version: {Plugin.instance.Version}");
                     _newVersionText.gameObject.SetActive(true);
                 }
             }

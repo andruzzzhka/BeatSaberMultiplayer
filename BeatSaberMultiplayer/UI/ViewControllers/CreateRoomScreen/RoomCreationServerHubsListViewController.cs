@@ -1,4 +1,5 @@
 ﻿using BeatSaberMultiplayer.UI.FlowCoordinators;
+using CustomUI.BeatSaber;
 using HMUI;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 {
     class RoomCreationServerHubsListViewController : VRUIViewController, TableView.IDataSource
     {
+        public event Action didFinishEvent;
         public event Action<ServerHubClient> selectedServerHub;
 
         private Button _backButton;
@@ -23,7 +25,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private TextMeshProUGUI _selectText;
 
         TableView _serverHubsTableView;
-        StandardLevelListTableCell _serverTableCellInstance;
+        LevelListTableCell _serverTableCellInstance;
 
         List<ServerHubClient> _serverHubClients = new List<ServerHubClient>();
 
@@ -33,14 +35,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             {
                 if(activationType == ActivationType.AddedToHierarchy)
                 {
-                    _serverTableCellInstance = Resources.FindObjectsOfTypeAll<StandardLevelListTableCell>().First(x => (x.name == "StandardLevelListTableCell"));
+                    _serverTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
 
-                    _selectText = BeatSaberUI.CreateText(rectTransform, "Select ServerHub", new Vector2(0f, -5f));
+                    _selectText = BeatSaberUI.CreateText(rectTransform, "Select ServerHub", new Vector2(0f, 35f));
                     _selectText.alignment = TextAlignmentOptions.Center;
                     _selectText.fontSize = 7f;
 
                     _backButton = BeatSaberUI.CreateBackButton(rectTransform);
-                    _backButton.onClick.AddListener(delegate () { DismissModalViewController(null, false); });
+                    _backButton.onClick.AddListener(delegate () { didFinishEvent?.Invoke(); });
 
                     _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
                     (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
@@ -69,7 +71,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     _serverHubsTableView = new GameObject().AddComponent<TableView>();
                     _serverHubsTableView.transform.SetParent(rectTransform, false);
 
-                    Mask viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<Mask>().First(), _serverHubsTableView.transform, false);
+                    _serverHubsTableView.SetPrivateField("_isInitialized", false);
+                    _serverHubsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
+                    _serverHubsTableView.Init();
+
+                    RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _serverHubsTableView.transform, false);
                     viewportMask.transform.DetachChildren();
                     _serverHubsTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 
@@ -84,11 +90,12 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
                     _serverHubsTableView.didSelectRowEvent += ServerHubs_didSelectRowEvent;
                     _serverHubsTableView.dataSource = this;
+                    _serverHubsTableView.ScrollToRow(0, false);
                 }
             }
             else
             {
-                _serverHubsTableView.ReloadData();
+                _serverHubsTableView.dataSource = this;
             }
         }
 
@@ -96,16 +103,19 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         {
             _serverHubClients = serverHubClients.OrderBy(x => x.availableRooms.Count).ToList();
 
-            if (_serverHubsTableView.dataSource != this)
+            if (_serverHubsTableView != null)
             {
-                _serverHubsTableView.dataSource = this;
-            }
-            else
-            {
-                _serverHubsTableView.ReloadData();
-            }
+                if (_serverHubsTableView.dataSource != this)
+                {
+                    _serverHubsTableView.dataSource = this;
+                }
+                else
+                {
+                    _serverHubsTableView.ReloadData();
+                }
 
-            _serverHubsTableView.ScrollToRow(0, false);
+                _serverHubsTableView.ScrollToRow(0, false);
+            }
         }
 
         private void ServerHubs_didSelectRowEvent(TableView sender, int row)
@@ -115,7 +125,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         public TableCell CellForRow(int row)
         {
-            StandardLevelListTableCell cell = Instantiate(_serverTableCellInstance);
+            LevelListTableCell cell = Instantiate(_serverTableCellInstance);
+            cell.reuseIdentifier = "ServerHubCell";
 
             ServerHubClient client = _serverHubClients[row];
 

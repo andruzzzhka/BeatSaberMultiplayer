@@ -26,7 +26,7 @@ namespace BeatSaberMultiplayer
         public static Vector3 openVrPosOffset = new Vector3(0f, -0.008f, 0f);
         public static InGameOnlineController Instance;
 
-        private GameplayManager _gameManager;
+        private StandardLevelGameplayManager _gameManager;
         private ScoreController _scoreController;
         private GameEnergyCounter _energyController;
         private PauseMenuManager _pauseMenuManager;
@@ -88,7 +88,7 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Log.Exception($"(Main) Exception on {_currentScene.name} scene load! {e}");
+                Misc.Logger.Exception($"(Main) Exception on {_currentScene.name} scene load! {e}");
             }
         }
 
@@ -307,7 +307,7 @@ namespace BeatSaberMultiplayer
                 _avatars.Clear();
             }catch(Exception e)
             {
-                Log.Exception($"Unable to destroy avatars! Exception: {e}");
+                Misc.Logger.Exception($"Unable to destroy avatars! Exception: {e}");
             }
         }
 
@@ -325,18 +325,43 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Log.Exception($"Unable to destroy score screens! Exception: {e}");
+                Misc.Logger.Exception($"Unable to destroy score screens! Exception: {e}");
             }
         }
 
-        public void SongFinished(MainGameSceneSetupData sender, LevelCompletionResults result)
+        public void SongFinished(StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers)
         {
-            sender.didFinishEvent -= SongFinished;
-            Resources.FindObjectsOfTypeAll<MenuSceneSetupData>().First().TransitionToScene((result == null) ? 0.35f : 1.3f);
+            if (Config.Instance.SpectatorMode)
+                return;
+
+            Misc.Logger.Info("PlayerDataModels: "+ Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().Count());
+            PlayerDataModelSO _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+
+            _playerDataModel.currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
+            _playerDataModel.Save();
+            if (levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Failed && levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Cleared)
+            {
+                return;
+            }
+
+            PlayerDataModelSO.LocalPlayer currentLocalPlayer = _playerDataModel.currentLocalPlayer;
+            bool cleared = levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared;
+            string levelID = difficultyBeatmap.level.levelID;
+            BeatmapDifficulty difficulty = difficultyBeatmap.difficulty;
+            PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(levelID, difficulty);
+            bool newHighScore = playerLevelStatsData.highScore < levelCompletionResults.score;
+            playerLevelStatsData.IncreaseNumberOfGameplays();
+            if (cleared)
+            {
+                playerLevelStatsData.UpdateScoreData(levelCompletionResults.score, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
+                Resources.FindObjectsOfTypeAll<PlatformLeaderboardsModel>().First().AddScore(difficultyBeatmap, levelCompletionResults.unmodifiedScore, gameplayModifiers);
+            }
         }
 
         IEnumerator ReturnToRoom()
         {
+            yield break;
+            /*
             yield return new WaitUntil(delegate () { return Resources.FindObjectsOfTypeAll<VRUIScreenSystem>().Any(); });
             VRUIScreenSystem screenSystem = Resources.FindObjectsOfTypeAll<VRUIScreenSystem>().First();
 
@@ -369,8 +394,8 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Log.Exception($"MENU EXCEPTION: {e}");
-            }
+                Misc.Logger.Exception($"MENU EXCEPTION: {e}");
+            }*/
 
         }
 
@@ -383,7 +408,7 @@ namespace BeatSaberMultiplayer
 #if DEBUG
             Log.Info("Game controllers found!");
 #endif
-            _gameManager = Resources.FindObjectsOfTypeAll<GameplayManager>().First();
+            _gameManager = Resources.FindObjectsOfTypeAll<StandardLevelGameplayManager>().First();
 
             if (_gameManager != null)
             {
@@ -391,7 +416,8 @@ namespace BeatSaberMultiplayer
                 {
                     if (ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger") != null)
                     {
-                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").SetCallback(delegate () { ShowMenu(); });
+                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").pauseTriggeredEvent -= _gameManager.HandlePauseTriggered;
+                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").pauseTriggeredEvent += ShowMenu;
                     }
 
                     if (ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper") != null)
@@ -402,7 +428,7 @@ namespace BeatSaberMultiplayer
                 }
                 catch (Exception e)
                 {
-                    Log.Exception(e.ToString());
+                    Misc.Logger.Exception(e.ToString());
                 }
             }
 #if DEBUG
@@ -437,7 +463,7 @@ namespace BeatSaberMultiplayer
             if (_pauseMenuManager != null)
             {
                 OnlinePauseAnimController _pauseAnim = new GameObject("OnlinePauseAnimController").AddComponent<OnlinePauseAnimController>();
-                _pauseAnim.animationDidFinishEvent += _pauseMenuManager.HandleResumeAnimationDidFinish;
+                _pauseAnim.resumeFromPauseAnimationDidFinishEvent += _pauseMenuManager.HandleResumeFromPauseAnimationDidFinish;
                 _pauseMenuManager.SetPrivateField("_resumePauseAnimationController", _pauseAnim);
                 _pauseMenuManager.GetPrivateField<GameObject>("_gameObjectsWrapper").GetComponentsInChildren<Button>().First(x => x.name == "RestartButton").interactable = false;
             }

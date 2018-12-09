@@ -76,13 +76,13 @@ namespace BeatSaberMultiplayer
                 }
             }catch(Exception e)
             {
-                Log.Warning($"(Spectator) Exception on {next.name} scene load! {e}");
+                Misc.Logger.Warning($"(Spectator) Exception on {next.name} scene load! {e}");
             }
         }
 
         IEnumerator WaitForControllers()
         {
-            Log.Info("Waiting for controllers...");
+            Misc.Logger.Info("Waiting for controllers...");
             yield return new WaitWhile(delegate() { return !Resources.FindObjectsOfTypeAll<Saber>().Any(); });
 
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
@@ -100,11 +100,11 @@ namespace BeatSaberMultiplayer
 
             _playerController = Resources.FindObjectsOfTypeAll<PlayerController>().First();
 
-            Log.Info("Controllers found!");
+            Misc.Logger.Info("Controllers found!");
 
             _scoreController = FindObjectOfType<ScoreController>();
 
-            Log.Info("Score controller found!");
+            Misc.Logger.Info("Score controller found!");
         }
 
         private void ClientCreated()
@@ -161,7 +161,7 @@ namespace BeatSaberMultiplayer
                     if (_playerInfos.Count > 1 && _spectatedPlayer == null)
                     {
                         _spectatedPlayer = _playerInfos.First(x => !x.Key.Equals(Client.instance.playerInfo)).Value.Last();
-                        Log.Info("Spectating " + _spectatedPlayer.playerName);
+                        Misc.Logger.Info("Spectating " + _spectatedPlayer.playerName);
                     }
                     
                     if (_spectatedPlayer != null)
@@ -285,7 +285,7 @@ namespace BeatSaberMultiplayer
                 {
                     if(_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime > 1.9f)
                     {
-                        Log.Info("Resuming song...");
+                        Misc.Logger.Info("Resuming song...");
                         InGameOnlineController.Instance.ResumeSong();
                         _paused = false;
                     }

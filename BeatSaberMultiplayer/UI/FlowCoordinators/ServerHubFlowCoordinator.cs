@@ -1,53 +1,70 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers;
+using CustomUI.BeatSaber;
+using CustomUI.Utilities;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
+using VRUI;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
     class ServerHubFlowCoordinator : FlowCoordinator
     {
-        public MainMenuViewController mainMenuViewController;
+        MainFlowCoordinator _mainFlowCoordinator;
         ServerHubNavigationController _serverHubNavigationController;
+
+        RoomListViewController _roomListViewController;
 
         List<ServerHubClient> _serverHubClients = new List<ServerHubClient>();
 
-        public void OnlineButtonPressed()
+        protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
-            if (mainMenuViewController == null)
-                return;
-            
-            AvatarController.LoadAvatar();
-            PresentServerHubUI();
+            if (_mainFlowCoordinator == null)
+                _mainFlowCoordinator = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
 
-            UpdateRoomsList();
-
-        }
-
-        private void PresentServerHubUI(bool immediately = false)
-        {
-            if (_serverHubNavigationController == null)
+            if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
+                AvatarController.LoadAvatar();
+
+                title = "Online Multiplayer";
+
                 _serverHubNavigationController = BeatSaberUI.CreateViewController<ServerHubNavigationController>();
+                _serverHubNavigationController.didFinishEvent += () => {
+                    MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
+                    mainFlow.InvokeMethod("DismissFlowCoordinator", this, null, false);
+                };
+
+                _roomListViewController = BeatSaberUI.CreateViewController<RoomListViewController>();
+
+                _roomListViewController.createRoomButtonPressed += CreateRoomPressed;
+                _roomListViewController.selectedRoom += RoomSelected;
             }
 
-            mainMenuViewController.PresentModalViewController(_serverHubNavigationController, null, immediately);
-            _serverHubNavigationController.PushViewController(_serverHubNavigationController.roomListViewController, true);
-            _serverHubNavigationController.roomListViewController.createRoomButtonPressed -= CreateRoomPressed;
-            _serverHubNavigationController.roomListViewController.selectedRoom -= RoomSelected;
-            _serverHubNavigationController.roomListViewController.createRoomButtonPressed += CreateRoomPressed;
-            _serverHubNavigationController.roomListViewController.selectedRoom += RoomSelected;
+            SetViewControllerToNavigationConctroller(_serverHubNavigationController, _roomListViewController);
+            ProvideInitialViewControllers(_serverHubNavigationController, null, null);
+
+            StartCoroutine(UpdateRoomsListCoroutine());
         }
 
         private void CreateRoomPressed()
         {
-            PluginUI.instance.roomCreationFlowCoordinator.MainCreateRoomButtonPressed(_serverHubNavigationController, _serverHubClients.Where(x => x.serverHubAvailable).ToList());
+            PresentFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, false, false);
+            PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients.Where(x => x.serverHubAvailable).ToList());
+
+            PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent += RoomCreationFlowCoordinator_didFinishEvent;
+        }
+
+        private void RoomCreationFlowCoordinator_didFinishEvent(bool immediately)
+        {
+            DismissFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, immediately);
         }
 
         private void RoomSelected(RoomInfo selectedRoom)
@@ -65,18 +82,35 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void JoinRoom(string ip, int port, uint roomId, bool usePassword, string pass = "")
         {
-            PluginUI.instance.roomFlowCoordinator.JoinRoom(_serverHubNavigationController, ip, port, roomId, usePassword, pass);
+            PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
+            PluginUI.instance.roomFlowCoordinator.JoinRoom(ip, port, roomId, usePassword, pass);
+            PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
+            PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
         }
-
+        
         public void ReturnToRoom()
         {
-            PresentServerHubUI(true);
-            PluginUI.instance.roomFlowCoordinator.ReturnToRoom(_serverHubNavigationController);
+
+            PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
+            PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
+            PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
+            PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
+        }
+
+        private void RoomFlowCoordinator_didFinishEvent()
+        {
+            DismissFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false);
+        }
+
+        public IEnumerator UpdateRoomsListCoroutine()
+        {
+            yield return null;
+            UpdateRoomsList();
         }
 
         public void UpdateRoomsList()
         {
-            Log.Info("Updating rooms list...");
+            Misc.Logger.Info("Updating rooms list...");
             _serverHubClients.ForEach(x =>
             {
                 x.Abort();
@@ -99,28 +133,27 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _serverHubClients.Add(client);
             }
 
-            _serverHubNavigationController.roomListViewController.SetRooms(null);
+            _roomListViewController.SetRooms(null);
             _serverHubNavigationController.SetLoadingState(true);
             _serverHubClients.ForEach(x => x.GetRooms());
 
-            Log.Info("Requested rooms lists from ServerHubs...");
+            Misc.Logger.Info("Requested rooms lists from ServerHubs...");
         }
 
         private void ReceivedRoomsList(ServerHubClient sender, List<RoomInfo> rooms)
         {
             HMMainThreadDispatcher.instance.Enqueue(delegate ()
             {
-                Log.Info($"Received {rooms.Count} rooms from {sender.ip}:{sender.port}");
-                _serverHubNavigationController.roomListViewController.SetRooms(_serverHubClients);
+                Misc.Logger.Info($"Received {rooms.Count} rooms from {sender.ip}:{sender.port}");
+                _roomListViewController.SetRooms(_serverHubClients);
                 _serverHubNavigationController.SetLoadingState(false);
             });
         }
 
         public void ServerHubException(ServerHubClient sender, Exception e)
         {
-            Log.Error($"ServerHub exception ({sender.ip}:{sender.port}): {e}");
+            Misc.Logger.Error($"ServerHub exception ({sender.ip}:{sender.port}): {e}");
         }
-
     }
 
 

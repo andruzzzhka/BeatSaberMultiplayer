@@ -8,6 +8,18 @@ namespace BeatSaberMultiplayer.Data
 {
     public class SongInfo
     {
+        public static Dictionary<string, byte> originalLevels = new Dictionary<string, byte>() { { "100Bills", 1 },
+                                                                                                 { "Escape", 2 },
+                                                                                                 { "Legend", 3 },
+                                                                                                 { "BeatSaber", 4 },
+                                                                                                 { "AngelVoices", 5 },
+                                                                                                 { "CountryRounds", 6 },
+                                                                                                 { "BalearicPumping", 7 },
+                                                                                                 { "Breezer", 8 },
+                                                                                                 { "CommercialPumping", 9 },
+                                                                                                 { "TurnMeOn", 10 },
+                                                                                                 { "LvlInsane", 11 }};
+
         public string songName;
         public string levelId;
         public float songDuration;
@@ -24,9 +36,10 @@ namespace BeatSaberMultiplayer.Data
                 int nameLength = BitConverter.ToInt32(data, 0);
                 songName = Encoding.UTF8.GetString(data, 4, nameLength);
 
+
                 if (data.Skip(5 + nameLength).Take(15).Max() == 0)
                 {
-                    levelId = "Level" + data[4 + nameLength];
+                    levelId = originalLevels.First(x => x.Value == data[4 + nameLength]).Key;
                 }
                 else
                 {
@@ -45,14 +58,14 @@ namespace BeatSaberMultiplayer.Data
             buffer.AddRange(BitConverter.GetBytes(nameBuffer.Length));
             buffer.AddRange(nameBuffer);
 
-            if (levelId.Length == 32)
+            if (originalLevels.ContainsKey(levelId))
+            {
+                buffer.Add(originalLevels[levelId]);
+                buffer.AddRange(new byte[15]);
+            }
+            else
             {
                 buffer.AddRange(HexConverter.ConvertHexToBytesX(levelId));
-            }
-            else if(levelId.StartsWith("Level"))
-            {
-                buffer.Add(byte.Parse(levelId.Substring(5)));
-                buffer.AddRange(new byte[15]);
             }
 
             buffer.AddRange(BitConverter.GetBytes(songDuration));

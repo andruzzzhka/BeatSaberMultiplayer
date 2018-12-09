@@ -2,6 +2,7 @@
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using CustomAvatar;
+using CustomUI.BeatSaber;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -92,7 +93,7 @@ namespace BeatSaberMultiplayer
             }
             else
             {
-                Log.Error($"Unable to load avatar! Error: {result}");
+                Misc.Logger.Error($"Unable to load avatar! Error: {result}");
             }
         }
 
@@ -115,7 +116,7 @@ namespace BeatSaberMultiplayer
 #endif
             avatar = AvatarSpawner.SpawnAvatar(avatarInstance, this);
             
-            playerNameText = BeatSaberUI.CreateWorldText(transform, "INVALID");
+            playerNameText = CustomExtensions.CreateWorldText(transform, "INVALID");
             playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 0.25f, 0f);
             playerNameText.alignment = TextAlignmentOptions.Center;
             playerNameText.fontSize = 2.5f;
@@ -148,9 +149,6 @@ namespace BeatSaberMultiplayer
                 interpRightHandRot = Quaternion.Lerp(lastRightHandRot, targetRightHandRot, interpolationProgress);
 
                 transform.position = interpHeadPos;
-
-
-
             }
 
             if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "CameraPlus") && _camera == null)
@@ -261,7 +259,7 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Log.Exception($"AVATAR EXCEPTION: {_playerInfo.playerName}: {e}");
+                Misc.Logger.Exception($"AVATAR EXCEPTION: {_playerInfo.playerName}: {e}");
             }
 
         }

@@ -1,4 +1,5 @@
 ﻿using BeatSaberMultiplayer.UI;
+using CustomUI.BeatSaber;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,9 +17,6 @@ namespace BeatSaberMultiplayer.UI
 
         CustomUIKeyboard _customKeyboard;
 
-        Button _enterButton;
-        Button _backButton;
-
         TextMeshProUGUI _inputText;
         public string _inputString = "";
 
@@ -27,50 +25,27 @@ namespace BeatSaberMultiplayer.UI
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
-            if (_customKeyboard == null)
+            if (type == ActivationType.AddedToHierarchy && firstActivation)
             {
                 _customKeyboardGO = Instantiate(Resources.FindObjectsOfTypeAll<UIKeyboard>().First(x => x.name != "CustomUIKeyboard"), rectTransform, false).gameObject;
 
+                Destroy(_customKeyboardGO.GetComponent<UIKeyboard>());
                 _customKeyboard = _customKeyboardGO.AddComponent<CustomUIKeyboard>();
 
-                _customKeyboard.uiKeyboardKeyEvent += delegate (char input) { _inputString += input; UpdateInputText(); };
-                _customKeyboard.uiKeyboardDeleteEvent += delegate () { _inputString = _inputString.Substring(0, Math.Max(_inputString.Length - 1, 0)); UpdateInputText(); };
-            }
+                _customKeyboard.textKeyWasPressedEvent += delegate (char input) { _inputString += input; UpdateInputText(); };
+                _customKeyboard.deleteButtonWasPressedEvent += delegate () { _inputString = _inputString.Substring(0, _inputString.Length - 1); UpdateInputText(); };
+                _customKeyboard.cancelButtonWasPressedEvent += () => { backButtonPressed?.Invoke(); };
+                _customKeyboard.okButtonWasPressedEvent += () => { enterButtonPressed?.Invoke(_inputString); };
 
-            if(_inputText == null)
-            {
-                _inputText = BeatSaberUI.CreateText(rectTransform, _inputString, new Vector2(0f,-11.5f));
+                _inputText = BeatSaberUI.CreateText(rectTransform, _inputString, new Vector2(0f, 22f));
                 _inputText.alignment = TextAlignmentOptions.Center;
                 _inputText.fontSize = 6f;
+
             }
             else
             {
+                _inputString = "";
                 UpdateInputText();
-            }
-
-            if(_enterButton == null)
-            {
-                _enterButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
-                BeatSaberUI.SetButtonText(_enterButton, "Enter");
-                (_enterButton.transform as RectTransform).sizeDelta = new Vector2(30f, 10f);
-                (_enterButton.transform as RectTransform).anchoredPosition = new Vector2(-65f, 1.5f);
-                _enterButton.onClick.RemoveAllListeners();
-                _enterButton.onClick.AddListener(delegate() {
-                    DismissModalViewController(null, false);
-                    enterButtonPressed?.Invoke(_inputString);
-                });
-            }
-
-            if (_backButton == null)
-            {
-                _backButton = BeatSaberUI.CreateBackButton(rectTransform);
-
-                _backButton.onClick.AddListener(delegate ()
-                {
-                    _inputString = "";
-                    DismissModalViewController(null, false);
-                    backButtonPressed?.Invoke();
-                });
             }
 
         }
@@ -80,6 +55,14 @@ namespace BeatSaberMultiplayer.UI
             if (_inputText != null)
             {
                 _inputText.text = _inputString.ToUpper();
+                if (string.IsNullOrEmpty(_inputString))
+                {
+                    _customKeyboard.OkButtonInteractivity = false;
+                }
+                else
+                {
+                    _customKeyboard.OkButtonInteractivity = true;
+                }
             }
         }
 
@@ -87,7 +70,7 @@ namespace BeatSaberMultiplayer.UI
         {
             _inputString = "";
         }
-        
+
 
     }
 }

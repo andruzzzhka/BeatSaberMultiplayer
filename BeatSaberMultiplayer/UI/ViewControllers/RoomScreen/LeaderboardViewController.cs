@@ -1,6 +1,7 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
+using CustomUI.BeatSaber;
 using HMUI;
 using SongLoaderPlugin.OverrideClasses;
 using System;
@@ -20,18 +21,18 @@ namespace BeatSaberMultiplayer
         private LeaderboardTableCell _leaderboardTableCellInstance;
         private TextMeshProUGUI _timerText;
 
-        StandardLevelListTableCell _songTableCell;
+        LevelListTableCell _songTableCell;
 
         PlayerInfo[] _playerInfos;
 
-        private IStandardLevel _selectedSong;
-        public IStandardLevel SelectedSong { get { return _selectedSong; } set {SetSong(value);} }
+        private LevelSO _selectedSong;
+        public LevelSO SelectedSong { get { return _selectedSong; } set {SetSong(value);} }
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
             if (firstActivation && type == ActivationType.AddedToHierarchy)
             {
-                _songTableCell = Instantiate(Resources.FindObjectsOfTypeAll<StandardLevelListTableCell>().First(x => (x.name == "StandardLevelListTableCell")));
+                _songTableCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")));
                 (_songTableCell.transform as RectTransform).anchoredPosition = new Vector2(18f, 39f);
 
                 _leaderboardTableCellInstance = Resources.FindObjectsOfTypeAll<LeaderboardTableCell>().First(x => (x.name == "LeaderboardTableCell"));
@@ -40,9 +41,12 @@ namespace BeatSaberMultiplayer
 
                 _leaderboardTableView.transform.SetParent(rectTransform, false);
 
-                Mask viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<Mask>().First(), _leaderboardTableView.transform, false);
-                viewportMask.transform.DetachChildren();
+                _leaderboardTableView.SetPrivateField("_isInitialized", false);
+                _leaderboardTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
+                _leaderboardTableView.Init();
 
+                RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _leaderboardTableView.transform, false);
+                viewportMask.transform.DetachChildren();
                 _leaderboardTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 
                 (_leaderboardTableView.transform as RectTransform).anchorMin = new Vector2(0.1f, 0.5f);
@@ -56,11 +60,6 @@ namespace BeatSaberMultiplayer
                 _timerText.rectTransform.sizeDelta = new Vector2(30f, 6f);
             }
 
-        }
-
-        protected override void LeftAndRightScreenViewControllers(out VRUIViewController leftScreenViewController, out VRUIViewController rightScreenViewController)
-        {
-            PluginUI.instance.roomFlowCoordinator.GetLeftAndRightScreenViewControllers(out leftScreenViewController, out rightScreenViewController);
         }
 
         public void SetLeaderboard(PlayerInfo[] _playerInfos)
@@ -80,7 +79,7 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SetSong(IStandardLevel song)
+        public void SetSong(LevelSO song)
         {
             if (_songTableCell == null)
                 return;

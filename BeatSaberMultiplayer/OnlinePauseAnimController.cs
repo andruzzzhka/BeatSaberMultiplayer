@@ -6,16 +6,17 @@ using System.Threading.Tasks;
 
 namespace BeatSaberMultiplayer
 {
-    class OnlinePauseAnimController : ResumePauseAnimationController
+    class OnlinePauseAnimController : PauseAnimationController
     {
 
-        public override void StartAnimation()
+        public override void StartEnterPauseAnimation()
         {
-            AnimationDidFinish();
+            EnterPauseAnimationDidFinish();
         }
 
-        public override void StopAnimation()
+        public override void StartResumeFromPauseAnimation()
         {
+            ResumeFromPauseAnimationDidFinish();
         }
     }
 }

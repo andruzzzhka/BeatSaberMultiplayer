@@ -4,31 +4,33 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
+using Logger = BeatSaberMultiplayer.Misc.Logger;
 
 namespace BeatSaberMultiplayer.UI
 {
-    class CustomUIKeyboard : UIKeyboard
+    class CustomUIKeyboard : MonoBehaviour
     {
+        public event Action<char> textKeyWasPressedEvent;
+        public event Action deleteButtonWasPressedEvent;
+        public event Action cancelButtonWasPressedEvent;
+        public event Action okButtonWasPressedEvent;
+
+        public bool HideCancelButton { get { return hideCancelButton; } set { hideCancelButton = value; _cancelButton.gameObject.SetActive(!value); } }
+        public bool OkButtonInteractivity { get { return okButtonInteractivity; } set { okButtonInteractivity = value; _okButton.interactable = value; } }
+
+        private bool okButtonInteractivity;
+        private bool hideCancelButton;
+
+        TextMeshProButton _keyButtonPrefab;
+        Button _cancelButton;
+        Button _okButton;
+
 
         public void Awake()
         {
-            UIKeyboard original = GetComponent<UIKeyboard>();
-            
-            System.Reflection.FieldInfo[] fields = original.GetType().GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            foreach (System.Reflection.FieldInfo field in fields)
-            {
-                field.SetValue(this, field.GetValue(original));
-            }
+            _keyButtonPrefab = Resources.FindObjectsOfTypeAll<TextMeshProButton>().First(x => x.name == "KeyboardButton");
 
-            Destroy(original);
-
-        }
-
-        public override void Start()
-        {
-            name = "CustomUIKeyboard";
-
-            (transform as RectTransform).anchoredPosition -= new Vector2(0f, 5f);
+            Logger.Info("Found keyboard button!");
 
             string[] array = new string[]
             {
@@ -59,49 +61,76 @@ namespace BeatSaberMultiplayer.UI
                 "n",
                 "m",
                 "<-",
-                "space"
+                "space",
+                "OK",
+                "Cancel"
             };
-
 
             for (int i = 0; i < array.Length; i++)
             {
-                TextMeshProButton textButton = Instantiate(_keyButtonPrefab);
-                textButton.text.text = array[i];
-                if (i < array.Length - 2)
+                RectTransform parent = transform.GetChild(i) as RectTransform;
+                //TextMeshProButton textMeshProButton = Instantiate(_keyButtonPrefab, parent);
+                TextMeshProButton textMeshProButton = parent.GetComponentInChildren<TextMeshProButton>();
+                textMeshProButton.text.text = array[i];
+                RectTransform rectTransform = textMeshProButton.transform as RectTransform;
+                rectTransform.localPosition = Vector2.zero;
+                rectTransform.localScale = Vector3.one;
+                rectTransform.anchoredPosition = Vector2.zero;
+                rectTransform.anchorMin = Vector2.zero;
+                rectTransform.anchorMax = Vector3.one;
+                rectTransform.offsetMin = Vector2.zero;
+                rectTransform.offsetMax = Vector2.zero;
+                Navigation navigation = textMeshProButton.button.navigation;
+                navigation.mode = Navigation.Mode.None;
+                textMeshProButton.button.navigation = navigation;
+                textMeshProButton.button.onClick.RemoveAllListeners();
+                if (i < array.Length - 4)
                 {
                     string key = array[i];
-                    textButton.button.onClick.AddListener(delegate ()
+                    textMeshProButton.button.onClick.AddListener(delegate ()
                     {
-                        KeyButtonWasPressed(key);
+                        textKeyWasPressedEvent?.Invoke(key[0]);
+                    });
+                }
+                else if (i == array.Length - 4)
+                {
+                    textMeshProButton.button.onClick.AddListener(delegate ()
+                    {
+                        deleteButtonWasPressedEvent?.Invoke();
+                    });
+                }
+                else if (i == array.Length - 1)
+                {
+                    (textMeshProButton.transform as RectTransform).sizeDelta = new Vector2(7f, 1.5f);
+                    _cancelButton = textMeshProButton.button;
+                    _cancelButton.gameObject.SetActive(!HideCancelButton);
+                    textMeshProButton.button.onClick.AddListener(delegate ()
+                    {
+                        cancelButtonWasPressedEvent?.Invoke();
                     });
                 }
                 else if (i == array.Length - 2)
                 {
-                    textButton.button.onClick.AddListener(delegate ()
+                    _okButton = textMeshProButton.button;
+                    _okButton.interactable = OkButtonInteractivity;
+                    textMeshProButton.button.onClick.AddListener(delegate ()
                     {
-                        DeleteButtonWasPressed();
+                        okButtonWasPressedEvent?.Invoke();
                     });
                 }
                 else
                 {
-                    textButton.button.onClick.AddListener(delegate ()
+                    textMeshProButton.button.onClick.AddListener(delegate ()
                     {
-                        SpaceButtonWasPressed();
+                        textKeyWasPressedEvent?.Invoke(' ');
                     });
                 }
-                RectTransform buttonRect = textButton.GetComponent<RectTransform>();
-                RectTransform component2 = transform.GetChild(i).gameObject.GetComponent<RectTransform>();
-                buttonRect.SetParent(component2, false);
-                buttonRect.localPosition = Vector2.zero;
-                buttonRect.localScale = Vector3.one;
-                buttonRect.anchoredPosition = Vector2.zero;
-                buttonRect.anchorMin = Vector2.zero;
-                buttonRect.anchorMax = Vector3.one;
-                buttonRect.offsetMin = Vector2.zero;
-                buttonRect.offsetMax = Vector2.zero;
             }
 
-            
+            name = "CustomUIKeyboard";
+
+            (transform as RectTransform).anchoredPosition -= new Vector2(0f, 0f);
+
             for (int i = 1; i <= 10; i++)
             {
                 TextMeshProButton textButton = Instantiate(_keyButtonPrefab);
@@ -110,7 +139,7 @@ namespace BeatSaberMultiplayer.UI
                 string key = i.ToString().Last().ToString();
                 textButton.button.onClick.AddListener(delegate ()
                 {
-                    KeyButtonWasPressed(key);
+                    textKeyWasPressedEvent?.Invoke(key[0]);
                 });
 
                 RectTransform buttonRect = textButton.GetComponent<RectTransform>();
@@ -133,7 +162,5 @@ namespace BeatSaberMultiplayer.UI
             }
 
         }
-
-
     }
 }

@@ -3,6 +3,7 @@ using BeatSaberMultiplayer.UI;
 using IllusionPlugin;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine.SceneManagement;
@@ -24,28 +25,30 @@ namespace BeatSaberMultiplayer
 
         public void OnApplicationStart()
         {
+            if(File.Exists("MPLog.txt"))
+                File.Delete("MPLog.txt");
+
             instance = this;
 
 #if DEBUG
             DebugForm.OnLoad();
 #endif
 
-            SceneManager.sceneLoaded += SceneLoaded;
+            SceneManager.activeSceneChanged += ActiveSceneChanged;
             if (Config.Load())
-                Log.Info("Loaded config!");
+                Logger.Info("Loaded config!");
             else
                 Config.Create();
             Base64Sprites.ConvertSprites();
         }
 
-        private void SceneLoaded(Scene nextScene, LoadSceneMode loadMode)
+        private void ActiveSceneChanged(Scene from, Scene to)
         {
 #if DEBUG
-            Log.Info("Loaded scene " + nextScene.name);
+            Logger.Log($"Active scene changed from \"{from.name}\" to \"{to.name}\"");
 #endif
-            if (nextScene.name == "Menu")
+            if (from.name == "EmptyTransition" && to.name == "Menu")
             {
-                BeatSaberUI.OnLoad();
                 PluginUI.OnLoad();
                 InGameOnlineController.OnLoad();
                 SpectatingController.OnLoad();
