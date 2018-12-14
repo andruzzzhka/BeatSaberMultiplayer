@@ -52,22 +52,22 @@ namespace BeatSaberMultiplayer
             if (Instance != this)
             {
                 Instance = this;
-                DontDestroyOnLoad(this);
+                DontDestroyOnLoad(gameObject);
 
-                SceneManager.sceneLoaded += OnSceneLoaded;
                 Client.ClientCreated += ClientCreated;
                 _currentScene = SceneManager.GetActiveScene();
             }
         }
 
-        private void OnSceneLoaded(Scene next, LoadSceneMode loadMode)
+        public void ActiveSceneChanged(Scene from, Scene to)
         {
             try
             {
-                if (next.name == "StandardLevel" || next.name == "Menu")
+                Misc.Logger.Info($"(OnlineController) Travelling from {from.name} to {to.name}");
+                if (to.name == "GameCore" || to.name == "Menu")
                 {
-                    _currentScene = next;
-                    if (_currentScene.name == "StandardLevel")
+                    _currentScene = to;
+                    if (_currentScene.name == "GameCore")
                     {
                         DestroyAvatars();
                         DestroyScoreScreens();
@@ -81,14 +81,14 @@ namespace BeatSaberMultiplayer
                         DestroyAvatars();
                         if (Client.instance != null && Client.instance.Connected)
                         {
-                            StartCoroutine(ReturnToRoom());
+                            PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
                         }
                     }
                 }
             }
             catch (Exception e)
             {
-                Misc.Logger.Exception($"(Main) Exception on {_currentScene.name} scene load! {e}");
+                Misc.Logger.Exception($"(OnlineController) Exception on {_currentScene.name} scene activation! Exception: {e}");
             }
         }
 
@@ -124,12 +124,12 @@ namespace BeatSaberMultiplayer
                     catch (Exception e)
                     {
 #if DEBUG
-                        Log.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
+                        Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
 #endif
                     }
                 }
 
-                playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene.name == "StandardLevel") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu")).OrderByDescending(x => x.playerScore).ToList();
+                playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene.name == "GameCore") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu")).OrderByDescending(x => x.playerScore).ToList();
 
                 int localPlayerIndex = playerInfos.FindIndexInList(Client.instance.playerInfo);
 
@@ -158,7 +158,7 @@ namespace BeatSaberMultiplayer
 
                         for (int i = 0; i < playerInfos.Count; i++)
                         {
-                            if (_currentScene.name == "StandardLevel")
+                            if (_currentScene.name == "GameCore")
                             {
                                 _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - _playerInfosByID.FindIndexInList(Client.instance.playerInfo)) * 3f, Client.instance.playerInfo.Equals(_playerInfosByID[i]));
                             }
@@ -174,7 +174,7 @@ namespace BeatSaberMultiplayer
                     }
                 }
 
-                if (_currentScene.name == "StandardLevel" && loaded)
+                if (_currentScene.name == "GameCore" && loaded)
                 {
                     if (_scoreDisplays.Count < 5)
                     {
@@ -251,7 +251,7 @@ namespace BeatSaberMultiplayer
                     Client.instance.playerInfo.leftHandPos += openVrPosOffset;
                 }
 
-                if (_currentScene.name == "StandardLevel" && loaded)
+                if (_currentScene.name == "GameCore" && loaded)
                 {
                     Client.instance.playerInfo.playerProgress = audioTimeSync.songTime;
                 }
@@ -274,7 +274,7 @@ namespace BeatSaberMultiplayer
 
         private bool ShowAvatarsInGame()
         {
-            return Config.Instance.ShowAvatarsInGame && _currentScene.name == "StandardLevel";
+            return Config.Instance.ShowAvatarsInGame && _currentScene.name == "GameCore";
         }
 
         private bool ShowAvatarsInRoom()
@@ -358,55 +358,14 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        IEnumerator ReturnToRoom()
-        {
-            yield break;
-            /*
-            yield return new WaitUntil(delegate () { return Resources.FindObjectsOfTypeAll<VRUIScreenSystem>().Any(); });
-            VRUIScreenSystem screenSystem = Resources.FindObjectsOfTypeAll<VRUIScreenSystem>().First();
-
-            yield return new WaitWhile(delegate () { return screenSystem.mainScreen == null; });
-            yield return new WaitWhile(delegate () { return screenSystem.mainScreen.rootViewController == null; });
-
-            try
-            {
-
-                VRUIViewController root = screenSystem.mainScreen.rootViewController;
-
-                List<VRUIViewController> children = new List<VRUIViewController>();
-
-                children.Add(root);
-
-                while (children.Last().childViewController != null)
-                {
-                    children.Add(children.Last().childViewController);
-                }
-
-                children.Reverse();
-                children.Remove(root);
-                children.ForEach(x => {
-#if DEBUG
-                    Log.Info($"Dismissing {x.name}...");
-#endif
-                    x.DismissModalViewController(null, true); });
-
-                PluginUI.instance.serverHubFlowCoordinator.ReturnToRoom();
-            }
-            catch (Exception e)
-            {
-                Misc.Logger.Exception($"MENU EXCEPTION: {e}");
-            }*/
-
-        }
-
         IEnumerator WaitForControllers()
         {
 #if DEBUG
-            Log.Info("Waiting for game controllers...");
+            Misc.Logger.Info("Waiting for game controllers...");
 #endif
             yield return new WaitUntil(delegate () { return FindObjectOfType<ScoreController>() != null; });
 #if DEBUG
-            Log.Info("Game controllers found!");
+            Misc.Logger.Info("Game controllers found!");
 #endif
             _gameManager = Resources.FindObjectsOfTypeAll<StandardLevelGameplayManager>().First();
 
@@ -432,7 +391,7 @@ namespace BeatSaberMultiplayer
                 }
             }
 #if DEBUG
-            Log.Info("Disabled pause button!");
+            Misc.Logger.Info("Disabled pause button!");
 #endif
             _scoreController = FindObjectOfType<ScoreController>();
 
@@ -443,7 +402,7 @@ namespace BeatSaberMultiplayer
                 _scoreController.comboDidChangeEvent += ComboDidChangeEvent;
             }
 #if DEBUG
-            Log.Info("Found score controller");
+            Misc.Logger.Info("Found score controller");
 #endif
 
             _energyController = FindObjectOfType<GameEnergyCounter>();
@@ -453,34 +412,35 @@ namespace BeatSaberMultiplayer
                 _energyController.gameEnergyDidChangeEvent += EnergyDidChangeEvent;
             }
 #if DEBUG
-            Log.Info("Found energy controller");
+            Misc.Logger.Info("Found energy controller");
 #endif
 
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
 
             _pauseMenuManager = FindObjectsOfType<PauseMenuManager>().First();
-
+            
             if (_pauseMenuManager != null)
             {
-                OnlinePauseAnimController _pauseAnim = new GameObject("OnlinePauseAnimController").AddComponent<OnlinePauseAnimController>();
-                _pauseAnim.resumeFromPauseAnimationDidFinishEvent += _pauseMenuManager.HandleResumeFromPauseAnimationDidFinish;
-                _pauseMenuManager.SetPrivateField("_resumePauseAnimationController", _pauseAnim);
-                _pauseMenuManager.GetPrivateField<GameObject>("_gameObjectsWrapper").GetComponentsInChildren<Button>().First(x => x.name == "RestartButton").interactable = false;
+                _pauseMenuManager.GetPrivateField<Button>("_restartButton").interactable = false;
             }
 
 #if DEBUG
-            Log.Info("Found pause manager");
+            Misc.Logger.Info("Found pause manager");
 #endif
 
             loaded = true;
-        }
+        }        
 
         private void ShowMenu()
         {
-            _pauseMenuManager.enabled = true;
-
-            _pauseMenuManager.SetPrivateField("_ignoreFirstFrameVRControllerInteraction", true);
-            _pauseMenuManager.GetPrivateField<GameObject>("_gameObjectsWrapper").SetActive(true);
+            try
+            {
+                _pauseMenuManager.ShowMenu();
+            }
+            catch(Exception e)
+            {
+                Misc.Logger.Error("Unable to show menu! Exception: "+e);
+            }
         }
 
         public void PauseSong()

@@ -98,7 +98,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public void ReturnToRoom()
         {
             joined = true;
-            ConnectedToServerHub();
+            Client.instance.PacketReceived += PacketReceived;
             Client.instance.RequestRoomInfo(false);
         }
 
@@ -299,14 +299,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     {
                                         Client.instance.playerInfo.playerState = PlayerState.Room;
 #if DEBUG
-                                        Log.Info("All songs downloaded!");
+                                        Logger.Info("All songs downloaded!");
 #endif
                                         UpdateUI(roomInfo.roomState);
                                     }
                                     else
                                     {
 #if DEBUG
-                                        Log.Info("Downloading missing songs...");
+                                        Logger.Info("Downloading missing songs...");
 #endif
                                         Client.instance.playerInfo.playerState = PlayerState.DownloadingSongs;
                                         foreach (var song in songsBuffer.Where(x => !x.Value))
@@ -429,6 +429,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                     Logger.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={(BeatmapDifficulty)difficulty}");
 
+                                    Client.instance.PacketReceived -= PacketReceived;
                                     menuSceneSetupData.StartStandardLevel(difficultyBeatmap, gameplayModifiers, playerSettings, null, null, (StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, gameplayModifiers); });
                                     return;
                                 }
@@ -533,15 +534,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public IEnumerator EnqueueSongByLevelID(SongInfo song)
         {
 #if DEBUG
-            Log.Info("Downloading " + song.levelId);
+            Logger.Info("Downloading " + song.levelId);
 #endif
             if (_downloadQueueViewController == null)
             {
                 _downloadQueueViewController = BeatSaberUI.CreateViewController<DownloadQueueViewController>();
+                _downloadQueueViewController.allSongsDownloaded += DownloadFlowCoordinator_AllSongsDownloaded;
             }
             if (_roomNavigationController.viewControllers.IndexOf(_downloadQueueViewController) < 0)
             {
-                PushViewControllerToNavigationController(_roomNavigationController, _downloadQueueViewController);
+                PushViewControllerToNavigationController(_roomNavigationController, _downloadQueueViewController, null, true);
             }
 
             UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/songs/search/hash/" + song.levelId);
@@ -557,7 +559,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             else
             {
 #if DEBUG
-                Log.Info("Received response from BeatSaver...");
+                Logger.Info("Received response from BeatSaver...");
 #endif
                 JSONNode node = JSON.Parse(wwwId.downloadHandler.text);
 
@@ -577,6 +579,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void DownloadFlowCoordinator_AllSongsDownloaded()
         {
+            SongLoader.SongsLoadedEvent += SongLoader_SongsLoadedEvent;
+            SongLoader.Instance.RefreshSongs(false);
+        }
+
+        private void SongLoader_SongsLoadedEvent(SongLoader arg1, List<CustomLevel> arg2)
+        {
+            SongLoader.SongsLoadedEvent -= SongLoader_SongsLoadedEvent;
             Client.instance.playerInfo.playerState = PlayerState.Room;
             UpdateUI(roomInfo.roomState);
         }
@@ -600,7 +609,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     break;
                 case RoomState.Preparing:
                     {
-                        PopAllViewControllers(_roomNavigationController);
+                        if (_roomNavigationController.viewControllers.IndexOf(_difficultySelectionViewController) == -1)
+                            PopAllViewControllers(_roomNavigationController);
                         if (roomInfo.selectedSong != null)
                         {
                             ShowDifficultySelection(_levelCollection.GetLevelsWithBeatmapCharacteristic(_standardCharacteristics).First(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
@@ -610,13 +620,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     break;
                 case RoomState.InGame:
                     {
-                        PopAllViewControllers(_roomNavigationController);
+                        if (_roomNavigationController.viewControllers.IndexOf(_leaderboardViewController) == -1)
+                            PopAllViewControllers(_roomNavigationController);
+
                         ShowLeaderboard(new PlayerInfo[0], _levelCollection.GetLevelsWithBeatmapCharacteristic(_standardCharacteristics).FirstOrDefault(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
                     }
                     break;
                 case RoomState.Results:
                     {
-                        PopAllViewControllers(_roomNavigationController);
+                        if(_roomNavigationController.viewControllers.IndexOf(_leaderboardViewController) == -1)
+                            PopAllViewControllers(_roomNavigationController);
 
                         ShowLeaderboard(new PlayerInfo[0], _levelCollection.GetLevelsWithBeatmapCharacteristic(_standardCharacteristics).FirstOrDefault(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
                     }
@@ -644,7 +657,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 PushViewControllerToNavigationController(_roomNavigationController, _songSelectionViewController, null, true);
                 List<LevelSO> availableSongs = new List<LevelSO>();
-                availableSongInfos.ForEach(x => availableSongs.Add(_levelCollection.GetLevelsWithBeatmapCharacteristic(_standardCharacteristics).First(y => y.levelID.StartsWith(x.levelId))));
+                LevelSO[] levels = _levelCollection.GetLevelsWithBeatmapCharacteristic(_standardCharacteristics);
+                
+                availableSongInfos.ForEach(x => {
+                    LevelSO availableLevel = levels.FirstOrDefault(y => y.levelID.StartsWith(x.levelId));
+                    if (availableLevel != null)
+                        availableSongs.Add(availableLevel);
+                    else
+                        Logger.Warning("Unable to find song "+x.songName+"("+x.levelId+")");
+                });
 
                 _songSelectionViewController.SetSongs(availableSongs);
 
@@ -829,7 +850,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             if (_downloadQueueViewController != null)
             {
-                if (_roomNavigationController.viewControllers.IndexOf(_votingViewController) >= 0)
+                if (_roomNavigationController.viewControllers.IndexOf(_downloadQueueViewController) >= 0)
                 {
                     PopViewControllerFromNavigationController(_roomNavigationController, null, true);
                     Destroy(_downloadQueueViewController.gameObject);

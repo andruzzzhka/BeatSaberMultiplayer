@@ -45,13 +45,17 @@ namespace BeatSaberMultiplayer
         private void ActiveSceneChanged(Scene from, Scene to)
         {
 #if DEBUG
-            Logger.Log($"Active scene changed from \"{from.name}\" to \"{to.name}\"");
+           Logger.Info($"Active scene changed from \"{from.name}\" to \"{to.name}\"");
 #endif
             if (from.name == "EmptyTransition" && to.name == "Menu")
             {
                 PluginUI.OnLoad();
                 InGameOnlineController.OnLoad();
                 SpectatingController.OnLoad();
+            }
+            else
+            {
+                InGameOnlineController.Instance.ActiveSceneChanged(from, to);
             }
         }
 

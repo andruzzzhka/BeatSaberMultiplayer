@@ -28,7 +28,7 @@ namespace BeatSaberMultiplayer
         }
     }
 
-    class Client : MonoBehaviour, IDisposable
+    class Client : MonoBehaviour
     {
 #if DEBUG
         public static FileStream packetWriter = File.Open("packetDump.dmp", FileMode.Append);
@@ -163,7 +163,14 @@ namespace BeatSaberMultiplayer
 
         public void RemovePacketsFromQueue(CommandType type)
         {
-            _packetsQueue = new Queue<BasePacket>(_packetsQueue.ToList().RemoveAll(x => x.commandType == type));
+            try
+            {
+                _packetsQueue = new Queue<BasePacket>(_packetsQueue.ToList().RemoveAll(x => x.commandType == type));
+            }
+            catch(Exception e)
+            {
+                Misc.Logger.Warning("Unable to remove "+type.ToString()+" packets from queue! Exception: "+e);
+            }
         }
 
         public void Update()
@@ -177,7 +184,7 @@ namespace BeatSaberMultiplayer
                 if (packet.commandType == CommandType.Disconnect)
                 {
 #if DEBUG
-                    Log.Info("Disconnecting...");
+                    Misc.Logger.Info("Disconnecting...");
 #endif
                     Disconnect();
                 }
@@ -222,7 +229,7 @@ namespace BeatSaberMultiplayer
                     Tickrate = 1000f / (_averagePacketTimes.Sum() / _averagePacketTimes.Count);
 #if DEBUG
                     if (packet.commandType != CommandType.UpdatePlayerInfo)
-                        Log.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");
+                        Misc.Logger.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");
 #endif
                     _packetsQueue.Enqueue(packet);
                 }catch(Exception e)
@@ -248,7 +255,7 @@ namespace BeatSaberMultiplayer
             if (Connected && socket.Connected)
             {
 #if DEBUG
-                Log.Info("Joining room " + roomId);
+                Misc.Logger.Info("Joining room " + roomId);
 #endif
                 socket.SendData(new BasePacket(CommandType.JoinRoom, BitConverter.GetBytes(roomId)));
             }
@@ -259,7 +266,7 @@ namespace BeatSaberMultiplayer
             if (Connected && socket.Connected)
             {
 #if DEBUG
-                Log.Info("Joining room " + roomId+" with password "+password);
+                Misc.Logger.Info("Joining room " + roomId+" with password "+password);
 #endif
 
                 List<byte> buffer = new List<byte>();
@@ -278,7 +285,7 @@ namespace BeatSaberMultiplayer
             {
                 socket.SendData(new BasePacket(CommandType.CreateRoom, settings.ToBytes(false)));
 #if DEBUG
-                Log.Info("Creating room...");
+                Misc.Logger.Info("Creating room...");
 #endif
             }
         }
@@ -289,7 +296,7 @@ namespace BeatSaberMultiplayer
             {
                 socket.SendData(new BasePacket(CommandType.LeaveRoom, new byte[0]));
 #if DEBUG
-                Log.Info("Leaving room...");
+                Misc.Logger.Info("Leaving room...");
 #endif
             }
             isHost = false;
@@ -303,7 +310,7 @@ namespace BeatSaberMultiplayer
             {
                 socket.SendData(new BasePacket(CommandType.DestroyRoom, new byte[0]));
 #if DEBUG
-                Log.Info("Destroying room...");
+                Misc.Logger.Info("Destroying room...");
 #endif
             }
             isHost = false;
@@ -316,7 +323,7 @@ namespace BeatSaberMultiplayer
             {
                 socket.SendData(new BasePacket(CommandType.GetRoomInfo, new byte[1] { (byte)(requestSongList ? 1 : 0) }));
 #if DEBUG
-                Log.Info("Requested RoomInfo...");
+                Misc.Logger.Info("Requested RoomInfo...");
 #endif
             }
         }
@@ -334,7 +341,7 @@ namespace BeatSaberMultiplayer
                     socket.SendData(new BasePacket(CommandType.SetSelectedSong, song.ToBytes(false)));
                 }
 #if DEBUG
-                Log.Info("Sending SongInfo for selected song...");
+                Misc.Logger.Info("Sending SongInfo for selected song...");
 #endif
             }
         }
@@ -344,7 +351,7 @@ namespace BeatSaberMultiplayer
             if (Connected && socket.Connected)
             {
 #if DEBUG
-                Log.Info("Starting level...");
+                Misc.Logger.Info("Starting level...");
 #endif
                 List<byte> buffer = new List<byte>();
                 buffer.Add((byte)difficulty);
@@ -378,7 +385,7 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void Dispose()
+        public void OnDestroy()
         {
             socket.Dispose();
             _packetsQueue.Clear();

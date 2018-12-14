@@ -64,7 +64,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void RoomCreationFlowCoordinator_didFinishEvent(bool immediately)
         {
-            DismissFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, immediately);
+            try
+            {
+                DismissFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, immediately);
+            }catch(Exception e)
+            {
+                Misc.Logger.Warning("Unable to dismiss flow coordinator! Exception: "+e);
+            }
         }
 
         private void RoomSelected(RoomInfo selectedRoom)

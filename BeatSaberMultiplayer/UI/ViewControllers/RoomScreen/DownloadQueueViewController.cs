@@ -83,7 +83,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 _queuedSongsTableView.dataSource = this;
 
-                _abortButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton", new Vector2(36f, -30f), new Vector2(20f, 10f), AbortDownloads, "Abort All");
+                _abortButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton", new Vector2(48f, -30f), new Vector2(20f, 10f), AbortDownloads, "Abort All");
                 _abortButton.ToggleWordWrapping(false);
 
                 SongDownloader.Instance.songDownloaded += (Song song) => { Refresh(); };
@@ -135,17 +135,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void Refresh()
         {
-            Misc.Logger.Info("REFRESH 1");
             int removed = queuedSongs.RemoveAll(x => x.songQueueState == SongQueueState.Downloaded || x.songQueueState == SongQueueState.Error);
-
-            Misc.Logger.Info("REFRESH 2");
+            
             Misc.Logger.Info($"Removed {removed} songs from queue");
 
             _queuedSongsTableView.ReloadData();
-            Misc.Logger.Info("REFRESH 3");
             _queuedSongsTableView.ScrollToRow(0, true);
-
-            Misc.Logger.Info("REFRESH 4");
+            
             if (queuedSongs.Count(x => x.songQueueState == SongQueueState.Downloading || x.songQueueState == SongQueueState.Queued) == 0)
             {
                 Misc.Logger.Info("All songs downloaded!");

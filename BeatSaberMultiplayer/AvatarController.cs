@@ -65,12 +65,12 @@ namespace BeatSaberMultiplayer
             if (avatarInstance == null)
             {
 #if DEBUG
-                CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().ForEach(x => Log.Info(x.FullPath));
+                CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().ForEach(x => Misc.Logger.Info(x.FullPath));
 #endif
                 avatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.Contains("TemplateFullBody"));
             }
 #if DEBUG
-            Log.Info($"Found avatar, isLoaded={avatarInstance.IsLoaded}");
+            Misc.Logger.Info($"Found avatar, isLoaded={avatarInstance.IsLoaded}");
 #endif
             if (!avatarInstance.IsLoaded)
             {
@@ -88,7 +88,7 @@ namespace BeatSaberMultiplayer
             if (result == AvatarLoadResult.Completed)
             {
 #if DEBUG
-                Log.Info("Loaded avatar");
+                Misc.Logger.Info("Loaded avatar");
 #endif
             }
             else
@@ -102,7 +102,7 @@ namespace BeatSaberMultiplayer
             if (!avatarInstance.IsLoaded)
             {
 #if DEBUG
-                Log.Info("Waiting for avatar to load");
+                Misc.Logger.Info("Waiting for avatar to load");
 #endif
                 yield return new WaitWhile(delegate () { return !avatarInstance.IsLoaded; });
             }
@@ -112,7 +112,7 @@ namespace BeatSaberMultiplayer
             }
 
 #if DEBUG
-            Log.Info("Spawning avatar");
+            Misc.Logger.Info("Spawning avatar");
 #endif
             avatar = AvatarSpawner.SpawnAvatar(avatarInstance, this);
             
@@ -124,45 +124,56 @@ namespace BeatSaberMultiplayer
 
         void Update()
         {
-
-            if (avatar != null && !forcePlayerInfo)
+            try
             {
-                if (Client.instance.Tickrate < 88f)
+                if (avatar != null && !forcePlayerInfo)
                 {
-                    interpolationProgress += Time.deltaTime * Client.instance.Tickrate;
+                    if (Client.instance.Tickrate < 88f)
+                    {
+                        interpolationProgress += Time.deltaTime * Client.instance.Tickrate;
+                    }
+                    else
+                    {
+                        interpolationProgress = 1f;
+                    }
+                    if (interpolationProgress > 1f)
+                    {
+                        interpolationProgress = 1f;
+                    }
+
+                    interpHeadPos = Vector3.Lerp(lastHeadPos, targetHeadPos, interpolationProgress);
+                    interpLeftHandPos = Vector3.Lerp(lastLeftHandPos, targetLeftHandPos, interpolationProgress);
+                    interpRightHandPos = Vector3.Lerp(lastRightHandPos, targetRightHandPos, interpolationProgress);
+
+                    interpHeadRot = Quaternion.Lerp(lastHeadRot, targetHeadRot, interpolationProgress);
+                    interpLeftHandRot = Quaternion.Lerp(lastLeftHandRot, targetLeftHandRot, interpolationProgress);
+                    interpRightHandRot = Quaternion.Lerp(lastRightHandRot, targetRightHandRot, interpolationProgress);
+
+                    transform.position = interpHeadPos;
+                }
+            }catch(Exception e)
+            {
+                Misc.Logger.Error("Unable to lerp avatar position! Exception: "+e);
+            }
+
+            try
+            {
+                if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "CameraPlus") && _camera == null)
+                {
+                    _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name == "Camera Plus");
+                }
+
+                if (Config.Instance.SpectatorMode && _camera != null)
+                {
+                    playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
                 }
                 else
                 {
-                    interpolationProgress = 1f;
+                    playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
                 }
-                if (interpolationProgress > 1f)
-                {
-                    interpolationProgress = 1f;
-                }
-
-                interpHeadPos = Vector3.Lerp(lastHeadPos, targetHeadPos, interpolationProgress);
-                interpLeftHandPos = Vector3.Lerp(lastLeftHandPos, targetLeftHandPos, interpolationProgress);
-                interpRightHandPos = Vector3.Lerp(lastRightHandPos, targetRightHandPos, interpolationProgress);
-
-                interpHeadRot = Quaternion.Lerp(lastHeadRot, targetHeadRot, interpolationProgress);
-                interpLeftHandRot = Quaternion.Lerp(lastLeftHandRot, targetLeftHandRot, interpolationProgress);
-                interpRightHandRot = Quaternion.Lerp(lastRightHandRot, targetRightHandRot, interpolationProgress);
-
-                transform.position = interpHeadPos;
-            }
-
-            if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "CameraPlus") && _camera == null)
+            }catch(Exception e)
             {
-                _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name == "Camera Plus");
-            }
-
-            if (Config.Instance.SpectatorMode && _camera != null)
-            {
-                playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
-            }
-            else
-            {
-                playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
+                Misc.Logger.Warning("Unable to rotate text to the camera! Exception: "+e);
             }
 
         }
@@ -170,7 +181,7 @@ namespace BeatSaberMultiplayer
         void OnDestroy()
         {
 #if DEBUG
-            Log.Info("Destroying avatar");
+            Misc.Logger.Info("Destroying avatar");
 #endif
             Destroy(avatar.GameObject);
         }
@@ -259,7 +270,7 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Misc.Logger.Exception($"AVATAR EXCEPTION: {_playerInfo.playerName}: {e}");
+                Misc.Logger.Exception($"Avatar controller exception: {_playerInfo.playerName}: {e}");
             }
 
         }

@@ -59,24 +59,26 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        private void SceneManager_activeSceneChanged(Scene prev, Scene next)
+        private void SceneManager_activeSceneChanged(Scene from, Scene to)
         {
             try
             {
-                if (next.name.EndsWith("Environment"))
+                if (to.name == "GameCore" || (from.name == "EmptyTransition" && to.name == "Menu"))
                 {
-                    _currentScene = next;
-                    DestroyAvatar();
-                    StartCoroutine(WaitForControllers());
-                }
-                else if (next.name == "Menu")
-                {
-                    _currentScene = next;
-                    DestroyAvatar();
+                    _currentScene = to;
+                    if (to.name == "GameCore")
+                    {
+                        DestroyAvatar();
+                        StartCoroutine(WaitForControllers());
+                    }
+                    else if (to.name == "Menu")
+                    {
+                        DestroyAvatar();
+                    }
                 }
             }catch(Exception e)
             {
-                Misc.Logger.Warning($"(Spectator) Exception on {next.name} scene load! {e}");
+                Misc.Logger.Warning($"(Spectator) Exception on {to.name} scene activation! Exception: {e}");
             }
         }
 
@@ -152,7 +154,7 @@ namespace BeatSaberMultiplayer
                         catch (Exception e)
                         {
 #if DEBUG
-                            Log.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
+                            Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
 #endif
                         }
                     }
@@ -225,7 +227,7 @@ namespace BeatSaberMultiplayer
                             {
 #if DEBUG
                                 if(_playerInfos[_spectatedPlayer].Last().playerProgress > 2f)
-                                    Log.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
+                                    Misc.Logger.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
 #endif
                                 SetPositionInSong(_playerInfos[_spectatedPlayer].Last().playerProgress - 1f);
                                 InGameOnlineController.Instance.PauseSong();
@@ -236,7 +238,7 @@ namespace BeatSaberMultiplayer
                             {
 #if DEBUG
                                 if (_playerInfos[_spectatedPlayer].Last().playerProgress > 2f)
-                                    Log.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
+                                    Misc.Logger.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
 #endif
                                 InGameOnlineController.Instance.PauseSong();
                                 _paused = true;

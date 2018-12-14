@@ -174,7 +174,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         public void Update()
         {
-            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
+            if(isInViewControllerHierarchy)
+                _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
         }
 
         public void CreateButtonInteractable(bool interactable)

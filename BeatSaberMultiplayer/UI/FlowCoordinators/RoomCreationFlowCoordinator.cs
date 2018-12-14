@@ -39,6 +39,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _serverHubsViewController = BeatSaberUI.CreateViewController<RoomCreationServerHubsListViewController>();
                 _serverHubsViewController.selectedServerHub += ServerHubSelected;
                 _serverHubsViewController.didFinishEvent += () => { didFinishEvent?.Invoke(false); };
+
+                _mainRoomCreationViewController = BeatSaberUI.CreateViewController<MainRoomCreationViewController>();
+                _mainRoomCreationViewController.CreatedRoom += CreateRoomPressed;
+                _mainRoomCreationViewController.keyboardDidFinishEvent += _mainRoomCreationViewController_keyboardDidFinishEvent;
+                _mainRoomCreationViewController.didFinishEvent += () => { DismissViewController(_mainRoomCreationViewController); SetLeftScreenViewController(null); };
+
+                _leftRoomCreationViewController = BeatSaberUI.CreateViewController<LeftRoomCreationViewController>();
+                _leftRoomCreationViewController.SetSongs(_levelCollection.GetLevelsWithBeatmapCharacteristic(_beatmapCharacteristics.First(x => x.characteristicName == "Standard")).ToList());
             }
 
             ProvideInitialViewControllers(_serverHubsViewController, null, null);
@@ -62,23 +70,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public void ServerHubSelected(ServerHubClient serverHubClient)
         {
             _selectedServerHub = serverHubClient;
-
-            if(_mainRoomCreationViewController == null)
-            {
-                _mainRoomCreationViewController = BeatSaberUI.CreateViewController<MainRoomCreationViewController>();
-                _mainRoomCreationViewController.CreatedRoom += CreateRoomPressed;
-                _mainRoomCreationViewController.keyboardDidFinishEvent += _mainRoomCreationViewController_keyboardDidFinishEvent;
-                _mainRoomCreationViewController.didFinishEvent += () => { ReplaceTopViewController(_serverHubsViewController); SetLeftScreenViewController(null); };
-                
-            }
-
-            if (_leftRoomCreationViewController == null)
-            {
-                _leftRoomCreationViewController = BeatSaberUI.CreateViewController<LeftRoomCreationViewController>();
-                _leftRoomCreationViewController.SetSongs(_levelCollection.GetLevelsWithBeatmapCharacteristic(_beatmapCharacteristics.First(x => x.characteristicName == "Standard")).ToList());
-            }
-
-            ReplaceTopViewController(_mainRoomCreationViewController);
+            
+            PresentViewController(_mainRoomCreationViewController);
             SetLeftScreenViewController(_leftRoomCreationViewController);
         }
 
@@ -130,9 +123,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 Client.instance.PacketReceived -= PacketReceived;
                 _createdRoomId = BitConverter.ToUInt32(packet.additionalData, 0);
-
+                
+                DismissViewController(_mainRoomCreationViewController, null, true);
+                SetLeftScreenViewController(null);
                 didFinishEvent?.Invoke(true);
-
+                
                 PluginUI.instance.serverHubFlowCoordinator.JoinRoom(_selectedServerHub.ip, _selectedServerHub.port, _createdRoomId, _roomSettings.UsePassword, _roomSettings.Password);
             }
         }

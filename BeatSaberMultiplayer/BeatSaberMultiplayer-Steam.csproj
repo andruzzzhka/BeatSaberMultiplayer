@@ -142,7 +142,6 @@
     <Compile Include="Misc\SongDownloader.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
-    <Compile Include="OnlinePauseAnimController.cs" />
     <Compile Include="OnlineVRController.cs" />
     <Compile Include="PlayerInfoDisplay.cs" />
     <Compile Include="Plugin.cs" />

@@ -132,6 +132,7 @@ namespace ServerHub.Rooms
 
         private void RoomLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
+            List<byte> buffer = new List<byte>();
             switch (roomState)
             {
                 case RoomState.InGame:
@@ -140,6 +141,13 @@ namespace ServerHub.Rooms
                         {
                             roomState = RoomState.Results;
                             _resultsStartTime = DateTime.Now;
+
+                            buffer.Add(0);
+                            buffer.AddRange(GetRoomInfo().ToBytes());
+                            BroadcastPacket(new BasePacket(CommandType.GetRoomInfo, buffer.ToArray()));
+
+                            if (roomClients.Count > 0)
+                                BroadcastWebSocket(CommandType.GetRoomInfo, GetRoomInfo());
                         }
                     }
                     break;
@@ -196,8 +204,7 @@ namespace ServerHub.Rooms
                     }
                     break;
             }
-
-            List<byte> buffer = new List<byte>();
+            buffer.Clear();
             switch (roomState)
             {
                 case RoomState.SelectingSong:

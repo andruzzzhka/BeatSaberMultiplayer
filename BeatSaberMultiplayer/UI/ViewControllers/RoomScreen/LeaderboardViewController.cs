@@ -26,7 +26,7 @@ namespace BeatSaberMultiplayer
         PlayerInfo[] _playerInfos;
 
         private LevelSO _selectedSong;
-        public LevelSO SelectedSong { get { return _selectedSong; } set {SetSong(value);} }
+        public LevelSO SelectedSong { get { return _selectedSong; } set { SetSong(value); } }
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
@@ -36,7 +36,7 @@ namespace BeatSaberMultiplayer
                 (_songTableCell.transform as RectTransform).anchoredPosition = new Vector2(18f, 39f);
 
                 _leaderboardTableCellInstance = Resources.FindObjectsOfTypeAll<LeaderboardTableCell>().First(x => (x.name == "LeaderboardTableCell"));
-                
+
                 _leaderboardTableView = new GameObject().AddComponent<TableView>();
 
                 _leaderboardTableView.transform.SetParent(rectTransform, false);
@@ -49,12 +49,12 @@ namespace BeatSaberMultiplayer
                 viewportMask.transform.DetachChildren();
                 _leaderboardTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 
-                (_leaderboardTableView.transform as RectTransform).anchorMin = new Vector2(0.1f, 0.5f);
-                (_leaderboardTableView.transform as RectTransform).anchorMax = new Vector2(0.9f, 0.5f);
+                (_leaderboardTableView.transform as RectTransform).anchorMin = new Vector2(0.2f, 0.5f);
+                (_leaderboardTableView.transform as RectTransform).anchorMax = new Vector2(0.8f, 0.5f);
                 (_leaderboardTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 60f);
                 (_leaderboardTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
 
-                _timerText = BeatSaberUI.CreateText(rectTransform, "", new Vector2(0f, -5f));
+                _timerText = BeatSaberUI.CreateText(rectTransform, "", new Vector2(0f, 34f));
                 _timerText.fontSize = 8f;
                 _timerText.alignment = TextAlignmentOptions.Center;
                 _timerText.rectTransform.sizeDelta = new Vector2(30f, 6f);
@@ -66,16 +66,17 @@ namespace BeatSaberMultiplayer
         {
             this._playerInfos = _playerInfos.Where(x => x.playerState == PlayerState.Game || (x.playerState == PlayerState.Room && x.playerScore > 0)).OrderByDescending(x => x.playerScore).ToArray();
 
-            if (_leaderboardTableView == null)
-                return;
+            if (_leaderboardTableView != null)
+            {
 
-            if (_leaderboardTableView.dataSource != this)
-            {
-                _leaderboardTableView.dataSource = this;
-            }
-            else
-            {
-                _leaderboardTableView.ReloadData();
+                if (_leaderboardTableView.dataSource != this)
+                {
+                    _leaderboardTableView.dataSource = this;
+                }
+                else
+                {
+                    _leaderboardTableView.ReloadData();
+                }
             }
         }
 
@@ -109,6 +110,8 @@ namespace BeatSaberMultiplayer
         public TableCell CellForRow(int row)
         {
             LeaderboardTableCell cell = Instantiate(_leaderboardTableCellInstance);
+
+            cell.reuseIdentifier = "ResultsCell";
 
             cell.playerName = _playerInfos[row].playerName;
             cell.score = (int)_playerInfos[row].playerScore;

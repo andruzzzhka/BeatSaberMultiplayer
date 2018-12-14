@@ -54,7 +54,7 @@ namespace BeatSaberMultiplayer.Misc
         {
             _alreadyDownloadedSongs = levels.Select(x => new Song(x)).ToList();
         }
-        
+
         public IEnumerator DownloadSongCoroutine(Song songInfo)
         {
             songInfo.songQueueState = SongQueueState.Downloading;
@@ -99,7 +99,7 @@ namespace BeatSaberMultiplayer.Misc
             if (www.isNetworkError || www.isHttpError || timeout || songInfo.songQueueState == SongQueueState.Error)
             {
                 songInfo.songQueueState = SongQueueState.Error;
-                Logger.Error("Unable to download song! "+(www.isNetworkError ? $"Network error: {www.error}" : (www.isHttpError ? $"HTTP error: {www.error}" : "Unknown error")));
+                Logger.Error("Unable to download song! " + (www.isNetworkError ? $"Network error: {www.error}" : (www.isHttpError ? $"HTTP error: {www.error}" : "Unknown error")));
             }
             else
             {
@@ -132,27 +132,22 @@ namespace BeatSaberMultiplayer.Misc
                     yield break;
                 }
 
-                while (_extractingZip)
-                {
-                    yield return new WaitForSecondsRealtime(0.25f);
-                }
-                ExtractZipAsync(songInfo, zipStream, customSongsPath);
+                yield return new WaitWhile(() => _extractingZip); //because extracting several songs at once sometimes hangs the game
+
+                Task extract = ExtractZipAsync(songInfo, zipStream, customSongsPath);
+                yield return new WaitWhile(() => (int)extract.Status <= 4);
+                songDownloaded?.Invoke(songInfo);
             }
         }
 
-        private async void ExtractZipAsync(Song songInfo, Stream zipStream, string customSongsPath)
+        private async Task ExtractZipAsync(Song songInfo, Stream zipStream, string customSongsPath)
         {
-
             try
             {
-                while (_extractingZip)
-                {
-                    Thread.Sleep(250);
-                }
                 Logger.Info("Extracting...");
                 _extractingZip = true;
                 ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Read);
-                await Task.Run(() => archive.ExtractToDirectory(customSongsPath)); //ZipFile.ExtractToDirectory(zipPath, customSongsPath));
+                await Task.Run(() => archive.ExtractToDirectory(customSongsPath)).ConfigureAwait(false);
                 archive.Dispose();
                 zipStream.Close();
             }
@@ -170,13 +165,11 @@ namespace BeatSaberMultiplayer.Misc
             {
                 songInfo.path = customSongsPath;
             }
-            
+
             _extractingZip = false;
             songInfo.songQueueState = SongQueueState.Downloaded;
             _alreadyDownloadedSongs.Add(songInfo);
             Logger.Info($"Extracted {songInfo.songName} {songInfo.songSubName}!");
-
-            songDownloaded?.Invoke(songInfo);
         }
 
         public bool DeleteSong(Song song)
@@ -281,7 +274,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public static string GetLevelID(Song song)
         {
-            string[] values = new string[] { song.hash, song.songName, song.songSubName, song.authorName, song.beatsPerMinute};
+            string[] values = new string[] { song.hash, song.songName, song.songSubName, song.authorName, song.beatsPerMinute };
             return string.Join("∎", values) + "∎";
         }
 
