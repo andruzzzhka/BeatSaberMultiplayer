@@ -42,10 +42,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
-            if(firstActivation && activationType == ActivationType.AddedToHierarchy)
+            if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
                 _songTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
-                                
+
                 _checkAllButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
                 _checkAllButton.SetButtonText("Check all");
                 _checkAllButton.SetButtonTextSize(3f);
@@ -63,7 +63,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     _songsTableView.SetPrivateField("_selectedRows", hashSet);
                     _songsTableView.RefreshCells(true);
                 });
-                
+
                 _uncheckAllButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
                 _uncheckAllButton.SetButtonText("Uncheck all");
                 _uncheckAllButton.SetButtonTextSize(3f);
@@ -153,9 +153,27 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             if (_songsTableView != null)
             {
                 _songsTableView.dataSource = this;
-                
+
                 _songsTableView.ScrollToRow(0, false);
             }
+        }
+
+        public void SelectSongs(List<string> levelIds)
+        {
+            _songsTableView.GetPrivateField<List<TableCell>>("_visibleCells").ForEach(x => x.selected = levelIds.Any(y => y == (availableSongs[x.idx].levelID.Substring(0, Math.Min(32, availableSongs[x.idx].levelID.Length)))));
+
+            HashSet<int> hashSet = new HashSet<int>();
+
+            for (int i = 0; i < availableSongs.Count; i++)
+            {
+                if(levelIds.Any(x => x == availableSongs[i].levelID.Substring(0, Math.Min(32, availableSongs[i].levelID.Length))))
+                {
+                    hashSet.Add(i);
+                }
+
+            }
+            _songsTableView.SetPrivateField("_selectedRows", hashSet);
+            _songsTableView.RefreshCells(true);
         }
 
         private void SongsTableView_DidSelectRow(TableView sender, int row)

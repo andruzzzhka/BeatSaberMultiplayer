@@ -16,6 +16,8 @@ namespace ServerHub.Hub
 {
     static class HubListener
     {
+        public static Action<Client> ClientConnected;
+
         private static List<float> _ticksLength = new List<float>();
         private static DateTime _lastTick;
 
@@ -185,6 +187,7 @@ namespace ServerHub.Hub
                     client.ClientJoinedRoom += ClientJoinedRoom;
                     client.ClientLeftRoom += RoomsController.ClientLeftRoom;
                     client.ClientAccepted();
+                    ClientConnected?.Invoke(client);
                 }
             }
             catch (Exception e)

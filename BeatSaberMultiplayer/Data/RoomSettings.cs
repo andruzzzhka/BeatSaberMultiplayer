@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SimpleJSON;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -16,11 +17,22 @@ namespace BeatSaberMultiplayer.Data
         public int MaxPlayers;
         public bool NoFail;
 
+        [NonSerialized]
         public List<SongInfo> AvailableSongs;
 
         public RoomSettings()
         {
 
+        }
+
+        public RoomSettings(JSONNode node)
+        {
+            Name = node["Name"];
+            UsePassword = node["UsePassword"];
+            Password = node["Password"];
+            SelectionType = (SongSelectionType)node["SelectionType"].AsInt;
+            MaxPlayers = node["MaxPlayers"];
+            NoFail = node["NoFail"];
         }
 
         public RoomSettings(byte[] data)

@@ -20,6 +20,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         RoomCreationServerHubsListViewController _serverHubsViewController;
         MainRoomCreationViewController _mainRoomCreationViewController;
         LeftRoomCreationViewController _leftRoomCreationViewController;
+        PresetsListViewController _presetsListViewController;
 
         LevelCollectionSO _levelCollection;
         BeatmapCharacteristicSO[] _beatmapCharacteristics;
@@ -42,11 +43,17 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 _mainRoomCreationViewController = BeatSaberUI.CreateViewController<MainRoomCreationViewController>();
                 _mainRoomCreationViewController.CreatedRoom += CreateRoomPressed;
+                _mainRoomCreationViewController.SavePresetPressed += SavePreset;
+                _mainRoomCreationViewController.LoadPresetPressed += LoadPresetPressed;
                 _mainRoomCreationViewController.keyboardDidFinishEvent += _mainRoomCreationViewController_keyboardDidFinishEvent;
                 _mainRoomCreationViewController.didFinishEvent += () => { DismissViewController(_mainRoomCreationViewController); SetLeftScreenViewController(null); };
 
                 _leftRoomCreationViewController = BeatSaberUI.CreateViewController<LeftRoomCreationViewController>();
                 _leftRoomCreationViewController.SetSongs(_levelCollection.GetLevelsWithBeatmapCharacteristic(_beatmapCharacteristics.First(x => x.characteristicName == "Standard")).ToList());
+
+                _presetsListViewController = BeatSaberUI.CreateViewController<PresetsListViewController>();
+                _presetsListViewController.didFinishEvent += _presetsListViewController_didFinishEvent;
+
             }
 
             ProvideInitialViewControllers(_serverHubsViewController, null, null);
@@ -78,6 +85,34 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public bool CheckRequirements()
         {
             return _leftRoomCreationViewController.CheckRequirements() && _mainRoomCreationViewController.CheckRequirements();
+        }
+        
+        private void SavePreset(RoomSettings settings, string name)
+        {
+            RoomSettings presetSettings = new RoomSettings();
+            presetSettings = settings;
+            presetSettings.AvailableSongs = _leftRoomCreationViewController.selectedSongs.Select(x => new SongInfo() { songName = x.songName + " " + x.songSubName, levelId = x.levelID.Substring(0, Math.Min(32, x.levelID.Length)), songDuration = x.audioClip.length }).ToList();
+            RoomPreset preset = new RoomPreset(presetSettings);
+            preset.SavePreset("UserData\\RoomPresets\\"+name+".json");
+        }
+
+        private void LoadPresetPressed()
+        {
+            _presetsListViewController.SetPresets(PresetsCollection.loadedPresets);
+            PresentViewController(_presetsListViewController);
+            SetLeftScreenViewController(null);
+        }
+
+
+        private void _presetsListViewController_didFinishEvent(RoomPreset selectedPreset)
+        {
+            DismissViewController(_presetsListViewController);
+            SetLeftScreenViewController(_leftRoomCreationViewController);
+
+            RoomSettings settings = selectedPreset.GetRoomSettings();
+            
+            _mainRoomCreationViewController.ApplyRoomSettings(settings);
+            _leftRoomCreationViewController.SelectSongs(settings.AvailableSongs.Select(x=>x.levelId).ToList());
         }
 
         public void CreateRoomPressed(RoomSettings settings)

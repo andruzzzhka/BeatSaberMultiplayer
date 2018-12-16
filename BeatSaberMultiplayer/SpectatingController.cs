@@ -52,14 +52,13 @@ namespace BeatSaberMultiplayer
             {
                 Instance = this;
                 DontDestroyOnLoad(this);
-
-                SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
+                
                 Client.ClientCreated += ClientCreated;
                 _currentScene = SceneManager.GetActiveScene();
             }
         }
 
-        private void SceneManager_activeSceneChanged(Scene from, Scene to)
+        public void ActiveSceneChanged(Scene from, Scene to)
         {
             try
             {
@@ -117,7 +116,7 @@ namespace BeatSaberMultiplayer
 
         private void PacketReceived(BasePacket packet)
         {
-            if (Config.Instance.SpectatorMode && _currentScene.name.EndsWith("Environment"))
+            if (Config.Instance.SpectatorMode && _currentScene.name == "GameCore")
             {
                 if (packet.commandType == CommandType.UpdatePlayerInfo)
                 {

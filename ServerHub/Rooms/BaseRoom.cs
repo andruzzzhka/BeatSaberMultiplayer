@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 
 namespace ServerHub.Rooms
 {
-    struct WebSocketPacket
+    public struct WebSocketPacket
     {
         public string commandType;
         public object data;
@@ -25,7 +25,7 @@ namespace ServerHub.Rooms
         }
     }
 
-    struct ReadyPlayers
+    public struct ReadyPlayers
     {
         public int readyPlayers, roomClients;
 
@@ -36,7 +36,7 @@ namespace ServerHub.Rooms
         }
     }
 
-    struct SongWithDifficulty
+    public struct SongWithDifficulty
     {
         public SongInfo song;
         public byte difficulty;
@@ -48,7 +48,7 @@ namespace ServerHub.Rooms
         }
     }
     
-    class Room
+    public class BaseRoom
     {
         public uint roomId;
 
@@ -73,14 +73,14 @@ namespace ServerHub.Rooms
         public const float resultsShowTime = 15f;
         public const float votingTime = 30f;
 
-        public Room(uint id, RoomSettings settings, PlayerInfo host)
+        public BaseRoom(uint id, RoomSettings settings, PlayerInfo host)
         {
             roomId = id;
             roomSettings = settings;
             roomHost = host;
         }
 
-        public void StartRoom()
+        public virtual void StartRoom()
         {
             HighResolutionTimer.LoopTimer.Elapsed += RoomLoop;
             if (roomSettings.SelectionType == SongSelectionType.Voting)
@@ -89,12 +89,12 @@ namespace ServerHub.Rooms
             }
         }
 
-        public void StopRoom()
+        public virtual void StopRoom()
         {
             HighResolutionTimer.LoopTimer.Elapsed -= RoomLoop;
         }
 
-        public RoomInfo GetRoomInfo()
+        public virtual RoomInfo GetRoomInfo()
         {
             return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, noFail = roomSettings.NoFail, roomHost = roomHost, roomState = roomState, songSelectionType = roomSettings.SelectionType, selectedSong = selectedSong, selectedDifficulty = selectedDifficulty };
         }
@@ -110,7 +110,7 @@ namespace ServerHub.Rooms
             return buffer.ToArray();
         }
 
-        public void PlayerLeft(Client player)
+        public virtual void PlayerLeft(Client player)
         {
             _votes.Remove(player.playerInfo);
             _readyPlayers.Remove(player.playerInfo);
@@ -130,7 +130,7 @@ namespace ServerHub.Rooms
             }
         }
 
-        private void RoomLoop(object sender, HighResolutionTimerElapsedEventArgs e)
+        public virtual void RoomLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
             List<byte> buffer = new List<byte>();
             switch (roomState)
@@ -248,7 +248,7 @@ namespace ServerHub.Rooms
                 BroadcastWebSocket(CommandType.UpdatePlayerInfo, roomClients.Select(x => x.playerInfo).ToArray());
         }
 
-        public void BroadcastPacket(BasePacket packet)
+        public virtual void BroadcastPacket(BasePacket packet)
         {
             for (int i = 0; i < roomClients.Count; i++)
             {
@@ -263,7 +263,7 @@ namespace ServerHub.Rooms
             }
         }
 
-        public void OnOpenWebSocket()
+        public virtual void OnOpenWebSocket()
         {
             if (WebSocketListener.Server == null || !Settings.Instance.Server.EnableWebSocketRoomInfo)
                 return;
@@ -292,7 +292,7 @@ namespace ServerHub.Rooms
             }
         }
 
-        public void BroadcastWebSocket(CommandType commandType, object data)
+        public virtual void BroadcastWebSocket(CommandType commandType, object data)
         {
             if (WebSocketListener.Server == null || !Settings.Instance.Server.EnableWebSocketRoomInfo)
                 return;
@@ -304,7 +304,7 @@ namespace ServerHub.Rooms
             service.Sessions.BroadcastAsync(serialized, null);
         }
 
-        public void SetSelectedSong(PlayerInfo sender, SongInfo song)
+        public virtual void SetSelectedSong(PlayerInfo sender, SongInfo song)
         {
             if (sender.Equals(roomHost))
             {
@@ -368,7 +368,7 @@ namespace ServerHub.Rooms
             }
         }
 
-        public void StartLevel(PlayerInfo sender, byte difficulty, SongInfo song)
+        public virtual void StartLevel(PlayerInfo sender, byte difficulty, SongInfo song)
         {
             if (sender.Equals(roomHost))
             {
@@ -394,7 +394,7 @@ namespace ServerHub.Rooms
             }
         }
 
-        public void TransferHost(PlayerInfo sender, PlayerInfo newHost)
+        public virtual void TransferHost(PlayerInfo sender, PlayerInfo newHost)
         {
             if (sender.Equals(roomHost))
             {
@@ -407,13 +407,13 @@ namespace ServerHub.Rooms
             }
         }
 
-        public void ForceTransferHost(PlayerInfo newHost)
+        public virtual void ForceTransferHost(PlayerInfo newHost)
         {
             roomHost = newHost;
             BroadcastPacket(new BasePacket(CommandType.TransferHost, roomHost.ToBytes(false)));
         }
-      
-        public void ReadyStateChanged(PlayerInfo sender, bool ready)
+
+        public virtual void ReadyStateChanged(PlayerInfo sender, bool ready)
         {
             if (ready)
             {
@@ -430,7 +430,7 @@ namespace ServerHub.Rooms
             UpdatePlayersReady();
         }
 
-        private void UpdatePlayersReady()
+        public virtual void UpdatePlayersReady()
         {
             List<byte> buffer = new List<byte>();
             buffer.AddRange(BitConverter.GetBytes(_readyPlayers.Count));
@@ -439,7 +439,7 @@ namespace ServerHub.Rooms
             BroadcastWebSocket(CommandType.PlayerReady, new ReadyPlayers(_readyPlayers.Count, roomClients.Count));
         }
 
-        public void DestroyRoom(PlayerInfo sender)
+        public virtual void DestroyRoom(PlayerInfo sender)
         {
             if (roomHost.Equals(sender))
             {

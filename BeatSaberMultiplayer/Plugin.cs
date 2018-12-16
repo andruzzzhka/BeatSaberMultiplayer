@@ -1,4 +1,5 @@
-﻿using BeatSaberMultiplayer.Misc;
+﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using IllusionPlugin;
 using System;
@@ -14,8 +15,8 @@ namespace BeatSaberMultiplayer
     {
         public string Name => "Beat Saber Multiplayer";
 
-        public string Version => "0.5.1.7";
-        public static uint pluginVersion = 517;
+        public string Version => "0.5.2.0";
+        public static uint pluginVersion = 520;
 
         public static Plugin instance;
 
@@ -25,9 +26,10 @@ namespace BeatSaberMultiplayer
 
         public void OnApplicationStart()
         {
-            if(File.Exists("MPLog.txt"))
-                File.Delete("MPLog.txt");
 
+            if (File.Exists("MPLog.txt"))
+                File.Delete("MPLog.txt");
+            
             instance = this;
 
 #if DEBUG
@@ -39,7 +41,16 @@ namespace BeatSaberMultiplayer
                 Logger.Info("Loaded config!");
             else
                 Config.Create();
+            try
+            {
+                PresetsCollection.ReloadPresets();
+            }
+            catch (Exception e)
+            {
+                Logger.Warning("Unable to load presets! Exception: "+e);
+            }
             Base64Sprites.ConvertSprites();
+            
         }
 
         private void ActiveSceneChanged(Scene from, Scene to)
@@ -56,6 +67,8 @@ namespace BeatSaberMultiplayer
             else
             {
                 InGameOnlineController.Instance.ActiveSceneChanged(from, to);
+                if(Config.Instance.SpectatorMode)
+                    SpectatingController.Instance.ActiveSceneChanged(from, to);
             }
         }
 

@@ -81,7 +81,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _songsTableView.didSelectRowEvent += SongsTableView_DidSelectRow;
                 _songsTableView.dataSource = this;
 
-                _hostIsSelectingSongText = BeatSaberUI.CreateText(rectTransform, "Host is selecting song...", new Vector2(0f, -25f));
+                _hostIsSelectingSongText = BeatSaberUI.CreateText(rectTransform, "Host is selecting song...", new Vector2(0f, 0f));
                 _hostIsSelectingSongText.fontSize = 8f;
                 _hostIsSelectingSongText.alignment = TextAlignmentOptions.Center;
                 _hostIsSelectingSongText.rectTransform.sizeDelta = new Vector2(120f, 6f);

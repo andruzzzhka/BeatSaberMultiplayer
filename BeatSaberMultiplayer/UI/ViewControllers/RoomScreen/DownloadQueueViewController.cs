@@ -34,6 +34,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             if (firstActivation && type == ActivationType.AddedToHierarchy)
             {
+                SongDownloader.Instance.songDownloaded += SongDownloaded;
                 _songListTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
 
                 _titleText = BeatSaberUI.CreateText(rectTransform, "DOWNLOAD QUEUE", new Vector2(0f, 36f));
@@ -83,10 +84,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 _queuedSongsTableView.dataSource = this;
 
-                _abortButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton", new Vector2(48f, -30f), new Vector2(20f, 10f), AbortDownloads, "Abort All");
+                _abortButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton", new Vector2(36f, -30f), new Vector2(20f, 10f), AbortDownloads, "Abort All");
                 _abortButton.ToggleWordWrapping(false);
-
-                SongDownloader.Instance.songDownloaded += (Song song) => { Refresh(); };
             }
         }
 
@@ -112,9 +111,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             song.songQueueState = SongQueueState.Queued;
             if (startDownload && queuedSongs.Count(x => x.songQueueState == SongQueueState.Downloading) < Config.Instance.MaxSimultaneousDownloads)
             {
-                DownloadSong(song);
+                StartCoroutine(DownloadSong(song));
             }
-            Refresh();
         }
 
         public void DownloadAllSongsFromQueue()
@@ -123,25 +121,34 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             for (int i = 0; i < Math.Min(Config.Instance.MaxSimultaneousDownloads, queuedSongs.Count); i++)
             {
-                DownloadSong(queuedSongs[i]);
+                StartCoroutine(DownloadSong(queuedSongs[i]));
             }
         }
 
-        void DownloadSong(Song song)
+        IEnumerator DownloadSong(Song song)
         {
-            StartCoroutine(SongDownloader.Instance.DownloadSongCoroutine(song));
+            yield return SongDownloader.Instance.DownloadSongCoroutine(song);
             Refresh();
+        }
+
+        private void SongDownloaded(Song obj)
+        {
+            Refresh();
+            if (queuedSongs.Count(x => x.songQueueState == SongQueueState.Downloading) < Config.Instance.MaxSimultaneousDownloads && queuedSongs.Any(x => x.songQueueState == SongQueueState.Queued))
+            {
+                StartCoroutine(DownloadSong(queuedSongs.First(x => x.songQueueState == SongQueueState.Queued)));
+            }
         }
 
         public void Refresh()
         {
             int removed = queuedSongs.RemoveAll(x => x.songQueueState == SongQueueState.Downloaded || x.songQueueState == SongQueueState.Error);
-            
+
             Misc.Logger.Info($"Removed {removed} songs from queue");
 
             _queuedSongsTableView.ReloadData();
             _queuedSongsTableView.ScrollToRow(0, true);
-            
+
             if (queuedSongs.Count(x => x.songQueueState == SongQueueState.Downloading || x.songQueueState == SongQueueState.Queued) == 0)
             {
                 Misc.Logger.Info("All songs downloaded!");
@@ -149,7 +156,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
 
             if (queuedSongs.Count(x => x.songQueueState == SongQueueState.Downloading) < Config.Instance.MaxSimultaneousDownloads && queuedSongs.Any(x => x.songQueueState == SongQueueState.Queued))
-                DownloadSong(queuedSongs.First(x => x.songQueueState == SongQueueState.Queued));
+                StartCoroutine(DownloadSong(queuedSongs.First(x => x.songQueueState == SongQueueState.Queued)));
         }
 
         public float RowHeight()

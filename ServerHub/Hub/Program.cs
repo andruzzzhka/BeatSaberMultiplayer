@@ -42,6 +42,10 @@ namespace ServerHub.Hub
         public static List<ulong> whitelistedIDs;
         public static List<string> whitelistedNames;
 
+        public static List<IPlugin> plugins;
+
+        public static List<Command> availableCommands = new List<Command>();
+
         static void Main(string[] args) => Start(args);
 
         static private Thread listenerThread { get; set; }
@@ -54,6 +58,17 @@ namespace ServerHub.Hub
 #endif
 
         static private void OnShutdown(ShutdownEventArgs obj) {
+            foreach (IPlugin plugin in plugins)
+            {
+                try
+                {
+                    plugin.ServerShutdown();
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"[{plugin.Name}] Exception on ServerShutdown event: {e}");
+                }
+            }
             HubListener.Stop();
         }
 
@@ -62,6 +77,81 @@ namespace ServerHub.Hub
             AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
 #endif
             UpdateLists();
+
+            if (!Directory.Exists("Plugins"))
+            {
+                try
+                {
+                    Directory.CreateDirectory("Plugins");
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Exception($"Unable to create Plugins folder! Exception: {e}");
+                }
+            }
+
+            string[] pluginFiles = Directory.GetFiles("Plugins", "*.dll");
+
+            plugins = new List<IPlugin>();
+
+            foreach (string path in pluginFiles)
+            {
+                try
+                {
+                    Assembly assembly = Assembly.LoadFile(Path.GetFullPath(path));
+                    foreach (Type t in assembly.GetTypes())
+                    {
+                        if (t.GetInterface("IPlugin") != null)
+                        {
+                            try
+                            {
+                                IPlugin pluginInstance = Activator.CreateInstance(t) as IPlugin;
+
+                                plugins.Add(pluginInstance);
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.Instance.Error(string.Format("Unable to load plugin {0} in {1}! {2}", t.FullName, Path.GetFileName(path), e));
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Error($"Unable to load assembly {Path.GetFileName(path)}! Exception: {e}");
+                }
+            }
+
+            foreach(IPlugin plugin in plugins)
+            {
+                try
+                {
+                    if (plugin.Init())
+                    {
+                        Logger.Instance.Log("Initialized plugin: "+plugin.Name+" v"+plugin.Version);
+                        HighResolutionTimer.LoopTimer.Elapsed += (object sender, HighResolutionTimerElapsedEventArgs e) =>
+                        {
+                            try
+                            {
+                                plugin.Tick(sender, e);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Instance.Warning($"[{plugin.Name}] Exception on Tick event: {ex}");
+                            }
+                        };
+                    }
+                    else
+                    {
+                        plugins.Remove(plugin);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"[{plugin.Name}] Exception on Init event: {e}");
+                    plugins.Remove(plugin);
+                }
+            }
 
             if (args.Length > 0)
             {
@@ -116,12 +206,25 @@ namespace ServerHub.Hub
             listenerThread.Start();
             HubListener.Listen = true;
 
+            foreach (IPlugin plugin in plugins)
+            {
+                try
+                {
+                    plugin.ServerStart();
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"[{plugin.Name}] Exception on ServerStart event: {e}");
+                }
+            }
+
             if (Settings.Instance.TournamentMode.Enabled)
                 CreateTournamentRooms();
 
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
-            
+
+
             while (HubListener.Listen)
             {
                 var x = Console.ReadLine();
@@ -227,34 +330,59 @@ namespace ServerHub.Hub
                     #region Console commands
                     case "help":
                         {
-                            string commands = "";
-                            foreach (var com in new[] {
-                        "help",
-                        "version",
-                        "quit",
-                        "clients",
-                        "blacklist [add/remove] [nick/playerID/IP]",
-                        "whitelist [enable/disable/add/remove] [nick/playerID/IP]",
-                        "tickrate [5-150]",
-                        "createroom [presetname]",
-                        "saveroom [roomId] [presetname]",
-                        "cloneroom [roomId]",
-                        "destroyroom [roomId]" ,
-                        "destroyempty"})
+                            string commands = $"{Environment.NewLine}Default:";
+                            foreach (var com in new string[]{   "help",
+                                                                "version",
+                                                                "quit",
+                                                                "clients",
+                                                                "blacklist [add/remove] [nick/playerID/IP]",
+                                                                "whitelist [enable/disable/add/remove] [nick/playerID/IP]",
+                                                                "tickrate [5-150]",
+                                                                "createroom [presetname]",
+                                                                "saveroom [roomId] [presetname]",
+                                                                "cloneroom [roomId]",
+                                                                "destroyroom [roomId]",
+                                                                "destroyempty" })
                             {
                                 commands += $"{Environment.NewLine}> {com}";
                             }
+
+                            foreach (IPlugin plugin in plugins)
+                            {
+                                try
+                                {
+                                    commands += $"{Environment.NewLine}{plugin.Name}:";
+                                    plugin.Commands.ForEach(x => commands += $"{Environment.NewLine}> {x.help}");
+                                }
+                                catch
+                                {
+
+                                }
+                            }
+
                             return $"Commands:{commands}";
                         }
                     case "version":
-                        return $"{Assembly.GetEntryAssembly().GetName().Version}";
+                        string versions = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}";
+                        foreach (IPlugin plugin in plugins)
+                        {
+                            try
+                            {
+                                versions += $"\n{plugin.Name} v{plugin.Version}";
+                            }
+                            catch
+                            {
+
+                            }
+                        }
+                        return versions;
                     case "quit":
                         {
                             if (HubListener.Listen)
                             {
                                 Logger.Instance.Log("Shutting down...");
-                                List<Room> rooms = new List<Room>(RoomsController.GetRoomsList());
-                                foreach (Room room in rooms)
+                                List<BaseRoom> rooms = new List<BaseRoom>(RoomsController.GetRoomsList());
+                                foreach (BaseRoom room in rooms)
                                 {
                                     RoomsController.DestroyRoom(room.roomId, "ServerHub is shutting down...");
                                     HubListener.Stop();
@@ -495,7 +623,7 @@ namespace ServerHub.Hub
                                     uint roomId;
                                     if (uint.TryParse(comArgs[0], out roomId))
                                     {
-                                        Room room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
+                                        BaseRoom room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
                                         if (room != null)
                                         {
                                             string path = comArgs[1];
@@ -538,7 +666,7 @@ namespace ServerHub.Hub
                                     uint roomId;
                                     if (uint.TryParse(comArgs[0], out roomId))
                                     {
-                                        Room room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
+                                        BaseRoom room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
                                         if (room != null)
                                         {
                                             uint newRoomId = RoomsController.CreateRoom(room.roomSettings, room.roomHost);
@@ -661,6 +789,15 @@ namespace ServerHub.Hub
                             return "Created room with ID " + id;
                         }
                     #endregion
+                    default:
+                        {
+                            IPlugin plugin = plugins.FirstOrDefault(x => x.Commands.Any(y => y.name == comName));
+                            if (plugin != null)
+                            {
+                                Command comm = plugin.Commands.First(x => x.name == comName);
+                                return comm.function(comArgs);
+                            }
+                        }; break;
 #endif
                 }
 

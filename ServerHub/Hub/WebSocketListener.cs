@@ -31,7 +31,7 @@ namespace ServerHub.Hub
             string[] split = _path.Split('/');
             int _id = Convert.ToInt32(split[split.Length - 1]);
 
-            Room _room = RoomsController.GetRoomsList().Find(room => room.roomId == _id);
+            BaseRoom _room = RoomsController.GetRoomsList().Find(room => room.roomId == _id);
             RoomName = _room.roomSettings.Name;
         }
     }
@@ -78,7 +78,7 @@ namespace ServerHub.Hub
             string[] split = Context.RequestUri.AbsolutePath.Split('/');
             int _id = Convert.ToInt32(split[split.Length - 1]);
 
-            Room _room = RoomsController.GetRoomsList().Find(room => room.roomId == _id);
+            BaseRoom _room = RoomsController.GetRoomsList().Find(room => room.roomId == _id);
             if(_room != null)
                 _room.OnOpenWebSocket();
         }
@@ -162,7 +162,7 @@ namespace ServerHub.Hub
             }
         }
 
-        public static void AddRoom(Room room)
+        public static void AddRoom(BaseRoom room)
         {
             if (Server != null && Settings.Instance.Server.EnableWebSocketRoomInfo)
             {
@@ -171,7 +171,7 @@ namespace ServerHub.Hub
             }
         }
 
-        public static void DestroyRoom(Room room)
+        public static void DestroyRoom(BaseRoom room)
         {
             if (Server != null && Settings.Instance.Server.EnableWebSocketRoomInfo)
             {

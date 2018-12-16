@@ -49,6 +49,9 @@
     <Reference Include="IllusionPlugin">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\IllusionPlugin.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="SongLoaderPlugin">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\SongLoaderPlugin.dll</HintPath>
     </Reference>
@@ -125,6 +128,7 @@
     <Compile Include="Data\BeatSaverAPIResult.cs" />
     <Compile Include="Data\PlayerInfo.cs" />
     <Compile Include="Data\RoomInfo.cs" />
+    <Compile Include="Data\RoomPreset.cs" />
     <Compile Include="Data\RoomSettings.cs" />
     <Compile Include="Data\SongInfo.cs" />
     <Compile Include="DebugForm.cs" />
@@ -137,6 +141,7 @@
     <Compile Include="Misc\HexConverter.cs" />
     <Compile Include="Misc\LoadScripts.cs" />
     <Compile Include="Misc\Logger.cs" />
+    <Compile Include="Misc\PresetsCollection.cs" />
     <Compile Include="Misc\ReflectionUtil.cs" />
     <Compile Include="Misc\Serialization.cs" />
     <Compile Include="Misc\SongDownloader.cs" />
@@ -157,6 +162,7 @@
     <Compile Include="UI\UIElements\DownloadQueueTableCell.cs" />
     <Compile Include="UI\UIElements\CustomListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\LeftRoomCreationViewController.cs" />
+    <Compile Include="UI\ViewControllers\CreateRoomScreen\PresetsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\MainRoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\CustomKeyboardViewController.cs" />
