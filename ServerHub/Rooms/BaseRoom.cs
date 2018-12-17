@@ -47,7 +47,21 @@ namespace ServerHub.Rooms
             difficulty = diff;
         }
     }
-    
+
+    public struct DisplayMessage
+    {
+        float displayTime;
+        float fontSize;
+        string message;
+
+        public DisplayMessage(float displayTime, float fontSize, string message)
+        {
+            this.displayTime = displayTime;
+            this.fontSize = fontSize;
+            this.message = message;
+        }
+    }
+
     public class BaseRoom
     {
         public uint roomId;

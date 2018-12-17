@@ -91,7 +91,11 @@ namespace ServerHub.Hub
                 }
             }
 
+            Logger.Instance.Log($"Beat Saber Multiplayer ServerHub v{Assembly.GetEntryAssembly().GetName().Version}");
+
             string[] pluginFiles = Directory.GetFiles("Plugins", "*.dll");
+
+            Logger.Instance.Log($"Found {pluginFiles.Length} plugins!");
 
             plugins = new List<IPlugin>();
 
@@ -193,8 +197,6 @@ namespace ServerHub.Hub
 #endif
 
             IP = GetPublicIPv4();
-
-            Logger.Instance.Log($"Beat Saber Multiplayer ServerHub v{Assembly.GetEntryAssembly().GetName().Version}");
 
             VersionChecker.CheckForUpdates();
             
@@ -770,6 +772,7 @@ namespace ServerHub.Hub
 
                                                 BaseRoom room = rooms.First(x => x.roomId == roomId);
                                                 room.BroadcastPacket(new BasePacket(CommandType.DisplayMessage, buffer.ToArray()));
+                                                room.BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(displayTime, fontSize, message));
                                                 return $"Sent message \"{string.Join(" ", comArgs.Skip(3).ToArray())}\" to all players in room {roomId}!";
                                             }
                                             else
