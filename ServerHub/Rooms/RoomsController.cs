@@ -19,7 +19,7 @@ namespace ServerHub.Rooms
         public static uint CreateRoom(RoomSettings settings, PlayerInfo host)
         {
 
-            BaseRoom room = Activator.CreateInstance(roomClass, GetNextFreeID(), settings, host) as BaseRoom;  //new BaseRoom(GetNextFreeID(), settings, host);
+            BaseRoom room = Activator.CreateInstance(roomClass, GetNextFreeID(), settings, host) as BaseRoom;
             rooms.Add(room);
             room.StartRoom();
             WebSocketListener.AddRoom(room);
@@ -31,7 +31,7 @@ namespace ServerHub.Rooms
 
         public static uint CreateRoom(RoomSettings settings)
         {
-            BaseRoom room = Activator.CreateInstance(roomClass, GetNextFreeID(), settings, new PlayerInfo("server", long.MaxValue)) as BaseRoom;  //new BaseRoom(GetNextFreeID(), settings, new PlayerInfo("server", long.MaxValue));
+            BaseRoom room = Activator.CreateInstance(roomClass, GetNextFreeID(), settings, new PlayerInfo("server", long.MaxValue)) as BaseRoom;
             room.noHost = true;
             rooms.Add(room);
             room.StartRoom();

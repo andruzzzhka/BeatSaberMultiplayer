@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 using static ServerHub.Hub.RCONStructs;
 using static ServerHub.Misc.Logger;
 using System.Diagnostics;
+using System.Text;
 #if DEBUG
 using System.IO.Pipes;
 using System.Diagnostics;
@@ -98,7 +99,7 @@ namespace ServerHub.Hub
             {
                 try
                 {
-                    Assembly assembly = Assembly.LoadFile(Path.GetFullPath(path));
+                    Assembly assembly = Assembly.LoadFrom(Path.GetFullPath(path));
                     foreach (Type t in assembly.GetTypes())
                     {
                         if (t.GetInterface("IPlugin") != null)
@@ -342,7 +343,8 @@ namespace ServerHub.Hub
                                                                 "saveroom [roomId] [presetname]",
                                                                 "cloneroom [roomId]",
                                                                 "destroyroom [roomId]",
-                                                                "destroyempty" })
+                                                                "destroyempty",
+                                                                "message [roomId] [displayTime] [fontSize] [text]"})
                             {
                                 commands += $"{Environment.NewLine}> {com}";
                             }
@@ -737,6 +739,57 @@ namespace ServerHub.Hub
                             }
                             return roomsStr;
                         }
+                        break;
+                    case "message":
+                        {
+                            if (HubListener.Listen)
+                            {
+                                if (comArgs.Length >= 4)
+                                {
+                                    uint roomId;
+                                    if (uint.TryParse(comArgs[0], out roomId))
+                                    {
+                                        List<BaseRoom> rooms = RoomsController.GetRoomsList();
+                                        if (rooms.Any(x => x.roomId == roomId))
+                                        {
+                                            float displayTime;
+                                            float fontSize;
+                                            if (float.TryParse(comArgs[1], out displayTime) && float.TryParse(comArgs[2], out fontSize))
+                                            {
+                                                List<byte> buffer = new List<byte>();
+
+                                                buffer.AddRange(BitConverter.GetBytes(displayTime));
+                                                buffer.AddRange(BitConverter.GetBytes(fontSize));
+
+                                                string message = string.Join(" ", comArgs.Skip(3).ToArray()).Replace("\\n", Environment.NewLine);
+
+                                                byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+
+                                                buffer.AddRange(BitConverter.GetBytes(messageBytes.Length));
+                                                buffer.AddRange(messageBytes);
+
+                                                BaseRoom room = rooms.First(x => x.roomId == roomId);
+                                                room.BroadcastPacket(new BasePacket(CommandType.DisplayMessage, buffer.ToArray()));
+                                                return $"Sent message \"{string.Join(" ", comArgs.Skip(3).ToArray())}\" to all players in room {roomId}!";
+                                            }
+                                            else
+                                                return $"Command usage: message [roomId] [displayTime] [fontSize] [text]";
+                                        }
+                                        else
+                                            return "Room with ID " + roomId + " not found!";
+                                    }
+                                    else
+                                    {
+                                        return $"Command usage: message [roomId] [displayTime] [fontSize] [text]";
+                                    }
+                                }
+                                else
+                                {
+                                    return $"Command usage: message [roomId] [displayTime] [fontSize] [text]";
+                                }
+                            }
+                        }
+                        break;
                     #endregion
 
                     #region RCON Commands
