@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 using static ServerHub.Hub.RCONStructs;
 using static ServerHub.Misc.Logger;
 using System.Diagnostics;
+using System.Text;
 #if DEBUG
 using System.IO.Pipes;
 using System.Diagnostics;
@@ -42,6 +43,10 @@ namespace ServerHub.Hub
         public static List<ulong> whitelistedIDs;
         public static List<string> whitelistedNames;
 
+        public static List<IPlugin> plugins;
+
+        public static List<Command> availableCommands = new List<Command>();
+
         static void Main(string[] args) => Start(args);
 
         static private Thread listenerThread { get; set; }
@@ -54,6 +59,17 @@ namespace ServerHub.Hub
 #endif
 
         static private void OnShutdown(ShutdownEventArgs obj) {
+            foreach (IPlugin plugin in plugins)
+            {
+                try
+                {
+                    plugin.ServerShutdown();
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"[{plugin.Name}] Exception on ServerShutdown event: {e}");
+                }
+            }
             HubListener.Stop();
         }
 
@@ -62,6 +78,85 @@ namespace ServerHub.Hub
             AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
 #endif
             UpdateLists();
+
+            if (!Directory.Exists("Plugins"))
+            {
+                try
+                {
+                    Directory.CreateDirectory("Plugins");
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Exception($"Unable to create Plugins folder! Exception: {e}");
+                }
+            }
+
+            Logger.Instance.Log($"Beat Saber Multiplayer ServerHub v{Assembly.GetEntryAssembly().GetName().Version}");
+
+            string[] pluginFiles = Directory.GetFiles("Plugins", "*.dll");
+
+            Logger.Instance.Log($"Found {pluginFiles.Length} plugins!");
+
+            plugins = new List<IPlugin>();
+
+            foreach (string path in pluginFiles)
+            {
+                try
+                {
+                    Assembly assembly = Assembly.LoadFrom(Path.GetFullPath(path));
+                    foreach (Type t in assembly.GetTypes())
+                    {
+                        if (t.GetInterface("IPlugin") != null)
+                        {
+                            try
+                            {
+                                IPlugin pluginInstance = Activator.CreateInstance(t) as IPlugin;
+
+                                plugins.Add(pluginInstance);
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.Instance.Error(string.Format("Unable to load plugin {0} in {1}! {2}", t.FullName, Path.GetFileName(path), e));
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Error($"Unable to load assembly {Path.GetFileName(path)}! Exception: {e}");
+                }
+            }
+
+            foreach(IPlugin plugin in plugins)
+            {
+                try
+                {
+                    if (plugin.Init())
+                    {
+                        Logger.Instance.Log("Initialized plugin: "+plugin.Name+" v"+plugin.Version);
+                        HighResolutionTimer.LoopTimer.Elapsed += (object sender, HighResolutionTimerElapsedEventArgs e) =>
+                        {
+                            try
+                            {
+                                plugin.Tick(sender, e);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Instance.Warning($"[{plugin.Name}] Exception on Tick event: {ex}");
+                            }
+                        };
+                    }
+                    else
+                    {
+                        plugins.Remove(plugin);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"[{plugin.Name}] Exception on Init event: {e}");
+                    plugins.Remove(plugin);
+                }
+            }
 
             if (args.Length > 0)
             {
@@ -103,8 +198,6 @@ namespace ServerHub.Hub
 
             IP = GetPublicIPv4();
 
-            Logger.Instance.Log($"Beat Saber Multiplayer ServerHub v{Assembly.GetEntryAssembly().GetName().Version}");
-
             VersionChecker.CheckForUpdates();
             
             Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
@@ -116,12 +209,25 @@ namespace ServerHub.Hub
             listenerThread.Start();
             HubListener.Listen = true;
 
+            foreach (IPlugin plugin in plugins)
+            {
+                try
+                {
+                    plugin.ServerStart();
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"[{plugin.Name}] Exception on ServerStart event: {e}");
+                }
+            }
+
             if (Settings.Instance.TournamentMode.Enabled)
                 CreateTournamentRooms();
 
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
-            
+
+
             while (HubListener.Listen)
             {
                 var x = Console.ReadLine();
@@ -227,34 +333,60 @@ namespace ServerHub.Hub
                     #region Console commands
                     case "help":
                         {
-                            string commands = "";
-                            foreach (var com in new[] {
-                        "help",
-                        "version",
-                        "quit",
-                        "clients",
-                        "blacklist [add/remove] [nick/playerID/IP]",
-                        "whitelist [enable/disable/add/remove] [nick/playerID/IP]",
-                        "tickrate [5-150]",
-                        "createroom [presetname]",
-                        "saveroom [roomId] [presetname]",
-                        "cloneroom [roomId]",
-                        "destroyroom [roomId]" ,
-                        "destroyempty"})
+                            string commands = $"{Environment.NewLine}Default:";
+                            foreach (var com in new string[]{   "help",
+                                                                "version",
+                                                                "quit",
+                                                                "clients",
+                                                                "blacklist [add/remove] [nick/playerID/IP]",
+                                                                "whitelist [enable/disable/add/remove] [nick/playerID/IP]",
+                                                                "tickrate [5-150]",
+                                                                "createroom [presetname]",
+                                                                "saveroom [roomId] [presetname]",
+                                                                "cloneroom [roomId]",
+                                                                "destroyroom [roomId]",
+                                                                "destroyempty",
+                                                                "message [roomId] [displayTime] [fontSize] [text]"})
                             {
                                 commands += $"{Environment.NewLine}> {com}";
                             }
+
+                            foreach (IPlugin plugin in plugins)
+                            {
+                                try
+                                {
+                                    commands += $"{Environment.NewLine}{plugin.Name}:";
+                                    plugin.Commands.ForEach(x => commands += $"{Environment.NewLine}> {x.help}");
+                                }
+                                catch
+                                {
+
+                                }
+                            }
+
                             return $"Commands:{commands}";
                         }
                     case "version":
-                        return $"{Assembly.GetEntryAssembly().GetName().Version}";
+                        string versions = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}";
+                        foreach (IPlugin plugin in plugins)
+                        {
+                            try
+                            {
+                                versions += $"\n{plugin.Name} v{plugin.Version}";
+                            }
+                            catch
+                            {
+
+                            }
+                        }
+                        return versions;
                     case "quit":
                         {
                             if (HubListener.Listen)
                             {
                                 Logger.Instance.Log("Shutting down...");
-                                List<Room> rooms = new List<Room>(RoomsController.GetRoomsList());
-                                foreach (Room room in rooms)
+                                List<BaseRoom> rooms = new List<BaseRoom>(RoomsController.GetRoomsList());
+                                foreach (BaseRoom room in rooms)
                                 {
                                     RoomsController.DestroyRoom(room.roomId, "ServerHub is shutting down...");
                                     HubListener.Stop();
@@ -495,7 +627,7 @@ namespace ServerHub.Hub
                                     uint roomId;
                                     if (uint.TryParse(comArgs[0], out roomId))
                                     {
-                                        Room room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
+                                        BaseRoom room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
                                         if (room != null)
                                         {
                                             string path = comArgs[1];
@@ -538,7 +670,7 @@ namespace ServerHub.Hub
                                     uint roomId;
                                     if (uint.TryParse(comArgs[0], out roomId))
                                     {
-                                        Room room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
+                                        BaseRoom room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
                                         if (room != null)
                                         {
                                             uint newRoomId = RoomsController.CreateRoom(room.roomSettings, room.roomHost);
@@ -609,6 +741,58 @@ namespace ServerHub.Hub
                             }
                             return roomsStr;
                         }
+                        break;
+                    case "message":
+                        {
+                            if (HubListener.Listen)
+                            {
+                                if (comArgs.Length >= 4)
+                                {
+                                    uint roomId;
+                                    if (uint.TryParse(comArgs[0], out roomId))
+                                    {
+                                        List<BaseRoom> rooms = RoomsController.GetRoomsList();
+                                        if (rooms.Any(x => x.roomId == roomId))
+                                        {
+                                            float displayTime;
+                                            float fontSize;
+                                            if (float.TryParse(comArgs[1], out displayTime) && float.TryParse(comArgs[2], out fontSize))
+                                            {
+                                                List<byte> buffer = new List<byte>();
+
+                                                buffer.AddRange(BitConverter.GetBytes(displayTime));
+                                                buffer.AddRange(BitConverter.GetBytes(fontSize));
+
+                                                string message = string.Join(" ", comArgs.Skip(3).ToArray()).Replace("\\n", Environment.NewLine);
+
+                                                byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+
+                                                buffer.AddRange(BitConverter.GetBytes(messageBytes.Length));
+                                                buffer.AddRange(messageBytes);
+
+                                                BaseRoom room = rooms.First(x => x.roomId == roomId);
+                                                room.BroadcastPacket(new BasePacket(CommandType.DisplayMessage, buffer.ToArray()));
+                                                room.BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(displayTime, fontSize, message));
+                                                return $"Sent message \"{string.Join(" ", comArgs.Skip(3).ToArray())}\" to all players in room {roomId}!";
+                                            }
+                                            else
+                                                return $"Command usage: message [roomId] [displayTime] [fontSize] [text]";
+                                        }
+                                        else
+                                            return "Room with ID " + roomId + " not found!";
+                                    }
+                                    else
+                                    {
+                                        return $"Command usage: message [roomId] [displayTime] [fontSize] [text]";
+                                    }
+                                }
+                                else
+                                {
+                                    return $"Command usage: message [roomId] [displayTime] [fontSize] [text]";
+                                }
+                            }
+                        }
+                        break;
                     #endregion
 
                     #region RCON Commands
@@ -661,6 +845,15 @@ namespace ServerHub.Hub
                             return "Created room with ID " + id;
                         }
                     #endregion
+                    default:
+                        {
+                            IPlugin plugin = plugins.FirstOrDefault(x => x.Commands.Any(y => y.name == comName));
+                            if (plugin != null)
+                            {
+                                Command comm = plugin.Commands.First(x => x.name == comName);
+                                return comm.function(comArgs);
+                            }
+                        }; break;
 #endif
                 }
 

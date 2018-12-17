@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CustomUI.BeatSaber;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,8 +19,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             if(firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
-                _destroyRoomButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
-                BeatSaberUI.SetButtonText(_destroyRoomButton, "DESTROY ROOM");
+                _destroyRoomButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _destroyRoomButton.SetButtonText("DESTROY ROOM");
                 _destroyRoomButton.onClick.AddListener(delegate() {
                     DestroyRoomPressed?.Invoke();
                 });

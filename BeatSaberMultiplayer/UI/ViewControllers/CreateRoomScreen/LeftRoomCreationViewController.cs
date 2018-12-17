@@ -1,8 +1,10 @@
 ﻿using BeatSaberMultiplayer.Misc;
+using CustomUI.BeatSaber;
 using HMUI;
 using SongLoaderPlugin;
 using SongLoaderPlugin.OverrideClasses;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,22 +35,22 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private Button _uncheckAllButton;
 
         TableView _songsTableView;
-        StandardLevelListTableCell _songTableCellInstance;
+        LevelListTableCell _songTableCellInstance;
 
-        public List<IStandardLevel> availableSongs;
-        public List<IStandardLevel> selectedSongs { get { return (availableSongs == null || _songsTableView == null) ? null : _songsTableView.GetPrivateField<HashSet<int>>("_selectedRows").Select(x => availableSongs[x]).ToList(); } }
+        public List<LevelSO> availableSongs;
+        public List<LevelSO> selectedSongs { get { return (availableSongs == null || _songsTableView == null) ? null : _songsTableView.GetPrivateField<HashSet<int>>("_selectedRows").Select(x => availableSongs[x]).ToList(); } }
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
-            if(firstActivation && activationType == ActivationType.AddedToHierarchy)
+            if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
-                _songTableCellInstance = Resources.FindObjectsOfTypeAll<StandardLevelListTableCell>().First(x => (x.name == "StandardLevelListTableCell"));
-                                
-                _checkAllButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
-                BeatSaberUI.SetButtonText(_checkAllButton, "Check all");
-                BeatSaberUI.SetButtonTextSize(_checkAllButton, 3f);
+                _songTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
+
+                _checkAllButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _checkAllButton.SetButtonText("Check all");
+                _checkAllButton.SetButtonTextSize(3f);
                 (_checkAllButton.transform as RectTransform).sizeDelta = new Vector2(30f, 6f);
-                (_checkAllButton.transform as RectTransform).anchoredPosition = new Vector2(-30f, 73f);
+                (_checkAllButton.transform as RectTransform).anchoredPosition = new Vector2(-15f, 36.25f);
                 _checkAllButton.onClick.RemoveAllListeners();
                 _checkAllButton.onClick.AddListener(delegate ()
                 {
@@ -61,12 +63,12 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     _songsTableView.SetPrivateField("_selectedRows", hashSet);
                     _songsTableView.RefreshCells(true);
                 });
-                
-                _uncheckAllButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
-                BeatSaberUI.SetButtonText(_uncheckAllButton, "Uncheck all");
-                BeatSaberUI.SetButtonTextSize(_uncheckAllButton, 3f);
+
+                _uncheckAllButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _uncheckAllButton.SetButtonText("Uncheck all");
+                _uncheckAllButton.SetButtonTextSize(3f);
                 (_uncheckAllButton.transform as RectTransform).sizeDelta = new Vector2(30f, 6f);
-                (_uncheckAllButton.transform as RectTransform).anchoredPosition = new Vector2(-60f, 73f);
+                (_uncheckAllButton.transform as RectTransform).anchoredPosition = new Vector2(15f, 36.25f);
                 _uncheckAllButton.onClick.RemoveAllListeners();
                 _uncheckAllButton.onClick.AddListener(delegate ()
                 {
@@ -100,7 +102,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _songsTableView = new GameObject().AddComponent<TableView>();
                 _songsTableView.transform.SetParent(rectTransform, false);
 
-                Mask viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<Mask>().First(), _songsTableView.transform, false);
+                _songsTableView.SetPrivateField("_isInitialized", false);
+                _songsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
+                _songsTableView.Init();
+
+                RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _songsTableView.transform, false);
                 viewportMask.transform.DetachChildren();
                 _songsTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 
@@ -112,12 +118,27 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 ReflectionUtil.SetPrivateField(_songsTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_songsTableView, "_pageDownButton", _pageDownButton);
 
-                _songsTableView.selectionType = TableView.SelectionType.Multiple;
+                _songsTableView.selectionType = TableViewSelectionType.Multiple;
                 _songsTableView.didSelectRowEvent += SongsTableView_DidSelectRow;
                 _songsTableView.dataSource = this;
-                
                 _songsTableView.ScrollToRow(0, false);
+                StartCoroutine(Scroll());
             }
+            else
+            {
+                _songsTableView.dataSource = this;
+                _songsTableView.ScrollToRow(0, false);
+                StartCoroutine(Scroll());
+            }
+
+        }
+
+        IEnumerator Scroll()
+        {
+            yield return null;
+            yield return null;
+            _songsTableView.ScrollToRow(0, false);
+
         }
 
         public bool CheckRequirements()
@@ -125,23 +146,34 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             return selectedSongs != null && selectedSongs.Count > 0;
         }
 
-        public void SetSongs(List<IStandardLevel> levels)
+        public void SetSongs(List<LevelSO> levels)
         {
             availableSongs = levels;
 
             if (_songsTableView != null)
             {
-                if (_songsTableView.dataSource != this)
-                {
-                    _songsTableView.dataSource = this;
-                }
-                else
-                {
-                    _songsTableView.ReloadData();
-                }
+                _songsTableView.dataSource = this;
 
                 _songsTableView.ScrollToRow(0, false);
             }
+        }
+
+        public void SelectSongs(List<string> levelIds)
+        {
+            _songsTableView.GetPrivateField<List<TableCell>>("_visibleCells").ForEach(x => x.selected = levelIds.Any(y => y == (availableSongs[x.idx].levelID.Substring(0, Math.Min(32, availableSongs[x.idx].levelID.Length)))));
+
+            HashSet<int> hashSet = new HashSet<int>();
+
+            for (int i = 0; i < availableSongs.Count; i++)
+            {
+                if(levelIds.Any(x => x == availableSongs[i].levelID.Substring(0, Math.Min(32, availableSongs[i].levelID.Length))))
+                {
+                    hashSet.Add(i);
+                }
+
+            }
+            _songsTableView.SetPrivateField("_selectedRows", hashSet);
+            _songsTableView.RefreshCells(true);
         }
 
         private void SongsTableView_DidSelectRow(TableView sender, int row)
@@ -150,16 +182,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             else SongLoaded(availableSongs[row]);
         }
 
-        private void SongLoaded(IStandardLevel song) 
+        private void SongLoaded(LevelSO song) 
 		{
             PreviewPlayer.CrossfadeTo(song.audioClip, song.previewStartTime, song.previewDuration, 1f);
         }
 
         public TableCell CellForRow(int row)
         {
-            StandardLevelListTableCell cell = Instantiate(_songTableCellInstance);
+            LevelListTableCell cell = Instantiate(_songTableCellInstance);
 
-            IStandardLevel song = availableSongs[row];
+            LevelSO song = availableSongs[row];
 
             cell.coverImage = song.coverImage;
             cell.songName = $"{song.songName}\n<size=80%>{song.songSubName}</size>";

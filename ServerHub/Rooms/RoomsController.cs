@@ -10,13 +10,16 @@ namespace ServerHub.Rooms
 {
     public enum JoinResult : byte { Success, RoomNotFound, IncorrectPassword, TooMuchPlayers}
 
-    static class RoomsController
+    public static class RoomsController
     {
-        static List<Room> rooms = new List<Room>();
+        public static Type roomClass = typeof(BaseRoom);
+
+        static List<BaseRoom> rooms = new List<BaseRoom>();
 
         public static uint CreateRoom(RoomSettings settings, PlayerInfo host)
         {
-            Room room = new Room(GetNextFreeID(), settings, host);
+
+            BaseRoom room = Activator.CreateInstance(roomClass, GetNextFreeID(), settings, host) as BaseRoom;
             rooms.Add(room);
             room.StartRoom();
             WebSocketListener.AddRoom(room);
@@ -28,8 +31,8 @@ namespace ServerHub.Rooms
 
         public static uint CreateRoom(RoomSettings settings)
         {
-            Room room = new Room(GetNextFreeID(), settings, new PlayerInfo("server", long.MaxValue));
-            room.firstPlayerHost = true;
+            BaseRoom room = Activator.CreateInstance(roomClass, GetNextFreeID(), settings, new PlayerInfo("server", long.MaxValue)) as BaseRoom;
+            room.noHost = true;
             rooms.Add(room);
             room.StartRoom();
             WebSocketListener.AddRoom(room);
@@ -46,7 +49,7 @@ namespace ServerHub.Rooms
 #endif
             if (rooms.Any(x => x.roomId == roomId))
             {
-                Room room = rooms.First(x => x.roomId == roomId);
+                BaseRoom room = rooms.First(x => x.roomId == roomId);
                 room.StopRoom();
                 WebSocketListener.DestroyRoom(room);
 
@@ -77,7 +80,7 @@ namespace ServerHub.Rooms
 #endif
             if (rooms.Any(x => x.roomId == roomId))
             {
-                Room room = rooms.First(x => x.roomId == roomId);
+                BaseRoom room = rooms.First(x => x.roomId == roomId);
                 RoomInfo roomInfo = room.GetRoomInfo();
 
                 if (roomInfo.players < roomInfo.maxPlayers || roomInfo.maxPlayers == 0)
@@ -131,9 +134,9 @@ namespace ServerHub.Rooms
             }
         } 
 
-        public static void AddClient(Room room, Client client)
+        public static void AddClient(BaseRoom room, Client client)
         {
-            if (room.GetRoomInfo().players == 0 && room.firstPlayerHost)
+            if (room.GetRoomInfo().players == 0 && room.noHost)
                 room.ForceTransferHost(client.playerInfo);
 
             room.roomClients.Add(client);
@@ -141,7 +144,7 @@ namespace ServerHub.Rooms
 
         public static void ClientLeftRoom(Client client)
         {
-            Room room = rooms.Find(x => x.roomId == client.joinedRoomID);
+            BaseRoom room = rooms.Find(x => x.roomId == client.joinedRoomID);
             if (room != null)
             {
                 room.PlayerLeft(client);
@@ -159,7 +162,7 @@ namespace ServerHub.Rooms
             return rooms.Select(x => x.GetRoomInfo()).ToList();
         }
 
-        public static List<Room> GetRoomsList()
+        public static List<BaseRoom> GetRoomsList()
         {
             return rooms;
         }

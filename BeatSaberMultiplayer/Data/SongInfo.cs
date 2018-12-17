@@ -1,13 +1,29 @@
 ﻿using BeatSaberMultiplayer.Misc;
+using SongLoaderPlugin;
+using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace BeatSaberMultiplayer.Data
 {
     public class SongInfo
     {
+        public static Dictionary<string, byte> originalLevels = new Dictionary<string, byte>() { { "100Bills", 1 },
+                                                                                                 { "Escape", 2 },
+                                                                                                 { "Legend", 3 },
+                                                                                                 { "BeatSaber", 4 },
+                                                                                                 { "AngelVoices", 5 },
+                                                                                                 { "CountryRounds", 6 },
+                                                                                                 { "BalearicPumping", 7 },
+                                                                                                 { "Breezer", 8 },
+                                                                                                 { "CommercialPumping", 9 },
+                                                                                                 { "TurnMeOn", 10 },
+                                                                                                 { "LvlInsane", 11 },
+                                                                                                 { "OneHope", 12 }};
+
         public string songName;
         public string levelId;
         public float songDuration;
@@ -24,9 +40,10 @@ namespace BeatSaberMultiplayer.Data
                 int nameLength = BitConverter.ToInt32(data, 0);
                 songName = Encoding.UTF8.GetString(data, 4, nameLength);
 
+
                 if (data.Skip(5 + nameLength).Take(15).Max() == 0)
                 {
-                    levelId = "Level" + data[4 + nameLength];
+                    levelId = originalLevels.First(x => x.Value == data[4 + nameLength]).Key;
                 }
                 else
                 {
@@ -45,14 +62,14 @@ namespace BeatSaberMultiplayer.Data
             buffer.AddRange(BitConverter.GetBytes(nameBuffer.Length));
             buffer.AddRange(nameBuffer);
 
-            if (levelId.Length == 32)
+            if (originalLevels.ContainsKey(levelId))
+            {
+                buffer.Add(originalLevels[levelId]);
+                buffer.AddRange(new byte[15]);
+            }
+            else
             {
                 buffer.AddRange(HexConverter.ConvertHexToBytesX(levelId));
-            }
-            else if(levelId.StartsWith("Level"))
-            {
-                buffer.Add(byte.Parse(levelId.Substring(5)));
-                buffer.AddRange(new byte[15]);
             }
 
             buffer.AddRange(BitConverter.GetBytes(songDuration));
@@ -61,6 +78,36 @@ namespace BeatSaberMultiplayer.Data
                 buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));
 
             return buffer.ToArray();
+        }
+
+        public string GetSongKey()
+        {
+            if (!originalLevels.ContainsKey(levelId)) {
+                CustomLevel level = SongLoader.CustomLevels.FirstOrDefault(x => x.levelID.Contains(levelId));
+                if (level != null)
+                {
+                    Regex expression = new Regex(@"\d{1,}-\d{1,}");
+                    string match = expression.Match(level.customSongInfo.path).Value;
+                    if (string.IsNullOrEmpty(match))
+                    {
+                        Logger.Warning("Unable to retrieve BeatSaver ID of the song from the path! Are you sure you are using the correct folder structure?");
+                        return "0-0";
+                    }
+                    else
+                    {
+                        return match;
+                    }
+                }
+                else
+                {
+                    Logger.Warning("Song with id "+levelId+" not found!");
+                    return "0-0";
+                }
+            }
+            else
+            {
+                return "0-0";
+            }
         }
 
         public override bool Equals(object obj)

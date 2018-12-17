@@ -19,7 +19,7 @@ namespace ServerHub.Data
 
         }
 
-        public RoomPreset(Room room)
+        public RoomPreset(BaseRoom room)
         {
             settings = room.roomSettings;
             songs = ConvertSongHashes(settings.AvailableSongs.ConvertAll(x => x.levelId));

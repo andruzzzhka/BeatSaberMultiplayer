@@ -1,6 +1,7 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.UIElements;
+using CustomUI.BeatSaber;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +16,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 {
     class MainRoomCreationViewController : VRUIViewController
     {
+        public event Action didFinishEvent;
+        public event Action<CustomKeyboardViewController> keyboardDidFinishEvent;
         public event Action<RoomSettings> CreatedRoom;
+        public event Action<RoomSettings, string> SavePresetPressed;
+        public event Action LoadPresetPressed;
 
         private Button _backButton;
         private Button _editNameButton;
@@ -28,9 +33,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private TextMeshProUGUI _passwordText;
 
         private Button _createRoomButton;
+        private Button _loadPresetButton;
+        private Button _savePresetButton;
 
         private CustomKeyboardViewController _nameKeyboard;
         private CustomKeyboardViewController _passwordKeyboard;
+        private CustomKeyboardViewController _presetNameKeyboard;
+
+        private string _presetName;
 
         private string _roomName;
         private string _roomPassword;
@@ -44,12 +54,17 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             if(firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
                 _backButton = BeatSaberUI.CreateBackButton(rectTransform);
-                _backButton.onClick.AddListener(delegate () { DismissModalViewController(null, false); });
+                _backButton.onClick.AddListener(delegate () { didFinishEvent?.Invoke(); });
 
                 _nameKeyboard = BeatSaberUI.CreateViewController<CustomKeyboardViewController>();
                 _nameKeyboard.enterButtonPressed += NameEntered;
+                _nameKeyboard.backButtonPressed += () => { keyboardDidFinishEvent?.Invoke(_nameKeyboard); };
                 _passwordKeyboard = BeatSaberUI.CreateViewController<CustomKeyboardViewController>();
                 _passwordKeyboard.enterButtonPressed += PasswordEntered;
+                _passwordKeyboard.backButtonPressed += () => { keyboardDidFinishEvent?.Invoke(_passwordKeyboard); };
+                _presetNameKeyboard = BeatSaberUI.CreateViewController<CustomKeyboardViewController>();
+                _presetNameKeyboard.enterButtonPressed += PresetNameEntered;
+                _presetNameKeyboard.backButtonPressed += () => { keyboardDidFinishEvent?.Invoke(_presetNameKeyboard); };
 
                 _usePasswordToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "Use Password");
                 (_usePasswordToggle.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
@@ -84,64 +99,95 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _noFailToggle.Value = _noFailMode;
 
                 _roomName = $"{GetUserInfo.GetUserName()}'s room".ToUpper();
-                _nameText = BeatSaberUI.CreateText(rectTransform, _roomName, new Vector2(-15f, -14.5f));
+                _nameText = BeatSaberUI.CreateText(rectTransform, _roomName, new Vector2(-22.5f, 25f));
                 _nameText.fontSize = 5f;
 
-                _editNameButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
-                BeatSaberUI.SetButtonText(_editNameButton, "EDIT NAME");
+                _editNameButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _editNameButton.SetButtonText("EDIT NAME");
                 (_editNameButton.transform as RectTransform).sizeDelta = new Vector2(34f, 8f);
-                (_editNameButton.transform as RectTransform).anchoredPosition = new Vector2(-37.5f, 63f);
+                (_editNameButton.transform as RectTransform).anchoredPosition = new Vector2(34f, 25f);
                 _editNameButton.onClick.RemoveAllListeners();
                 _editNameButton.onClick.AddListener(delegate ()
                 {
                     _nameKeyboard._inputString = _roomName;
-                    PresentModalViewController(_nameKeyboard, null);
+                    PluginUI.instance.roomCreationFlowCoordinator.PresentKeyboard(_nameKeyboard);
                 });
                 
                 _roomPassword = "";
-                _passwordText = BeatSaberUI.CreateText(rectTransform, "ENTER PASSWORD", new Vector2(-15f, -25.5f));
+                _passwordText = BeatSaberUI.CreateText(rectTransform, "ENTER PASSWORD", new Vector2(-22.5f, 15f));
                 _passwordText.fontSize = 5f;
 
-                _editPasswordButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
-                BeatSaberUI.SetButtonText(_editPasswordButton, "EDIT PASS");
+                _editPasswordButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _editPasswordButton.SetButtonText("EDIT PASS");
                 (_editPasswordButton.transform as RectTransform).sizeDelta = new Vector2(34f, 8f);
-                (_editPasswordButton.transform as RectTransform).anchoredPosition = new Vector2(-37.5f, 53f);
+                (_editPasswordButton.transform as RectTransform).anchoredPosition = new Vector2(34f, 15f);
                 _editPasswordButton.onClick.RemoveAllListeners();
                 _editPasswordButton.onClick.AddListener(delegate ()
                 {
                     _passwordKeyboard._inputString = _roomPassword;
-                    PresentModalViewController(_passwordKeyboard, null);
+                    PluginUI.instance.roomCreationFlowCoordinator.PresentKeyboard(_passwordKeyboard);
                 });
 
-                _createRoomButton = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
-                BeatSaberUI.SetButtonText(_createRoomButton, "Create Room");
+                _createRoomButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _createRoomButton.SetButtonText("Create Room");
                 (_createRoomButton.transform as RectTransform).sizeDelta = new Vector2(30f, 10f);
-                (_createRoomButton.transform as RectTransform).anchoredPosition = new Vector2(-65f, 1.5f);
+                (_createRoomButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -32.5f);
                 _createRoomButton.onClick.RemoveAllListeners();
                 _createRoomButton.onClick.AddListener(delegate () {
                     CreatedRoom?.Invoke(new RoomSettings() { Name = _roomName, UsePassword = _usePassword, Password = _roomPassword, NoFail = _noFailMode, MaxPlayers = _maxPlayers, SelectionType = _songSelectionType});
                 });
-                CheckRequirements();
+                _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
+
+                _savePresetButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _savePresetButton.SetButtonText("Save Preset");
+                (_savePresetButton.transform as RectTransform).sizeDelta = new Vector2(30f, 10f);
+                (_savePresetButton.transform as RectTransform).anchoredPosition = new Vector2(-32f, -32.5f);
+                _savePresetButton.onClick.RemoveAllListeners();
+                _savePresetButton.onClick.AddListener(delegate () {
+                    _presetNameKeyboard._inputString = "NEW PRESET";
+                    PluginUI.instance.roomCreationFlowCoordinator.PresentKeyboard(_presetNameKeyboard);
+                });
+
+                _loadPresetButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _loadPresetButton.SetButtonText("Load Preset");
+                (_loadPresetButton.transform as RectTransform).sizeDelta = new Vector2(30f, 10f);
+                (_loadPresetButton.transform as RectTransform).anchoredPosition = new Vector2(32f, -32.5f);
+                _loadPresetButton.onClick.RemoveAllListeners();
+                _loadPresetButton.onClick.AddListener(delegate () {
+                    LoadPresetPressed?.Invoke();
+                });
             }
             else
             {
-                _roomPassword = "";
-                _roomName = $"{GetUserInfo.GetUserName()}'s room".ToUpper();
-                _songSelectionList.Value = (int)_songSelectionType;
-                _songSelectionList.textForValues = new string[] { "Manual", "Random", "Voting" };
-                _songSelectionList.UpdateText();
-                _noFailToggle.Value = _noFailMode;
-                _maxPlayersList.Value = _maxPlayers;
-                _createRoomButton.interactable = true;
-
-                CheckRequirements();
+                _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
             }
 
         }
 
-        protected override void LeftAndRightScreenViewControllers(out VRUIViewController leftScreenViewController, out VRUIViewController rightScreenViewController)
+        public void ApplyRoomSettings(RoomSettings settings)
         {
-            PluginUI.instance.roomCreationFlowCoordinator.LeftAndRightScreenViewControllers(out leftScreenViewController, out rightScreenViewController);
+            _roomName = settings.Name;
+
+            _usePassword = settings.UsePassword;
+            _usePasswordToggle.Value = _usePassword;
+
+            _roomPassword = settings.Password;
+
+            _noFailMode = settings.NoFail;
+            _noFailToggle.Value = _noFailMode;
+
+            _maxPlayers = settings.MaxPlayers;
+            _maxPlayersList.Value = _maxPlayers;
+
+            _songSelectionType = settings.SelectionType;
+            _songSelectionList.Value = (int)_songSelectionType;
+            _songSelectionList.textForValues = new string[] { "Manual", "Random", "Voting" };
+            _songSelectionList.UpdateText();
+
+            _passwordText.text = string.IsNullOrEmpty(_roomPassword) ? "ENTER PASSWORD" : _roomPassword.ToUpper();
+            _nameText.text = string.IsNullOrEmpty(_roomName) ? "ENTER ROOM NAME" : _roomName.ToUpper();
+
+            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
         }
 
         private void SongSelection_ValueChanged(int obj)
@@ -156,16 +202,26 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         private void PasswordEntered(string obj)
         {
+            keyboardDidFinishEvent?.Invoke(_passwordKeyboard);
             _roomPassword = obj.ToUpper();
             _passwordText.text = string.IsNullOrEmpty(obj) ? "ENTER PASSWORD" : obj.ToUpper();
-            CheckRequirements();
+            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
         }
 
         private void NameEntered(string obj)
         {
+            keyboardDidFinishEvent?.Invoke(_nameKeyboard);
             _roomName = obj.ToUpper();
             _nameText.text = string.IsNullOrEmpty(obj) ? "ENTER ROOM NAME" : obj.ToUpper();
-            CheckRequirements();
+            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
+        }
+
+        private void PresetNameEntered(string obj)
+        {
+            keyboardDidFinishEvent?.Invoke(_presetNameKeyboard);
+            _presetName = obj.ToUpper();
+            SavePresetPressed?.Invoke(new RoomSettings() { Name = _roomName, UsePassword = _usePassword, Password = _roomPassword, NoFail = _noFailMode, MaxPlayers = _maxPlayers, SelectionType = _songSelectionType }, _presetName);
+
         }
 
         private void NoFailToggle_ValueChanged(bool value)
@@ -176,12 +232,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private void UsePasswordToggle_ValueChanged(bool value)
         {
             _usePassword = value;
-            CheckRequirements();
+            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
         }
 
         public void Update()
         {
-            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
+            if(isInViewControllerHierarchy)
+                _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
         }
 
         public void CreateButtonInteractable(bool interactable)
@@ -193,7 +250,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         {
             return (!_usePassword || (_usePassword && !string.IsNullOrEmpty(_roomPassword))) && !string.IsNullOrEmpty(_roomName);
         }
-
-
+        
     }
 }

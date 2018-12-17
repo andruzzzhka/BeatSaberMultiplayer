@@ -1,4 +1,5 @@
 ﻿using BeatSaberMultiplayer.Misc;
+using CustomUI.BeatSaber;
 using HMUI;
 using SongLoaderPlugin.OverrideClasses;
 using System;
@@ -15,7 +16,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
     class SongSelectionViewController : VRUIViewController, TableView.IDataSource
     {
-        public event Action<IStandardLevel> SongSelected;
+        public event Action<LevelSO> SongSelected;
 
         private Button _pageUpButton;
         private Button _pageDownButton;
@@ -23,15 +24,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         TextMeshProUGUI _hostIsSelectingSongText;
 
         TableView _songsTableView;
-        StandardLevelListTableCell _songTableCellInstance;
+        LevelListTableCell _songTableCellInstance;
 
-        List<IStandardLevel> availableSongs = new List<IStandardLevel>();
+        List<LevelSO> availableSongs = new List<LevelSO>();
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
             if (firstActivation && type == ActivationType.AddedToHierarchy)
             {
-                _songTableCellInstance = Resources.FindObjectsOfTypeAll<StandardLevelListTableCell>().First(x => (x.name == "StandardLevelListTableCell"));
+                _songTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
 
                 _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
@@ -60,7 +61,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _songsTableView = new GameObject().AddComponent<TableView>();
                 _songsTableView.transform.SetParent(rectTransform, false);
 
-                Mask viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<Mask>().First(), _songsTableView.transform, false);
+                _songsTableView.SetPrivateField("_isInitialized", false);
+                _songsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
+                _songsTableView.Init();
+
+                RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _songsTableView.transform, false);
                 viewportMask.transform.DetachChildren();
                 _songsTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 
@@ -76,7 +81,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _songsTableView.didSelectRowEvent += SongsTableView_DidSelectRow;
                 _songsTableView.dataSource = this;
 
-                _hostIsSelectingSongText = BeatSaberUI.CreateText(rectTransform, "Host is selecting song...", new Vector2(0f, -25f));
+                _hostIsSelectingSongText = BeatSaberUI.CreateText(rectTransform, "Host is selecting song...", new Vector2(0f, 0f));
                 _hostIsSelectingSongText.fontSize = 8f;
                 _hostIsSelectingSongText.alignment = TextAlignmentOptions.Center;
                 _hostIsSelectingSongText.rectTransform.sizeDelta = new Vector2(120f, 6f);
@@ -86,12 +91,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             {
                 _songsTableView.ReloadData();
             }
-
-        }
-
-        protected override void LeftAndRightScreenViewControllers(out VRUIViewController leftScreenViewController, out VRUIViewController rightScreenViewController)
-        {
-            PluginUI.instance.roomFlowCoordinator.GetLeftAndRightScreenViewControllers(out leftScreenViewController, out rightScreenViewController);
         }
 
         private void SongsTableView_DidSelectRow(TableView sender, int row)
@@ -99,20 +98,23 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             SongSelected?.Invoke(availableSongs[row]);
         }
 
-        public void SetSongs(List<IStandardLevel> levels)
+        public void SetSongs(List<LevelSO> levels)
         {
             availableSongs = levels;
 
-            if (_songsTableView.dataSource != this)
+            if (_songsTableView != null)
             {
-                _songsTableView.dataSource = this;
-            }
-            else
-            {
-                _songsTableView.ReloadData();
-            }
+                if (_songsTableView.dataSource != this)
+                {
+                    _songsTableView.dataSource = this;
+                }
+                else
+                {
+                    _songsTableView.ReloadData();
+                }
 
-            _songsTableView.ScrollToRow(0, false);
+                _songsTableView.ScrollToRow(0, false);
+            }
         }
 
         public void ScrollToLevel(string levelId)
@@ -134,9 +136,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public TableCell CellForRow(int row)
         {
-            StandardLevelListTableCell cell = Instantiate(_songTableCellInstance);
+            LevelListTableCell cell = Instantiate(_songTableCellInstance);
 
-            IStandardLevel song = availableSongs[row];
+            LevelSO song = availableSongs[row];
 
             cell.coverImage = song.coverImage;
             cell.songName = $"{song.songName}\n<size=80%>{song.songSubName}</size>";

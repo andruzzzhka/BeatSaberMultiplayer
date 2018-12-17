@@ -52,39 +52,38 @@ namespace BeatSaberMultiplayer
             {
                 Instance = this;
                 DontDestroyOnLoad(this);
-
-                SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
+                
                 Client.ClientCreated += ClientCreated;
                 _currentScene = SceneManager.GetActiveScene();
             }
         }
 
-        private void SceneManager_activeSceneChanged(Scene prev, Scene next)
+        public void ActiveSceneChanged(Scene from, Scene to)
         {
             try
             {
-                if (next.name.EndsWith("Environment"))
+                if (to.name == "GameCore" || (from.name == "EmptyTransition" && to.name == "Menu"))
                 {
-                    _currentScene = next;
-                    TogglePlayerAvatar(!(Client.instance != null && Client.instance.Connected));
-                    DestroyAvatar();
-                    StartCoroutine(WaitForControllers());
-                }
-                else if (next.name == "Menu")
-                {
-                    _currentScene = next;
-                    TogglePlayerAvatar(true);
-                    DestroyAvatar();
+                    _currentScene = to;
+                    if (to.name == "GameCore")
+                    {
+                        DestroyAvatar();
+                        StartCoroutine(WaitForControllers());
+                    }
+                    else if (to.name == "Menu")
+                    {
+                        DestroyAvatar();
+                    }
                 }
             }catch(Exception e)
             {
-                Log.Warning($"(Spectator) Exception on {next.name} scene load! {e}");
+                Misc.Logger.Warning($"(Spectator) Exception on {to.name} scene activation! Exception: {e}");
             }
         }
 
         IEnumerator WaitForControllers()
         {
-            Log.Info("Waiting for controllers...");
+            Misc.Logger.Info("Waiting for controllers...");
             yield return new WaitWhile(delegate() { return !Resources.FindObjectsOfTypeAll<Saber>().Any(); });
 
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
@@ -102,11 +101,11 @@ namespace BeatSaberMultiplayer
 
             _playerController = Resources.FindObjectsOfTypeAll<PlayerController>().First();
 
-            Log.Info("Controllers found!");
+            Misc.Logger.Info("Controllers found!");
 
             _scoreController = FindObjectOfType<ScoreController>();
 
-            Log.Info("Score controller found!");
+            Misc.Logger.Info("Score controller found!");
         }
 
         private void ClientCreated()
@@ -117,7 +116,7 @@ namespace BeatSaberMultiplayer
 
         private void PacketReceived(BasePacket packet)
         {
-            if (Config.Instance.SpectatorMode && _currentScene.name.EndsWith("Environment"))
+            if (Config.Instance.SpectatorMode && _currentScene.name == "GameCore")
             {
                 if (packet.commandType == CommandType.UpdatePlayerInfo)
                 {
@@ -154,7 +153,7 @@ namespace BeatSaberMultiplayer
                         catch (Exception e)
                         {
 #if DEBUG
-                            Log.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
+                            Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
 #endif
                         }
                     }
@@ -163,7 +162,7 @@ namespace BeatSaberMultiplayer
                     if (_playerInfos.Count > 1 && _spectatedPlayer == null)
                     {
                         _spectatedPlayer = _playerInfos.First(x => !x.Key.Equals(Client.instance.playerInfo)).Value.Last();
-                        Log.Info("Spectating " + _spectatedPlayer.playerName);
+                        Misc.Logger.Info("Spectating " + _spectatedPlayer.playerName);
                     }
                     
                     if (_spectatedPlayer != null)
@@ -227,7 +226,7 @@ namespace BeatSaberMultiplayer
                             {
 #if DEBUG
                                 if(_playerInfos[_spectatedPlayer].Last().playerProgress > 2f)
-                                    Log.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
+                                    Misc.Logger.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
 #endif
                                 SetPositionInSong(_playerInfos[_spectatedPlayer].Last().playerProgress - 1f);
                                 InGameOnlineController.Instance.PauseSong();
@@ -238,7 +237,7 @@ namespace BeatSaberMultiplayer
                             {
 #if DEBUG
                                 if (_playerInfos[_spectatedPlayer].Last().playerProgress > 2f)
-                                    Log.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
+                                    Misc.Logger.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
 #endif
                                 InGameOnlineController.Instance.PauseSong();
                                 _paused = true;
@@ -254,20 +253,6 @@ namespace BeatSaberMultiplayer
             if(_spectatedPlayerAvatar != null && _spectatedPlayerAvatar.gameObject != null)
             {
                 Destroy(_spectatedPlayerAvatar.gameObject);
-            }
-        }
-
-        public void TogglePlayerAvatar(bool enabled)
-        {
-            SetRendererInChilds(CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetPrivateField<SpawnedAvatar>("_currentSpawnedPlayerAvatar").GameObject.transform, enabled);
-        }
-
-        private void SetRendererInChilds(Transform origin, bool enabled)
-        {
-            Renderer[] rends = origin.gameObject.GetComponentsInChildren<Renderer>();
-            foreach (Renderer rend in rends)
-            {
-                rend.enabled = enabled;
             }
         }
 
@@ -301,7 +286,7 @@ namespace BeatSaberMultiplayer
                 {
                     if(_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime > 1.9f)
                     {
-                        Log.Info("Resuming song...");
+                        Misc.Logger.Info("Resuming song...");
                         InGameOnlineController.Instance.ResumeSong();
                         _paused = false;
                     }

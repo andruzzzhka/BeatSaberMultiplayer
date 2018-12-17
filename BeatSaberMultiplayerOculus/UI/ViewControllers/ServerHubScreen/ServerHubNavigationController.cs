@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CustomUI.BeatSaber;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,10 +12,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
 {
     class ServerHubNavigationController : VRUINavigationController
     {
+        public event Action didFinishEvent;
+
         private GameObject _loadingIndicator;
         private Button _backButton;
-
-        public RoomListViewController roomListViewController;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -24,11 +25,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 if (activationType == ActivationType.AddedToHierarchy)
                 {
                     _backButton = BeatSaberUI.CreateBackButton(rectTransform);
-                    _backButton.onClick.AddListener(delegate () { DismissModalViewController(null, false); });
+                    _backButton.onClick.AddListener(delegate () { didFinishEvent?.Invoke(); });
 
-                    _loadingIndicator = BeatSaberUI.CreateLoadingIndicator(rectTransform);
-
-                    roomListViewController = BeatSaberUI.CreateViewController<RoomListViewController>();
+                    _loadingIndicator = BeatSaberUI.CreateLoadingSpinner(rectTransform);
                 }
             }
         }

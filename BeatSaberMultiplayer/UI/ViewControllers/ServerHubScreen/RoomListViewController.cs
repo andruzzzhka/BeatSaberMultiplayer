@@ -1,6 +1,7 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
+using CustomUI.BeatSaber;
 using HMUI;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
         private Button _createRoom;
 
         TableView _serverTableView;
-        StandardLevelListTableCell _serverTableCellInstance;
+        LevelListTableCell _serverTableCellInstance;
 
         List<RoomInfo> availableRooms = new List<RoomInfo>();
 
@@ -31,7 +32,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
         {
             if (firstActivation && type == ActivationType.AddedToHierarchy)
             {
-                _serverTableCellInstance = Resources.FindObjectsOfTypeAll<StandardLevelListTableCell>().First(x => (x.name == "StandardLevelListTableCell"));
+                _serverTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
 
                 _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
@@ -57,11 +58,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 });
                 _pageDownButton.interactable = false;
 
-                _createRoom = BeatSaberUI.CreateUIButton(rectTransform, "SettingsButton");
-                BeatSaberUI.SetButtonText(_createRoom, "Create room");
-                BeatSaberUI.SetButtonTextSize(_createRoom, 3f);
-                (_createRoom.transform as RectTransform).sizeDelta = new Vector2(38f, 6f);
-                (_createRoom.transform as RectTransform).anchoredPosition = new Vector2(-60f, 73f);
+                _createRoom = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _createRoom.SetButtonText("Create room");
+                _createRoom.SetButtonTextSize(3f);
+                (_createRoom.transform as RectTransform).sizeDelta = new Vector2(38f, 8f);
+                (_createRoom.transform as RectTransform).anchoredPosition = new Vector2(0f, 36f);
                 _createRoom.onClick.RemoveAllListeners();
                 _createRoom.onClick.AddListener(delegate ()
                 {
@@ -71,7 +72,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 _serverTableView = new GameObject().AddComponent<TableView>();
                 _serverTableView.transform.SetParent(rectTransform, false);
 
-                Mask viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<Mask>().First(), _serverTableView.transform, false);
+                _serverTableView.SetPrivateField("_isInitialized", false);
+                _serverTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
+                _serverTableView.Init();
+
+                RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _serverTableView.transform, false);
                 viewportMask.transform.DetachChildren();
                 _serverTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 
@@ -79,7 +84,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 (_serverTableView.transform as RectTransform).anchorMax = new Vector2(0.7f, 0.5f);
                 (_serverTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 60f);
                 (_serverTableView.transform as RectTransform).position = new Vector3(0f, 0f, 2.4f);
-                (_serverTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
+                (_serverTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -2.5f);
 
                 ReflectionUtil.SetPrivateField(_serverTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_serverTableView, "_pageDownButton", _pageDownButton);
@@ -125,7 +130,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
 
         public TableCell CellForRow(int row)
         {
-            StandardLevelListTableCell cell = Instantiate(_serverTableCellInstance);
+            LevelListTableCell cell = Instantiate(_serverTableCellInstance);
             cell.reuseIdentifier = "ServerTableCell";
 
             RoomInfo room = availableRooms[row];

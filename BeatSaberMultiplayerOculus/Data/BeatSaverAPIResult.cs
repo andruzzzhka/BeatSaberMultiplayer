@@ -1,15 +1,14 @@
-﻿using SimpleJSON;
-using SongLoaderPlugin;
-using SongLoaderPlugin.OverrideClasses;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using SimpleJSON;
+using SongLoaderPlugin;
+using SongLoaderPlugin.OverrideClasses;
 
-namespace BeatSaberMultiplayer.Data
+namespace BeatSaberMultiplayer.Misc
 {
-    public enum SongQueueState { Available, Queued, Downloading, Downloaded, Error };
+    public enum SongQueueState { Queued, Downloading, Downloaded, Error }; 
 
     [Serializable]
     public class DifficultyLevel
@@ -60,7 +59,7 @@ namespace BeatSaberMultiplayer.Data
 
         public string path;
 
-        public SongQueueState songQueueState = SongQueueState.Available;
+        public SongQueueState songQueueState = SongQueueState.Queued;
 
         public float downloadingProgress = 0f;
 
@@ -87,6 +86,7 @@ namespace BeatSaberMultiplayer.Data
             coverUrl = jsonNode["coverUrl"];
             downloadUrl = jsonNode["downloadUrl"];
             hash = jsonNode["hashMd5"];
+            hash = hash.ToUpper();
 
             var difficultyNode = jsonNode["difficulties"];
 
@@ -116,11 +116,11 @@ namespace BeatSaberMultiplayer.Data
             buffer.coverUrl = mainNode["coverUrl"];
             buffer.downloadUrl = mainNode["downloadUrl"];
             buffer.hash = mainNode["hashMd5"];
-
+            
             var difficultyNode = mainNode["difficulties"];
 
             buffer.difficultyLevels = new DifficultyLevel[difficultyNode.Count];
-
+            
             for (int i = 0; i < difficultyNode.Count; i++)
             {
                 buffer.difficultyLevels[i] = new DifficultyLevel(difficultyNode[i]["difficulty"], difficultyNode[i]["difficultyRank"], difficultyNode[i]["audioPath"], difficultyNode[i]["jsonPath"]);
@@ -131,7 +131,7 @@ namespace BeatSaberMultiplayer.Data
 
         public Song(JSONNode jsonNode, JSONNode difficultyNode)
         {
-
+            
             id = jsonNode["key"];
             beatname = jsonNode["name"];
             ownerid = jsonNode["uploaderId"];
@@ -177,7 +177,7 @@ namespace BeatSaberMultiplayer.Data
         }
 
 
-
+        
         public Song(CustomLevel _data)
         {
             songName = _data.songName;
@@ -185,6 +185,7 @@ namespace BeatSaberMultiplayer.Data
             authorName = _data.songAuthorName;
             difficultyLevels = ConvertDifficultyLevels(_data.difficultyBeatmaps);
             path = _data.customSongInfo.path;
+            hash = _data.levelID.Substring(0, 32);
         }
 
         public Song(CustomSongInfo _song)
@@ -195,6 +196,7 @@ namespace BeatSaberMultiplayer.Data
             authorName = _song.songAuthorName;
             difficultyLevels = ConvertDifficultyLevels(_song.difficultyLevels);
             path = _song.path;
+            hash = _song.levelId.Substring(0, 32);
         }
 
         public DifficultyLevel[] ConvertDifficultyLevels(CustomSongInfo.DifficultyLevel[] _difficultyLevels)
@@ -217,8 +219,8 @@ namespace BeatSaberMultiplayer.Data
             }
         }
 
-
-        public DifficultyLevel[] ConvertDifficultyLevels(IStandardLevelDifficultyBeatmap[] _difficultyLevels)
+        
+        public DifficultyLevel[] ConvertDifficultyLevels(IDifficultyBeatmap[] _difficultyLevels)
         {
             if (_difficultyLevels != null && _difficultyLevels.Length > 0)
             {

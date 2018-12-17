@@ -34,6 +34,10 @@
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Oculus\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
+    <Reference Include="BeatSaberCustomUI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BeatSaberCustomUI.dll</HintPath>
+    </Reference>
     <Reference Include="CustomAvatar">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\CustomAvatar.dll</HintPath>
     </Reference>
@@ -43,6 +47,9 @@
     </Reference>
     <Reference Include="IllusionPlugin">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\IllusionPlugin.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="SongLoaderPlugin">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\SongLoaderPlugin.dll</HintPath>
@@ -116,6 +123,7 @@
     <Compile Include="Data\BeatSaverAPIResult.cs" />
     <Compile Include="Data\PlayerInfo.cs" />
     <Compile Include="Data\RoomInfo.cs" />
+    <Compile Include="Data\RoomPreset.cs" />
     <Compile Include="Data\RoomSettings.cs" />
     <Compile Include="Data\SongInfo.cs" />
     <Compile Include="DebugForm.cs" />
@@ -127,25 +135,22 @@
     <Compile Include="Misc\GetUserInfo.cs" />
     <Compile Include="Misc\HexConverter.cs" />
     <Compile Include="Misc\LoadScripts.cs" />
-    <Compile Include="Misc\Log.cs" />
+    <Compile Include="Misc\Logger.cs" />
+    <Compile Include="Misc\PresetsCollection.cs" />
     <Compile Include="Misc\ReflectionUtil.cs" />
-    <Compile Include="Misc\SceneEvents.cs" />
     <Compile Include="Misc\Serialization.cs" />
+    <Compile Include="Misc\SongDownloader.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
-    <Compile Include="OnlinePauseAnimController.cs" />
     <Compile Include="OnlineVRController.cs" />
     <Compile Include="PlayerInfoDisplay.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpectatingController.cs" />
-    <Compile Include="UI\BeatSaberUI.cs" />
-    <Compile Include="UI\FlowCoordinators\DownloadFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\RoomCreationFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\RoomFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\ServerHubFlowCoordinator.cs" />
     <Compile Include="UI\PluginUI.cs" />
-    <Compile Include="UI\SettingsUI.cs" />
     <Compile Include="UI\UIElements\CustomListViewController.cs" />
     <Compile Include="UI\UIElements\CustomSettingsHelper.cs" />
     <Compile Include="UI\UIElements\CustomUIKeyboard.cs" />
@@ -153,6 +158,7 @@
     <Compile Include="UI\UIElements\OnOffViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\LeftRoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\MainRoomCreationViewController.cs" />
+    <Compile Include="UI\ViewControllers\CreateRoomScreen\PresetsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CustomKeyboardViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />

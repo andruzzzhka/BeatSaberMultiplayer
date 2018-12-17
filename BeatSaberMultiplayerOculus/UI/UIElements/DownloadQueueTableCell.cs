@@ -10,11 +10,9 @@ using UnityEngine;
 
 namespace BeatSaberMultiplayer.UI.UIElements
 {
-    class DownloadQueueTableCell : StandardLevelListTableCell
+    class DownloadQueueTableCell : LevelListTableCell
     {
-
         Song song;
-
 
         protected override void Awake()
         {
@@ -23,7 +21,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         public void Init(Song _song)
         {
-            StandardLevelListTableCell cell = GetComponent<StandardLevelListTableCell>();
+            LevelListTableCell cell = GetComponent<LevelListTableCell>();
 
             foreach (FieldInfo info in cell.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic))
             {
@@ -31,6 +29,8 @@ namespace BeatSaberMultiplayer.UI.UIElements
             }
 
             Destroy(cell);
+
+            reuseIdentifier = "DownloadCell";
 
             song = _song;
 
@@ -42,6 +42,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
             _bgImage.sprite = Sprite.Create((new Texture2D(1, 1)), new Rect(0, 0, 1, 1), Vector2.one / 2f);
             _bgImage.type = UnityEngine.UI.Image.Type.Filled;
             _bgImage.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
+
             switch (song.songQueueState)
             {
                 case SongQueueState.Queued:
@@ -51,7 +52,6 @@ namespace BeatSaberMultiplayer.UI.UIElements
                         _bgImage.fillAmount = song.downloadingProgress;
                     }
                     break;
-                case SongQueueState.Available:
                 case SongQueueState.Downloaded:
                     {
                         _bgImage.color = new Color(1f, 1f, 1f, 0.35f);
@@ -71,7 +71,8 @@ namespace BeatSaberMultiplayer.UI.UIElements
         {
 
             _bgImage.enabled = true;
-            switch (song.songQueueState) {
+            switch (song.songQueueState)
+            {
                 case SongQueueState.Queued:
                 case SongQueueState.Downloading:
                     {
@@ -79,7 +80,6 @@ namespace BeatSaberMultiplayer.UI.UIElements
                         _bgImage.fillAmount = song.downloadingProgress;
                     }
                     break;
-                case SongQueueState.Available:
                 case SongQueueState.Downloaded:
                     {
                         _bgImage.color = new Color(1f, 1f, 1f, 0.35f);
@@ -94,6 +94,5 @@ namespace BeatSaberMultiplayer.UI.UIElements
                     break;
             }
         }
-
     }
 }

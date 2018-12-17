@@ -22,7 +22,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         public int _value;
 
-        public int Value { get { return _value; } set { _value = value; _valueText.text = _value.ToString(); UpdateButtons(); } }
+        public int Value { get { return _value; } set { _value = value; _valueText.text = (textForValues.Length > _value) ? textForValues[_value] : _value.ToString(); UpdateButtons(); } }
 
         public int minValue = 0;
         public int maxValue = 999;

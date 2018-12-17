@@ -16,7 +16,7 @@ namespace BeatSaberMultiplayer
     static class DebugForm
     {
         static Form debugForm;
-        static private Label packetsLabel;
+        static private Label roomStateLabel;
         static private Label playersLabel;
         static private ListBox playersListBox;
         static private Label visiblePlayersLabel;
@@ -24,22 +24,21 @@ namespace BeatSaberMultiplayer
         static int packetsReceived;
         static int playersActive;
         static int visiblePlayers;
+        static RoomInfo roomInfo;
         private static Scene _currentScene;
 
         static List<PlayerInfo> playerInfos = new List<PlayerInfo>();
-
-        static System.Timers.Timer timer = new System.Timers.Timer();
 
         public static void OnLoad()
         {
             Client.ClientCreated += Client_ClientCreated;
 
             _currentScene = SceneManager.GetActiveScene();
-            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
 
             debugForm = new Form();
 
-            packetsLabel = new Label();
+            roomStateLabel = new Label();
             playersLabel = new Label();
             playersListBox = new ListBox();
             visiblePlayersLabel = new Label();
@@ -47,12 +46,12 @@ namespace BeatSaberMultiplayer
             // 
             // packetsLabel
             // 
-            packetsLabel.AutoSize = true;
-            packetsLabel.Location = new Point(10, 9);
-            packetsLabel.Name = "packetsLabel";
-            packetsLabel.Size = new Size(102, 13);
-            packetsLabel.TabIndex = 0;
-            packetsLabel.Text = "Packets received: 0";
+            roomStateLabel.AutoSize = true;
+            roomStateLabel.Location = new Point(10, 9);
+            roomStateLabel.Name = "roomStateLabel";
+            roomStateLabel.Size = new Size(102, 13);
+            roomStateLabel.TabIndex = 0;
+            roomStateLabel.Text = "Room state: Unknown";
             // 
             // playersLabel
             // 
@@ -88,23 +87,31 @@ namespace BeatSaberMultiplayer
             debugForm.Controls.Add(visiblePlayersLabel);
             debugForm.Controls.Add(playersListBox);
             debugForm.Controls.Add(playersLabel);
-            debugForm.Controls.Add(packetsLabel);
+            debugForm.Controls.Add(roomStateLabel);
             debugForm.Name = "DebugForm";
             debugForm.Text = "DebugForm";
             debugForm.ResumeLayout(false);
             debugForm.PerformLayout();
 
             debugForm.Show();
+        }
 
-            //timer.Elapsed += Timer_Elapsed;
-            //timer.AutoReset = true;
-            //timer.Interval = 50;
-            //timer.Start();
+        private static void SceneManager_activeSceneChanged(Scene from, Scene to)
+        {
+            try
+            {
+                if (to.name == "GameCore" || to.name == "Menu")
+                {
+                    _currentScene = to;
+                }
+            }
+            catch
+            {
+            }
         }
 
         private static void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            throw new NotImplementedException();
         }
 
         private static void Tick(object sender, EventArgs e)
@@ -114,28 +121,21 @@ namespace BeatSaberMultiplayer
 
         public static void UpdateUI()
         {
-            packetsLabel.Text = "Packets received: " + packetsReceived.ToString();
-            playersLabel.Text = "Players: " + playersActive.ToString();
-            visiblePlayersLabel.Text = "Visible players: " + visiblePlayers.ToString();
-
-            playersListBox.Items.Clear();
-            foreach (var playerInfo in playerInfos)
-            {
-                playersListBox.Items.Add($"{playerInfo.playerName}:{playerInfo.playerId} ({playerInfo.playerState})");
-            }
-        }
-
-        private static void SceneManager_sceneLoaded(Scene next, LoadSceneMode arg1)
-        {
             try
             {
-                if (next.name == "StandardLevel" || next.name == "Menu")
+                roomStateLabel.Text = "Room state: " + roomInfo.roomState.ToString();
+                playersLabel.Text = "Players: " + playersActive.ToString();
+                visiblePlayersLabel.Text = "Visible players: " + visiblePlayers.ToString();
+
+                playersListBox.Items.Clear();
+                foreach (var playerInfo in playerInfos)
                 {
-                    _currentScene = next;
+                    playersListBox.Items.Add($"{playerInfo.playerName}:{playerInfo.playerId} ({playerInfo.playerState}) Score: {playerInfo.playerScore}");
                 }
             }
             catch
             {
+
             }
         }
 
@@ -146,42 +146,90 @@ namespace BeatSaberMultiplayer
 
         private static void PacketReceived(BasePacket packet)
         {
-            if(packet.commandType == CommandType.UpdatePlayerInfo)
+            try
             {
-                packetsReceived++;
-
-                playersActive = BitConverter.ToInt32(packet.additionalData, 8);
-
-                Stream byteStream = new MemoryStream(packet.additionalData, 12, packet.additionalData.Length - 12);
-
-
-                playersListBox.Items.Clear();
-
-                playerInfos.Clear();
-                for (int j = 0; j < playersActive; j++)
+                if (packet.commandType == CommandType.UpdatePlayerInfo)
                 {
-                    byte[] sizeBytes = new byte[4];
-                    byteStream.Read(sizeBytes, 0, 4);
+                    packetsReceived++;
 
-                    int playerInfoSize = BitConverter.ToInt32(sizeBytes, 0);
+                    playersActive = BitConverter.ToInt32(packet.additionalData, 8);
 
-                    byte[] playerInfoBytes = new byte[playerInfoSize];
-                    byteStream.Read(playerInfoBytes, 0, playerInfoSize);
+                    Stream byteStream = new MemoryStream(packet.additionalData, 12, packet.additionalData.Length - 12);
 
-                    try
+
+                    playersListBox.Items.Clear();
+
+                    playerInfos.Clear();
+                    for (int j = 0; j < playersActive; j++)
                     {
-                        PlayerInfo playerInfo = new PlayerInfo(playerInfoBytes);
-                        playerInfos.Add(playerInfo);
+                        byte[] sizeBytes = new byte[4];
+                        byteStream.Read(sizeBytes, 0, 4);
+
+                        int playerInfoSize = BitConverter.ToInt32(sizeBytes, 0);
+
+                        byte[] playerInfoBytes = new byte[playerInfoSize];
+                        byteStream.Read(playerInfoBytes, 0, playerInfoSize);
+
+                        try
+                        {
+                            PlayerInfo playerInfo = new PlayerInfo(playerInfoBytes);
+                            playerInfos.Add(playerInfo);
+                        }
+                        catch (Exception e)
+                        {
+                            //MessageBox.Show($"Unable to parse PlayerInfo! Excpetion: {e}", "Exception");
+                        }
                     }
-                    catch (Exception e)
+
+                    visiblePlayers = playerInfos.Count(x => (x.playerState == PlayerState.Game && _currentScene.name == "GameCore") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu"));
+
+                    UpdateUI();
+                }
+                else if (packet.commandType == CommandType.GetRoomInfo)
+                {
+                    if (packet.additionalData[0] == 1)
                     {
-                        MessageBox.Show($"Unable to parse PlayerInfo! Excpetion: {e}", "Exception");
+                        int songsCount = BitConverter.ToInt32(packet.additionalData, 1);
+
+                        Stream byteStream = new MemoryStream(packet.additionalData, 5, packet.additionalData.Length - 5);
+
+                        for (int j = 0; j < songsCount; j++)
+                        {
+                            byte[] sizeBytes = new byte[4];
+                            byteStream.Read(sizeBytes, 0, 4);
+
+                            int songInfoSize = BitConverter.ToInt32(sizeBytes, 0);
+
+                            byte[] songInfoBytes = new byte[songInfoSize];
+                            byteStream.Read(songInfoBytes, 0, songInfoSize);
+                        }
+
+                        byte[] roomInfoSizeBytes = new byte[4];
+                        byteStream.Read(roomInfoSizeBytes, 0, 4);
+
+                        int roomInfoSize = BitConverter.ToInt32(roomInfoSizeBytes, 0);
+
+                        byte[] roomInfoBytes = new byte[roomInfoSize];
+                        byteStream.Read(roomInfoBytes, 0, roomInfoSize);
+
+                        roomInfo = new RoomInfo(roomInfoBytes);
+                    }
+                    else
+                    {
+                        if (BitConverter.ToInt32(packet.additionalData, 1) == packet.additionalData.Length - 5)
+                        {
+                            roomInfo = new RoomInfo(packet.additionalData.Skip(5).ToArray());
+                        }
+                        else
+                        {
+                            roomInfo = new RoomInfo(packet.additionalData.Skip(1).ToArray());
+                        }
                     }
                 }
+            }
+            catch
+            {
 
-                visiblePlayers = playerInfos.Count(x => (x.playerState == PlayerState.Game && _currentScene.name == "StandardLevel") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu"));
-
-                UpdateUI();
             }
         }
     }

@@ -2,13 +2,16 @@
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using CustomAvatar;
+using CustomUI.BeatSaber;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -26,7 +29,7 @@ namespace BeatSaberMultiplayer
         public static Vector3 openVrPosOffset = new Vector3(0f, -0.008f, 0f);
         public static InGameOnlineController Instance;
 
-        private GameplayManager _gameManager;
+        private StandardLevelGameplayManager _gameManager;
         private ScoreController _scoreController;
         private GameEnergyCounter _energyController;
         private PauseMenuManager _pauseMenuManager;
@@ -35,6 +38,9 @@ namespace BeatSaberMultiplayer
         private List<AvatarController> _avatars = new List<AvatarController>();
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
         private GameObject _scoreScreen;
+
+        private TextMeshPro _messageDisplayText;
+        private float _messageDisplayTime;
 
         private Scene _currentScene;
 
@@ -52,22 +58,30 @@ namespace BeatSaberMultiplayer
             if (Instance != this)
             {
                 Instance = this;
-                DontDestroyOnLoad(this);
+                DontDestroyOnLoad(gameObject);
 
-                SceneManager.sceneLoaded += OnSceneLoaded;
                 Client.ClientCreated += ClientCreated;
                 _currentScene = SceneManager.GetActiveScene();
+
+                _messageDisplayText = CustomExtensions.CreateWorldText(transform, "");
+                transform.position = new Vector3(0f, 3.75f, 3.75f);
+                transform.rotation = Quaternion.Euler(-30f, 0f, 0f);
+                _messageDisplayText.overflowMode = TextOverflowModes.Overflow;
+                _messageDisplayText.enableWordWrapping = false;
+                _messageDisplayText.alignment = TextAlignmentOptions.Center;
+                DontDestroyOnLoad(_messageDisplayText.gameObject);
             }
         }
 
-        private void OnSceneLoaded(Scene next, LoadSceneMode loadMode)
+        public void ActiveSceneChanged(Scene from, Scene to)
         {
             try
             {
-                if (next.name == "StandardLevel" || next.name == "Menu")
+                Misc.Logger.Info($"(OnlineController) Travelling from {from.name} to {to.name}");
+                if (to.name == "GameCore" || to.name == "Menu")
                 {
-                    _currentScene = next;
-                    if (_currentScene.name == "StandardLevel")
+                    _currentScene = to;
+                    if (_currentScene.name == "GameCore")
                     {
                         DestroyAvatars();
                         DestroyScoreScreens();
@@ -78,17 +92,18 @@ namespace BeatSaberMultiplayer
                     }
                     else if (_currentScene.name == "Menu")
                     {
+                        loaded = false;
                         DestroyAvatars();
                         if (Client.instance != null && Client.instance.Connected)
                         {
-                            StartCoroutine(ReturnToRoom());
+                            PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
                         }
                     }
                 }
             }
             catch (Exception e)
             {
-                Log.Exception($"(Main) Exception on {_currentScene.name} scene load! {e}");
+                Misc.Logger.Exception($"(OnlineController) Exception on {_currentScene.name} scene activation! Exception: {e}");
             }
         }
 
@@ -100,181 +115,216 @@ namespace BeatSaberMultiplayer
 
         private void PacketReceived(BasePacket packet)
         {
-            if (packet.commandType == CommandType.UpdatePlayerInfo)
+            switch (packet.commandType)
             {
-                int playersCount = BitConverter.ToInt32(packet.additionalData, 8);
-
-                Stream byteStream = new MemoryStream(packet.additionalData, 12, packet.additionalData.Length - 12);
-
-                List<PlayerInfo> playerInfos = new List<PlayerInfo>();
-                for (int j = 0; j < playersCount; j++)
-                {
-                    byte[] sizeBytes = new byte[4];
-                    byteStream.Read(sizeBytes, 0, 4);
-
-                    int playerInfoSize = BitConverter.ToInt32(sizeBytes, 0);
-
-                    byte[] playerInfoBytes = new byte[playerInfoSize];
-                    byteStream.Read(playerInfoBytes, 0, playerInfoSize);
-
-                    try
+                case CommandType.UpdatePlayerInfo:
                     {
-                        playerInfos.Add(new PlayerInfo(playerInfoBytes));
-                    }
-                    catch (Exception e)
-                    {
+                        int playersCount = BitConverter.ToInt32(packet.additionalData, 8);
+
+                        Stream byteStream = new MemoryStream(packet.additionalData, 12, packet.additionalData.Length - 12);
+
+                        List<PlayerInfo> playerInfos = new List<PlayerInfo>();
+                        for (int j = 0; j < playersCount; j++)
+                        {
+                            byte[] sizeBytes = new byte[4];
+                            byteStream.Read(sizeBytes, 0, 4);
+
+                            int playerInfoSize = BitConverter.ToInt32(sizeBytes, 0);
+
+                            byte[] playerInfoBytes = new byte[playerInfoSize];
+                            byteStream.Read(playerInfoBytes, 0, playerInfoSize);
+
+                            try
+                            {
+                                playerInfos.Add(new PlayerInfo(playerInfoBytes));
+                            }
+                            catch (Exception e)
+                            {
 #if DEBUG
-                        Log.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
+                                Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
 #endif
-                    }
-                }
-
-                playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene.name == "StandardLevel") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu")).OrderByDescending(x => x.playerScore).ToList();
-
-                int localPlayerIndex = playerInfos.FindIndexInList(Client.instance.playerInfo);
-
-                if ((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom())
-                {
-                    try
-                    {
-                        if (_avatars.Count > playerInfos.Count)
-                        {
-                            for (int i = playerInfos.Count; i < _avatars.Count; i++)
-                            {
-                                if(_avatars[i] != null && _avatars[i].gameObject != null)
-                                    Destroy(_avatars[i].gameObject);
-                            }
-                            _avatars.RemoveAll(x => x == null || x.gameObject == null);
-                        }
-                        else if (_avatars.Count < playerInfos.Count)
-                        {
-                            for (int i = 0; i < (playerInfos.Count - _avatars.Count); i++)
-                            {
-                                _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
                             }
                         }
 
-                        List<PlayerInfo> _playerInfosByID = playerInfos.OrderBy(x => x.playerId).ToList();
+                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene.name == "GameCore") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu")).OrderByDescending(x => x.playerScore).ToList();
 
-                        for (int i = 0; i < playerInfos.Count; i++)
+                        int localPlayerIndex = playerInfos.FindIndexInList(Client.instance.playerInfo);
+
+                        if ((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom())
                         {
-                            if (_currentScene.name == "StandardLevel")
+                            try
                             {
-                                _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - _playerInfosByID.FindIndexInList(Client.instance.playerInfo)) * 3f, Client.instance.playerInfo.Equals(_playerInfosByID[i]));
+                                if (_avatars.Count > playerInfos.Count)
+                                {
+                                    for (int i = playerInfos.Count; i < _avatars.Count; i++)
+                                    {
+                                        if (_avatars[i] != null && _avatars[i].gameObject != null)
+                                            Destroy(_avatars[i].gameObject);
+                                    }
+                                    _avatars.RemoveAll(x => x == null || x.gameObject == null);
+                                }
+                                else if (_avatars.Count < playerInfos.Count)
+                                {
+                                    for (int i = 0; i < (playerInfos.Count - _avatars.Count); i++)
+                                    {
+                                        _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
+                                    }
+                                }
+
+                                List<PlayerInfo> _playerInfosByID = playerInfos.OrderBy(x => x.playerId).ToList();
+
+                                for (int i = 0; i < playerInfos.Count; i++)
+                                {
+                                    if (_currentScene.name == "GameCore")
+                                    {
+                                        _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - _playerInfosByID.FindIndexInList(Client.instance.playerInfo)) * 3f, Client.instance.playerInfo.Equals(_playerInfosByID[i]));
+                                    }
+                                    else
+                                    {
+                                        _avatars[i].SetPlayerInfo(_playerInfosByID[i], 0f, Client.instance.playerInfo.Equals(_playerInfosByID[i]));
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine($"AVATARS EXCEPTION: {e}");
+                            }
+                        }
+
+                        if (_currentScene.name == "GameCore" && loaded)
+                        {
+                            if (_scoreDisplays.Count < 5)
+                            {
+                                _scoreScreen = new GameObject("ScoreScreen");
+                                _scoreScreen.transform.position = new Vector3(0f, 4f, 12f);
+                                _scoreScreen.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+
+                                _scoreDisplays.Clear();
+
+                                for (int i = 0; i < 5; i++)
+                                {
+                                    PlayerInfoDisplay buffer = new GameObject("ScoreDisplay " + i).AddComponent<PlayerInfoDisplay>();
+                                    buffer.transform.SetParent(_scoreScreen.transform);
+                                    buffer.transform.localPosition = new Vector3(0f, 2.5f - i, 0);
+
+                                    _scoreDisplays.Add(buffer);
+                                }
+                            }
+
+                            if (playerInfos.Count <= 5)
+                            {
+                                for (int i = 0; i < playerInfos.Count; i++)
+                                {
+                                    _scoreDisplays[i].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                }
+                                for (int i = playerInfos.Count; i < _scoreDisplays.Count; i++)
+                                {
+                                    _scoreDisplays[i].UpdatePlayerInfo(null, 0);
+                                }
                             }
                             else
                             {
-                                _avatars[i].SetPlayerInfo(_playerInfosByID[i], 0f, Client.instance.playerInfo.Equals(_playerInfosByID[i]));
+                                if (localPlayerIndex < 3)
+                                {
+                                    for (int i = 0; i < 5; i++)
+                                    {
+                                        _scoreDisplays[i].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                    }
+                                }
+                                else if (localPlayerIndex > playerInfos.Count - 3)
+                                {
+                                    for (int i = playerInfos.Count - 5; i < playerInfos.Count; i++)
+                                    {
+                                        _scoreDisplays[i - (playerInfos.Count - 5)].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                    }
+                                }
+                                else
+                                {
+                                    for (int i = localPlayerIndex - 2; i < localPlayerIndex + 3; i++)
+                                    {
+                                        _scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                    }
+                                }
+
                             }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine($"AVATARS EXCEPTION: {e}");
-                    }
-                }
 
-                if (_currentScene.name == "StandardLevel" && loaded)
-                {
-                    if (_scoreDisplays.Count < 5)
-                    {
-                        _scoreScreen = new GameObject("ScoreScreen");
-                        _scoreScreen.transform.position = new Vector3(0f, 4f, 12f);
-                        _scoreScreen.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+                        Client.instance.playerInfo.headPos = GetXRNodeWorldPosRot(XRNode.Head).Position;
+                        Client.instance.playerInfo.headRot = GetXRNodeWorldPosRot(XRNode.Head).Rotation;
+                        Client.instance.playerInfo.leftHandPos = GetXRNodeWorldPosRot(XRNode.LeftHand).Position;
+                        Client.instance.playerInfo.leftHandRot = GetXRNodeWorldPosRot(XRNode.LeftHand).Rotation;
 
-                        _scoreDisplays.Clear();
+                        Client.instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
+                        Client.instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
 
-                        for (int i = 0; i < 5; i++)
+                        if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
                         {
-                            PlayerInfoDisplay buffer = new GameObject("ScoreDisplay " + i).AddComponent<PlayerInfoDisplay>();
-                            buffer.transform.SetParent(_scoreScreen.transform);
-                            buffer.transform.localPosition = new Vector3(0f, 2.5f - i, 0);
+                            Client.instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
+                            Client.instance.playerInfo.leftHandPos += oculusTouchPosOffset;
+                        }
+                        else if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
+                        {
+                            Client.instance.playerInfo.leftHandRot *= openVrRotOffset;
+                            Client.instance.playerInfo.leftHandPos += openVrPosOffset;
+                        }
 
-                            _scoreDisplays.Add(buffer);
-                        }
-                    }
-                    
-                    if (playerInfos.Count <= 5)
-                    {
-                        for (int i = 0; i < playerInfos.Count; i++)
+                        if (_currentScene.name == "GameCore" && loaded)
                         {
-                            _scoreDisplays[i].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
-                        }
-                        for (int i = playerInfos.Count; i < _scoreDisplays.Count; i++)
-                        {
-                            _scoreDisplays[i].UpdatePlayerInfo(null, 0);
-                        }
-                    }
-                    else
-                    {
-                        if (localPlayerIndex < 3)
-                        {
-                            for (int i = 0; i < 5; i++)
-                            {
-                                _scoreDisplays[i].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
-                            }
-                        }
-                        else if (localPlayerIndex > playerInfos.Count - 3)
-                        {
-                            for (int i = playerInfos.Count - 5; i < playerInfos.Count; i++)
-                            {
-                                _scoreDisplays[i - (playerInfos.Count - 5)].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
-                            }
+                            Client.instance.playerInfo.playerProgress = audioTimeSync.songTime;
                         }
                         else
                         {
-                            for (int i = localPlayerIndex - 2; i < localPlayerIndex + 3; i++)
-                            {
-                                _scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
-                            }
+                            Client.instance.playerInfo.playerProgress = 0;
                         }
 
+                        if (Config.Instance.SpectatorMode)
+                        {
+                            Client.instance.playerInfo.playerScore = 0;
+                            Client.instance.playerInfo.playerEnergy = 0f;
+                            Client.instance.playerInfo.playerCutBlocks = 0;
+                            Client.instance.playerInfo.playerComboBlocks = 0;
+                        }
+
+                        Client.instance.SendPlayerInfo();
+                    }; break;
+                case CommandType.SetGameState:
+                    {
+                        if (_currentScene.name == "GameCore" && loaded)
+                        {
+                            PropertyInfo property = typeof(StandardLevelGameplayManager).GetProperty("gameState");
+                            property.DeclaringType.GetProperty("gameState");
+                            property.GetSetMethod(true).Invoke(_gameManager, new object[] { (StandardLevelGameplayManager.GameState)packet.additionalData[0] });
+                        }
                     }
-                }
+                    break;
+                case CommandType.DisplayMessage:
+                    {
+                        _messageDisplayTime = BitConverter.ToSingle(packet.additionalData, 0);
+                        _messageDisplayText.fontSize = BitConverter.ToSingle(packet.additionalData, 4);
 
-                Client.instance.playerInfo.headPos = GetXRNodeWorldPosRot(XRNode.Head).Position;
-                Client.instance.playerInfo.headRot = GetXRNodeWorldPosRot(XRNode.Head).Rotation;
-                Client.instance.playerInfo.leftHandPos = GetXRNodeWorldPosRot(XRNode.LeftHand).Position;
-                Client.instance.playerInfo.leftHandRot = GetXRNodeWorldPosRot(XRNode.LeftHand).Rotation;
+                        int messageSize = BitConverter.ToInt32(packet.additionalData, 8);
 
-                Client.instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
-                Client.instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
+                        _messageDisplayText.text = Encoding.UTF8.GetString(packet.additionalData, 12, messageSize);
+                    };break;
+            }
+        }
 
-                if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
+        public void Update()
+        {
+            if(_messageDisplayTime > 0f)
+            {
+                _messageDisplayTime -= Time.deltaTime;
+                if(_messageDisplayTime <= 0f)
                 {
-                    Client.instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
-                    Client.instance.playerInfo.leftHandPos += oculusTouchPosOffset;
+                    _messageDisplayTime = 0f;
+                    _messageDisplayText.text = "";
                 }
-                else if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
-                {
-                    Client.instance.playerInfo.leftHandRot *= openVrRotOffset;
-                    Client.instance.playerInfo.leftHandPos += openVrPosOffset;
-                }
-
-                if (_currentScene.name == "StandardLevel" && loaded)
-                {
-                    Client.instance.playerInfo.playerProgress = audioTimeSync.songTime;
-                }
-                else
-                {
-                    Client.instance.playerInfo.playerProgress = 0;
-                }
-
-                if (Config.Instance.SpectatorMode)
-                {
-                    Client.instance.playerInfo.playerScore = 0;
-                    Client.instance.playerInfo.playerEnergy = 0f;
-                    Client.instance.playerInfo.playerCutBlocks = 0;
-                    Client.instance.playerInfo.playerComboBlocks = 0;
-                }
-
-                Client.instance.SendPlayerInfo();
             }
         }
 
         private bool ShowAvatarsInGame()
         {
-            return Config.Instance.ShowAvatarsInGame && _currentScene.name == "StandardLevel";
+            return Config.Instance.ShowAvatarsInGame && _currentScene.name == "GameCore";
         }
 
         private bool ShowAvatarsInRoom()
@@ -307,7 +357,7 @@ namespace BeatSaberMultiplayer
                 _avatars.Clear();
             }catch(Exception e)
             {
-                Log.Exception($"Unable to destroy avatars! Exception: {e}");
+                Misc.Logger.Exception($"Unable to destroy avatars! Exception: {e}");
             }
         }
 
@@ -325,65 +375,49 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Log.Exception($"Unable to destroy score screens! Exception: {e}");
+                Misc.Logger.Exception($"Unable to destroy score screens! Exception: {e}");
             }
         }
 
-        public void SongFinished(MainGameSceneSetupData sender, LevelCompletionResults result)
+        public void SongFinished(StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers)
         {
-            sender.didFinishEvent -= SongFinished;
-            Resources.FindObjectsOfTypeAll<MenuSceneSetupData>().First().TransitionToScene((result == null) ? 0.35f : 1.3f);
-        }
+            if (Config.Instance.SpectatorMode)
+                return;
 
-        IEnumerator ReturnToRoom()
-        {
-            yield return new WaitUntil(delegate () { return Resources.FindObjectsOfTypeAll<VRUIScreenSystem>().Any(); });
-            VRUIScreenSystem screenSystem = Resources.FindObjectsOfTypeAll<VRUIScreenSystem>().First();
+            Misc.Logger.Info("PlayerDataModels: "+ Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().Count());
+            PlayerDataModelSO _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
 
-            yield return new WaitWhile(delegate () { return screenSystem.mainScreen == null; });
-            yield return new WaitWhile(delegate () { return screenSystem.mainScreen.rootViewController == null; });
-
-            try
+            _playerDataModel.currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
+            _playerDataModel.Save();
+            if (levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Failed && levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Cleared)
             {
-
-                VRUIViewController root = screenSystem.mainScreen.rootViewController;
-
-                List<VRUIViewController> children = new List<VRUIViewController>();
-
-                children.Add(root);
-
-                while (children.Last().childViewController != null)
-                {
-                    children.Add(children.Last().childViewController);
-                }
-
-                children.Reverse();
-                children.Remove(root);
-                children.ForEach(x => {
-#if DEBUG
-                    Log.Info($"Dismissing {x.name}...");
-#endif
-                    x.DismissModalViewController(null, true); });
-
-                PluginUI.instance.serverHubFlowCoordinator.ReturnToRoom();
-            }
-            catch (Exception e)
-            {
-                Log.Exception($"MENU EXCEPTION: {e}");
+                return;
             }
 
+            PlayerDataModelSO.LocalPlayer currentLocalPlayer = _playerDataModel.currentLocalPlayer;
+            bool cleared = levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared;
+            string levelID = difficultyBeatmap.level.levelID;
+            BeatmapDifficulty difficulty = difficultyBeatmap.difficulty;
+            PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(levelID, difficulty);
+            bool newHighScore = playerLevelStatsData.highScore < levelCompletionResults.score;
+            playerLevelStatsData.IncreaseNumberOfGameplays();
+            if (cleared)
+            {
+                playerLevelStatsData.UpdateScoreData(levelCompletionResults.score, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
+                Resources.FindObjectsOfTypeAll<PlatformLeaderboardsModel>().First().AddScore(difficultyBeatmap, levelCompletionResults.unmodifiedScore, gameplayModifiers);
+            }
         }
 
         IEnumerator WaitForControllers()
         {
 #if DEBUG
-            Log.Info("Waiting for game controllers...");
+            Misc.Logger.Info("Waiting for game controllers...");
 #endif
             yield return new WaitUntil(delegate () { return FindObjectOfType<ScoreController>() != null; });
 #if DEBUG
-            Log.Info("Game controllers found!");
+            Misc.Logger.Info("Game controllers found!");
 #endif
-            _gameManager = Resources.FindObjectsOfTypeAll<GameplayManager>().First();
+            _gameManager = Resources.FindObjectsOfTypeAll<StandardLevelGameplayManager>().First();
 
             if (_gameManager != null)
             {
@@ -391,7 +425,8 @@ namespace BeatSaberMultiplayer
                 {
                     if (ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger") != null)
                     {
-                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").SetCallback(delegate () { ShowMenu(); });
+                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").pauseTriggeredEvent -= _gameManager.HandlePauseTriggered;
+                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").pauseTriggeredEvent += ShowMenu;
                     }
 
                     if (ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper") != null)
@@ -402,11 +437,11 @@ namespace BeatSaberMultiplayer
                 }
                 catch (Exception e)
                 {
-                    Log.Exception(e.ToString());
+                    Misc.Logger.Exception(e.ToString());
                 }
             }
 #if DEBUG
-            Log.Info("Disabled pause button!");
+            Misc.Logger.Info("Disabled pause button!");
 #endif
             _scoreController = FindObjectOfType<ScoreController>();
 
@@ -417,7 +452,7 @@ namespace BeatSaberMultiplayer
                 _scoreController.comboDidChangeEvent += ComboDidChangeEvent;
             }
 #if DEBUG
-            Log.Info("Found score controller");
+            Misc.Logger.Info("Found score controller");
 #endif
 
             _energyController = FindObjectOfType<GameEnergyCounter>();
@@ -427,34 +462,35 @@ namespace BeatSaberMultiplayer
                 _energyController.gameEnergyDidChangeEvent += EnergyDidChangeEvent;
             }
 #if DEBUG
-            Log.Info("Found energy controller");
+            Misc.Logger.Info("Found energy controller");
 #endif
 
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
 
             _pauseMenuManager = FindObjectsOfType<PauseMenuManager>().First();
-
+            
             if (_pauseMenuManager != null)
             {
-                OnlinePauseAnimController _pauseAnim = new GameObject("OnlinePauseAnimController").AddComponent<OnlinePauseAnimController>();
-                _pauseAnim.animationDidFinishEvent += _pauseMenuManager.HandleResumeAnimationDidFinish;
-                _pauseMenuManager.SetPrivateField("_resumePauseAnimationController", _pauseAnim);
-                _pauseMenuManager.GetPrivateField<GameObject>("_gameObjectsWrapper").GetComponentsInChildren<Button>().First(x => x.name == "RestartButton").interactable = false;
+                _pauseMenuManager.GetPrivateField<Button>("_restartButton").interactable = false;
             }
 
 #if DEBUG
-            Log.Info("Found pause manager");
+            Misc.Logger.Info("Found pause manager");
 #endif
 
             loaded = true;
-        }
+        }        
 
         private void ShowMenu()
         {
-            _pauseMenuManager.enabled = true;
-
-            _pauseMenuManager.SetPrivateField("_ignoreFirstFrameVRControllerInteraction", true);
-            _pauseMenuManager.GetPrivateField<GameObject>("_gameObjectsWrapper").SetActive(true);
+            try
+            {
+                _pauseMenuManager.ShowMenu();
+            }
+            catch(Exception e)
+            {
+                Misc.Logger.Error("Unable to show menu! Exception: "+e);
+            }
         }
 
         public void PauseSong()

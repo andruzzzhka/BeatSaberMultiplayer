@@ -328,7 +328,7 @@ namespace ServerHub.Data
 #endif
                         if (joinedRoomID != 0)
                         {
-                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
                             if (joinedRoom != null)
                             {
                                 List<byte> buffer = new List<byte>();
@@ -352,7 +352,7 @@ namespace ServerHub.Data
                     {
                         if (joinedRoomID != 0)
                         {
-                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
                             if (joinedRoom != null)
                             {
                                 if (packet.additionalData == null || packet.additionalData.Length == 0)
@@ -375,7 +375,7 @@ namespace ServerHub.Data
 
                         if (joinedRoomID != 0)
                         {
-                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
                             if (joinedRoom != null)
                             {
                                 byte difficulty = packet.additionalData[0];
@@ -390,7 +390,7 @@ namespace ServerHub.Data
                     {
                         if (joinedRoomID != 0)
                         {
-                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
                             if (joinedRoom != null)
                             {
                                 joinedRoom.DestroyRoom(playerInfo);
@@ -402,7 +402,7 @@ namespace ServerHub.Data
                     {
                         if (joinedRoomID != 0)
                         {
-                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
                             if (joinedRoom != null)
                             {
                                 joinedRoom.TransferHost(playerInfo, new PlayerInfo(packet.additionalData));
@@ -414,7 +414,7 @@ namespace ServerHub.Data
                     {
                         if (joinedRoomID != 0)
                         {
-                            Room joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
                             if (joinedRoom != null)
                             {
                                 joinedRoom.ReadyStateChanged(playerInfo, (packet.additionalData[0] == 0) ? false : true);

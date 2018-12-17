@@ -1,8 +1,10 @@
-﻿using BeatSaberMultiplayer.Misc;
+﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using IllusionPlugin;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine.SceneManagement;
@@ -13,8 +15,8 @@ namespace BeatSaberMultiplayer
     {
         public string Name => "Beat Saber Multiplayer";
 
-        public string Version => "0.5.1.6";
-        public static uint pluginVersion = 516;
+        public string Version => "0.5.2.0";
+        public static uint pluginVersion = 520;
 
         public static Plugin instance;
 
@@ -24,31 +26,49 @@ namespace BeatSaberMultiplayer
 
         public void OnApplicationStart()
         {
+
+            if (File.Exists("MPLog.txt"))
+                File.Delete("MPLog.txt");
+            
             instance = this;
 
 #if DEBUG
             DebugForm.OnLoad();
 #endif
 
-            SceneManager.sceneLoaded += SceneLoaded;
+            SceneManager.activeSceneChanged += ActiveSceneChanged;
             if (Config.Load())
-                Log.Info("Loaded config!");
+                Logger.Info("Loaded config!");
             else
                 Config.Create();
+            try
+            {
+                PresetsCollection.ReloadPresets();
+            }
+            catch (Exception e)
+            {
+                Logger.Warning("Unable to load presets! Exception: "+e);
+            }
             Base64Sprites.ConvertSprites();
+            
         }
 
-        private void SceneLoaded(Scene nextScene, LoadSceneMode loadMode)
+        private void ActiveSceneChanged(Scene from, Scene to)
         {
 #if DEBUG
-            Log.Info("Loaded scene " + nextScene.name);
+           Logger.Info($"Active scene changed from \"{from.name}\" to \"{to.name}\"");
 #endif
-            if (nextScene.name == "Menu")
+            if (from.name == "EmptyTransition" && to.name == "Menu")
             {
-                BeatSaberUI.OnLoad();
                 PluginUI.OnLoad();
                 InGameOnlineController.OnLoad();
                 SpectatingController.OnLoad();
+            }
+            else
+            {
+                InGameOnlineController.Instance.ActiveSceneChanged(from, to);
+                if(Config.Instance.SpectatorMode)
+                    SpectatingController.Instance.ActiveSceneChanged(from, to);
             }
         }
 

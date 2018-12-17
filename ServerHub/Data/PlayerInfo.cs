@@ -6,6 +6,7 @@ using System.Text;
 namespace ServerHub.Data
 {
     public enum PlayerState: byte { Disconnected, Lobby, Room, Game, Spectating, DownloadingSongs }
+    public enum GameState : byte { Intro, Playing, Paused, Finished, Failed}
 
     public class PlayerInfo
     {
