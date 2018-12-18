@@ -66,9 +66,9 @@ namespace BeatSaberMultiplayer
             }
             else
             {
-                InGameOnlineController.Instance.ActiveSceneChanged(from, to);
+                InGameOnlineController.Instance?.ActiveSceneChanged(from, to);
                 if(Config.Instance.SpectatorMode)
-                    SpectatingController.Instance.ActiveSceneChanged(from, to);
+                    SpectatingController.Instance?.ActiveSceneChanged(from, to);
             }
         }
 
