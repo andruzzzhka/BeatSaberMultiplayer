@@ -83,7 +83,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     (_serverHubsTableView.transform as RectTransform).anchorMax = new Vector2(0.7f, 0.5f);
                     (_serverHubsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 60f);
                     (_serverHubsTableView.transform as RectTransform).position = new Vector3(0f, 0f, 2.4f);
-                    (_serverHubsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
+                    (_serverHubsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -2f);
 
                     ReflectionUtil.SetPrivateField(_serverHubsTableView, "_pageUpButton", _pageUpButton);
                     ReflectionUtil.SetPrivateField(_serverHubsTableView, "_pageDownButton", _pageDownButton);

@@ -128,7 +128,7 @@ namespace BeatSaberMultiplayer
             {
                 if (avatar != null && !forcePlayerInfo)
                 {
-                    if (Client.instance.Tickrate < 88f)
+                    if (Client.instance.Tickrate < (1f/Time.smoothDeltaTime))
                     {
                         interpolationProgress += Time.deltaTime * Client.instance.Tickrate;
                     }
@@ -163,15 +163,19 @@ namespace BeatSaberMultiplayer
                     _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name == "Camera Plus");
                 }
 
-                if (Config.Instance.SpectatorMode && _camera != null)
+                if (_camera != null)
                 {
-                    playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
+                    if (Config.Instance.SpectatorMode)
+                    {
+                        playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
+                    }
                 }
                 else
                 {
                     playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
                 }
-            }catch(Exception e)
+            }
+            catch(Exception e)
             {
                 Misc.Logger.Warning("Unable to rotate text to the camera! Exception: "+e);
             }

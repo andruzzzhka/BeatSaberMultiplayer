@@ -16,7 +16,7 @@ namespace ServerHub.Hub
 {
     static class HubListener
     {
-        public static Action<Client> ClientConnected;
+        public static event Action<Client> ClientConnected;
 
         private static List<float> _ticksLength = new List<float>();
         private static DateTime _lastTick;
@@ -80,7 +80,11 @@ namespace ServerHub.Hub
             _ticksLength.Add(DateTime.Now.Subtract(_lastTick).Ticks/TimeSpan.TicksPerMillisecond);
             _lastTick = DateTime.Now;
             List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
-            Console.Title = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total, {Tickrate.ToString("0.0")} tickrate";
+
+            string titleBuffer = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total {(Settings.Instance.Server.ShowTickrateInTitle ? $", {Tickrate.ToString("0.0")} tickrate" : "")}";
+
+            if(Console.Title != titleBuffer)
+                Console.Title = titleBuffer;
 
         }
         

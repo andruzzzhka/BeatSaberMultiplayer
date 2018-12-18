@@ -94,6 +94,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             presetSettings.AvailableSongs = _leftRoomCreationViewController.selectedSongs.Select(x => new SongInfo() { songName = x.songName + " " + x.songSubName, levelId = x.levelID.Substring(0, Math.Min(32, x.levelID.Length)), songDuration = x.audioClip.length }).ToList();
             RoomPreset preset = new RoomPreset(presetSettings);
             preset.SavePreset("UserData\\RoomPresets\\"+name+".json");
+            PresetsCollection.ReloadPresets();
         }
 
         private void LoadPresetPressed()
@@ -109,10 +110,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             DismissViewController(_presetsListViewController);
             SetLeftScreenViewController(_leftRoomCreationViewController);
 
-            RoomSettings settings = selectedPreset.GetRoomSettings();
-            
-            _mainRoomCreationViewController.ApplyRoomSettings(settings);
-            _leftRoomCreationViewController.SelectSongs(settings.AvailableSongs.Select(x=>x.levelId).ToList());
+            if (selectedPreset != null)
+            {
+                RoomSettings settings = selectedPreset.GetRoomSettings();
+
+                _mainRoomCreationViewController.ApplyRoomSettings(settings);
+                _leftRoomCreationViewController.SelectSongs(settings.AvailableSongs.Select(x => x.levelId).ToList());
+            }
         }
 
         public void CreateRoomPressed(RoomSettings settings)

@@ -18,6 +18,16 @@ namespace BeatSaberMultiplayer.Misc
             {
                 loadedPresets.Clear();
 
+                if (!Directory.Exists(Path.Combine(Environment.CurrentDirectory, "UserData")))
+                {
+                    Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "UserData"));
+                }
+
+                if (!Directory.Exists(Path.Combine(Path.Combine(Environment.CurrentDirectory, "UserData"), "RoomPresets")))
+                {
+                    Directory.CreateDirectory(Path.Combine(Path.Combine(Environment.CurrentDirectory, "UserData"), "RoomPresets"));
+                }
+
                 List<string> presetFiles = Directory.GetFiles(Path.Combine(Path.Combine(Environment.CurrentDirectory, "UserData"), "RoomPresets"), "*.json").ToList();
 
                 Logger.Info($"Found {presetFiles.Count} presets in RoomPresets folder");

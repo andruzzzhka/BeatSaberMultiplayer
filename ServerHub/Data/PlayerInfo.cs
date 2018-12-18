@@ -11,7 +11,10 @@ namespace ServerHub.Data
     public class PlayerInfo
     {
         public string playerName;
+        [NonSerialized]
         public ulong playerId;
+
+        public string playerIdString;
 
         public PlayerState playerState;
 
@@ -36,6 +39,7 @@ namespace ServerHub.Data
             int nameLength = BitConverter.ToInt32(data, 0);
             playerName = Encoding.UTF8.GetString(data, 4, nameLength);
             playerId = BitConverter.ToUInt64(data, 4 + nameLength);
+            playerIdString = playerId.ToString();
 
             playerState = (PlayerState)data[12 + nameLength];
 

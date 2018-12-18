@@ -133,6 +133,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         }
 
+        protected override void DidDeactivate(DeactivationType deactivationType)
+        {
+            PreviewPlayer.CrossfadeToDefault();
+        }
+
         IEnumerator Scroll()
         {
             yield return null;

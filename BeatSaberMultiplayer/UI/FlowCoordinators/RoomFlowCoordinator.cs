@@ -688,7 +688,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     PopViewControllerFromNavigationController(_roomNavigationController, null, true);
                     _songSelectionViewController.SongSelected -= SongSelected;
-                    Destroy(_songSelectionViewController.gameObject);
                 }
             }
         }
@@ -759,7 +758,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     PopViewControllerFromNavigationController(_roomNavigationController, null, true);
                     _difficultySelectionViewController.DiscardPressed -= DiscardPressed;
                     _difficultySelectionViewController.PlayPressed -= PlayPressed;
-                    Destroy(_difficultySelectionViewController.gameObject);
                 }
             }
         }
@@ -793,7 +791,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 if (_roomNavigationController.viewControllers.IndexOf(_leaderboardViewController) >= 0)
                 {
                     PopViewControllerFromNavigationController(_roomNavigationController, null, true);
-                    Destroy(_leaderboardViewController.gameObject);
                 }
             }
             PreviewPlayer.CrossfadeToDefault();
@@ -833,7 +830,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 if (_roomNavigationController.viewControllers.IndexOf(_votingViewController) >= 0)
                 {
                     PopViewControllerFromNavigationController(_roomNavigationController, null, true);
-                    Destroy(_votingViewController.gameObject);
                 }
             }
         }
@@ -853,7 +849,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 if (_roomNavigationController.viewControllers.IndexOf(_downloadQueueViewController) >= 0)
                 {
                     PopViewControllerFromNavigationController(_roomNavigationController, null, true);
-                    Destroy(_downloadQueueViewController.gameObject);
                 }
             }
         }

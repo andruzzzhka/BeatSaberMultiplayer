@@ -561,11 +561,11 @@ namespace ServerHub.Hub
                         }
                     case "tickrate":
                         {
-                            int tickrate = 30;
+                            int tickrate = Settings.Instance.Server.Tickrate;
                             if (int.TryParse(comArgs[0], out tickrate))
                             {
 #if !DEBUG
-                            tickrate = Misc.Math.Clamp(tickrate, 5, 150);
+                                tickrate = Misc.Math.Clamp(tickrate, 5, 150);
 #endif
                                 Settings.Instance.Server.Tickrate = tickrate;
                                 HighResolutionTimer.LoopTimer.Interval = 1000f / tickrate;

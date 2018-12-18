@@ -17,6 +17,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
     {
         public event Action<RoomPreset> didFinishEvent;
 
+        private Button _backButton;
         private Button _pageUpButton;
         private Button _pageDownButton;
 
@@ -31,6 +32,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         {
             if (firstActivation && type == ActivationType.AddedToHierarchy)
             {
+                _backButton = BeatSaberUI.CreateBackButton(rectTransform, () => { didFinishEvent?.Invoke(null); });
+
                 _presetsTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
 
                 _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
