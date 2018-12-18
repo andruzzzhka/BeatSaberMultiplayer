@@ -31,7 +31,8 @@ namespace BeatSaberMultiplayer {
                 FileLocation?.Directory?.Create();
                 Misc.Logger.Info($"Attempting to load JSON @ {FileLocation.FullName}");
                 _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
-                _instance.MarkClean();
+                _instance.MarkDirty();
+                _instance.Save();
             }
             catch (Exception)
             {
@@ -141,8 +142,8 @@ namespace BeatSaberMultiplayer {
 
         Config()
         {
-            _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "auros.host", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org" };
-            _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700 };
+            _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "auros.host", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.ligma.site", "beatsaber.hexbugman213.net" };
+            _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700 };
             _showAvatarsInGame = false;
             _showAvatarsInRoom = true;
             _spectatorMode = false;
@@ -162,8 +163,8 @@ namespace BeatSaberMultiplayer {
                 MarkClean();
                 return true;
             }
-            catch (IOException ex) {
-                Misc.Logger.Exception($"ERROR WRITING TO CONFIG [{ex.Message}]");
+            catch (Exception ex) {
+                Misc.Logger.Exception($"Unable to write the config file! Exception: {ex}");
                 return false;
             }
         }
