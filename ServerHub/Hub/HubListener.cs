@@ -37,6 +37,8 @@ namespace ServerHub.Hub
 
         public static List<Client> hubClients = new List<Client>();
 
+        private static string _currentTitle;
+
         public static void Start()
         {
             if (Settings.Instance.Server.TryUPnP)
@@ -83,8 +85,11 @@ namespace ServerHub.Hub
 
             string titleBuffer = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total {(Settings.Instance.Server.ShowTickrateInTitle ? $", {Tickrate.ToString("0.0")} tickrate" : "")}";
 
-            if(Console.Title != titleBuffer)
-                Console.Title = titleBuffer;
+            if (_currentTitle != titleBuffer)
+            {
+                _currentTitle = titleBuffer;
+                Console.Title = _currentTitle;
+            }
 
         }
         
