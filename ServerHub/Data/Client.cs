@@ -36,6 +36,8 @@ namespace ServerHub.Data
         public event Action<Client> ClientDisconnected;
         public event Action<Client, uint, string> ClientJoinedRoom;
         public event Action<Client> ClientLeftRoom;
+        
+        public event Action<string, string> EventMessageReceived;
 
         public Socket socket;
         public PlayerInfo playerInfo;
@@ -418,6 +420,28 @@ namespace ServerHub.Data
                             if (joinedRoom != null)
                             {
                                 joinedRoom.ReadyStateChanged(playerInfo, (packet.additionalData[0] == 0) ? false : true);
+                            }
+                        }
+                    }
+                    break;
+                case CommandType.SendEventMessage:
+                    {
+                        if (joinedRoomID != 0 && Settings.Instance.Server.AllowEventMessages)
+                        {
+                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == joinedRoomID);
+                            if (joinedRoom != null)
+                            {
+                                int headerLength = BitConverter.ToInt32(packet.additionalData, 0);
+                                string header = Encoding.UTF8.GetString(packet.additionalData.Skip(4).Take(headerLength).ToArray());
+                                string data = Encoding.UTF8.GetString(packet.additionalData.Skip(4 + headerLength).ToArray());
+
+                                joinedRoom.BroadcastEventMessage(header, data, new List<Client>() { this });
+                                joinedRoom.BroadcastWebSocket(CommandType.SendEventMessage, new EventMessage(header, data));
+
+                                EventMessageReceived?.Invoke(header, data);
+#if DEBUG
+                                Logger.Instance.Log($"Received event message! Header=\"{header}\", Data=\"{data}\"");
+#endif
                             }
                         }
                     }

@@ -62,6 +62,18 @@ namespace ServerHub.Rooms
         }
     }
 
+    public struct EventMessage
+    {
+        string header;
+        string data;
+
+        public EventMessage(string header, string data)
+        {
+            this.header = header;
+            this.data = data;
+        }
+    }
+
     public class BaseRoom
     {
         public uint roomId;
@@ -269,6 +281,33 @@ namespace ServerHub.Rooms
                 try
                 {
                     roomClients[i].SendData(packet);
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"Unable to send packet to {roomClients[i].playerInfo.playerName}! Exception: {e}");
+                }
+            }
+        }
+
+        public virtual void BroadcastEventMessage(string header, string data, List<Client> excludeClients = null)
+        {
+            List<byte> buffer = new List<byte>();
+
+            byte[] headerBytes = Encoding.UTF8.GetBytes(header);
+            byte[] dataBytes = Encoding.UTF8.GetBytes(data);
+
+            buffer.AddRange(BitConverter.GetBytes(headerBytes.Length));
+            buffer.AddRange(headerBytes);
+            buffer.AddRange(dataBytes);
+
+            BasePacket packet = new BasePacket(CommandType.SendEventMessage, buffer.ToArray());
+
+            for (int i = 0; i < roomClients.Count; i++)
+            {
+                try
+                {
+                    if((excludeClients != null && !excludeClients.Contains(roomClients[i])) || excludeClients == null)
+                        roomClients[i].SendData(packet);
                 }
                 catch (Exception e)
                 {

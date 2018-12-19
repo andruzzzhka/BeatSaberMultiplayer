@@ -450,6 +450,7 @@ namespace BeatSaberMultiplayer
                 _scoreController.scoreDidChangeEvent += ScoreChanged;
                 _scoreController.noteWasCutEvent += NoteWasCutEvent;
                 _scoreController.comboDidChangeEvent += ComboDidChangeEvent;
+                _scoreController.noteWasMissedEvent += NoteWasMissedEvent;
             }
 #if DEBUG
             Misc.Logger.Info("Found score controller");
@@ -479,8 +480,8 @@ namespace BeatSaberMultiplayer
 #endif
 
             loaded = true;
-        }        
-
+        }
+        
         private void ShowMenu()
         {
             try
@@ -516,7 +517,19 @@ namespace BeatSaberMultiplayer
         private void NoteWasCutEvent(NoteData arg1, NoteCutInfo arg2, int score)
         {
             if (arg2.allIsOK)
+            {
                 Client.instance.playerInfo.playerCutBlocks++;
+                Client.instance.playerInfo.playerTotalBlocks++;
+            }
+            else
+            {
+                Client.instance.playerInfo.playerTotalBlocks++;
+            }
+        }
+
+        private void NoteWasMissedEvent(NoteData arg1, int arg2)
+        {
+            Client.instance.playerInfo.playerTotalBlocks++;
         }
 
         private void ScoreChanged(int score)

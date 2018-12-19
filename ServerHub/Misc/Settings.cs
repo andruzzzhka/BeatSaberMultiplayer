@@ -19,6 +19,7 @@ namespace ServerHub.Misc {
             private string _rconPassword;
             private int _webSocketPort;
             private bool _showTickrateInTitle;
+            private bool _allowEventMessages;
 
             private Action MarkDirty { get; }
 
@@ -151,6 +152,20 @@ namespace ServerHub.Misc {
                 }
             }
 
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool AllowEventMessages
+            {
+                get => _allowEventMessages;
+                set
+                {
+                    _allowEventMessages = value;
+                    MarkDirty();
+                }
+            }
+
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
@@ -162,6 +177,7 @@ namespace ServerHub.Misc {
                 _rconPassword = "changeme";
                 _webSocketPort = 3701;
                 _showTickrateInTitle = true;
+                _allowEventMessages = true;
             }
         }
 

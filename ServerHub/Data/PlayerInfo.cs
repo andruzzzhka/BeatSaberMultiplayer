@@ -21,6 +21,7 @@ namespace ServerHub.Data
         public uint playerScore;
         public uint playerCutBlocks;
         public uint playerComboBlocks;
+        public uint playerTotalBlocks;
         public float playerEnergy;
 
         public float playerProgress;
@@ -46,11 +47,12 @@ namespace ServerHub.Data
             playerScore = BitConverter.ToUInt32(data, 13 + nameLength);
             playerCutBlocks = BitConverter.ToUInt32(data, 17 + nameLength);
             playerComboBlocks = BitConverter.ToUInt32(data, 21 + nameLength);
-            playerEnergy = BitConverter.ToSingle(data, 25 + nameLength);
-            
-            playerProgress = BitConverter.ToSingle(data, 29 + nameLength);
+            playerTotalBlocks = BitConverter.ToUInt32(data, 25 + nameLength);
+            playerEnergy = BitConverter.ToSingle(data, 29 + nameLength);
 
-            playerAvatar = data.Skip(33 + nameLength).Take(84).ToArray();
+            playerProgress = BitConverter.ToSingle(data, 33 + nameLength);
+
+            playerAvatar = data.Skip(37 + nameLength).Take(84).ToArray();
         }
 
         public byte[] ToBytes(bool includeSize = true)
@@ -67,6 +69,7 @@ namespace ServerHub.Data
             buffer.AddRange(BitConverter.GetBytes(playerScore));
             buffer.AddRange(BitConverter.GetBytes(playerCutBlocks));
             buffer.AddRange(BitConverter.GetBytes(playerComboBlocks));
+            buffer.AddRange(BitConverter.GetBytes(playerTotalBlocks));
             buffer.AddRange(BitConverter.GetBytes(playerEnergy));
 
             buffer.AddRange(BitConverter.GetBytes(playerProgress));

@@ -33,6 +33,7 @@ namespace BeatSaberMultiplayer
 #if DEBUG
         public static FileStream packetWriter = File.Open("packetDump.dmp", FileMode.Append);
 #endif
+        public static event Action<string, string> EventMessageReceived;
         public static event Action ClientCreated;
         public static event Action ClientDestroyed;
         public static Client instance;
@@ -43,7 +44,7 @@ namespace BeatSaberMultiplayer
         public event Action<BasePacket> PacketReceived;
 
         public bool Connected;
-        
+
         Socket socket;
 
         public string ip;
@@ -178,15 +179,27 @@ namespace BeatSaberMultiplayer
             while (_packetsQueue.Count > 0)
             {
                 BasePacket packet = _packetsQueue.Dequeue();
-
-                PacketReceived?.Invoke(packet);
-
+                
                 if (packet.commandType == CommandType.Disconnect)
                 {
 #if DEBUG
                     Misc.Logger.Info("Disconnecting...");
 #endif
                     Disconnect();
+                } else if (packet.commandType == CommandType.SendEventMessage)
+                {
+                    int headerLength = BitConverter.ToInt32(packet.additionalData, 0);
+                    string header = Encoding.UTF8.GetString(packet.additionalData.Skip(4).Take(headerLength).ToArray());
+                    string data = Encoding.UTF8.GetString(packet.additionalData.Skip(4+headerLength).ToArray());
+
+#if DEBUG
+                    Misc.Logger.Info($"Received event message! Header=\"{header}\", Data=\"{data}\"");
+#endif
+                    EventMessageReceived?.Invoke(header, data);
+                }
+                else
+                {
+                    PacketReceived?.Invoke(packet);
                 }
             }
         }
@@ -382,6 +395,23 @@ namespace BeatSaberMultiplayer
             if (Connected && socket.Connected)
             {
                 socket.SendData(new BasePacket(CommandType.PlayerReady, new byte[1] { (byte)(ready ? 1 : 0) }));
+            }
+        }
+
+        public void SendEventMessage(string header, string data)
+        {
+            if (Connected && socket.Connected)
+            {
+                List<byte> buffer = new List<byte>();
+
+                byte[] headerBytes = Encoding.UTF8.GetBytes(header);
+                byte[] dataBytes = Encoding.UTF8.GetBytes(data);
+
+                buffer.AddRange(BitConverter.GetBytes(headerBytes.Length));
+                buffer.AddRange(headerBytes);
+                buffer.AddRange(dataBytes);
+
+                socket.SendData(new BasePacket(CommandType.SendEventMessage, buffer.ToArray()));
             }
         }
 
