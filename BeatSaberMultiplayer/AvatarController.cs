@@ -14,7 +14,7 @@ using UnityEngine.XR;
 
 namespace BeatSaberMultiplayer
 {
-    class AvatarController : MonoBehaviour, IAvatarInput
+    public class AvatarController : MonoBehaviour, IAvatarInput
     {
         static CustomAvatar.CustomAvatar avatarInstance;
 

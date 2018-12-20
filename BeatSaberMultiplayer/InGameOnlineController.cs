@@ -20,7 +20,7 @@ using VRUI;
 
 namespace BeatSaberMultiplayer
 {
-    class InGameOnlineController : MonoBehaviour
+    public class InGameOnlineController : MonoBehaviour
     {
 
         public static Quaternion oculusTouchRotOffset = Quaternion.Euler(-40f, 0f, 0f);

@@ -8,7 +8,7 @@ using System.Net;
 
 namespace ServerHub.Misc
 {
-    static class BeatSaver
+    public static class BeatSaver
     {
         static readonly string BeatSaverAPI = "https://beatsaver.com/api/songs";
 

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ServerHub.Hub
 {
-    class RCONStructs
+    public class RCONStructs
     {
 
         public struct OutgoingMessage

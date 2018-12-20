@@ -28,7 +28,7 @@ namespace BeatSaberMultiplayer
         }
     }
 
-    class Client : MonoBehaviour
+    public class Client : MonoBehaviour
     {
 #if DEBUG
         public static FileStream packetWriter = File.Open("packetDump.dmp", FileMode.Append);

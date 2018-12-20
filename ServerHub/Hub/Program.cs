@@ -22,7 +22,7 @@ using System.Diagnostics;
 
 namespace ServerHub.Hub
 {
-    static class Program {
+    public static class Program {
         private static string IP { get; set; }
 
         public static DateTime serverStartTime;

@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace BeatSaberMultiplayer
 {
-    class PlayerInfoDisplay : MonoBehaviour
+    public class PlayerInfoDisplay : MonoBehaviour
     {
         private PlayerInfo _playerInfo;
 

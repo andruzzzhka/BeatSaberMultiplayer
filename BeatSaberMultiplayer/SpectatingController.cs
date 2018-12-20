@@ -17,7 +17,7 @@ using UnityEngine.XR;
 
 namespace BeatSaberMultiplayer
 {
-    class SpectatingController : MonoBehaviour
+    public class SpectatingController : MonoBehaviour
     {
         public static SpectatingController Instance;
 

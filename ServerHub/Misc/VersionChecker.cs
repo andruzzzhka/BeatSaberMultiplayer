@@ -9,10 +9,8 @@ namespace ServerHub.Misc
 {
     public static class VersionChecker
     {
-
         static string releasesURL = "https://api.github.com/repos/andruzzzhka/BeatSaberMultiplayer/releases";
-
-
+        
         public static void CheckForUpdates()
         {
             try

@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Hub
 {
-    static class HubListener
+    public static class HubListener
     {
         public static event Action<Client> ClientConnected;
 

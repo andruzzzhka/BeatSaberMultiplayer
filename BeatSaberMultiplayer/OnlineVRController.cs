@@ -12,7 +12,7 @@ using UnityEngine.XR;
 
 namespace BeatSaberMultiplayer
 {
-    class OnlineVRController : VRController
+    public class OnlineVRController : VRController
     {
         Vector3 targetPos;
         Vector3 interpPos;

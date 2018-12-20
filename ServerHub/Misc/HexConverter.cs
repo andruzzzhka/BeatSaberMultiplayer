@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ServerHub.Misc
 {
-    static class HexConverter
+    public static class HexConverter
     {
         //https://codereview.stackexchange.com/questions/53839/convert-hex-string-to-byte-array
         private static readonly byte[,] ByteLookup = new byte[,]

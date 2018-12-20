@@ -16,7 +16,7 @@ using UnityEngine.Networking;
 
 namespace BeatSaberMultiplayer.Misc
 {
-    class SongDownloader : MonoBehaviour
+    public class SongDownloader : MonoBehaviour
     {
         public event Action<Song> songDownloaded;
 

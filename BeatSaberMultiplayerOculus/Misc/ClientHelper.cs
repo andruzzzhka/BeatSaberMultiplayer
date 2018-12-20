@@ -6,7 +6,7 @@ using System.Text;
 
 namespace BeatSaberMultiplayer.Misc
 {
-    static class ClientHelper
+    public static class ClientHelper
     {
         public static BasePacket ReceiveData(this Socket client, bool waitForData = true)
         {

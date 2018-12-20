@@ -6,7 +6,7 @@ using System.Text;
 
 namespace BeatSaberMultiplayer.Misc
 {
-    static class GetUserInfo
+    public static class GetUserInfo
     {
         static string userName;
         static ulong userID;

@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace BeatSaberMultiplayer.Misc
 {
-    static class CustomExtensions
+    public static class CustomExtensions
     {
         public static void SetButtonStrokeColor(this Button btn, Color color)
         {

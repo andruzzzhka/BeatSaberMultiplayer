@@ -8,7 +8,7 @@ using System.Text;
 
 namespace ServerHub.Misc
 {
-    static class ClientHelper
+    public static class ClientHelper
     {
         public static event Action<Client> LostConnection;
 
