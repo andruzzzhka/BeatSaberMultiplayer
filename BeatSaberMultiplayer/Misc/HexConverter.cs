@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace BeatSaberMultiplayer.Misc
@@ -29,6 +30,13 @@ namespace BeatSaberMultiplayer.Misc
                 result[lastcell - (i >> 1)] |= ByteLookup[i & 1, HexToInt(input[lastchar - i])];
             }
             return result;
+        }
+
+        public static byte[] GetStringHashBytes(string input)
+        {
+            MD5 md5 = MD5.Create();
+            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+            return md5.ComputeHash(inputBytes);
         }
 
         private static int HexToInt(char c)

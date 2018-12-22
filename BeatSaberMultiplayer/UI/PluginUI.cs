@@ -1,4 +1,5 @@
-﻿using BeatSaberMultiplayer.Misc;
+﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.ViewControllers;
 using CustomUI.BeatSaber;
@@ -67,6 +68,8 @@ namespace BeatSaberMultiplayer.UI
             {
                 CreateUI();
             }
+
+            SongInfo.GetOriginalLevelHashes();
         }
 
         public void CreateUI()
