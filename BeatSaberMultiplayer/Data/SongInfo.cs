@@ -22,7 +22,8 @@ namespace BeatSaberMultiplayer.Data
                                                                                                  { "CommercialPumping", 9 },
                                                                                                  { "TurnMeOn", 10 },
                                                                                                  { "LvlInsane", 11 },
-                                                                                                 { "OneHope", 12 }};
+                                                                                                 { "OneHope", 12 },
+                                                                                                 { "PopStars", 13 }};
 
         public string songName;
         public string levelId;
