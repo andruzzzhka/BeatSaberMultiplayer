@@ -54,6 +54,8 @@ namespace BeatSaberMultiplayer
         Camera _camera;
         public bool forcePlayerInfo = false;
 
+        VRCenterAdjust _centerAdjust;
+
         public PosRot HeadPosRot => new PosRot(interpHeadPos, interpHeadRot);
 
         public PosRot LeftPosRot => new PosRot(interpLeftHandPos, interpLeftHandRot);
@@ -125,12 +127,17 @@ namespace BeatSaberMultiplayer
 #if DEBUG
             Misc.Logger.Info("Spawning avatar");
 #endif
+            _centerAdjust = FindObjectOfType<VRCenterAdjust>();
+
             avatar = AvatarSpawner.SpawnAvatar(avatarInstance, this);
             
             playerNameText = CustomExtensions.CreateWorldText(transform, "INVALID");
             playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 0.25f, 0f);
             playerNameText.alignment = TextAlignmentOptions.Center;
             playerNameText.fontSize = 2.5f;
+
+            avatar.GameObject.transform.SetParent(_centerAdjust.transform, false);
+            transform.SetParent(_centerAdjust.transform, false);
         }
 
         void Update()

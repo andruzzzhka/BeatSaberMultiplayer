@@ -42,11 +42,11 @@ namespace BeatSaberMultiplayer
         private TextMeshPro _messageDisplayText;
         private float _messageDisplayTime;
 
-        private Scene _currentScene;
+        private string _currentScene;
 
         private bool loaded;
 
-        public static void OnLoad()
+        public static void OnLoad(Scene to)
         {
             if (Instance != null)
                 return;
@@ -61,7 +61,7 @@ namespace BeatSaberMultiplayer
                 DontDestroyOnLoad(gameObject);
 
                 Client.ClientCreated += ClientCreated;
-                _currentScene = SceneManager.GetActiveScene();
+                _currentScene = SceneManager.GetActiveScene().name;
 
                 _messageDisplayText = CustomExtensions.CreateWorldText(transform, "");
                 transform.position = new Vector3(0f, 3.75f, 3.75f);
@@ -80,8 +80,8 @@ namespace BeatSaberMultiplayer
                 Misc.Logger.Info($"(OnlineController) Travelling from {from.name} to {to.name}");
                 if (to.name == "GameCore" || to.name == "Menu")
                 {
-                    _currentScene = to;
-                    if (_currentScene.name == "GameCore")
+                    _currentScene = to.name;
+                    if (_currentScene == "GameCore")
                     {
                         DestroyAvatars();
                         DestroyScoreScreens();
@@ -90,7 +90,7 @@ namespace BeatSaberMultiplayer
                             StartCoroutine(WaitForControllers());
                         }
                     }
-                    else if (_currentScene.name == "Menu")
+                    else if (_currentScene == "Menu")
                     {
                         loaded = false;
                         DestroyAvatars();
@@ -103,7 +103,7 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Misc.Logger.Exception($"(OnlineController) Exception on {_currentScene.name} scene activation! Exception: {e}");
+                Misc.Logger.Exception($"(OnlineController) Exception on {_currentScene} scene activation! Exception: {e}");
             }
         }
 
@@ -146,7 +146,7 @@ namespace BeatSaberMultiplayer
                             }
                         }
 
-                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene.name == "GameCore") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu")).OrderByDescending(x => x.playerScore).ToList();
+                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "Menu")).OrderByDescending(x => x.playerScore).ToList();
 
                         int localPlayerIndex = playerInfos.FindIndexInList(Client.instance.playerInfo);
 
@@ -175,7 +175,7 @@ namespace BeatSaberMultiplayer
 
                                 for (int i = 0; i < playerInfos.Count; i++)
                                 {
-                                    if (_currentScene.name == "GameCore")
+                                    if (_currentScene == "GameCore")
                                     {
                                         _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - _playerInfosByID.FindIndexInList(Client.instance.playerInfo)) * 3f, Client.instance.playerInfo.Equals(_playerInfosByID[i]));
                                     }
@@ -191,7 +191,7 @@ namespace BeatSaberMultiplayer
                             }
                         }
 
-                        if (_currentScene.name == "GameCore" && loaded)
+                        if (_currentScene == "GameCore" && loaded)
                         {
                             if (_scoreDisplays.Count < 5)
                             {
@@ -268,7 +268,7 @@ namespace BeatSaberMultiplayer
                             Client.instance.playerInfo.leftHandPos += openVrPosOffset;
                         }
 
-                        if (_currentScene.name == "GameCore" && loaded)
+                        if (_currentScene == "GameCore" && loaded)
                         {
                             Client.instance.playerInfo.playerProgress = audioTimeSync.songTime;
                         }
@@ -289,7 +289,7 @@ namespace BeatSaberMultiplayer
                     }; break;
                 case CommandType.SetGameState:
                     {
-                        if (_currentScene.name == "GameCore" && loaded)
+                        if (_currentScene == "GameCore" && loaded)
                         {
                             PropertyInfo property = typeof(StandardLevelGameplayManager).GetProperty("gameState");
                             property.DeclaringType.GetProperty("gameState");
@@ -324,12 +324,12 @@ namespace BeatSaberMultiplayer
 
         private bool ShowAvatarsInGame()
         {
-            return Config.Instance.ShowAvatarsInGame && _currentScene.name == "GameCore";
+            return Config.Instance.ShowAvatarsInGame && _currentScene == "GameCore";
         }
 
         private bool ShowAvatarsInRoom()
         {
-            return Config.Instance.ShowAvatarsInRoom && _currentScene.name == "Menu";
+            return Config.Instance.ShowAvatarsInRoom && _currentScene == "Menu";
         }
 
         public static PosRot GetXRNodeWorldPosRot(XRNode node)
@@ -339,8 +339,9 @@ namespace BeatSaberMultiplayer
 
             var roomCenter = BeatSaberUtil.GetRoomCenter();
             var roomRotation = BeatSaberUtil.GetRoomRotation();
-            pos += roomCenter;
+
             pos = roomRotation * pos;
+            pos += roomCenter;
             rot = roomRotation * rot;
             return new PosRot(pos, rot);
         }
@@ -349,6 +350,7 @@ namespace BeatSaberMultiplayer
         {
             try
             {
+                Misc.Logger.Info("Destroying avatars");
                 for (int i = 0; i < _avatars.Count; i++)
                 {
                     if (_avatars[i] != null)
