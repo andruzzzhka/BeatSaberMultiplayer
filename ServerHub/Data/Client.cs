@@ -31,7 +31,7 @@ namespace ServerHub.Data
     {
         Stopwatch timeoutTimer;
 
-        int inactivityKickTime = 45000;
+        int inactivityKickTime = 10000;
 
         public event Action<Client> ClientDisconnected;
         public event Action<Client, uint, string> ClientJoinedRoom;
@@ -170,16 +170,9 @@ namespace ServerHub.Data
             {
                 DestroyClient();
             }
-
-            if ((playerInfo.playerState == PlayerState.Room || playerInfo.playerState == PlayerState.Game))
-            {
-                if(!timeoutTimer.IsRunning)
-                    timeoutTimer.Start();
-            }
-            else
-            {
-                timeoutTimer.Reset();
-            }
+            
+            if (!timeoutTimer.IsRunning)
+                timeoutTimer.Start();
 
             if (timeoutTimer.ElapsedMilliseconds > inactivityKickTime)
             {
@@ -272,6 +265,9 @@ namespace ServerHub.Data
 
         public void ProcessPacket(BasePacket packet)
         {
+            if(timeoutTimer.IsRunning)
+                timeoutTimer.Restart();
+
             switch (packet.commandType)
             {
                 case CommandType.Connect:
@@ -290,7 +286,6 @@ namespace ServerHub.Data
                 case CommandType.UpdatePlayerInfo:
                     {
                         playerInfo = new PlayerInfo(packet.additionalData);
-                        timeoutTimer.Restart();
                     }
                     break;
                 case CommandType.JoinRoom:

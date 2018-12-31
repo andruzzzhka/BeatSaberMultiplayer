@@ -163,11 +163,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
 
-            PopAllViewControllers(_roomNavigationController);
             InGameOnlineController.Instance.DestroyAvatars();
             PreviewPlayer.CrossfadeToDefault();
             _roomSongList.Clear();
             lastSelectedSong = "";
+            PopAllViewControllers(_roomNavigationController);
             didFinishEvent?.Invoke();
             PluginUI.instance.serverHubFlowCoordinator.UpdateRoomsList();
         }

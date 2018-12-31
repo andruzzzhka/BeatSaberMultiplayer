@@ -61,7 +61,7 @@ namespace BeatSaberMultiplayer
             if (from.name == "EmptyTransition" && to.name == "Menu")
             {
                 PluginUI.OnLoad();
-                InGameOnlineController.OnLoad();
+                InGameOnlineController.OnLoad(to);
                 SpectatingController.OnLoad();
             }
             else
