@@ -186,7 +186,9 @@ namespace BeatSaberMultiplayer
                     Misc.Logger.Info("Disconnecting...");
 #endif
                     Disconnect();
-                } else if (packet.commandType == CommandType.SendEventMessage)
+                    PacketReceived?.Invoke(packet);
+                }
+                else if (packet.commandType == CommandType.SendEventMessage)
                 {
                     int headerLength = BitConverter.ToInt32(packet.additionalData, 0);
                     string header = Encoding.UTF8.GetString(packet.additionalData.Skip(4).Take(headerLength).ToArray());

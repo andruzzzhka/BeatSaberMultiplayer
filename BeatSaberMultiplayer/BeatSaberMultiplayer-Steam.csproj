@@ -126,6 +126,7 @@
     <Compile Include="Client.cs" />
     <Compile Include="Data\BasePacket.cs" />
     <Compile Include="Data\BeatSaverAPIResult.cs" />
+    <Compile Include="Misc\ModelSaberAPI.cs" />
     <Compile Include="Data\PlayerInfo.cs" />
     <Compile Include="Data\RoomInfo.cs" />
     <Compile Include="Data\RoomPreset.cs" />

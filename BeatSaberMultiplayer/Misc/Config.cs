@@ -14,6 +14,7 @@ namespace BeatSaberMultiplayer {
         [SerializeField] private int[] _serverHubPorts;
         [SerializeField] private bool _showAvatarsInGame;
         [SerializeField] private bool _showAvatarsInRoom;
+        [SerializeField] private bool _downloadAvatars;
         [SerializeField] private bool _spectatorMode;
         [SerializeField] private int _maxSimultaneousDownloads;
         [SerializeField] private string _beatSaverURL;
@@ -110,6 +111,16 @@ namespace BeatSaberMultiplayer {
             }
         }
 
+        public bool DownloadAvatars
+        {
+            get { return _downloadAvatars; }
+            set
+            {
+                _downloadAvatars = value;
+                MarkDirty();
+            }
+        }
+
         public bool SpectatorMode
         {
             get { return _spectatorMode; }
@@ -142,10 +153,11 @@ namespace BeatSaberMultiplayer {
 
         Config()
         {
-            _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "auros.host", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.ligma.site", "beatsaber.hexbugman213.net" };
+            _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "hub.auros.red", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.ligma.site", "beatsaber.hexbugman213.net" };
             _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700 };
             _showAvatarsInGame = false;
             _showAvatarsInRoom = true;
+            _downloadAvatars = true;
             _spectatorMode = false;
             _maxSimultaneousDownloads = ModPrefs.GetInt("BeatSaverDownloader", "maxSimultaneousDownloads", 3);
             _beatSaverURL = ModPrefs.GetString("BeatSaverDownloader", "beatsaverURL", "https://beatsaver.com");

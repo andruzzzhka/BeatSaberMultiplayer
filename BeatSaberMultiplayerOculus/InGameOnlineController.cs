@@ -249,6 +249,13 @@ namespace BeatSaberMultiplayer
                             }
                         }
 
+                        Client.instance.playerInfo.avatarHash = "ebde83d014af958beefa66f7f4498a2a".ToUpper();//ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+                        if (Client.instance.playerInfo.avatarHash == null)
+                        {
+                            Misc.Logger.Info("Avatar hash not found! Using default hash...");
+                            Client.instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+                        }
+
                         Client.instance.playerInfo.headPos = GetXRNodeWorldPosRot(XRNode.Head).Position;
                         Client.instance.playerInfo.headRot = GetXRNodeWorldPosRot(XRNode.Head).Rotation;
                         Client.instance.playerInfo.leftHandPos = GetXRNodeWorldPosRot(XRNode.LeftHand).Position;

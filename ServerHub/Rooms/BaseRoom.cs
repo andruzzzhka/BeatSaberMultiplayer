@@ -329,7 +329,7 @@ namespace ServerHub.Rooms
 
                 WebSocketPacket packet = new WebSocketPacket(CommandType.GetRoomInfo, roomInfo);
                 string serialized = JsonConvert.SerializeObject(packet);
-                service.Sessions.BroadcastAsync(serialized, null);
+                service?.Sessions.BroadcastAsync(serialized, null);
 
                 if (roomInfo.roomState == RoomState.Preparing)
                 {
@@ -337,7 +337,7 @@ namespace ServerHub.Rooms
 
                     packet = new WebSocketPacket(CommandType.PlayerReady, readyPlayers);
                     serialized = JsonConvert.SerializeObject(packet);
-                    service.Sessions.BroadcastAsync(serialized, null);
+                    service?.Sessions.BroadcastAsync(serialized, null);
                 }
             }catch(Exception e)
             {
@@ -354,7 +354,7 @@ namespace ServerHub.Rooms
             string serialized = JsonConvert.SerializeObject(packet);
 
             var service = WebSocketListener.Server.WebSocketServices[$"/room/{roomId}"];
-            service.Sessions.BroadcastAsync(serialized, null);
+            service?.Sessions.BroadcastAsync(serialized, null);
         }
 
         public virtual void SetSelectedSong(PlayerInfo sender, SongInfo song)

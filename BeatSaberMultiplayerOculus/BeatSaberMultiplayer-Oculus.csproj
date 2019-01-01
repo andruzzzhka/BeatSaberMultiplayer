@@ -136,6 +136,7 @@
     <Compile Include="Misc\HexConverter.cs" />
     <Compile Include="Misc\LoadScripts.cs" />
     <Compile Include="Misc\Logger.cs" />
+    <Compile Include="Misc\ModelSaberAPI.cs" />
     <Compile Include="Misc\PresetsCollection.cs" />
     <Compile Include="Misc\ReflectionUtil.cs" />
     <Compile Include="Misc\Serialization.cs" />

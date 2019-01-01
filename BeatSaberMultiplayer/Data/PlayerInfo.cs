@@ -33,10 +33,13 @@ namespace BeatSaberMultiplayer.Data
         public Quaternion rightHandRot;
         public Quaternion leftHandRot;
 
+        public string avatarHash;
+
         public PlayerInfo(string _name, ulong _id)
         {
             playerName = _name;
             playerId = _id;
+            avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
         }
 
         public PlayerInfo(byte[] data)
@@ -55,7 +58,7 @@ namespace BeatSaberMultiplayer.Data
 
             playerProgress = BitConverter.ToSingle(data, 33 + nameLength);
 
-            byte[] avatar = data.Skip(37 + nameLength).Take(84).ToArray();
+            byte[] avatar = data.Skip(37 + nameLength).Take(100).ToArray();
 
             rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
             leftHandPos = Serialization.ToVector3(avatar.Skip(12).Take(12).ToArray());
@@ -64,6 +67,8 @@ namespace BeatSaberMultiplayer.Data
             rightHandRot = Serialization.ToQuaternion(avatar.Skip(36).Take(16).ToArray());
             leftHandRot = Serialization.ToQuaternion(avatar.Skip(52).Take(16).ToArray());
             headRot = Serialization.ToQuaternion(avatar.Skip(68).Take(16).ToArray());
+
+            avatarHash = BitConverter.ToString(avatar.Skip(84).Take(16).ToArray()).Replace("-", "");
         }
 
         public byte[] ToBytes(bool includeSize = true)
@@ -92,6 +97,8 @@ namespace BeatSaberMultiplayer.Data
                             Serialization.ToBytes(rightHandRot),
                             Serialization.ToBytes(leftHandRot),
                             Serialization.ToBytes(headRot)));
+
+            buffer.AddRange(HexConverter.ConvertHexToBytesX(avatarHash));
 
             if (includeSize)
                 buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));

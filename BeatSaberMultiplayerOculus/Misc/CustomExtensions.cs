@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using TMPro;
@@ -32,6 +33,16 @@ namespace BeatSaberMultiplayer.Misc
             textMesh.font = Resources.Load<TMP_FontAsset>("Teko-Medium SDF No Glow");
 
             return textMesh;
+        }
+
+        public static T CreateInstance<T>(params object[] args)
+        {
+            var type = typeof(T);
+            var instance = type.Assembly.CreateInstance(
+                type.FullName, false,
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                null, args, null, null);
+            return (T)instance;
         }
     }
 }
