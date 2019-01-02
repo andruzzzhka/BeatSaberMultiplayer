@@ -35,6 +35,9 @@ namespace BeatSaberMultiplayer
 #endif
         public static event Action<string, string> EventMessageReceived;
         public static event Action ClientCreated;
+        public static event Action ClientJoinedRoom;
+        public static event Action ClientLevelStarted;
+        public static event Action ClientLeftRoom;
         public static event Action ClientDestroyed;
         public static Client instance;
 
@@ -203,6 +206,16 @@ namespace BeatSaberMultiplayer
                 {
                     PacketReceived?.Invoke(packet);
                 }
+
+                if(packet.commandType == CommandType.JoinRoom)
+                {
+                    if(packet.additionalData[0] == 0)
+                        ClientJoinedRoom?.Invoke();
+                }else if(packet.commandType == CommandType.StartLevel)
+                {
+                    if (playerInfo.playerState == PlayerState.Room)
+                        ClientLevelStarted?.Invoke();
+                }
             }
         }
 
@@ -313,6 +326,8 @@ namespace BeatSaberMultiplayer
 #if DEBUG
                 Misc.Logger.Info("Leaving room...");
 #endif
+                HMMainThreadDispatcher.instance.Enqueue(() => { ClientLeftRoom?.Invoke(); });
+                
             }
             isHost = false;
             playerInfo.playerState = PlayerState.Lobby;

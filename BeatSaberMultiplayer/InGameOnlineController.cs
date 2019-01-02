@@ -392,17 +392,16 @@ namespace BeatSaberMultiplayer
         {
             if (Config.Instance.SpectatorMode)
                 return;
-
-            Misc.Logger.Info("PlayerDataModels: "+ Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().Count());
+            
             PlayerDataModelSO _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
-
+            
             _playerDataModel.currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
             _playerDataModel.Save();
             if (levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Failed && levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Cleared)
             {
                 return;
             }
-
+            
             PlayerDataModelSO.LocalPlayer currentLocalPlayer = _playerDataModel.currentLocalPlayer;
             bool cleared = levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared;
             string levelID = difficultyBeatmap.level.levelID;
