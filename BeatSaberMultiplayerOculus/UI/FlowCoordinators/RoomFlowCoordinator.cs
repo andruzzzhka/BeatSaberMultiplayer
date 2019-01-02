@@ -415,7 +415,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     else
                                     {
                                         Client.instance.playerInfo.playerState = PlayerState.Game;
-                                        gameplayModifiers.noFail = true;
+                                        gameplayModifiers.noFail = roomInfo.noFail;
                                     }
 
                                     PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().currentLocalPlayer.playerSpecificSettings;
