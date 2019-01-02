@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.XR;
@@ -69,7 +70,24 @@ namespace BeatSaberMultiplayer
 #if DEBUG
                 CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().ForEach(x => Misc.Logger.Info(x.FullPath));
 #endif
-                defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("loading.avatar"));
+                if (Config.Instance.DownloadAvatars)
+                {
+                    defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("loading.avatar"));
+                }
+                else
+                {
+                    defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("multiplayer.avatar"));
+
+                    if (defaultAvatarInstance == null)//fallback to default avatar
+                    {
+                        defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("templatefullbody.avatar"));
+                    }
+
+                    if (defaultAvatarInstance == null)//fallback to ANY avatar
+                    {
+                        defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault();
+                    }
+                }
 
             }
 #if DEBUG
@@ -82,12 +100,17 @@ namespace BeatSaberMultiplayer
             
             foreach(CustomAvatar.CustomAvatar avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
             {
-                string hash;
-                if(SongDownloader.CreateMD5FromFile(avatar.FullPath, out hash))
+                Task.Run(() =>
                 {
-                    ModelSaberAPI.cachedAvatars.Add(hash, avatar);
-                }
-
+                    string hash;
+                    if (SongDownloader.CreateMD5FromFile(avatar.FullPath, out hash))
+                    {
+                        ModelSaberAPI.cachedAvatars.Add(hash, avatar);
+#if DEBUG
+                        Misc.Logger.Info("Hashed avatar "+avatar.Name+"! Hash: "+hash);
+#endif
+                    }
+                }).ConfigureAwait(false);
 
             }
         }
