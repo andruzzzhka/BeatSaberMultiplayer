@@ -31,28 +31,34 @@ namespace ServerHub.Misc
 
         private static void Client_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
         {
-            string jsonString = e.Result;
-
-            GithubRelease[] releases = JsonConvert.DeserializeObject<GithubRelease[]>(jsonString);
-
-            GithubRelease latestRelease = releases[0];
-
-            List<string> assets = new List<string>();
-
-            assets.AddRange(latestRelease.assets.Select(x => x.name));
-
-            bool newTag = (!latestRelease.tag_name.StartsWith(Assembly.GetEntryAssembly().GetName().Version.ToString()));
-            bool platformUpdated = newTag && (assets.Any(x => x.Contains(Assembly.GetEntryAssembly().GetName().Name)));
-
-            if (platformUpdated)
+            try
             {
-                Logger.Instance.Warning($"New version of {Assembly.GetEntryAssembly().GetName().Name} is available!");
-                Logger.Instance.Warning($"Current version: {Assembly.GetEntryAssembly().GetName().Version.ToString()}");
-                Logger.Instance.Warning($"Available version: {latestRelease.tag_name}");
-            }
-            else
+                string jsonString = e.Result;
+
+                GithubRelease[] releases = JsonConvert.DeserializeObject<GithubRelease[]>(jsonString);
+
+                GithubRelease latestRelease = releases[0];
+
+                List<string> assets = new List<string>();
+
+                assets.AddRange(latestRelease.assets.Select(x => x.name));
+
+                bool newTag = (!latestRelease.tag_name.StartsWith(Assembly.GetEntryAssembly().GetName().Version.ToString()));
+                bool platformUpdated = newTag && (assets.Any(x => x.Contains(Assembly.GetEntryAssembly().GetName().Name)));
+
+                if (platformUpdated)
+                {
+                    Logger.Instance.Warning($"New version of {Assembly.GetEntryAssembly().GetName().Name} is available!");
+                    Logger.Instance.Warning($"Current version: {Assembly.GetEntryAssembly().GetName().Version.ToString()}");
+                    Logger.Instance.Warning($"Available version: {latestRelease.tag_name}");
+                }
+                else
+                {
+                    Logger.Instance.Log($"You have the latest version of {Assembly.GetEntryAssembly().GetName().Name}");
+                }
+            }catch(Exception ex)
             {
-                Logger.Instance.Log($"You have the latest version of {Assembly.GetEntryAssembly().GetName().Name}");
+                Logger.Instance.Warning($"Unable to check for updates! Exception: {ex}");
             }
         }
     }
