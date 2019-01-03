@@ -39,6 +39,7 @@ namespace BeatSaberMultiplayer
         public static event Action ClientLevelStarted;
         public static event Action ClientLeftRoom;
         public static event Action ClientDestroyed;
+        public static bool disableScoreSubmission;
         public static Client instance;
 
         public event Action ConnectedToServerHub;

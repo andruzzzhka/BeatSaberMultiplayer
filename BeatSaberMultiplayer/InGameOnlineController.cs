@@ -390,7 +390,7 @@ namespace BeatSaberMultiplayer
 
         public void SongFinished(StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers)
         {
-            if (Config.Instance.SpectatorMode)
+            if (Config.Instance.SpectatorMode || Client.disableScoreSubmission)
                 return;
             
             PlayerDataModelSO _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();

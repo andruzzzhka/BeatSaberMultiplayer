@@ -70,6 +70,21 @@ namespace BeatSaberMultiplayer
                 if (Config.Instance.DownloadAvatars)
                 {
                     defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("loading.avatar"));
+
+                    if (defaultAvatarInstance == null)//fallback to multiplayer avatar
+                    {
+                        defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("multiplayer.avatar"));
+                    }
+
+                    if (defaultAvatarInstance == null)//fallback to default avatar
+                    {
+                        defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("templatefullbody.avatar"));
+                    }
+
+                    if (defaultAvatarInstance == null)//fallback to ANY avatar
+                    {
+                        defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault();
+                    }
                 }
                 else
                 {
