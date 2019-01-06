@@ -252,7 +252,7 @@ namespace ServerHub.Misc {
             public AccessSettings(Action markDirty)
             {
                 MarkDirty = markDirty;
-                _blacklist = new List<string>();
+                _blacklist = new List<string>() { "76561201521433077", "IGGGAMES", "76561199437989403", "VALVE" };
                 _whitelistEnabled = false;
                 _whitelist = new List<string>();
             }
