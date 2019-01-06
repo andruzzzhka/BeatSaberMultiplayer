@@ -38,6 +38,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -14f);
+                (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
                 _pageUpButton.interactable = true;
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
@@ -50,6 +51,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
                 (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
                 (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 8f);
+                (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
                 _pageDownButton.interactable = true;
                 _pageDownButton.onClick.AddListener(delegate ()
                 {
@@ -72,7 +74,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 (_songsTableView.transform as RectTransform).anchorMin = new Vector2(0.3f, 0.5f);
                 (_songsTableView.transform as RectTransform).anchorMax = new Vector2(0.7f, 0.5f);
                 (_songsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 60f);
-                (_songsTableView.transform as RectTransform).position = new Vector3(0f, 0f, 2.4f);
                 (_songsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
 
                 ReflectionUtil.SetPrivateField(_songsTableView, "_pageUpButton", _pageUpButton);

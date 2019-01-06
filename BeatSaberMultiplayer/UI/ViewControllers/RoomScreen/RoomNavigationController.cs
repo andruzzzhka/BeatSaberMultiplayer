@@ -32,12 +32,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             }
             _errorText.text = "";
+            _errorText.gameObject.SetActive(false);
         }
 
         public void DisplayError(string error)
         {
-            if(_errorText != null)
+            if (_errorText != null)
+            {
+                _errorText.gameObject.SetActive(true);
                 _errorText.text = error;
+            }
         }
 
     }

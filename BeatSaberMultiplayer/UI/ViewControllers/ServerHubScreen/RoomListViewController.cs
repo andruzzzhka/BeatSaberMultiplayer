@@ -38,6 +38,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -14f);
+                (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
                 _pageUpButton.interactable = true;
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
@@ -50,6 +51,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
                 (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
                 (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 8f);
+                (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
                 _pageDownButton.interactable = true;
                 _pageDownButton.onClick.AddListener(delegate ()
                 {
@@ -61,7 +63,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 _createRoom = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
                 _createRoom.SetButtonText("Create room");
                 _createRoom.SetButtonTextSize(3f);
-                (_createRoom.transform as RectTransform).sizeDelta = new Vector2(38f, 8f);
+                (_createRoom.transform as RectTransform).sizeDelta = new Vector2(38f, 6f);
                 (_createRoom.transform as RectTransform).anchoredPosition = new Vector2(0f, 36f);
                 _createRoom.onClick.RemoveAllListeners();
                 _createRoom.onClick.AddListener(delegate ()
@@ -83,8 +85,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 (_serverTableView.transform as RectTransform).anchorMin = new Vector2(0.3f, 0.5f);
                 (_serverTableView.transform as RectTransform).anchorMax = new Vector2(0.7f, 0.5f);
                 (_serverTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 60f);
-                (_serverTableView.transform as RectTransform).position = new Vector3(0f, 0f, 2.4f);
-                (_serverTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -2.5f);
+                (_serverTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
 
                 ReflectionUtil.SetPrivateField(_serverTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_serverTableView, "_pageDownButton", _pageDownButton);
