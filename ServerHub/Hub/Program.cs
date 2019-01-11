@@ -38,7 +38,7 @@ namespace ServerHub.Hub
         public static List<IPAddressRange> blacklistedIPs;
         public static List<ulong> blacklistedIDs;
         public static List<string> blacklistedNames;
-        
+
         public static List<IPAddressRange> whitelistedIPs;
         public static List<ulong> whitelistedIDs;
         public static List<string> whitelistedNames;
@@ -199,7 +199,7 @@ namespace ServerHub.Hub
             IP = GetPublicIPv4();
 
             VersionChecker.CheckForUpdates();
-            
+
             Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
             serverStartTime = DateTime.Now;
 
@@ -303,7 +303,7 @@ namespace ServerHub.Hub
         private static void CreateTournamentRooms()
         {
             List<SongInfo> songs = BeatSaver.ConvertSongIDs(Settings.Instance.TournamentMode.SongIDs);
-            
+
             for (int i = 0; i < Settings.Instance.TournamentMode.Rooms; i++)
             {
 
@@ -317,7 +317,7 @@ namespace ServerHub.Hub
                     SelectionType = SongSelectionType.Manual,
                     AvailableSongs = songs,
                 };
-                
+
                 uint id = RoomsController.CreateRoom(settings);
 
                 Logger.Instance.Log("Created tournament room with ID " + id);
@@ -589,9 +589,9 @@ namespace ServerHub.Hub
                                         path += ".json";
                                     }
 
-                                    if (!path.ToLower().StartsWith("roompresets\\"))
+                                    if (!path.ToLower().StartsWith("roompresets"))
                                     {
-                                        path = "RoomPresets\\" + path;
+                                        path = Path.Combine("RoomPresets", path);
                                     }
 
                                     if (File.Exists(path))
@@ -603,7 +603,7 @@ namespace ServerHub.Hub
                                         preset.Update();
 
                                         uint roomId = RoomsController.CreateRoom(preset.GetRoomSettings());
-                                        
+
                                         return "Created room with ID "+ roomId;
                                     }
                                     else
@@ -636,9 +636,9 @@ namespace ServerHub.Hub
                                                 path += ".json";
                                             }
 
-                                            if (!path.ToLower().StartsWith("roompresets\\"))
+                                            if (!path.ToLower().StartsWith("roompresets"))
                                             {
-                                                path = "RoomPresets\\" + path;
+                                                path = Path.Combine("RoomPresets", path);
                                             }
 
                                             Logger.Instance.Log("Saving room...");
@@ -828,7 +828,7 @@ namespace ServerHub.Hub
                             List<RCONPlayerInfo> clients = new List<RCONPlayerInfo>();
 
                             RoomsController.GetRoomsList().ForEach(x => clients.AddRange(x.roomClients.Select(y => new RCONPlayerInfo(y.playerInfo))));
-                            
+
                             return JsonConvert.SerializeObject(clients);
                         }
                     #endregion
