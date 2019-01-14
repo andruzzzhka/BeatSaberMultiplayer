@@ -9,7 +9,7 @@ using UnityEngine;
 namespace BeatSaberMultiplayer {
     [Serializable]
     public class Config {
-        
+
         [SerializeField] private string[] _serverHubIPs;
         [SerializeField] private int[] _serverHubPorts;
         [SerializeField] private bool _showAvatarsInGame;
@@ -21,7 +21,7 @@ namespace BeatSaberMultiplayer {
 
 
         private static Config _instance;
-        
+
         private static FileInfo FileLocation { get; } = new FileInfo($"./UserData/{Assembly.GetExecutingAssembly().GetName().Name}.json");
 
         public static bool Load()
@@ -67,7 +67,7 @@ namespace BeatSaberMultiplayer {
                 return _instance;
             }
         }
-        
+
         private bool IsDirty { get; set; }
 
         /// <summary>
@@ -153,8 +153,8 @@ namespace BeatSaberMultiplayer {
 
         Config()
         {
-            _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "hub.auros.red", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.ligma.site" };
-            _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700 };
+            _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "hub.auros.red", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.ligma.site", "hub.jogi-server.de" };
+            _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700 };
             _showAvatarsInGame = false;
             _showAvatarsInRoom = true;
             _downloadAvatars = true;
@@ -185,7 +185,7 @@ namespace BeatSaberMultiplayer {
             IsDirty = true;
             Save();
         }
-        
+
         void MarkClean() {
             IsDirty = false;
         }
