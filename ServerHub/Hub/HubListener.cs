@@ -66,11 +66,12 @@ namespace ServerHub.Hub
             ClientDisconnected(obj);
         }
 
-        public static void Stop()
+        public static void Stop(string reason = "")
         {
             listener.Close(2);
             Listen = false;
             WebSocketListener.Stop();
+            hubClients.ForEach(x => x.KickClient(string.IsNullOrEmpty(reason) ? "Server is shutting down..." : reason));
         }
 
         private static void HubLoop(object sender, HighResolutionTimerElapsedEventArgs e)
@@ -155,9 +156,14 @@ namespace ServerHub.Hub
             {
                 clientAccepted.Reset();
 
-                listener.BeginAccept(new AsyncCallback(AcceptClient), listener);
-
-                clientAccepted.WaitOne();
+                try
+                {
+                    listener.BeginAccept(new AsyncCallback(AcceptClient), listener);
+                    clientAccepted.WaitOne();
+                }catch(Exception e)
+                {
+                    Logger.Instance.Warning($"Unable to accept client! Exception: {e}");
+                }
             }
         }
 

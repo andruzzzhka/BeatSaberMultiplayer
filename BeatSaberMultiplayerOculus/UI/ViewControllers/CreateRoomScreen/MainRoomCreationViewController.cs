@@ -26,8 +26,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private Button _editNameButton;
         private Button _editPasswordButton;
         private OnOffViewController _usePasswordToggle;
-        private CustomListViewController _songSelectionList;
-        private CustomListViewController _maxPlayersList;
+        private MultiplayerListViewController _songSelectionList;
+        private MultiplayerListViewController _maxPlayersList;
         private OnOffViewController _noFailToggle;
         private TextMeshProUGUI _nameText;
         private TextMeshProUGUI _passwordText;
@@ -73,7 +73,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _usePasswordToggle.ValueChanged += UsePasswordToggle_ValueChanged;
                 _usePasswordToggle.Value = _usePassword;
 
-                _songSelectionList = CustomSettingsHelper.AddListSetting<CustomListViewController>(rectTransform, "Song Selection");
+                _songSelectionList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Song Selection");
                 (_songSelectionList.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
                 (_songSelectionList.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
                 (_songSelectionList.transform as RectTransform).anchoredPosition = new Vector2(0f, 0f);
@@ -83,7 +83,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _songSelectionList.textForValues = new string[] { "Manual", "Random", "Voting" };
                 _songSelectionList.UpdateText();
 
-                _maxPlayersList = CustomSettingsHelper.AddListSetting<CustomListViewController>(rectTransform, "Max Players");
+                _maxPlayersList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Max Players");
                 (_maxPlayersList.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
                 (_maxPlayersList.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
                 (_maxPlayersList.transform as RectTransform).anchoredPosition = new Vector2(0f, -10f);

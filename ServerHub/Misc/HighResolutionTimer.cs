@@ -173,7 +173,19 @@ namespace ServerHub.Misc
 
 
                 double delay = elapsed - nextTrigger;
-                Elapsed?.Invoke(this, new HighResolutionTimerElapsedEventArgs(delay));
+
+                foreach (EventHandler<HighResolutionTimerElapsedEventArgs> nextDel in Elapsed.GetInvocationList())
+                {
+                    try
+                    {
+                        nextDel.Invoke(this, new HighResolutionTimerElapsedEventArgs(delay));
+                    }
+                    catch (Exception e)
+                    {
+                        if (Settings.Instance.Server.ShowTickEventExceptions)
+                            Logger.Instance.Exception($"Exception in {nextDel.Method.Name} on tick event: {e}");
+                    }
+                }
 
                 if (!_isRunning)
                     return;

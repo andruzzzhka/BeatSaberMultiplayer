@@ -175,9 +175,8 @@ namespace BeatSaberMultiplayer
                             PlayerInfo playerInfo = new PlayerInfo(playerInfoBytes);
                             playerInfos.Add(playerInfo);
                         }
-                        catch (Exception e)
+                        catch (Exception)
                         {
-                            //MessageBox.Show($"Unable to parse PlayerInfo! Excpetion: {e}", "Exception");
                         }
                     }
 

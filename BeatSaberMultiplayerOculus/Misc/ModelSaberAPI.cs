@@ -13,12 +13,12 @@ namespace BeatSaberMultiplayer.Misc
 {
     public static class ModelSaberAPI
     {
-        public static event Action<string, CustomAvatar.CustomAvatar> avatarDownloaded;
+        public static event Action<string> avatarDownloaded;
 
         public static Dictionary<string, CustomAvatar.CustomAvatar> cachedAvatars = new Dictionary<string, CustomAvatar.CustomAvatar>();
         public static List<string> queuedAvatars = new List<string>();
 
-        public static IEnumerator DownloadAvatarCoroutine(string hash, Action<CustomAvatar.CustomAvatar> callback)
+        public static IEnumerator DownloadAvatarCoroutine(string hash, Action<string> callback)
         {
             queuedAvatars.Add(hash);
             string downloadUrl = "";
@@ -131,7 +131,7 @@ namespace BeatSaberMultiplayer.Misc
                     queuedAvatars.Remove(hash);
                     cachedAvatars.Add(hash, downloadedAvatar);
 
-                    downloadedAvatar.Load((CustomAvatar.CustomAvatar avatar, CustomAvatar.AvatarLoadResult result) => { if (result == CustomAvatar.AvatarLoadResult.Completed) { callback?.Invoke(avatar); avatarDownloaded?.Invoke(hash, avatar); } else callback?.Invoke(null);  });
+                    downloadedAvatar.Load((CustomAvatar.CustomAvatar avatar, CustomAvatar.AvatarLoadResult result) => { if (result == CustomAvatar.AvatarLoadResult.Completed) { callback?.Invoke(hash); avatarDownloaded?.Invoke(hash); } else callback?.Invoke(null);  });
                     
                     Logger.Info("Downloaded avatar!");
                 }

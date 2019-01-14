@@ -20,6 +20,7 @@ namespace ServerHub.Misc {
             private int _webSocketPort;
             private bool _showTickrateInTitle;
             private bool _allowEventMessages;
+            private bool _showTickEventExceptions;
 
             private Action MarkDirty { get; }
 
@@ -166,6 +167,20 @@ namespace ServerHub.Misc {
                 }
             }
 
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool ShowTickEventExceptions
+            {
+                get => _showTickEventExceptions;
+                set
+                {
+                    _showTickEventExceptions = value;
+                    MarkDirty();
+                }
+            }
+
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
@@ -178,6 +193,7 @@ namespace ServerHub.Misc {
                 _webSocketPort = 3701;
                 _showTickrateInTitle = true;
                 _allowEventMessages = true;
+                _showTickEventExceptions = false;
             }
         }
 
@@ -252,7 +268,7 @@ namespace ServerHub.Misc {
             public AccessSettings(Action markDirty)
             {
                 MarkDirty = markDirty;
-                _blacklist = new List<string>() { "76561201521433077", "IGGGAMES", "76561199437989403", "VALVE" };
+                _blacklist = new List<string>();
                 _whitelistEnabled = false;
                 _whitelist = new List<string>();
             }
@@ -375,7 +391,7 @@ namespace ServerHub.Misc {
                 catch (Exception ex) {
                     _instance = new Settings();
                     _instance.Save();
-                    Misc.Logger.Instance.Exception(ex.Message);
+                    Misc.Logger.Instance.Exception(ex);
                 }
 
                 return _instance;
@@ -393,7 +409,6 @@ namespace ServerHub.Misc {
         }
 
         public bool Save() {
-            if (!IsDirty) return false;
             try {
                 using (var f = new StreamWriter(FileLocation.FullName)) {
                     var json = JsonConvert.SerializeObject(this, Formatting.Indented);

@@ -17,11 +17,12 @@ namespace BeatSaberMultiplayer
         static CustomAvatar.CustomAvatar defaultAvatarInstance;
 
         static List<CustomAvatar.CustomAvatar> pendingAvatars = new List<CustomAvatar.CustomAvatar>();
-        static event Action<string, CustomAvatar.CustomAvatar> AvatarLoaded;
+        static event Action<string> AvatarLoaded;
 
         PlayerInfo playerInfo;
 
         SpawnedAvatar avatar;
+        AvatarScriptPack.FirstPersonExclusion exclusionScript;
 
         TextMeshPro playerNameText;
 
@@ -152,6 +153,9 @@ namespace BeatSaberMultiplayer
             _centerAdjust = FindObjectOfType<VRCenterAdjust>();
 
             avatar = AvatarSpawner.SpawnAvatar(defaultAvatarInstance, this);
+            exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
+            if (exclusionScript != null)
+                exclusionScript.SetVisible();
 
             playerNameText = CustomExtensions.CreateWorldText(transform, "INVALID");
             playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 0.25f, 0f);
@@ -265,6 +269,9 @@ namespace BeatSaberMultiplayer
                             }
 
                             avatar = AvatarSpawner.SpawnAvatar(ModelSaberAPI.cachedAvatars[playerInfo.avatarHash], this);
+                            exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
+                            if (exclusionScript != null)
+                                exclusionScript.SetVisible();
                         }
                         else if(!pendingAvatars.Contains(ModelSaberAPI.cachedAvatars[playerInfo.avatarHash]))
                         {
@@ -274,7 +281,7 @@ namespace BeatSaberMultiplayer
                                if (result == AvatarLoadResult.Completed)
                                {
                                    pendingAvatars.Remove(ModelSaberAPI.cachedAvatars[playerInfo.avatarHash]);
-                                   AvatarLoaded?.Invoke(ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key, loadedAvatar);
+                                   AvatarLoaded?.Invoke(ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key);
                                }
                            });
                             AvatarLoaded += AvatarController_AvatarLoaded;
@@ -295,7 +302,7 @@ namespace BeatSaberMultiplayer
                             }
                             else
                             {
-                                SharedCoroutineStarter.instance.StartCoroutine(ModelSaberAPI.DownloadAvatarCoroutine(playerInfo.avatarHash, (CustomAvatar.CustomAvatar avatar) => { AvatarDownloaded(playerInfo.avatarHash, avatar); }));
+                                SharedCoroutineStarter.instance.StartCoroutine(ModelSaberAPI.DownloadAvatarCoroutine(playerInfo.avatarHash, (string hash) => { AvatarDownloaded(hash); }));
                             }
                         }
                     }
@@ -367,7 +374,7 @@ namespace BeatSaberMultiplayer
 
         }
 
-        private void AvatarController_AvatarLoaded(string hash, CustomAvatar.CustomAvatar loadedAvatar)
+        private void AvatarController_AvatarLoaded(string hash)
         {
             if (ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash && playerInfo.avatarHash == hash)
             {
@@ -378,11 +385,14 @@ namespace BeatSaberMultiplayer
                     Destroy(avatar.GameObject);
                 }
 
-                avatar = AvatarSpawner.SpawnAvatar(loadedAvatar, this);
+                avatar = AvatarSpawner.SpawnAvatar(ModelSaberAPI.cachedAvatars[hash], this);
+                exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
+                if (exclusionScript != null)
+                    exclusionScript.SetVisible();
             }
         }
 
-        private void AvatarDownloaded(string hash, CustomAvatar.CustomAvatar downloadedAvatar)
+        private void AvatarDownloaded(string hash)
         {
             if (ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash && playerInfo.avatarHash == hash)
             {
@@ -392,8 +402,11 @@ namespace BeatSaberMultiplayer
                 {
                     Destroy(avatar.GameObject);
                 }
-
-                avatar = AvatarSpawner.SpawnAvatar(downloadedAvatar, this);
+                
+                avatar = AvatarSpawner.SpawnAvatar(ModelSaberAPI.cachedAvatars[hash], this);
+                exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
+                if (exclusionScript != null)
+                    exclusionScript.SetVisible();
             }
         }
 

@@ -55,6 +55,13 @@ namespace ServerHub.Hub
         static private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Logger.Instance.Exception(e.ExceptionObject.ToString());
+            Logger.Instance.Log("Shutting down...");
+            List<BaseRoom> rooms = new List<BaseRoom>(RoomsController.GetRoomsList());
+            foreach (BaseRoom room in rooms)
+            {
+                RoomsController.DestroyRoom(room.roomId, "ServerHub exception occured!");
+            }
+            HubListener.Stop("ServerHub exception occured!");
         }
 #endif
 
@@ -224,6 +231,15 @@ namespace ServerHub.Hub
             if (Settings.Instance.TournamentMode.Enabled)
                 CreateTournamentRooms();
 
+            foreach (string blacklistItem in new string[] { "76561201521433077", "IGGGAMES", "76561199437989403", "VALVE" })
+            {
+                if (!Settings.Instance.Access.Blacklist.Contains(blacklistItem))
+                {
+                    Settings.Instance.Access.Blacklist.Add(blacklistItem);
+                    Settings.Instance.Save();
+                }
+            }
+
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
 
@@ -326,11 +342,18 @@ namespace ServerHub.Hub
 
         public static string ProcessCommand(string comName, string[] comArgs)
         {
+#if DEBUG
+            if(comName == "crash")
+            {
+                throw new Exception("Debug Exception");
+            }
+#endif
+
             try
             {
                 switch (comName.ToLower())
                 {
-                    #region Console commands
+#region Console commands
                     case "help":
                         {
                             string commands = $"{Environment.NewLine}Default:";
@@ -389,8 +412,8 @@ namespace ServerHub.Hub
                                 foreach (BaseRoom room in rooms)
                                 {
                                     RoomsController.DestroyRoom(room.roomId, "ServerHub is shutting down...");
-                                    HubListener.Stop();
                                 }
+                                HubListener.Stop();
                             }
 
                             Environment.Exit(0);
@@ -793,9 +816,9 @@ namespace ServerHub.Hub
                             }
                         }
                         break;
-                    #endregion
+#endregion
 
-                    #region RCON Commands
+#region RCON Commands
                     case "serverinfo":
                         {
                             ServerInfo info = new ServerInfo()
@@ -831,9 +854,9 @@ namespace ServerHub.Hub
                             
                             return JsonConvert.SerializeObject(clients);
                         }
-                    #endregion
+#endregion
 #if DEBUG
-                    #region Debug commands
+#region Debug commands
                     case "testroom":
                         {
                             uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "test", NoFail = true, MaxPlayers = 4, SelectionType = Data.SongSelectionType.Manual, AvailableSongs = new System.Collections.Generic.List<Data.SongInfo>() { new Data.SongInfo() { levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "451ffd065cf0e6adc01b2c3eda375794".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "97b35d13bac139c089a0c9d9306c9d76".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a0d040d1a4fe833d5f9838d35777d302".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "61e3b11c1a4cd9185db46b1f7bb7ea54".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e2d35a81fc0c54c326b09892c8d5c038".ToUpper(), songName = "" } } }, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
@@ -844,7 +867,7 @@ namespace ServerHub.Hub
                             uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = false, Password = "test", NoFail = false, MaxPlayers = 4, SelectionType = Data.SongSelectionType.Manual, AvailableSongs = new System.Collections.Generic.List<Data.SongInfo>() { new Data.SongInfo() { levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "451ffd065cf0e6adc01b2c3eda375794".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "97b35d13bac139c089a0c9d9306c9d76".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a0d040d1a4fe833d5f9838d35777d302".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "61e3b11c1a4cd9185db46b1f7bb7ea54".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e2d35a81fc0c54c326b09892c8d5c038".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a8f8f95869b90a288a9ce4bdc260fa17".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "7dce2ba59bc69ec59e6ac455b98f3761".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "fbd77e71ce31329e5ebacde40c7401e0".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "7014f67926d216a6e2df026fa67017b0".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "51d0e56ecea0a98637c0323e7a3af7cf".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "9d1e4315971f6644ac94babdbd20e36a".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "9812c675def22f7405e0bf3422134756".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "1d46797ccb24acb86d0403828533df61".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "6ffccb03d75106c5911dd876dfd5f054".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e3a97c826fab2ce5993dc2e71443b9aa".ToUpper(), songName = "" } } }, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
                             return "Created room with ID " + id;
                         }
-                    #endregion
+#endregion
                     default:
                         {
                             IPlugin plugin = plugins.FirstOrDefault(x => x.Commands.Any(y => y.name == comName));
