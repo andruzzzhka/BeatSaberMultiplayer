@@ -1,0 +1,6 @@
+[submodule "WebSocket-Sharp"]
+	path = WebSocket-Sharp
+	url = git://github.com/sta/websocket-sharp
+[submodule "Lidgren-Network"]
+	path = Lidgren-Network
+	url = git://github.com/lidgren/lidgren-network-gen3
