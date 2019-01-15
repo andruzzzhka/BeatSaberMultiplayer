@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Lidgren.Network;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -24,69 +25,52 @@ namespace ServerHub.Data
 
         }
 
-        public RoomSettings(byte[] data)
+        public RoomSettings(NetIncomingMessage msg)
         {
-            if(data.Length > 14)
+
+            Name = msg.ReadString();
+
+            UsePassword = msg.ReadBoolean();
+            NoFail = msg.ReadBoolean();
+
+            msg.SkipPadBits();
+
+            if (UsePassword)
+                Password = msg.ReadString();
+
+            MaxPlayers = msg.ReadInt32();
+            SelectionType = (SongSelectionType)msg.ReadByte();
+            int songsCount = msg.ReadInt32();
+
+            AvailableSongs = new List<SongInfo>();
+            for (int j = 0; j < songsCount; j++)
             {
-                int nameLength = BitConverter.ToInt32(data, 0);
-                Name = Encoding.UTF8.GetString(data, 4, nameLength);
-
-                UsePassword = (data[4 + nameLength] == 0) ? false : true;
                 
-                int passLength = BitConverter.ToInt32(data, 5 + nameLength);
-                Password = Encoding.UTF8.GetString(data, 9 + nameLength, passLength);
-
-                MaxPlayers = BitConverter.ToInt32(data, 9 + nameLength + passLength);
-
-                SelectionType = (SongSelectionType)(data[13 + nameLength + passLength]);
-                NoFail = (data[14 + nameLength + passLength] == 0) ? false : true;
-
-                int songsCount = BitConverter.ToInt32(data, 15 + nameLength + passLength);
-
-                Stream byteStream = new MemoryStream(data, 19 + nameLength + passLength, data.Length - (19 + nameLength + passLength));
-
-                AvailableSongs = new List<SongInfo>();
-                for (int j = 0; j < songsCount; j++)
-                {
-                    byte[] sizeBytes = new byte[4];
-                    byteStream.Read(sizeBytes, 0, 4);
-
-                    int songInfoSize = BitConverter.ToInt32(sizeBytes, 0);
-
-                    byte[] songInfoBytes = new byte[songInfoSize];
-                    byteStream.Read(songInfoBytes, 0, songInfoSize);
-
-                    AvailableSongs.Add(new SongInfo(songInfoBytes));
-                }
+                AvailableSongs.Add(new SongInfo(msg));
             }
+            
         }
 
-        public byte[] ToBytes(bool includeSize = true)
+        public void AddToMessage(NetOutgoingMessage msg)
         {
-            List<byte> buffer = new List<byte>();
+            msg.Write(Name);
 
-            byte[] nameStr = Encoding.UTF8.GetBytes(Name);
-            buffer.AddRange(BitConverter.GetBytes(nameStr.Length));
-            buffer.AddRange(nameStr);
+            msg.Write(UsePassword);
+            msg.Write(NoFail);
 
-            buffer.Add(UsePassword ? (byte)1 : (byte)0);
+            msg.WritePadBits();
 
-            byte[] passStr = Encoding.UTF8.GetBytes(Password);
-            buffer.AddRange(BitConverter.GetBytes(passStr.Length));
-            buffer.AddRange(passStr);
-            
-            buffer.AddRange(BitConverter.GetBytes(MaxPlayers));
+            if (UsePassword)
+                msg.Write(Password);
 
-            buffer.Add((byte)SelectionType);
-            buffer.Add(NoFail ? (byte)1 : (byte)0);
+            msg.Write(MaxPlayers);
+            msg.Write((byte)SelectionType);
+            msg.Write(AvailableSongs.Count);
 
-            buffer.AddRange(BitConverter.GetBytes(AvailableSongs.Count));
-            AvailableSongs.ForEach(x => buffer.AddRange(x.ToBytes()));
-
-            if (includeSize)
-                buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));
-
-            return buffer.ToArray();
+            for (int j = 0; j < AvailableSongs.Count; j++)
+            {
+                AvailableSongs[j].AddToMessage(msg);
+            }
         }
 
         public override bool Equals(object obj)

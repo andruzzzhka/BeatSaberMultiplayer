@@ -21,7 +21,6 @@
   <ItemGroup>
     <PackageReference Include="IPAddressRange" Version="3.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="Open.Nat" Version="2.1.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Logs\**" />
@@ -43,5 +42,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Websocket-sharp\doc\.gitignore" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Lidgren.Network.MultiTarget">
+      <HintPath>bin\Lidgren.Network.MultiTarget.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

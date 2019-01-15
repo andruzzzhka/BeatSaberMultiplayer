@@ -1,4 +1,4 @@
-using Open.Nat;
+using Lidgren.Network;
 using ServerHub.Data;
 using ServerHub.Misc;
 using ServerHub.Rooms;
@@ -14,9 +14,13 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Hub
 {
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage }
+
     public static class HubListener
     {
         public static event Action<Client> ClientConnected;
+
+        public static event Action<Client, string, string> EventMessageReceived;
 
         private static List<float> _ticksLength = new List<float>();
         private static DateTime _lastTick;
@@ -28,10 +32,8 @@ namespace ServerHub.Hub
         }
 
         public static Timer pingTimer;
-        
-        static Socket listener = new Socket(SocketType.Stream, ProtocolType.Tcp);
-        
-        public static ManualResetEvent clientAccepted = new ManualResetEvent(false);
+
+        public static NetServer ListenerServer;
 
         static public bool Listen;
 
@@ -41,11 +43,6 @@ namespace ServerHub.Hub
 
         public static void Start()
         {
-            if (Settings.Instance.Server.TryUPnP)
-            {
-                OpenPort();
-            }
-
             if (Settings.Instance.Server.EnableWebSocketServer)
             {
                 WebSocketListener.Start();
@@ -54,21 +51,28 @@ namespace ServerHub.Hub
             pingTimer = new Timer(PingTimerCallback, null, 7500, 10000);
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
             _lastTick = DateTime.Now;
-            
-            listener.Bind(new IPEndPoint(IPAddress.Any, Settings.Instance.Server.Port));
-            listener.Listen(25);
-            ClientHelper.LostConnection += ClientHelper_LostConnection;
-            BeginListening();
-        }
 
-        private static void ClientHelper_LostConnection(Client obj)
-        {
-            ClientDisconnected(obj);
+            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer");
+            Config.Port = Settings.Instance.Server.Port;
+            Config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
+
+            if (Settings.Instance.Server.TryUPnP)
+            {
+                Config.EnableUPnP = true;
+            }
+
+            ListenerServer = new NetServer(Config);
+            ListenerServer.Start();
+
+            if (Settings.Instance.Server.TryUPnP)
+            {
+                ListenerServer.UPnP.ForwardPort(Config.Port, "Beat Saber Multiplayer ServerHub");
+            }
         }
 
         public static void Stop(string reason = "")
         {
-            listener.Close(2);
+            ListenerServer.Shutdown(string.IsNullOrEmpty(reason) ? "Server is shutting down..." : reason);
             Listen = false;
             WebSocketListener.Stop();
             hubClients.ForEach(x => x.KickClient(string.IsNullOrEmpty(reason) ? "Server is shutting down..." : reason));
@@ -92,20 +96,324 @@ namespace ServerHub.Hub
                 Console.Title = _currentTitle;
             }
 
+
+            NetIncomingMessage msg;
+            while ((msg = ListenerServer.ReadMessage()) != null)
+            {
+                switch (msg.MessageType)
+                {
+
+                    case NetIncomingMessageType.ConnectionApproval:
+                        {
+                            uint version = msg.ReadUInt32();
+                            uint serverVersion = ((uint)Assembly.GetEntryAssembly().GetName().Version.Major).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Minor).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Build).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Revision);
+
+                            if (CompareVersions(version, serverVersion))
+                            {
+                                msg.SenderConnection.Deny($"Version mismatch!\nServer:{serverVersion}\nClient:{version}");
+                                Logger.Instance.Log($"Client version v{version} tried to connect");
+                                break;
+                            }
+                            
+                            PlayerInfo playerInfo = new PlayerInfo(msg);
+
+                            if (Settings.Instance.Access.WhitelistEnabled)
+                            {
+                                if (!IsWhitelisted(msg.SenderConnection.RemoteEndPoint, playerInfo))
+                                {
+                                    msg.SenderConnection.Deny("You are not whitelisted on this ServerHub!");
+                                    Logger.Instance.Warning($"Client {playerInfo.playerName}({playerInfo.playerId})@{msg.SenderConnection.RemoteEndPoint.Address} is not whitelisted!");
+                                    break;
+                                }
+                            }
+
+                            if (IsBlacklisted(msg.SenderConnection.RemoteEndPoint, playerInfo))
+                            {
+                                msg.SenderConnection.Deny("You are banned on this ServerHub!");
+                                Logger.Instance.Warning($"Client {playerInfo.playerName}({playerInfo.playerId})@{msg.SenderConnection.RemoteEndPoint.Address} is banned!");
+                                break;
+                            }
+
+                            msg.SenderConnection.Approve();
+
+                            Client client = new Client(msg.SenderConnection, playerInfo);
+
+                            client.ClientDisconnected += ClientDisconnected;
+
+                            hubClients.Add(client);
+
+                            Logger.Instance.Log($"{playerInfo.playerName} connected!");
+                        };
+                        break;
+                    case NetIncomingMessageType.Data:
+                        {
+                            Client client = hubClients.FirstOrDefault(x => x.playerConnection.RemoteEndPoint == msg.SenderEndPoint);
+
+                            switch ((CommandType)msg.ReadByte())
+                            {
+                                case CommandType.Disconnect:
+                                    {
+                                        msg.SenderConnection.Disconnect("Disconnected");
+                                    }
+                                    break;
+                                case CommandType.UpdatePlayerInfo:
+                                    {
+                                        if (client != null)
+                                        {
+                                            client.playerInfo = new PlayerInfo(msg);
+                                        }
+                                    }
+                                    break;
+                                case CommandType.JoinRoom:
+                                    {
+                                        if (client != null)
+                                        {
+                                            uint roomId = msg.ReadUInt32();
+
+                                            BaseRoom room = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == roomId);
+
+                                            if (room != null)
+                                            {
+                                                if (room.roomSettings.UsePassword)
+                                                {
+                                                    if (RoomsController.ClientJoined(client, roomId, msg.ReadString()))
+                                                    {
+                                                        if (hubClients.Contains(client))
+                                                            hubClients.Remove(client);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if (RoomsController.ClientJoined(client, roomId, ""))
+                                                    {
+                                                        if (hubClients.Contains(client))
+                                                            hubClients.Remove(client);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                RoomsController.ClientJoined(client, roomId, "");
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case CommandType.LeaveRoom:
+                                    {
+                                        if (client != null)
+                                        {
+                                            RoomsController.ClientLeftRoom(client);
+                                            client.playerInfo.playerState = PlayerState.Lobby;
+                                        }
+                                    }
+                                    break;
+                                case CommandType.GetRooms:
+                                    {
+                                        NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
+                                        outMsg.Write((byte)CommandType.GetRooms);
+                                        RoomsController.AddRoomListToMessage(outMsg);
+                                        
+                                        msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                    }
+                                    break;
+                                case CommandType.CreateRoom:
+                                    {
+                                        if (client != null)
+                                        {
+                                            uint roomId = RoomsController.CreateRoom(new RoomSettings(msg), client.playerInfo);
+
+                                            NetOutgoingMessage outMsg = ListenerServer.CreateMessage(5);
+                                            outMsg.Write((byte)CommandType.CreateRoom);
+                                            outMsg.Write(roomId);
+
+                                            msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                        }
+                                    }
+                                    break;
+                                case CommandType.GetRoomInfo:
+                                    {
+                                        if (client != null)
+                                        {
+#if DEBUG
+                                            Logger.Instance.Log("GetRoomInfo: Client room=" + client.joinedRoomID);
+#endif
+                                            if (client.joinedRoomID != 0)
+                                            {
+                                                BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                                if (joinedRoom != null)
+                                                {
+                                                    NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
+
+                                                    outMsg.Write((byte)CommandType.GetRoomInfo);
+
+                                                    bool includeSongList = (msg.ReadByte() == 1);
+
+                                                    if (includeSongList)
+                                                    {
+                                                        outMsg.Write((byte)1);
+                                                        joinedRoom.AddSongInfosToMessage(outMsg);
+                                                    }
+                                                    else
+                                                    {
+                                                        outMsg.Write((byte)0);
+                                                    }
+
+                                                    joinedRoom.GetRoomInfo().AddToMessage(outMsg);
+
+                                                    msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                                }
+                                            }
+                                        }
+
+                                    }
+                                    break;
+                                case CommandType.SetSelectedSong:
+                                    {
+                                        if (client != null && client.joinedRoomID != 0)
+                                        {
+                                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                            if (joinedRoom != null)
+                                            {
+                                                if (msg.LengthBytes < 16)
+                                                {
+                                                    joinedRoom.SetSelectedSong(client.playerInfo, null);
+                                                }
+                                                else
+                                                {
+                                                    joinedRoom.SetSelectedSong(client.playerInfo, new SongInfo(msg));
+                                                }
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case CommandType.StartLevel:
+                                    {
+#if DEBUG
+                                        Logger.Instance.Log("Received command StartLevel");
+#endif
+
+                                        if (client != null && client.joinedRoomID != 0)
+                                        {
+                                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                            if (joinedRoom != null)
+                                            {
+                                                byte difficulty = msg.ReadByte();
+                                                SongInfo song = new SongInfo(msg);
+                                                song.songDuration += 2.5f;
+                                                joinedRoom.StartLevel(client.playerInfo, difficulty, song);
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case CommandType.DestroyRoom:
+                                    {
+                                        if (client != null && client.joinedRoomID != 0)
+                                        {
+                                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                            if (joinedRoom != null)
+                                            {
+                                                joinedRoom.DestroyRoom(client.playerInfo);
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case CommandType.TransferHost:
+                                    {
+                                        if (client != null && client.joinedRoomID != 0)
+                                        {
+                                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                            if (joinedRoom != null)
+                                            {
+                                                joinedRoom.TransferHost(client.playerInfo, new PlayerInfo(msg));
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case CommandType.PlayerReady:
+                                    {
+                                        if (client != null && client.joinedRoomID != 0)
+                                        {
+                                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                            if (joinedRoom != null)
+                                            {
+                                                joinedRoom.ReadyStateChanged(client.playerInfo, msg.ReadBoolean());
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case CommandType.SendEventMessage:
+                                    {
+                                        if (client != null && client.joinedRoomID != 0 && Settings.Instance.Server.AllowEventMessages)
+                                        {
+                                            BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                            if (joinedRoom != null)
+                                            {
+                                                string header = msg.ReadString();
+                                                string data = msg.ReadString();
+
+                                                joinedRoom.BroadcastEventMessage(header, data, new List<Client>() { client });
+                                                joinedRoom.BroadcastWebSocket(CommandType.SendEventMessage, new EventMessage(header, data));
+
+                                                EventMessageReceived?.Invoke(client, header, data);
+#if DEBUG
+                                                Logger.Instance.Log($"Received event message! Header=\"{header}\", Data=\"{data}\"");
+#endif
+                                            }
+                                        }
+                                    }
+                                    break;
+                            }
+                        };
+                        break;
+
+
+
+                    case NetIncomingMessageType.VerboseDebugMessage:
+                    case NetIncomingMessageType.DebugMessage:
+                        Logger.Instance.Log(msg.ReadString());
+                        break;
+                    case NetIncomingMessageType.WarningMessage:
+                        Logger.Instance.Warning(msg.ReadString());
+                        break;
+                    case NetIncomingMessageType.ErrorMessage:
+                        Logger.Instance.Error(msg.ReadString());
+                        break;
+                    default:
+                        Console.WriteLine("Unhandled type: " + msg.MessageType);
+                        break;
+                }
+                ListenerServer.Recycle(msg);
+            }
+
+
         }
-        
+
+        private static bool CompareVersions(uint clientVersion, uint serverVersion)
+        {
+            string client = clientVersion.ToString();
+            string server = serverVersion.ToString();
+
+            return (client.Substring(0, client.Length - 1)) != (server.Substring(0, server.Length - 1));
+        }
+
+        public static bool IsBlacklisted(IPEndPoint ip, PlayerInfo playerInfo)
+        {
+            return Program.blacklistedIPs.Any(x => x.Contains(ip.Address)) ||
+                    Program.blacklistedIDs.Contains(playerInfo.playerId) ||
+                    Program.blacklistedNames.Contains(playerInfo.playerName);
+        }
+
+        public static bool IsWhitelisted(IPEndPoint ip, PlayerInfo playerInfo)
+        {
+            return Program.whitelistedIPs.Any(x => x.Contains(ip.Address)) ||
+                    Program.whitelistedIDs.Contains(playerInfo.playerId) ||
+                    Program.whitelistedNames.Contains(playerInfo.playerName);
+        }
+
         private static void PingTimerCallback(object state)
         {
             try
             {
-                foreach (Client client in hubClients)
-                {
-                    if (!client.socket.IsSocketConnected())
-                    {
-                        client.DestroyClient();
-                    }
-                }
-
                 List<uint> emptyRooms = RoomsController.GetRoomsList().Where(x => x.roomClients.Count == 0 && !x.noHost).Select(y => y.roomId).ToList();
                 if (emptyRooms.Count > 0 && !Settings.Instance.TournamentMode.Enabled)
                 {
@@ -126,54 +434,9 @@ namespace ServerHub.Hub
             }
         }
 
-        public static bool IsSocketConnected(this Socket s)
-        {
-            return !((s.Poll(1000, SelectMode.SelectRead) && (s.Available == 0)) || !s.Connected);
-        }
-
-        async static void OpenPort()
-        {
-            Logger.Instance.Log($"Trying to open port {Settings.Instance.Server.Port} using UPnP...");
-            try
-            {
-                NatDiscoverer discoverer = new NatDiscoverer();
-                CancellationTokenSource cts = new CancellationTokenSource(3000);
-                NatDevice device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
-
-                await device.CreatePortMapAsync(new Mapping(Protocol.Tcp, Settings.Instance.Server.Port, Settings.Instance.Server.Port, "BeatSaber Multiplayer ServerHub"));
-
-                Logger.Instance.Log($"Port {Settings.Instance.Server.Port} is open!");
-            }
-            catch (Exception)
-            {
-                Logger.Instance.Warning($"Unable to open port {Settings.Instance.Server.Port} using UPnP!");
-            }
-        }
-
-        static void BeginListening()
-        {
-            while (Listen)
-            {
-                clientAccepted.Reset();
-
-                try
-                {
-                    listener.BeginAccept(new AsyncCallback(AcceptClient), listener);
-                    clientAccepted.WaitOne();
-                }catch(Exception e)
-                {
-                    Logger.Instance.Warning($"Unable to accept client! Exception: {e}");
-                }
-            }
-        }
-
         private static void ClientJoinedRoom(Client sender, uint room, string password)
         {
-            if(RoomsController.ClientJoined(sender, room, password))
-            {
-                if (hubClients.Contains(sender))
-                    hubClients.Remove(sender);
-            }
+            
         }
 
         private static void ClientDisconnected(Client sender)
@@ -182,35 +445,6 @@ namespace ServerHub.Hub
             if(hubClients.Contains(sender))
                 hubClients.Remove(sender);
             sender.ClientDisconnected -= ClientDisconnected;
-            sender.ClientJoinedRoom -= ClientJoinedRoom;
-            sender.ClientLeftRoom -= RoomsController.ClientLeftRoom;
-        }
-
-        static void AcceptClient(IAsyncResult ar)
-        {
-#if DEBUG
-            Logger.Instance.Log("Waiting for a connection...");
-#endif
-            try
-            {
-                Client client = new Client(((Socket)ar.AsyncState).EndAccept(ar));
-
-                if (client.InitializeClient())
-                {
-                    hubClients.Add(client);
-                    client.ClientDisconnected += ClientDisconnected;
-                    client.ClientJoinedRoom += ClientJoinedRoom;
-                    client.ClientLeftRoom += RoomsController.ClientLeftRoom;
-                    client.ClientAccepted();
-                    ClientConnected?.Invoke(client);
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Instance.Warning($"Unable to accept client! Exception: {e}");
-            }
-
-            clientAccepted.Set();
         }
 
     }

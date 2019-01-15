@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Lidgren.Network;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,69 +34,46 @@ namespace ServerHub.Data
 
         }
 
-        public RoomInfo(byte[] data)
+        public RoomInfo(NetIncomingMessage msg)
         {
-            if (data.Length > 25)
-            {
-                roomId = BitConverter.ToUInt32(data, 0);
-
-                int nameLength = BitConverter.ToInt32(data, 4);
-                name = Encoding.UTF8.GetString(data, 8, nameLength);
-
-                usePassword = (data[8 + nameLength] == 0) ? false : true;
-
-                roomState = (RoomState)data[9 + nameLength];
-                songSelectionType = (SongSelectionType)data[10 + nameLength];
-
-                int hostInfoLength = BitConverter.ToInt32(data, 11 + nameLength);
-                roomHost = new PlayerInfo(data.Skip(15 + nameLength).Take(hostInfoLength).ToArray());
-
-                players = BitConverter.ToInt32(data, 15 + nameLength + hostInfoLength);
-                maxPlayers = BitConverter.ToInt32(data, 19 + nameLength + hostInfoLength);
-                
-                noFail = (data[23 + nameLength + hostInfoLength] == 0) ? false : true;
-
-                if(data.Length > 24 + nameLength + hostInfoLength)
-                {
-                    selectedDifficulty = data[24 + nameLength + hostInfoLength];
-                    selectedSong = new SongInfo(data.Skip(25 + nameLength + hostInfoLength).ToArray());
-                }
+            roomId = msg.ReadUInt32();
+            name = msg.ReadString();
+            usePassword = msg.ReadBoolean();
+            noFail = msg.ReadBoolean();
+            msg.SkipPadBits();
+            roomState = (RoomState)msg.ReadByte();
+            songSelectionType = (SongSelectionType)msg.ReadByte();
+            roomHost = new PlayerInfo(msg);
+            players = msg.ReadInt32();
+            maxPlayers = msg.ReadInt32();
+            if (roomState != RoomState.SelectingSong) {
+                selectedDifficulty = msg.ReadByte();
+                selectedSong = new SongInfo(msg);
             }
         }
 
-        public byte[] ToBytes(bool includeSize = true)
+        public void AddToMessage(NetOutgoingMessage msg)
         {
             List<byte> buffer = new List<byte>();
 
-            buffer.AddRange(BitConverter.GetBytes(roomId));
+            msg.Write(roomId);
+            msg.Write(name);
+            msg.Write(usePassword);
+            msg.Write(noFail);
+            msg.WritePadBits();
+            msg.Write((byte)roomState);
+            msg.Write((byte)songSelectionType);
 
-            byte[] nameStr = Encoding.UTF8.GetBytes(name);
-            buffer.AddRange(BitConverter.GetBytes(nameStr.Length));
-            buffer.AddRange(nameStr);
+            roomHost.AddToMessage(msg);
 
-            buffer.Add(usePassword ? (byte)1 : (byte)0);
+            msg.Write(players);
+            msg.Write(maxPlayers);
 
-            buffer.Add((byte)roomState);
-            buffer.Add((byte)songSelectionType);
-
-            byte[] hostInfo = roomHost.ToBytes();
-            buffer.AddRange(hostInfo);
-
-            buffer.AddRange(BitConverter.GetBytes(players));
-            buffer.AddRange(BitConverter.GetBytes(maxPlayers));
-            
-            buffer.Add(noFail ? (byte)1 : (byte)0);
-
-            if (selectedSong != null)
+            if (selectedSong != null && roomState != RoomState.SelectingSong)
             {
-                buffer.Add(selectedDifficulty);
-                buffer.AddRange(selectedSong.ToBytes(false));
+                msg.Write(selectedDifficulty);
+                selectedSong.AddToMessage(msg);
             }
-            
-            if(includeSize)
-                buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));
-
-            return buffer.ToArray();
         }
 
         public override bool Equals(object obj)

@@ -15,6 +15,7 @@ using static ServerHub.Hub.RCONStructs;
 using static ServerHub.Misc.Logger;
 using System.Diagnostics;
 using System.Text;
+using Lidgren.Network;
 #if DEBUG
 using System.IO.Pipes;
 using System.Diagnostics;
@@ -424,17 +425,17 @@ namespace ServerHub.Hub
                         if (HubListener.Listen)
                         {
                             clientsStr += $"{Environment.NewLine}┌─Lobby:";
-                            if (HubListener.hubClients.Where(x => x.socket != null && x.socket.Connected).Count() == 0)
+                            if (HubListener.hubClients.Where(x => x.playerConnection != null).Count() == 0)
                             {
                                 clientsStr += $"{Environment.NewLine}│ No Clients";
                             }
                             else
                             {
-                                List<Client> clients = new List<Client>(HubListener.hubClients.Where(x => x.socket != null && x.socket.Connected));
+                                List<Client> clients = new List<Client>(HubListener.hubClients.Where(x => x.playerConnection != null));
                                 foreach (var client in clients)
                                 {
-                                    IPEndPoint remote = (IPEndPoint)client.socket.RemoteEndPoint;
-                                    clientsStr += $"{Environment.NewLine}│ [{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
+                                    IPEndPoint remote = (IPEndPoint)client.playerConnection.RemoteEndPoint;
+                                    clientsStr += $"{Environment.NewLine}│ [{client.playerConnection.Status} | {client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
                                 }
                             }
 
@@ -452,8 +453,8 @@ namespace ServerHub.Hub
                                         List<Client> clients = new List<Client>(room.roomClients);
                                         foreach (var client in clients)
                                         {
-                                            IPEndPoint remote = (IPEndPoint)client.socket.RemoteEndPoint;
-                                            clientsStr += $"{Environment.NewLine}│ [{client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
+                                            IPEndPoint remote = (IPEndPoint)client.playerConnection.RemoteEndPoint;
+                                            clientsStr += $"{Environment.NewLine}│ [{client.playerConnection.Status} | {client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
                                         }
                                     }
                                 }
@@ -781,20 +782,17 @@ namespace ServerHub.Hub
                                             float fontSize;
                                             if (float.TryParse(comArgs[1], out displayTime) && float.TryParse(comArgs[2], out fontSize))
                                             {
-                                                List<byte> buffer = new List<byte>();
-
-                                                buffer.AddRange(BitConverter.GetBytes(displayTime));
-                                                buffer.AddRange(BitConverter.GetBytes(fontSize));
-
                                                 string message = string.Join(" ", comArgs.Skip(3).ToArray()).Replace("\\n", Environment.NewLine);
 
-                                                byte[] messageBytes = Encoding.UTF8.GetBytes(message);
-
-                                                buffer.AddRange(BitConverter.GetBytes(messageBytes.Length));
-                                                buffer.AddRange(messageBytes);
-
                                                 BaseRoom room = rooms.First(x => x.roomId == roomId);
-                                                room.BroadcastPacket(new BasePacket(CommandType.DisplayMessage, buffer.ToArray()));
+
+                                                NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
+                                                outMsg.Write((byte)CommandType.DisplayMessage);
+                                                outMsg.Write(displayTime);
+                                                outMsg.Write(fontSize);
+                                                outMsg.Write(message);
+
+                                                room.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
                                                 room.BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(displayTime, fontSize, message));
                                                 return $"Sent message \"{string.Join(" ", comArgs.Skip(3).ToArray())}\" to all players in room {roomId}!";
                                             }
@@ -939,11 +937,11 @@ namespace ServerHub.Hub
 
             foreach (var client in clientsToKick)
             {
-                if (Settings.Instance.Access.WhitelistEnabled && !client.IsWhitelisted())
+                if (Settings.Instance.Access.WhitelistEnabled && !HubListener.IsWhitelisted(client.playerConnection.RemoteEndPoint, client.playerInfo))
                 {
                     client.KickClient("You are not whitelisted!");
                 }
-                if (client.IsBlacklisted())
+                if (HubListener.IsWhitelisted(client.playerConnection.RemoteEndPoint, client.playerInfo))
                 {
                     client.KickClient("You are banned!");
                 }
