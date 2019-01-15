@@ -38,14 +38,7 @@
     <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="Websocket-sharp\doc\.gitignore" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Websocket-sharp\doc\.gitignore" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Lidgren.Network.MultiTarget">
-      <HintPath>bin\Lidgren.Network.MultiTarget.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\Lidgren-Network\Lidgren.Network.MultiTarget\Lidgren.Network.MultiTarget.csproj" />
+    <ProjectReference Include="..\WebSocket-Sharp\websocket-sharp\websocket-sharp.csproj" />
   </ItemGroup>
 </Project>

@@ -177,6 +177,12 @@
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\ServerHubNavigationController.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Lidgren-Network\Lidgren.Network.MultiTarget\Lidgren.Network.MultiTarget.csproj">
+      <Project>{7ac73631-8932-4e8c-b5c0-bc73384aa3c5}</Project>
+      <Name>Lidgren.Network.MultiTarget</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y $(TargetDir)BeatSaberMultiplayer.dll  "C:\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins"
