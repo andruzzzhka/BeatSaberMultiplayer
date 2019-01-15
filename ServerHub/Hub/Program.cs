@@ -18,7 +18,6 @@ using System.Text;
 using Lidgren.Network;
 #if DEBUG
 using System.IO.Pipes;
-using System.Diagnostics;
 #endif
 
 namespace ServerHub.Hub
@@ -50,7 +49,7 @@ namespace ServerHub.Hub
 
         static void Main(string[] args) => Start(args);
 
-        static private Thread listenerThread { get; set; }
+        static private Thread ListenerThread { get; set; }
 
 #if !DEBUG
         static private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -212,9 +211,9 @@ namespace ServerHub.Hub
             serverStartTime = DateTime.Now;
 
 
-            listenerThread = new Thread(HubListener.Start);
+            ListenerThread = new Thread(HubListener.Start);
 
-            listenerThread.Start();
+            ListenerThread.Start();
             HubListener.Listen = true;
 
             foreach (IPlugin plugin in plugins)
@@ -312,8 +311,10 @@ namespace ServerHub.Hub
             pipeServer = new NamedPipeServerStream("ServerHubStatsPipe", PipeDirection.Out);
             await pipeServer.WaitForConnectionAsync();
 
-            pipeWriter = new StreamWriter(pipeServer);
-            pipeWriter.AutoFlush = true;
+            pipeWriter = new StreamWriter(pipeServer)
+            {
+                AutoFlush = true
+            };
             lastTick = DateTime.Now;
         }
 #endif
@@ -765,7 +766,6 @@ namespace ServerHub.Hub
                             }
                             return roomsStr;
                         }
-                        break;
                     case "message":
                         {
                             if (HubListener.Listen)

@@ -52,15 +52,13 @@ namespace ServerHub.Hub
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
             _lastTick = DateTime.Now;
 
-            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer");
-            Config.Port = Settings.Instance.Server.Port;
-            Config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
-
-            if (Settings.Instance.Server.TryUPnP)
+            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer")
             {
-                Config.EnableUPnP = true;
-            }
-
+                Port = Settings.Instance.Server.Port,
+                EnableUPnP = Settings.Instance.Server.TryUPnP
+            };
+            Config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
+            
             ListenerServer = new NetServer(Config);
             ListenerServer.Start();
 
