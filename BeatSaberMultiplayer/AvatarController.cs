@@ -172,9 +172,9 @@ namespace BeatSaberMultiplayer
             {
                 if (avatar != null && !forcePlayerInfo)
                 {
-                    if (Client.instance.Tickrate < (1f/Time.smoothDeltaTime))
+                    if (Client.Instance.Tickrate < (1f/Time.smoothDeltaTime))
                     {
-                        interpolationProgress += Time.deltaTime * Client.instance.Tickrate;
+                        interpolationProgress += Time.deltaTime * Client.Instance.Tickrate;
                     }
                     else
                     {

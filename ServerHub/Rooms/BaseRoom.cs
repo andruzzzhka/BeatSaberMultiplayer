@@ -184,7 +184,7 @@ namespace ServerHub.Rooms
                             selectedSong = null;
 
                             outMsg.Write((byte)CommandType.SetSelectedSong);
-                            outMsg.Write((byte)0);
+                            outMsg.Write((int)0);
 
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
                             BroadcastWebSocket(CommandType.SetSelectedSong, null);
@@ -395,8 +395,8 @@ namespace ServerHub.Rooms
                                 roomState = RoomState.SelectingSong;
 
                                 outMsg.Write((byte)CommandType.SetSelectedSong);
-                                outMsg.Write((byte)0);
-                                
+                                outMsg.Write((int)0);
+
                                 BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
                                 BroadcastWebSocket(CommandType.SetSelectedSong, null);
                                 if (roomSettings.SelectionType == SongSelectionType.Voting)

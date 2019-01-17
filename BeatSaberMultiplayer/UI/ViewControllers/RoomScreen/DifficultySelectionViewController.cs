@@ -43,7 +43,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             if(firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
-                bool isHost = Client.instance.isHost;
+                bool isHost = Client.Instance.isHost;
 
                 _selectedSongCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")), rectTransform, false);
                 (_selectedSongCell.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);

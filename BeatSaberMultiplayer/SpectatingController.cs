@@ -10,6 +10,7 @@ using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using CustomAvatar;
+using Lidgren.Network;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -110,36 +111,31 @@ namespace BeatSaberMultiplayer
 
         private void ClientCreated()
         {
-            Client.instance.PacketReceived -= PacketReceived;
-            Client.instance.PacketReceived += PacketReceived;
+            Client.Instance.MessageReceived -= PacketReceived;
+            Client.Instance.MessageReceived += PacketReceived;
         }
 
-        private void PacketReceived(BasePacket packet)
+        private void PacketReceived(NetIncomingMessage msg)
         {
             if (Config.Instance.SpectatorMode && _currentScene.name == "GameCore")
             {
-                if (packet.commandType == CommandType.UpdatePlayerInfo)
+                msg.Position = 0;
+                CommandType commandType = (CommandType)msg.ReadByte();
+                if (commandType == CommandType.UpdatePlayerInfo)
                 {
-                    int playersCount = BitConverter.ToInt32(packet.additionalData, 8);
+                    float currentTime = msg.ReadFloat();
+                    float totalTime = msg.ReadFloat();
 
-                    Stream byteStream = new MemoryStream(packet.additionalData, 12, packet.additionalData.Length - 12);
+                    int playersCount = msg.ReadInt32();
                     
                     for (int j = 0; j < playersCount; j++)
                     {
-                        byte[] sizeBytes = new byte[4];
-                        byteStream.Read(sizeBytes, 0, 4);
-
-                        int playerInfoSize = BitConverter.ToInt32(sizeBytes, 0);
-
-                        byte[] playerInfoBytes = new byte[playerInfoSize];
-                        byteStream.Read(playerInfoBytes, 0, playerInfoSize);
-
                         try
                         {
-                            PlayerInfo player = new PlayerInfo(playerInfoBytes);
+                            PlayerInfo player = new PlayerInfo(msg);
                             if (_playerInfos.ContainsKey(player))
                             {
-                                if(_playerInfos[player].Count >= 3 * Client.instance.Tickrate)
+                                if(_playerInfos[player].Count >= 3 * Client.Instance.Tickrate)
                                 {
                                     _playerInfos[player].RemoveAt(0);
                                 }
@@ -161,7 +157,7 @@ namespace BeatSaberMultiplayer
 
                     if (_playerInfos.Count > 1 && _spectatedPlayer == null)
                     {
-                        _spectatedPlayer = _playerInfos.First(x => !x.Key.Equals(Client.instance.playerInfo)).Value.Last();
+                        _spectatedPlayer = _playerInfos.First(x => !x.Key.Equals(Client.Instance.playerInfo)).Value.Last();
                         Misc.Logger.Info("Spectating " + _spectatedPlayer.playerName);
                     }
                     
@@ -299,8 +295,6 @@ namespace BeatSaberMultiplayer
             _songAudioSource.timeSamples = Mathf.RoundToInt(Mathf.Lerp(0, _songAudioSource.clip.samples, (time / audioTimeSync.songLength)));
             _songAudioSource.time = _songAudioSource.time - Mathf.Min(0f, _songAudioSource.time);
             SongSeekBeatmapHandler.OnSongTimeChanged(_songAudioSource.time, Mathf.Min(0f, _songAudioSource.time));
-
-            Client.instance.RemovePacketsFromQueue(CommandType.UpdatePlayerInfo);
         }
 
         public float Remap(float value, float from1, float to1, float from2, float to2)

@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using VRUI;
+using Lidgren.Network;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
@@ -24,6 +25,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         RoomListViewController _roomListViewController;
 
         List<ServerHubClient> _serverHubClients = new List<ServerHubClient>();
+
+        public bool doNotUpdate = false;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -111,6 +114,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public IEnumerator UpdateRoomsListCoroutine()
         {
             yield return null;
+            if (doNotUpdate)
+            {
+                doNotUpdate = false;
+                yield break;
+            }
             UpdateRoomsList();
         }
 
@@ -125,7 +133,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             });
             _serverHubClients.Clear();
 
-            for (int i = 0; i < Config.Instance.ServerHubIPs.Length; i++)
+            for (int i = 0; i < Config.Instance.ServerHubIPs.Length ; i++)
             {
                 string ip = Config.Instance.ServerHubIPs[i];
                 int port = 3700;
@@ -133,7 +141,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     port = Config.Instance.ServerHubPorts[i];
                 }
-                ServerHubClient client = new ServerHubClient(ip, port);
+                ServerHubClient client = new GameObject("ServerHubClient").AddComponent<ServerHubClient>();
+                client.ip = ip;
+                client.port = port;
                 client.ReceivedRoomsList += ReceivedRoomsList;
                 client.ServerHubException += ServerHubException;
                 _serverHubClients.Add(client);
@@ -164,9 +174,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
 
 
-    class ServerHubClient
+    class ServerHubClient : MonoBehaviour
     {
-        private Socket socket;
+        private NetClient NetworkClient;
         
         public string ip;
         public int port;
@@ -178,111 +188,104 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public event Action<ServerHubClient, List<RoomInfo>> ReceivedRoomsList;
         public event Action<ServerHubClient, Exception> ServerHubException;
 
-        public ServerHubClient(string IP, int Port)
+        public void Awake()
         {
-            ip = IP;
-            port = Port;
-            socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { ConnectionTimeout = 5 };
+            NetworkClient = new NetClient(Config);
         }
 
         public void GetRooms()
         {
             try
             {
-                socket.BeginConnect(ip, port, new AsyncCallback(ConnectedToServerHub), null);
-            }catch(Exception e)
+                NetworkClient.Start();
+
+                Misc.Logger.Info($"Creating message...");
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write(Plugin.pluginVersion);
+                new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).AddToMessage(outMsg);
+
+                Misc.Logger.Info($"Connecting to {ip}:{port}...");
+
+                NetworkClient.Connect(ip, port, outMsg);
+            }
+            catch(Exception e)
             {
                 ServerHubException?.Invoke(this, e);
             }
         }
 
-        private void ConnectedToServerHub(IAsyncResult ar)
+        public void Update()
         {
-            socket.EndConnect(ar);
-
-            try
+            if (NetworkClient != null && NetworkClient.Status == NetPeerStatus.Running)
             {
-                List<byte> buffer = new List<byte>();
-                buffer.AddRange(BitConverter.GetBytes(Plugin.pluginVersion));
-                buffer.AddRange(new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).ToBytes(false));
-                socket.SendData(new BasePacket(CommandType.Connect, buffer.ToArray()));
-                BasePacket response = socket.ReceiveData();
-
-                if (response.commandType != CommandType.Connect)
+                NetIncomingMessage msg;
+                while ((msg = NetworkClient.ReadMessage()) != null)
                 {
-                    if(response.commandType == CommandType.Disconnect)
+                    switch (msg.MessageType)
                     {
-                        if (response.additionalData.Length > 0)
-                        {
-                            string reason = Encoding.UTF8.GetString(response.additionalData, 4, BitConverter.ToInt32(response.additionalData, 0));
+                        case NetIncomingMessageType.StatusChanged:
+                            {
+                                NetConnectionStatus status = (NetConnectionStatus)msg.ReadByte();
 
-                            ServerHubException?.Invoke(this, new Exception($"ServerHub refused connection! Reason: {reason}"));
-                            Abort();
-                            return;
-                        }
-                        else
-                        {
-                            ServerHubException?.Invoke(this, new Exception("ServerHub refused connection!"));
-                            Abort();
-                            return;
-                        }
+                                if (status == NetConnectionStatus.Connected)
+                                {
+                                    NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                                    outMsg.Write((byte)CommandType.GetRooms);
+
+                                    NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                }else if(status == NetConnectionStatus.Disconnected)
+                                {
+                                    Abort();
+                                    ServerHubException?.Invoke(this, new Exception("ServerHub refused connection!"));
+                                }
+
+                            };
+                            break;
+
+                        case NetIncomingMessageType.Data:
+                            {
+                                if ((CommandType)msg.ReadByte() == CommandType.GetRooms)
+                                {
+                                    serverHubAvailable = true;
+
+                                    int roomsCount = msg.ReadInt32();
+
+                                    availableRooms.Clear();
+
+                                    for (int i = 0; i < roomsCount; i++)
+                                    {
+                                        availableRooms.Add(new RoomInfo(msg));
+                                    }
+
+                                    NetworkClient.Shutdown("");
+
+                                    ReceivedRoomsList?.Invoke(this, availableRooms);
+                                }
+                            };
+                            break;
+                        case NetIncomingMessageType.VerboseDebugMessage:
+                        case NetIncomingMessageType.DebugMessage:
+                            Misc.Logger.Info(msg.ReadString());
+                            break;
+                        case NetIncomingMessageType.WarningMessage:
+                            Misc.Logger.Warning(msg.ReadString());
+                            break;
+                        case NetIncomingMessageType.ErrorMessage:
+                            Misc.Logger.Error(msg.ReadString());
+                            break;
+                        default:
+                            Console.WriteLine("Unhandled type: " + msg.MessageType);
+                            break;
                     }
-                    else
-                    {
-                        ServerHubException?.Invoke(this, new Exception("Unexpected response from ServerHub!"));
-                        Abort();
-                        return;
-                    }
+
                 }
-
-                serverHubAvailable = true;
-
-                socket.SendData(new BasePacket(CommandType.GetRooms, new byte[0]));
-                response = socket.ReceiveData();
-
-                socket.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
-
-                if (response.commandType == CommandType.GetRooms)
-                {
-                    int roomsCount = BitConverter.ToInt32(response.additionalData, 0);
-
-                    Stream byteStream = new MemoryStream(response.additionalData, 4, response.additionalData.Length - 4);
-
-                    for (int i = 0; i < roomsCount; i++)
-                    {
-                        byte[] sizeBytes = new byte[4];
-                        byteStream.Read(sizeBytes, 0, 4);
-
-                        int roomInfoSize = BitConverter.ToInt32(sizeBytes, 0);
-
-                        byte[] roomInfoBytes = new byte[roomInfoSize];
-                        byteStream.Read(roomInfoBytes, 0, roomInfoSize);
-
-                        availableRooms.Add(new RoomInfo(roomInfoBytes));
-                    }
-
-                    ReceivedRoomsList?.Invoke(this, availableRooms);
-                }
-                else
-                {
-                    ServerHubException?.Invoke(this, new Exception("Unexpected response from ServerHub!"));
-                    Abort();
-                    return;
-                }
-            }catch(Exception e)
-            {
-                ServerHubException?.Invoke(this, e);
-                Abort();
-                return;
             }
         }
 
         public void Abort()
         {
-            if (socket != null)
-            {
-                socket.Close();
-            }
+            NetworkClient.Shutdown("");
             availableRooms.Clear();
         }
     }

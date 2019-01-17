@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NET462;UNITY;__CONSTRAINED__</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -135,7 +135,6 @@
     <Compile Include="DebugForm.cs" />
     <Compile Include="InGameOnlineController.cs" />
     <Compile Include="Misc\Base64Sprites.cs" />
-    <Compile Include="Misc\ClientHelper.cs" />
     <Compile Include="Misc\Config.cs" />
     <Compile Include="Misc\CustomExtensions.cs" />
     <Compile Include="Misc\GetUserInfo.cs" />
@@ -178,9 +177,9 @@
     <Compile Include="UI\ViewControllers\ServerHubScreen\ServerHubNavigationController.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Lidgren-Network\Lidgren.Network.MultiTarget\Lidgren.Network.MultiTarget.csproj">
-      <Project>{7ac73631-8932-4e8c-b5c0-bc73384aa3c5}</Project>
-      <Name>Lidgren.Network.MultiTarget</Name>
+    <ProjectReference Include="..\Lidgren-Network\Lidgren.Network\Lidgren.Network.csproj">
+      <Project>{49ba1c69-6104-41ac-a5d8-b54fa9f696e8}</Project>
+      <Name>Lidgren.Network</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

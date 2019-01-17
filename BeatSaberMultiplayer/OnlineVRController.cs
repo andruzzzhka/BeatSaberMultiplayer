@@ -46,11 +46,11 @@ namespace BeatSaberMultiplayer
             }
             else
             {
-                if(Client.instance != null && Client.instance.Connected)
+                if(Client.Instance != null && Client.Instance.Connected)
                 {
                     if (!forcePlayerInfo)
                     {
-                        interpolationProgress += Time.deltaTime * Client.instance.Tickrate;
+                        interpolationProgress += Time.deltaTime * Client.Instance.Tickrate;
 
 
                         if (interpolationProgress > 1f)

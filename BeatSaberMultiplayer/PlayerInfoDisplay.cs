@@ -26,7 +26,7 @@ namespace BeatSaberMultiplayer
         {
             if (_playerInfo != null)
             {
-                progress += Time.deltaTime * Client.instance.Tickrate;
+                progress += Time.deltaTime * Client.Instance.Tickrate;
                 uint score = (uint)Mathf.Lerp(previousScore, currentScore, Mathf.Clamp01(progress));
 
 #if DEBUG

@@ -2,6 +2,7 @@
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen;
 using CustomUI.BeatSaber;
+using Lidgren.Network;
 using SongLoaderPlugin;
 using System;
 using System.Collections.Generic;
@@ -93,7 +94,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             presetSettings = settings;
             presetSettings.AvailableSongs = _leftRoomCreationViewController.selectedSongs.Select(x => new SongInfo() { songName = x.songName + " " + x.songSubName, levelId = x.levelID.Substring(0, Math.Min(32, x.levelID.Length)), songDuration = x.audioClip.length }).ToList();
             RoomPreset preset = new RoomPreset(presetSettings);
-            preset.SavePreset("UserData\\RoomPresets\\"+name+".json");
+            preset.SavePreset("UserData/RoomPresets/"+name+".json");
             PresetsCollection.ReloadPresets();
         }
 
@@ -128,16 +129,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _roomSettings.AvailableSongs = _leftRoomCreationViewController.selectedSongs.Select(x => new SongInfo() { songName = x.songName + " " + x.songSubName, levelId = x.levelID.Substring(0, Math.Min(32, x.levelID.Length)), songDuration = x.audioClip.length }).ToList();
 
             _mainRoomCreationViewController.CreateButtonInteractable(false);
-
-            if (Client.instance == null)
+            
+            if(!Client.Instance.Connected || (Client.Instance.Connected && (Client.Instance.ip != _selectedServerHub.ip || Client.Instance.port != _selectedServerHub.port)))
             {
-                Client.CreateClient();
-            }
-            if(!Client.instance.Connected || (Client.instance.Connected && (Client.instance.ip != _selectedServerHub.ip || Client.instance.port != _selectedServerHub.port)))
-            {
-                Client.instance.Disconnect(true);
-                Client.instance.Connect(_selectedServerHub.ip, _selectedServerHub.port);
-                Client.instance.ConnectedToServerHub += ConnectedToServerHub;
+                Client.Instance.Disconnect(true);
+                Client.Instance.Connect(_selectedServerHub.ip, _selectedServerHub.port);
+                Client.Instance.ConnectedToServerHub += ConnectedToServerHub;
             }
             else
             {
@@ -148,25 +145,26 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void ConnectedToServerHub()
         {
-            Client.instance.ConnectedToServerHub -= ConnectedToServerHub;
-            Client.instance.CreateRoom(_roomSettings);
-            Client.instance.PacketReceived -= PacketReceived;
-            Client.instance.PacketReceived += PacketReceived;
+            Client.Instance.ConnectedToServerHub -= ConnectedToServerHub;
+            Client.Instance.CreateRoom(_roomSettings);
+            Client.Instance.MessageReceived -= PacketReceived;
+            Client.Instance.MessageReceived += PacketReceived;
         }
 
-        public void PacketReceived(BasePacket packet)
+        public void PacketReceived(NetIncomingMessage msg)
         {
-            if(packet.commandType == CommandType.CreateRoom)
+            if ((CommandType)msg.ReadByte() == CommandType.CreateRoom)
             {
                 _mainRoomCreationViewController.CreateButtonInteractable(true);
 
-                Client.instance.PacketReceived -= PacketReceived;
-                _createdRoomId = BitConverter.ToUInt32(packet.additionalData, 0);
+                Client.Instance.MessageReceived -= PacketReceived;
+                _createdRoomId = msg.ReadUInt32();
                 
                 DismissViewController(_mainRoomCreationViewController, null, true);
                 SetLeftScreenViewController(null);
                 didFinishEvent?.Invoke(true);
-                
+
+                PluginUI.instance.serverHubFlowCoordinator.doNotUpdate = true;
                 PluginUI.instance.serverHubFlowCoordinator.JoinRoom(_selectedServerHub.ip, _selectedServerHub.port, _createdRoomId, _roomSettings.UsePassword, _roomSettings.Password);
             }
         }

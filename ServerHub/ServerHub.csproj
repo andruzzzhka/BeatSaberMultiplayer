@@ -38,7 +38,7 @@
     <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Lidgren-Network\Lidgren.Network.MultiTarget\Lidgren.Network.MultiTarget.csproj" />
+    <ProjectReference Include="..\Lidgren-Network\Lidgren.Network\Lidgren.Network.csproj" />
     <ProjectReference Include="..\WebSocket-Sharp\websocket-sharp\websocket-sharp.csproj" />
   </ItemGroup>
 </Project>

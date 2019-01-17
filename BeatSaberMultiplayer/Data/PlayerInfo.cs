@@ -1,4 +1,5 @@
 ﻿using BeatSaberMultiplayer.Misc;
+using Lidgren.Network;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,23 +43,20 @@ namespace BeatSaberMultiplayer.Data
             avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
         }
 
-        public PlayerInfo(byte[] data)
-        {            
-            int nameLength = BitConverter.ToInt32(data, 0);
-            playerName = Encoding.UTF8.GetString(data, 4, nameLength);
-            playerId = BitConverter.ToUInt64(data, 4 + nameLength);
+        public PlayerInfo(NetIncomingMessage msg)
+        {
+            playerName = msg.ReadString();
+            playerId = msg.ReadUInt64();
 
-            playerState = (PlayerState)data[12 + nameLength];
+            playerState = (PlayerState)msg.ReadByte();
 
-            playerScore = BitConverter.ToUInt32(data, 13 + nameLength);
-            playerCutBlocks = BitConverter.ToUInt32(data, 17 + nameLength);
-            playerComboBlocks = BitConverter.ToUInt32(data, 21 + nameLength);
-            playerTotalBlocks = BitConverter.ToUInt32(data, 25 + nameLength);
-            playerEnergy = BitConverter.ToSingle(data, 29 + nameLength);
+            playerScore = msg.ReadUInt32();
+            playerCutBlocks = msg.ReadUInt32();
+            playerComboBlocks = msg.ReadUInt32();
+            playerTotalBlocks = msg.ReadUInt32();
+            playerEnergy = msg.ReadFloat();
 
-            playerProgress = BitConverter.ToSingle(data, 33 + nameLength);
-
-            byte[] avatar = data.Skip(37 + nameLength).Take(100).ToArray();
+            byte[] avatar = msg.ReadBytes(100);
 
             rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
             leftHandPos = Serialization.ToVector3(avatar.Skip(12).Take(12).ToArray());
@@ -71,39 +69,27 @@ namespace BeatSaberMultiplayer.Data
             avatarHash = BitConverter.ToString(avatar.Skip(84).Take(16).ToArray()).Replace("-", "");
         }
 
-        public byte[] ToBytes(bool includeSize = true)
+        public void AddToMessage(NetOutgoingMessage msg)
         {
-            List<byte> buffer = new List<byte>();
+            msg.Write(playerName);
+            msg.Write(playerId);
 
-            byte[] nameBuffer = Encoding.UTF8.GetBytes(playerName);
-            buffer.AddRange(BitConverter.GetBytes(nameBuffer.Length));
-            buffer.AddRange(nameBuffer);
-            buffer.AddRange(BitConverter.GetBytes(playerId));
-            
-            buffer.Add((byte)playerState);
+            msg.Write((byte)playerState);
 
-            buffer.AddRange(BitConverter.GetBytes(playerScore));
-            buffer.AddRange(BitConverter.GetBytes(playerCutBlocks));
-            buffer.AddRange(BitConverter.GetBytes(playerComboBlocks));
-            buffer.AddRange(BitConverter.GetBytes(playerTotalBlocks));
-            buffer.AddRange(BitConverter.GetBytes(playerEnergy));
+            msg.Write(playerScore);
+            msg.Write(playerCutBlocks);
+            msg.Write(playerComboBlocks);
+            msg.Write(playerTotalBlocks);
+            msg.Write(playerEnergy);
 
-            buffer.AddRange(BitConverter.GetBytes(playerProgress));
-
-            buffer.AddRange(Serialization.Combine(
+            msg.Write(Serialization.Combine(
                             Serialization.ToBytes(rightHandPos),
                             Serialization.ToBytes(leftHandPos),
                             Serialization.ToBytes(headPos),
                             Serialization.ToBytes(rightHandRot),
                             Serialization.ToBytes(leftHandRot),
-                            Serialization.ToBytes(headRot)));
-
-            buffer.AddRange(HexConverter.ConvertHexToBytesX(avatarHash));
-
-            if (includeSize)
-                buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));
-
-            return buffer.ToArray();
+                            Serialization.ToBytes(headRot), 
+                            HexConverter.ConvertHexToBytesX(avatarHash)));
         }
 
         public override bool Equals(object obj)

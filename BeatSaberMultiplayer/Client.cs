@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
+using Lidgren.Network;
 using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,19 +16,6 @@ using UnityEngine;
 
 namespace BeatSaberMultiplayer
 {
-
-    public class StateObject
-    {
-        public Socket workSocket = null;
-        public BasePacket packet;
-        public int offset;
-        public byte[] buffer;
-
-        public StateObject(int BufferSize)
-        {
-            buffer = new byte[BufferSize];
-        }
-    }
 
     public class Client : MonoBehaviour
     {
@@ -40,17 +29,17 @@ namespace BeatSaberMultiplayer
         public static event Action ClientLeftRoom;
         public static event Action ClientDestroyed;
         public static bool disableScoreSubmission;
-        public static Client instance;
+
 
         public event Action ConnectedToServerHub;
         public event Action<Exception> ServerHubException;
 
-        public event Action<BasePacket> PacketReceived;
+        public event Action<NetIncomingMessage> MessageReceived;
 
         public bool Connected;
 
-        Socket socket;
-
+        public NetClient NetworkClient;
+        
         public string ip;
         public int port;
 
@@ -58,49 +47,37 @@ namespace BeatSaberMultiplayer
         
         public bool isHost;
 
-        Queue<BasePacket> _packetsQueue = new Queue<BasePacket>();
-
         DateTime _lastPacketTime;
         List<float> _averagePacketTimes = new List<float>();
 
         public float Tickrate;
 
-        public static void CreateClient()
-        {
-            if(instance != null)
+        public static Client Instance {
+            get
             {
-                Misc.Logger.Error("Client Instance already exists!");
-                return;
+                if (instance == null)
+                   instance = new GameObject("MultiplayerClient").AddComponent<Client>();
+                return instance;
             }
-
-            new GameObject("MultiplayerClient").AddComponent<Client>();
         }
-
+        
+        private static Client instance;
+        
         public void Awake()
         {
-            if (instance != this)
-            {
-                instance = this;
-                DontDestroyOnLoad(this);
-                playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
-                ClientCreated?.Invoke();
-            }
+            instance = this;
+            DontDestroyOnLoad(this);
+            playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
+            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { MaximumHandshakeAttempts = 2 };
+            NetworkClient = new NetClient(Config);
+            ClientCreated?.Invoke();
         }
 
         public void Disconnect(bool dontDestroy = false)
         {
-            if (socket != null && socket.Connected)
+            if (NetworkClient != null && NetworkClient.Status == NetPeerStatus.Running)
             {
-                try
-                {
-                    socket.SendData(new BasePacket(CommandType.Disconnect, new byte[0]));
-                    socket.Shutdown(SocketShutdown.Both);
-                    socket.Close(5);
-                }
-                catch (Exception)
-                {
-
-                }
+                NetworkClient.Shutdown("");
             }
 
             if (!dontDestroy)
@@ -109,6 +86,7 @@ namespace BeatSaberMultiplayer
                 ClientDestroyed?.Invoke();
                 Destroy(gameObject);
             }
+            Connected = false;
         }
 
         public void Connect(string IP, int Port)
@@ -116,203 +94,174 @@ namespace BeatSaberMultiplayer
             ip = IP;
             port = Port;
 
-            socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            socket.NoDelay = true;
-            socket.BeginConnect(ip, port, new AsyncCallback(ConnectedCallback), null);
-        }
+            NetworkClient.Start();
 
-        private void ConnectedCallback(IAsyncResult ar)
-        {
-            socket.EndConnect(ar);
-            _lastPacketTime = DateTime.Now;
+            Misc.Logger.Info($"Creating message...");
+            NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+            outMsg.Write(Plugin.pluginVersion);
+            playerInfo.AddToMessage(outMsg);
 
-            List<byte> buffer = new List<byte>();
-            buffer.AddRange(BitConverter.GetBytes(Plugin.pluginVersion));
-            buffer.AddRange(playerInfo.ToBytes(false));
-            socket.SendData(new BasePacket(CommandType.Connect, buffer.ToArray()));
-            BasePacket response = socket.ReceiveData();
+            Misc.Logger.Info($"Connecting to {ip}:{port}...");
 
-            if (response.commandType != CommandType.Connect)
-            {
-                if (response.commandType == CommandType.Disconnect)
-                {
-                    if (response.additionalData.Length > 0)
-                    {
-                        string reason = Encoding.UTF8.GetString(response.additionalData, 4, BitConverter.ToInt32(response.additionalData, 0));
-
-                        ServerHubException?.Invoke(new Exception($"ServerHub refused connection! Reason: {reason}"));
-                        return;
-                    }
-                    else
-                    {
-                        ServerHubException?.Invoke(new Exception("ServerHub refused connection!"));
-                        return;
-                    }
-                }
-                else
-                {
-                    ServerHubException?.Invoke(new Exception("Unexpected response from ServerHub!"));
-                    return;
-                }
-            }
-
-            playerInfo.playerState = PlayerState.Lobby;
-            Connected = true;
-            ConnectedToServerHub?.Invoke();
-
-            StateObject state = new StateObject(4);
-            state.workSocket = socket;
-
-            socket.BeginReceive(state.buffer, 0, 4, SocketFlags.None, new AsyncCallback(ReceiveHeader), state);
-        }
-
-        public void RemovePacketsFromQueue(CommandType type)
-        {
-            try
-            {
-                _packetsQueue = new Queue<BasePacket>(_packetsQueue.ToList().RemoveAll(x => x.commandType == type));
-            }
-            catch(Exception e)
-            {
-                Misc.Logger.Warning("Unable to remove "+type.ToString()+" packets from queue! Exception: "+e);
-            }
+            NetworkClient.Connect(ip, port, outMsg);
         }
 
         public void Update()
         {
-            while (_packetsQueue.Count > 0)
+            NetIncomingMessage msg;
+            while ((msg = NetworkClient.ReadMessage()) != null)
             {
-                BasePacket packet = _packetsQueue.Dequeue();
-                
-                if (packet.commandType == CommandType.Disconnect)
+                _lastPacketTime = DateTime.Now;
+                switch (msg.MessageType)
                 {
+                    case NetIncomingMessageType.StatusChanged:
+                        {
+                            NetConnectionStatus status = (NetConnectionStatus)msg.ReadByte();
+
+                            if (status == NetConnectionStatus.Connected && !Connected)
+                            {
+                                Connected = true;
+                                ConnectedToServerHub?.Invoke();
+                            }
+                        }
+                        break;
+                    case NetIncomingMessageType.Data:
+                        {
+                            CommandType commandType = (CommandType)msg.PeekByte();
+
+                            if (commandType == CommandType.Disconnect)
+                            {
 #if DEBUG
-                    Misc.Logger.Info("Disconnecting...");
+                                Misc.Logger.Info("Disconnecting...");
 #endif
-                    Disconnect();
-                    PacketReceived?.Invoke(packet);
-                }
-                else if (packet.commandType == CommandType.SendEventMessage)
-                {
-                    int headerLength = BitConverter.ToInt32(packet.additionalData, 0);
-                    string header = Encoding.UTF8.GetString(packet.additionalData.Skip(4).Take(headerLength).ToArray());
-                    string data = Encoding.UTF8.GetString(packet.additionalData.Skip(4+headerLength).ToArray());
+                                Disconnect();
+
+                                foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                                {
+                                    try
+                                    {
+                                        msg.Position = 0;
+                                        nextDel.Invoke(msg);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
+                                    }
+                                }
+                            }
+                            else if (commandType == CommandType.SendEventMessage)
+                            {
+                                string header = msg.ReadString();
+                                string data = msg.ReadString();
 
 #if DEBUG
-                    Misc.Logger.Info($"Received event message! Header=\"{header}\", Data=\"{data}\"");
+                                Misc.Logger.Info($"Received event message! Header=\"{header}\", Data=\"{data}\"");
 #endif
-                    EventMessageReceived?.Invoke(header, data);
-                }
-                else
-                {
-                    PacketReceived?.Invoke(packet);
-                }
+                                EventMessageReceived?.Invoke(header, data);
+                            }
+                            else
+                            {
+                                foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                                {
+                                    try
+                                    {
+                                        msg.Position = 0;
+                                        nextDel.Invoke(msg);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
+                                    }
+                                }
+                            }
 
-                if(packet.commandType == CommandType.JoinRoom)
-                {
-                    if(packet.additionalData[0] == 0)
-                        ClientJoinedRoom?.Invoke();
-                }else if(packet.commandType == CommandType.StartLevel)
-                {
-                    if (playerInfo.playerState == PlayerState.Room)
-                        ClientLevelStarted?.Invoke();
+
+                            if (commandType == CommandType.JoinRoom)
+                            {
+                                msg.Position = 8;
+                                if (msg.PeekByte() == 0)
+                                    ClientJoinedRoom?.Invoke();
+                            }
+                            else if (commandType == CommandType.StartLevel)
+                            {
+                                if (playerInfo.playerState == PlayerState.Room)
+                                    ClientLevelStarted?.Invoke();
+                            }
+                        };
+                        break;
+
+                    case NetIncomingMessageType.VerboseDebugMessage:
+                    case NetIncomingMessageType.DebugMessage:
+                        Misc.Logger.Info(msg.ReadString());
+                        break;
+                    case NetIncomingMessageType.WarningMessage:
+                        Misc.Logger.Warning(msg.ReadString());
+                        break;
+                    case NetIncomingMessageType.ErrorMessage:
+                        Misc.Logger.Error(msg.ReadString());
+                        break;
+                    default:
+                        Console.WriteLine("Unhandled type: " + msg.MessageType);
+                        break;
                 }
+                NetworkClient.Recycle(msg);
             }
         }
 
-        public void ReceiveHeader(IAsyncResult ar)
+        public void GetRooms()
         {
-
-            StateObject recState = (StateObject)ar.AsyncState;
-            Socket client = recState.workSocket;
-
-            int bytesRead = client.EndReceive(ar);
-
-            if (bytesRead == recState.buffer.Length)
+            if (Connected && NetworkClient != null)
             {
-                int bytesToReceive = BitConverter.ToInt32(recState.buffer, 0);
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.GetRooms);
 
-                StateObject state = new StateObject(bytesToReceive) { workSocket = client};
-                client.BeginReceive(state.buffer, 0, bytesToReceive, SocketFlags.None, new AsyncCallback(ReceiveCallback), state);
-            }
-        }
-
-        private void ReceiveCallback(IAsyncResult ar)
-        {
-            StateObject recState = (StateObject)ar.AsyncState;
-            Socket client = recState.workSocket;
-            
-            int bytesRead = client.EndReceive(ar);
-            
-            if (bytesRead == recState.buffer.Length-recState.offset)
-            {
-                try
-                {
-                    BasePacket packet = new BasePacket(recState.buffer);
-
-                    if (_averagePacketTimes.Count > 119)
-                        _averagePacketTimes.RemoveAt(0);
-                    _averagePacketTimes.Add((float)DateTime.Now.Subtract(_lastPacketTime).TotalMilliseconds);
-                    _lastPacketTime = DateTime.Now;
-
-                    Tickrate = 1000f / (_averagePacketTimes.Sum() / _averagePacketTimes.Count);
-#if DEBUG
-                    if (packet.commandType != CommandType.UpdatePlayerInfo)
-                        Misc.Logger.Info($"Received Packet: CommandType={packet.commandType}, DataLength={packet.additionalData.Length}");
-#endif
-                    _packetsQueue.Enqueue(packet);
-                }catch(Exception e)
-                {
-                    Misc.Logger.Warning("Unable to parse packet from ServerHub! Exception: "+ e);
-                }
-
-                if (client.Connected)
-                {
-                    StateObject state = new StateObject(4) { workSocket = client };
-                    client.BeginReceive(state.buffer, 0, 4, SocketFlags.None, new AsyncCallback(ReceiveHeader), state);
-                }
-            }
-            else if (bytesRead < recState.buffer.Length - recState.offset)
-            {
-                recState.offset += bytesRead;
-                client.BeginReceive(recState.buffer, recState.offset, recState.buffer.Length-recState.offset, SocketFlags.None, new AsyncCallback(ReceiveCallback), recState);
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void JoinRoom(uint roomId)
         {
-            if (Connected && socket.Connected)
+            if (Connected && NetworkClient != null)
             {
 #if DEBUG
                 Misc.Logger.Info("Joining room " + roomId);
 #endif
-                socket.SendData(new BasePacket(CommandType.JoinRoom, BitConverter.GetBytes(roomId)));
+
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.JoinRoom);
+                outMsg.Write(roomId);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void JoinRoom(uint roomId, string password)
         {
-            if (Connected && socket.Connected)
+            if (Connected && NetworkClient != null)
             {
 #if DEBUG
-                Misc.Logger.Info("Joining room " + roomId+" with password "+password);
+                Misc.Logger.Info("Joining room " + roomId+" with password \""+password+"\"");
 #endif
 
-                List<byte> buffer = new List<byte>();
-                buffer.AddRange(BitConverter.GetBytes(roomId));
-                byte[] passBytes = Encoding.UTF8.GetBytes(password);
-                buffer.AddRange(BitConverter.GetBytes(passBytes.Length));
-                buffer.AddRange(passBytes);
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.JoinRoom);
+                outMsg.Write(roomId);
+                outMsg.Write(password);
 
-                socket.SendData(new BasePacket(CommandType.JoinRoom, buffer.ToArray()));
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void CreateRoom(RoomSettings settings)
         {
-            if(Connected && socket.Connected)
+            if(Connected && NetworkClient != null)
             {
-                socket.SendData(new BasePacket(CommandType.CreateRoom, settings.ToBytes(false)));
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.CreateRoom);
+                settings.AddToMessage(outMsg);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                
 #if DEBUG
                 Misc.Logger.Info("Creating room...");
 #endif
@@ -321,9 +270,13 @@ namespace BeatSaberMultiplayer
 
         public void LeaveRoom()
         {
-            if (Connected && socket.Connected)
+            if (Connected && NetworkClient != null)
             {
-                socket.SendData(new BasePacket(CommandType.LeaveRoom, new byte[0]));
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.LeaveRoom);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+
 #if DEBUG
                 Misc.Logger.Info("Leaving room...");
 #endif
@@ -337,9 +290,13 @@ namespace BeatSaberMultiplayer
 
         public void DestroyRoom()
         {
-            if (Connected && socket.Connected)
+            if (Connected && NetworkClient != null)
             {
-                socket.SendData(new BasePacket(CommandType.DestroyRoom, new byte[0]));
+
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.DestroyRoom);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
                 Misc.Logger.Info("Destroying room...");
 #endif
@@ -350,9 +307,13 @@ namespace BeatSaberMultiplayer
 
         public void RequestRoomInfo(bool requestSongList = true)
         {
-            if (Connected && socket.Connected)
+            if (Connected && NetworkClient != null)
             {
-                socket.SendData(new BasePacket(CommandType.GetRoomInfo, new byte[1] { (byte)(requestSongList ? 1 : 0) }));
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.GetRoomInfo);
+                outMsg.Write((byte)(requestSongList ? 1 : 0));
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
                 Misc.Logger.Info("Requested RoomInfo...");
 #endif
@@ -361,15 +322,22 @@ namespace BeatSaberMultiplayer
 
         public void SetSelectedSong(SongInfo song)
         {
-            if (Connected && socket.Connected)
+            if (Connected && NetworkClient != null)
             {
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                 if (song == null)
                 {
-                    socket.SendData(new BasePacket(CommandType.SetSelectedSong, new byte[0]));
+                    outMsg.Write((byte)CommandType.SetSelectedSong);
+                    outMsg.Write((byte)0);
+
+                    NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                 }
                 else
                 {
-                    socket.SendData(new BasePacket(CommandType.SetSelectedSong, song.ToBytes(false)));
+                    outMsg.Write((byte)CommandType.SetSelectedSong);
+                    song.AddToMessage(outMsg);
+
+                    NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                 }
 #if DEBUG
                 Misc.Logger.Info("Sending SongInfo for selected song...");
@@ -379,24 +347,31 @@ namespace BeatSaberMultiplayer
         
         public void StartLevel(LevelSO song, BeatmapDifficulty difficulty)
         {
-            if (Connected && socket.Connected)
+            if (Connected && NetworkClient != null)
             {
 #if DEBUG
                 Misc.Logger.Info("Starting level...");
 #endif
-                List<byte> buffer = new List<byte>();
-                buffer.Add((byte)difficulty);
-                buffer.AddRange(new SongInfo() { songName = song.songName +" "+song.songSubName, levelId = song.levelID.Substring(0, Math.Min(32, song.levelID.Length)), songDuration = song.audioClip.length}.ToBytes(false));
-                socket.SendData(new BasePacket(CommandType.StartLevel, buffer.ToArray()));
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.StartLevel);
+                outMsg.Write((byte)difficulty);
+                new SongInfo() { songName = song.songName + " " + song.songSubName, levelId = song.levelID.Substring(0, Math.Min(32, song.levelID.Length)), songDuration = song.audioClip.length }.AddToMessage(outMsg);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void SendPlayerInfo()
         {
-            if (Connected && socket.Connected)
+            if (Connected && NetworkClient != null)
             {
-                socket.SendData(new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)));
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.UpdatePlayerInfo);
+                playerInfo.AddToMessage(outMsg);
 
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
+
+/*
 #if DEBUG
                 if (playerInfo.playerState == PlayerState.Game)
                 {
@@ -405,38 +380,33 @@ namespace BeatSaberMultiplayer
                     packetWriter.Flush();
                 }
 #endif
+*/
             }
         }
 
         public void SendPlayerReady(bool ready)
         {
-            if (Connected && socket.Connected)
+            if (Connected && NetworkClient != null)
             {
-                socket.SendData(new BasePacket(CommandType.PlayerReady, new byte[1] { (byte)(ready ? 1 : 0) }));
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.PlayerReady);
+                outMsg.Write(ready);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void SendEventMessage(string header, string data)
         {
-            if (Connected && socket.Connected)
+            if (Connected && NetworkClient != null)
             {
-                List<byte> buffer = new List<byte>();
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.SendEventMessage);
+                outMsg.Write(header);
+                outMsg.Write(data);
 
-                byte[] headerBytes = Encoding.UTF8.GetBytes(header);
-                byte[] dataBytes = Encoding.UTF8.GetBytes(data);
-
-                buffer.AddRange(BitConverter.GetBytes(headerBytes.Length));
-                buffer.AddRange(headerBytes);
-                buffer.AddRange(dataBytes);
-
-                socket.SendData(new BasePacket(CommandType.SendEventMessage, buffer.ToArray()));
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
-        }
-
-        public void OnDestroy()
-        {
-            socket.Dispose();
-            _packetsQueue.Clear();
         }
     }
 }
