@@ -111,7 +111,17 @@ namespace BeatSaberMultiplayer
             NetIncomingMessage msg;
             while ((msg = NetworkClient.ReadMessage()) != null)
             {
-                _lastPacketTime = DateTime.Now;
+                float packetTime = (float)DateTime.UtcNow.Subtract(_lastPacketTime).TotalMilliseconds;
+                if (packetTime > 1f)
+                {
+                    _averagePacketTimes.Add(packetTime);
+
+                    if(_averagePacketTimes.Count > 150)
+                        _averagePacketTimes.RemoveAt(0);
+
+                    Tickrate = (float)Math.Round(1000f/_averagePacketTimes.Average(), 2);
+                }
+                _lastPacketTime = DateTime.UtcNow;
                 switch (msg.MessageType)
                 {
                     case NetIncomingMessageType.StatusChanged:

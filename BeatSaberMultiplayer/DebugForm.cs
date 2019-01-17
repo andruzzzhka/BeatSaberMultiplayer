@@ -17,7 +17,7 @@ namespace BeatSaberMultiplayer
     static class DebugForm
     {
         static Form debugForm;
-        static private Label roomStateLabel;
+        static private Label tickRateLabel;
         static private Label playersLabel;
         static private ListBox playersListBox;
         static private Label visiblePlayersLabel;
@@ -39,7 +39,7 @@ namespace BeatSaberMultiplayer
 
             debugForm = new Form();
 
-            roomStateLabel = new Label();
+            tickRateLabel = new Label();
             playersLabel = new Label();
             playersListBox = new ListBox();
             visiblePlayersLabel = new Label();
@@ -47,12 +47,12 @@ namespace BeatSaberMultiplayer
             // 
             // packetsLabel
             // 
-            roomStateLabel.AutoSize = true;
-            roomStateLabel.Location = new Point(10, 9);
-            roomStateLabel.Name = "roomStateLabel";
-            roomStateLabel.Size = new Size(102, 13);
-            roomStateLabel.TabIndex = 0;
-            roomStateLabel.Text = "Room state: Unknown";
+            tickRateLabel.AutoSize = true;
+            tickRateLabel.Location = new Point(10, 9);
+            tickRateLabel.Name = "tickRateLabel";
+            tickRateLabel.Size = new Size(102, 13);
+            tickRateLabel.TabIndex = 0;
+            tickRateLabel.Text = "Tickrate: Unknown";
             // 
             // playersLabel
             // 
@@ -88,7 +88,7 @@ namespace BeatSaberMultiplayer
             debugForm.Controls.Add(visiblePlayersLabel);
             debugForm.Controls.Add(playersListBox);
             debugForm.Controls.Add(playersLabel);
-            debugForm.Controls.Add(roomStateLabel);
+            debugForm.Controls.Add(tickRateLabel);
             debugForm.Name = "DebugForm";
             debugForm.Text = "DebugForm";
             debugForm.ResumeLayout(false);
@@ -124,7 +124,7 @@ namespace BeatSaberMultiplayer
         {
             try
             {
-                roomStateLabel.Text = "Room state: " + roomInfo.roomState.ToString();
+                tickRateLabel.Text = "Tickrate: " + Client.Instance.Tickrate.ToString();
                 playersLabel.Text = "Players: " + playersActive.ToString();
                 visiblePlayersLabel.Text = "Visible players: " + visiblePlayers.ToString();
 
@@ -147,6 +147,7 @@ namespace BeatSaberMultiplayer
 
         private static void PacketReceived(NetIncomingMessage msg)
         {
+            UpdateUI();
             /*
             try
             {
