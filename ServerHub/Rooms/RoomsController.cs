@@ -54,17 +54,14 @@ namespace ServerHub.Rooms
                 BaseRoom room = rooms.First(x => x.roomId == roomId);
                 room.StopRoom();
                 WebSocketListener.DestroyRoom(room);
-                
-                byte[] reasonText;
+
                 if (string.IsNullOrEmpty(reason))
-                    reasonText = Encoding.UTF8.GetBytes("Room destroyed!");
-                else
-                    reasonText = Encoding.UTF8.GetBytes(reason);
+                    reason = "Room destroyed!";
 
                 NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
 
                 outMsg.Write((byte)CommandType.Disconnect);
-                outMsg.Write(reasonText);
+                outMsg.Write(reason);
 
                 room.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
                 rooms.Remove(room);

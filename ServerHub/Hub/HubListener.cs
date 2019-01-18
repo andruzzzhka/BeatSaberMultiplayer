@@ -27,7 +27,7 @@ namespace ServerHub.Hub
 
         public static float Tickrate {
             get {
-                return (1000 / (_ticksLength.Sum() / _ticksLength.Count));
+                return (1000 / (_ticksLength.Average()));
             }
         }
 
@@ -50,12 +50,20 @@ namespace ServerHub.Hub
 
             pingTimer = new Timer(PingTimerCallback, null, 7500, 10000);
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
+            HighResolutionTimer.LoopTimer.AfterElapsed += (sender, e) => 
+            {
+                if (ListenerServer != null)
+                {
+                    ListenerServer.FlushSendQueue();
+                }
+            };
             _lastTick = DateTime.Now;
 
             NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer")
             {
                 Port = Settings.Instance.Server.Port,
-                EnableUPnP = Settings.Instance.Server.TryUPnP
+                EnableUPnP = Settings.Instance.Server.TryUPnP,
+                AutoFlushSendQueue = false
             };
             Config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
             
@@ -78,12 +86,12 @@ namespace ServerHub.Hub
 
         private static void HubLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
-            if(_ticksLength.Count > 15)
+            if(_ticksLength.Count > 30)
             {
                 _ticksLength.RemoveAt(0);
             }
-            _ticksLength.Add(DateTime.Now.Subtract(_lastTick).Ticks/TimeSpan.TicksPerMillisecond);
-            _lastTick = DateTime.Now;
+            _ticksLength.Add(DateTime.UtcNow.Subtract(_lastTick).Ticks/TimeSpan.TicksPerMillisecond);
+            _lastTick = DateTime.UtcNow;
             List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
 
             string titleBuffer = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total {(Settings.Instance.Server.ShowTickrateInTitle ? $", {Tickrate.ToString("0.0")} tickrate" : "")}";
@@ -207,6 +215,8 @@ namespace ServerHub.Hub
                                                 RoomsController.ClientLeftRoom(client);
                                                 client.joinedRoomID = 0;
                                                 client.playerInfo.playerState = PlayerState.Lobby;
+                                                if (!hubClients.Contains(client))
+                                                    hubClients.Add(client);
                                             }
                                         }
                                         break;
@@ -392,8 +402,6 @@ namespace ServerHub.Hub
 
                                 if (client != null)
                                 {
-                                    Logger.Instance.Log($"{client.playerInfo.playerName}'s new connection status is {status}");
-
                                     if (status == NetConnectionStatus.Disconnected)
                                     {
                                         ClientDisconnected(client);

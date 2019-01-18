@@ -44,6 +44,11 @@ namespace ServerHub.Misc
         public event EventHandler<HighResolutionTimerElapsedEventArgs> Elapsed;
 
         /// <summary>
+        /// Invoked after Elapsed event
+        /// </summary>
+        public event EventHandler<HighResolutionTimerElapsedEventArgs> AfterElapsed;
+
+        /// <summary>
         /// The interval of timer ticks [ms]
         /// </summary>
         private volatile float _interval;
@@ -174,16 +179,35 @@ namespace ServerHub.Misc
 
                 double delay = elapsed - nextTrigger;
 
-                foreach (EventHandler<HighResolutionTimerElapsedEventArgs> nextDel in Elapsed.GetInvocationList())
+                if (Elapsed != null)
                 {
-                    try
+                    foreach (EventHandler<HighResolutionTimerElapsedEventArgs> nextDel in Elapsed.GetInvocationList())
                     {
-                        nextDel.Invoke(this, new HighResolutionTimerElapsedEventArgs(delay));
+                        try
+                        {
+                            nextDel.Invoke(this, new HighResolutionTimerElapsedEventArgs(delay));
+                        }
+                        catch (Exception e)
+                        {
+                            if (Settings.Instance.Server.ShowTickEventExceptions)
+                                Logger.Instance.Exception($"Exception in {nextDel.Method.Name} on tick event: {e}");
+                        }
                     }
-                    catch (Exception e)
+                }
+
+                if (AfterElapsed != null)
+                {
+                    foreach (EventHandler<HighResolutionTimerElapsedEventArgs> nextDel in AfterElapsed.GetInvocationList())
                     {
-                        if (Settings.Instance.Server.ShowTickEventExceptions)
-                            Logger.Instance.Exception($"Exception in {nextDel.Method.Name} on tick event: {e}");
+                        try
+                        {
+                            nextDel.Invoke(this, new HighResolutionTimerElapsedEventArgs(delay));
+                        }
+                        catch (Exception e)
+                        {
+                            if (Settings.Instance.Server.ShowTickEventExceptions)
+                                Logger.Instance.Exception($"Exception in {nextDel.Method.Name} on tick event: {e}");
+                        }
                     }
                 }
 

@@ -158,6 +158,8 @@ namespace BeatSaberMultiplayer
                                         Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
                                     }
                                 }
+
+                                return;
                             }
                             else if (commandType == CommandType.SendEventMessage)
                             {
