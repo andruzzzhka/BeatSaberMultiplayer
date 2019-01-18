@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
+using BS_Utils.Gameplay;
 using Lidgren.Network;
 using SongLoaderPlugin.OverrideClasses;
 using System;
