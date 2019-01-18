@@ -58,6 +58,7 @@ namespace BeatSaberMultiplayer
 #if DEBUG
            Logger.Info($"Active scene changed from \"{from.name}\" to \"{to.name}\"");
 #endif
+            GetUserInfo.UpdateUserInfo();
             if (from.name == "EmptyTransition" && to.name == "Menu")
             {
                 PluginUI.OnLoad();

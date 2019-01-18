@@ -39,9 +39,6 @@
     <Reference Include="BeatSaberCustomUI">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BeatSaberCustomUI.dll</HintPath>
     </Reference>
-    <Reference Include="BS_Utils">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BS_Utils.dll</HintPath>
-    </Reference>
     <Reference Include="CustomAvatar">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\CustomAvatar.dll</HintPath>
     </Reference>
@@ -132,6 +129,7 @@
     <Compile Include="Client.cs" />
     <Compile Include="Data\BasePacket.cs" />
     <Compile Include="Data\BeatSaverAPIResult.cs" />
+    <Compile Include="Misc\GetUserInfo.cs" />
     <Compile Include="Misc\ModelSaberAPI.cs" />
     <Compile Include="Data\PlayerInfo.cs" />
     <Compile Include="Data\RoomInfo.cs" />

@@ -1,6 +1,5 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
-using BS_Utils.Gameplay;
 using Lidgren.Network;
 using SongLoaderPlugin.OverrideClasses;
 using System;
@@ -68,6 +67,7 @@ namespace BeatSaberMultiplayer
         {
             instance = this;
             DontDestroyOnLoad(this);
+            GetUserInfo.UpdateUserInfo();
             playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
             NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { MaximumHandshakeAttempts = 2 };
             NetworkClient = new NetClient(Config);
@@ -100,6 +100,7 @@ namespace BeatSaberMultiplayer
             Misc.Logger.Info($"Creating message...");
             NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
             outMsg.Write(Plugin.pluginVersion);
+            playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
             playerInfo.AddToMessage(outMsg);
 
             Misc.Logger.Info($"Connecting to {ip}:{port}...");
