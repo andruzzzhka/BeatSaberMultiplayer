@@ -2,6 +2,7 @@
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.ViewControllers;
+using BS_Utils.Gameplay;
 using CustomUI.BeatSaber;
 using CustomUI.Settings;
 using CustomUI.Utilities;

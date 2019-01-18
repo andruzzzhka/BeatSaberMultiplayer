@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using VRUI;
 using Lidgren.Network;
+using BS_Utils.Gameplay;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
