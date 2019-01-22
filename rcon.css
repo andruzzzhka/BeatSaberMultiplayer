@@ -1,0 +1,151 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto:400,700);
+
+body
+{
+  font-family: "Roboto", sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: #cfd2da;
+  background-color: #252830;
+}
+
+a
+{
+	color: #1ca8dd;
+}
+
+a:hover
+{
+	color: #fff;
+	text-decoration: none;
+}
+
+.center
+{
+	text-align: center;
+}
+
+#ConsoleController .Output
+{
+	font-family: monospace;
+    font-size: 12px;
+	white-space: pre-wrap;
+}
+
+.scrollable 
+{
+	overflow: auto;
+}
+
+
+.nav-sidebar 
+{
+	margin-top: 64px;
+  margin-right: 16px;
+}
+
+.nav-sidebar > li > a 
+{
+  padding-right: 20px;
+  padding-left: 20px;
+  border-radius: 5px;
+}
+
+.nav-sidebar > .active > a,
+.nav-sidebar > .active > a:hover,
+.nav-sidebar > .active > a:focus 
+{
+  color: #fff;
+  background-color: #428bca;
+}
+
+.fade 
+{
+	opacity: 0.5;
+}
+
+.table > tbody > tr:hover
+{
+	background-color: rgba( 255, 255, 255, 0.3 );
+}
+
+.table > thead > tr > th.sorting 
+{
+	color: #1bc98e;
+	border-color: #1bc98e;
+}
+
+.table-responsive {
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
+.btn-default, .btn-default:active, .form-control
+{
+	background: rgba( 255, 255, 255, 0.3 );
+	border: none;
+	color: #cfd2da;
+	text-shadow: none;
+}
+
+.btn-default:hover 
+{
+	background: #1ca8dd;
+	color: #fff;
+}
+
+.panel 
+{
+	background-color: #434857;
+}
+
+.chatname
+{
+	display: block;
+	width: 200px;
+	float: left;
+	text-align: right;
+	padding-right: 8px;
+}
+
+.navbar-default
+{
+	background-color: #428bca;
+    background-image: none;
+    border: none;
+    border-radius: 0;
+    color: white;
+}
+
+.navbar-default .navbar-brand, .navbar-default .navbar-brand:hover
+{
+    color: #fff;
+}
+
+.navbar-default .navbar-text,
+.navbar-default .navbar-nav > li > a, .navbar-default .navbar-nav > li > a:hover, .navbar-default .navbar-nav > li > a:focus
+{
+    color: #fff;
+}
+
+.navbar-default .navbar-nav > li > a:hover
+{
+	background-color: rgba( 255, 255, 255, 0.25 );
+}
+
+.navbar-default .navbar-nav > .open > a, .navbar-default .navbar-nav > .active > a
+{
+	background-color: white;
+	background-image: none;
+    border: none;
+	color: #428bca;
+}
+
+.navbar-info
+{
+	position: relative;
+    display: block;
+    padding: 15px;
+	line-height: 20px;
+}

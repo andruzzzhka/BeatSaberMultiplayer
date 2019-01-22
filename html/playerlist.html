@@ -1,0 +1,84 @@
+<div ng-controller="PlayerListController" id="PlayerListController">
+
+	<div class="row">
+		<div class="col-xs-6">
+			<input ng-model="FilterText" class="form-control" placeholder="Filter..">
+		</div>
+		<div class="col-xs-6">
+			<button ng-click="Refresh()" class="btn btn-default pull-right" type="button"><span class="glyphicon glyphicon-refresh"></span></button>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="table-responsive">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Actions</th>
+
+							<th ng-click="Order( 'DisplayName' )" ng-class="SortClass( 'DisplayName' )">Username</th>
+							<th class="text-right" ng-click="Order( 'SteamID' )" ng-class="SortClass( 'SteamID' )">Steam ID</th>
+							<th class="text-right" ng-click="Order( 'VoiationLevel' )" ng-class="SortClass( 'VoiationLevel' )">Violation Level</th>
+							<th class="text-right" ng-click="Order( 'Address' )" ng-class="SortClass( 'Address' )">Address</th>
+							<th class="text-right" ng-click="Order( 'Ping' )" ng-class="SortClass( 'Ping' )">Ping</th>
+							<th class="text-right" ng-click="Order( 'ConnectedSeconds' )" ng-class="SortClass( 'ConnectedSeconds' )">Duration</th>
+						</tr>
+					</thead>
+					<tr ng-repeat="line in Players | orderBy: OrderBy | filter:FilterText" href="#/{{address}}/player/{{line.SteamID}}/">
+
+						<td>
+							<div class="btn-group">
+								<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							    	<span class="glyphicon glyphicon-cog"></span> <span class="caret"></span>
+							  	</button>
+							  	<ul class="dropdown-menu">
+								    <li>
+								    	<a href="http://www.steamcommunity.com/profiles/{{line.SteamID}}" target="_blank">
+											<span class="glyphicon glyphicon-info-sign"></span>
+											Steam Profile
+										</a>
+								    </li>
+								    <li class="divider"></li>
+								    <li>
+								    	<a href ng-click="KickPlayer(line.SteamID)">
+								    		<span class="glyphicon glyphicon-trash"></span>
+								    		Kick
+								    	</a>
+								    </li>
+								</ul>
+							</div>
+						</td>
+
+						<td>
+							<a href="#/{{address}}/player/{{line.SteamID}}/">{{line.DisplayName}}</a>
+						</td>
+
+						<td style="text-align: right">
+							<a href="#/{{address}}/player/{{line.SteamID}}/">{{line.SteamID}}</a>
+						</td>
+
+						<td class="text-right" ng-class="{fade: line.VoiationLevel == 0 }">
+							{{line.VoiationLevel}}
+						</td>
+
+						<td class="text-right">
+							{{line.Address}}
+						</td>
+
+						<td class="text-right">
+							{{line.Ping}}
+						</td>
+
+						<td class="text-right">
+							{{line.ConnectedSeconds | SecondsToDuration}}
+						</td>
+
+						<md-divider></md-divider>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+</div>

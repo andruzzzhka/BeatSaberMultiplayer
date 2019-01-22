@@ -1,0 +1,11 @@
+<div ng-controller="ConsoleController" id="ConsoleController">
+
+    <div style="height: 600px" class="Output scrollable">
+    	<div ng-repeat="line in Output" ng-class="line.Class">{{line.Message}}</div>
+    </div>
+
+	<form ng-submit="SubmitCommand()">
+		<input type="text" class="form-control" ng-model="Command" ng-keyup="KeyUp($event)" />
+	</form>
+
+</div>
