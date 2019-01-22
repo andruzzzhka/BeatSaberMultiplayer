@@ -23,13 +23,12 @@ namespace BeatSaberMultiplayer.Misc
             queuedAvatars.Add(hash);
             string downloadUrl = "";
             string avatarName = "";
-            UnityWebRequest www = UnityWebRequest.Get("https://modelsaber.assistant.moe/api/v1/avatar/get.php?filter=hash:"+hash);
+            UnityWebRequest www = UnityWebRequest.Get("https://modelsaber.com/api/v1/avatar/get.php?filter=hash:" + hash);
             
             www.timeout = 10;
 
             yield return www.SendWebRequest();
-
-
+            
             if (www.isNetworkError || www.isHttpError)
             {
                 Logger.Error(www.error);

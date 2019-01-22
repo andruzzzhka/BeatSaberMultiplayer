@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
+using BS_Utils.Gameplay;
 using Lidgren.Network;
 using SongLoaderPlugin.OverrideClasses;
 using System;
@@ -16,6 +17,8 @@ using UnityEngine;
 
 namespace BeatSaberMultiplayer
 {
+
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, GetSongDuration }
 
     public class Client : MonoBehaviour
     {
@@ -37,6 +40,7 @@ namespace BeatSaberMultiplayer
         public event Action<NetIncomingMessage> MessageReceived;
 
         public bool Connected;
+        public bool InRadioMode;
 
         public NetClient NetworkClient;
         
@@ -203,20 +207,22 @@ namespace BeatSaberMultiplayer
                             }
                         };
                         break;
-
-                    case NetIncomingMessageType.VerboseDebugMessage:
-                    case NetIncomingMessageType.DebugMessage:
-                        Misc.Logger.Info(msg.ReadString());
-                        break;
+                        
                     case NetIncomingMessageType.WarningMessage:
                         Misc.Logger.Warning(msg.ReadString());
                         break;
                     case NetIncomingMessageType.ErrorMessage:
                         Misc.Logger.Error(msg.ReadString());
                         break;
-                    default:
-                        Console.WriteLine("Unhandled type: " + msg.MessageType);
+#if DEBUG
+                    case NetIncomingMessageType.VerboseDebugMessage:
+                    case NetIncomingMessageType.DebugMessage:
+                        Misc.Logger.Info(msg.ReadString());
                         break;
+                    default:
+                        Misc.Logger.Info("Unhandled message type: " + msg.MessageType);
+                        break;
+#endif
                 }
                 NetworkClient.Recycle(msg);
             }
@@ -254,13 +260,28 @@ namespace BeatSaberMultiplayer
             if (Connected && NetworkClient != null)
             {
 #if DEBUG
-                Misc.Logger.Info("Joining room " + roomId+" with password \""+password+"\"");
+                Misc.Logger.Info("Joining room " + roomId + " with password \"" + password + "\"");
 #endif
 
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.JoinRoom);
                 outMsg.Write(roomId);
                 outMsg.Write(password);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+            }
+        }
+
+        public void JoinRadioChannel()
+        {
+            if (Connected && NetworkClient != null)
+            {
+#if DEBUG
+                Misc.Logger.Info("Joining radio channel!");
+#endif
+
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.JoinChannel);
 
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
@@ -330,6 +351,20 @@ namespace BeatSaberMultiplayer
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
                 Misc.Logger.Info("Requested RoomInfo...");
+#endif
+            }
+        }
+
+        public void RequestChannelInfo()
+        {
+            if (Connected && NetworkClient != null)
+            {
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.GetChannelInfo);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+#if DEBUG
+                Misc.Logger.Info("Requested ChannelInfo...");
 #endif
             }
         }
@@ -420,6 +455,21 @@ namespace BeatSaberMultiplayer
                 outMsg.Write(data);
 
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+            }
+        }
+
+        public void SendSongDuration(SongInfo info)
+        {
+            if (Connected && NetworkClient != null)
+            {
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.GetSongDuration);
+                info.AddToMessage(outMsg);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+#if DEBUG
+                Misc.Logger.Info("Requested ChannelInfo...");
+#endif
             }
         }
     }

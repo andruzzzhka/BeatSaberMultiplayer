@@ -39,6 +39,12 @@
     <Reference Include="BeatSaberCustomUI">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BeatSaberCustomUI.dll</HintPath>
     </Reference>
+    <Reference Include="BeatSaverDownloader">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BeatSaverDownloader.dll</HintPath>
+    </Reference>
+    <Reference Include="BS_Utils">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BS_Utils.dll</HintPath>
+    </Reference>
     <Reference Include="CustomAvatar">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\CustomAvatar.dll</HintPath>
     </Reference>
@@ -127,10 +133,9 @@
   <ItemGroup>
     <Compile Include="AvatarController.cs" />
     <Compile Include="Client.cs" />
-    <Compile Include="Data\BasePacket.cs" />
     <Compile Include="Data\BeatSaverAPIResult.cs" />
-    <Compile Include="Misc\GetUserInfo.cs" />
-    <Compile Include="Misc\ModelSaberAPI.cs" />
+    <Compile Include="Data\ChannelInfo.cs" />
+    <Compile Include="Data\ModelSaberAPI.cs" />
     <Compile Include="Data\PlayerInfo.cs" />
     <Compile Include="Data\RoomInfo.cs" />
     <Compile Include="Data\RoomPreset.cs" />
@@ -138,7 +143,8 @@
     <Compile Include="Data\SongInfo.cs" />
     <Compile Include="DebugForm.cs" />
     <Compile Include="InGameOnlineController.cs" />
-    <Compile Include="Misc\Base64Sprites.cs" />
+    <Compile Include="Misc\BeatSaverDownloaderHelper.cs" />
+    <Compile Include="Misc\Sprites.cs" />
     <Compile Include="Misc\Config.cs" />
     <Compile Include="Misc\CustomExtensions.cs" />
     <Compile Include="Misc\HexConverter.cs" />
@@ -155,6 +161,9 @@
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpectatingController.cs" />
+    <Compile Include="UI\FlowCoordinators\ChannelSelectionFlowCoordinator.cs" />
+    <Compile Include="UI\FlowCoordinators\ModeSelectionFlowCoordinator.cs" />
+    <Compile Include="UI\FlowCoordinators\RadioFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\RoomCreationFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\RoomFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\ServerHubFlowCoordinator.cs" />
@@ -164,11 +173,16 @@
     <Compile Include="UI\UIElements\CustomUIKeyboard.cs" />
     <Compile Include="UI\UIElements\DownloadQueueTableCell.cs" />
     <Compile Include="UI\UIElements\CustomListViewController.cs" />
+    <Compile Include="UI\ViewControllers\ChannelSelectionScreen\ChannelSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\LeftRoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\PresetsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\MainRoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\CustomKeyboardViewController.cs" />
+    <Compile Include="UI\ViewControllers\ModeSelectionScreen\ModeSelectionViewController.cs" />
+    <Compile Include="UI\ViewControllers\RadioScreen\InGameScreenViewController.cs" />
+    <Compile Include="UI\ViewControllers\RadioScreen\ResultsScreenViewController.cs" />
+    <Compile Include="UI\ViewControllers\RadioScreen\NextSongScreenViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DownloadQueueViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\LeaderboardViewController.cs" />
@@ -177,10 +191,25 @@
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\VotingViewController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
-    <Compile Include="UI\ViewControllers\ServerHubScreen\ServerHubNavigationController.cs" />
+    <Compile Include="UI\ViewControllers\MultiplayerNavigationController.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\LockedRoom.png" />
+    <EmbeddedResource Include="Assets\OnlineIcon.png" />
+    <EmbeddedResource Include="Assets\RadioIcon.png" />
+    <EmbeddedResource Include="Assets\RoomsIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\WhitePixel.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\AddToFavorites.png" />
+    <EmbeddedResource Include="Assets\RemoveFromFavorites.png" />
+    <EmbeddedResource Include="Assets\ThumbDown.png" />
+    <EmbeddedResource Include="Assets\ThumbUp.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

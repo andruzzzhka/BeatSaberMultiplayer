@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Hub
 {
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, GetSongDuration }
 
     public static class HubListener
     {
@@ -70,6 +70,11 @@ namespace ServerHub.Hub
             ListenerServer = new NetServer(Config);
             ListenerServer.Start();
 
+            if (Settings.Instance.Radio.EnableRadioChannel)
+            {
+                RadioController.StartRadioAsync();
+            }
+
             if (Settings.Instance.Server.TryUPnP)
             {
                 ListenerServer.UPnP.ForwardPort(Config.Port, "Beat Saber Multiplayer ServerHub");
@@ -82,6 +87,7 @@ namespace ServerHub.Hub
             Listen = false;
             WebSocketListener.Stop();
             hubClients.ForEach(x => x.KickClient(string.IsNullOrEmpty(reason) ? "Server is shutting down..." : reason));
+            RadioController.StopRadio(string.IsNullOrEmpty(reason) ? "Server is shutting down..." : reason);
         }
 
         private static void HubLoop(object sender, HighResolutionTimerElapsedEventArgs e)
@@ -378,16 +384,56 @@ namespace ServerHub.Hub
                                             }
                                         }
                                         break;
+
+
+
+                                    case CommandType.GetChannelInfo:
+                                        {
+                                            if (Settings.Instance.Radio.EnableRadioChannel)
+                                            {
+                                                NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
+                                                outMsg.Write((byte)CommandType.GetChannelInfo);
+                                                RadioController.channelInfo.AddToMessage(outMsg);
+
+                                                msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                            }
+                                        }
+                                        break;
+                                    case CommandType.JoinChannel:
+                                        {
+                                            if (Settings.Instance.Radio.EnableRadioChannel)
+                                            {
+                                                NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
+                                                outMsg.Write((byte)CommandType.JoinChannel);
+                                                if (RadioController.ClientJoinedChannel(client))
+                                                {
+                                                    outMsg.Write((byte)0);
+                                                }
+                                                else
+                                                {
+                                                    outMsg.Write((byte)1);
+                                                }
+
+                                                msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                            }
+                                        }
+                                        break;
+                                    case CommandType.GetSongDuration:
+                                        {
+                                            if (RadioController.radioClients.Contains(client) && RadioController.requestingSongDuration)
+                                            {
+                                                SongInfo info = new SongInfo(msg);
+                                                if(info.levelId == RadioController.channelInfo.currentSong.levelId)
+                                                    RadioController.songDurationResponses.TryAdd(client, info.songDuration);
+                                            }
+                                        }
+                                        break;
                                 }
                             };
                             break;
 
 
 
-                        case NetIncomingMessageType.VerboseDebugMessage:
-                        case NetIncomingMessageType.DebugMessage:
-                            Logger.Instance.Log(msg.ReadString());
-                            break;
                         case NetIncomingMessageType.WarningMessage:
                             Logger.Instance.Warning(msg.ReadString());
                             break;
@@ -409,9 +455,15 @@ namespace ServerHub.Hub
                                 }
                             }
                             break;
-                        default:
-                            Logger.Instance.Log("Unhandled type: " + msg.MessageType);
+#if DEBUG
+                        case NetIncomingMessageType.VerboseDebugMessage:
+                        case NetIncomingMessageType.DebugMessage:
+                            Logger.Instance.Log(msg.ReadString());
                             break;
+                        default:
+                            Logger.Instance.Log("Unhandled message type: " + msg.MessageType);
+                            break;
+#endif
                     }
                 }catch(Exception ex)
                 {
@@ -485,6 +537,7 @@ namespace ServerHub.Hub
         private static void ClientDisconnected(Client sender)
         {
             RoomsController.ClientLeftRoom(sender);
+            RadioController.ClientLeftChannel(sender);
             if(hubClients.Contains(sender))
                 hubClients.Remove(sender);
             sender.ClientDisconnected -= ClientDisconnected;

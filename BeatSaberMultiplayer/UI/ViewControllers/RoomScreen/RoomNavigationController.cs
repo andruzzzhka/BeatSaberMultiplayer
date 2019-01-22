@@ -13,6 +13,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
     class RoomNavigationController : VRUINavigationController
     {
+        public event Action didFinishEvent;
+
         public TextMeshProUGUI _errorText;
 
         private Button _backButton;
@@ -22,7 +24,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             if(firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
                 _backButton = BeatSaberUI.CreateBackButton(rectTransform);
-                _backButton.onClick.AddListener(delegate () { PluginUI.instance.roomFlowCoordinator.LeaveRoom(); });
+                _backButton.onClick.AddListener(delegate () { didFinishEvent?.Invoke(); });
 
                 _errorText = BeatSaberUI.CreateText(rectTransform, "", new Vector2(0f, 0f));
                 _errorText.fontSize = 8f;

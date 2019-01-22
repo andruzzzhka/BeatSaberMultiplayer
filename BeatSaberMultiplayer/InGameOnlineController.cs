@@ -1,6 +1,7 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
+using BS_Utils.Gameplay;
 using CustomAvatar;
 using CustomUI.BeatSaber;
 using Lidgren.Network;
@@ -97,7 +98,14 @@ namespace BeatSaberMultiplayer
                         DestroyAvatars();
                         if (Client.Instance != null && Client.Instance.Connected)
                         {
-                            PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
+                            if (Client.Instance.InRadioMode)
+                            {
+                                PluginUI.instance.radioFlowCoordinator.ReturnToChannel();
+                            }
+                            else
+                            {
+                                PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
+                            }
                         }
                     }
                 }
@@ -144,7 +152,7 @@ namespace BeatSaberMultiplayer
 
                         int localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
 
-                        if ((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom())
+                        if (((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom()) && ! Client.Instance.InRadioMode)
                         {
                             try
                             {
@@ -185,7 +193,7 @@ namespace BeatSaberMultiplayer
                             }
                         }
 
-                        if (_currentScene == "GameCore" && loaded)
+                        if (_currentScene == "GameCore" && loaded && !Client.Instance.InRadioMode)
                         {
                             if (_scoreDisplays.Count < 5)
                             {
@@ -246,7 +254,6 @@ namespace BeatSaberMultiplayer
                         Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
                         if (Client.Instance.playerInfo.avatarHash == null)
                         {
-                            Misc.Logger.Info("Avatar hash not found! Using default hash...");
                             Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
                         }
 
@@ -382,9 +389,15 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SongFinished(StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers)
+        public void SongFinished(StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers, bool practice)
         {
-            if (Config.Instance.SpectatorMode || Client.disableScoreSubmission)
+            if(Client.Instance.InRadioMode)
+            {
+                PluginUI.instance.radioFlowCoordinator.lastDifficulty = difficultyBeatmap;
+                PluginUI.instance.radioFlowCoordinator.lastResults = levelCompletionResults;
+            }
+
+            if (Config.Instance.SpectatorMode || Client.disableScoreSubmission || ScoreSubmission.Disabled || ScoreSubmission.ProlongedDisabled)
                 return;
             
             PlayerDataModelSO _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();

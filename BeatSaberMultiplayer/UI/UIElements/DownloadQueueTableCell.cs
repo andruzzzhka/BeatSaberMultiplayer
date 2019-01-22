@@ -36,7 +36,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
             songName = string.Format("{0}\n<size=80%>{1}</size>", song.songName, song.songSubName);
             author = song.authorName;
-            StartCoroutine(LoadScripts.LoadSprite(song.coverUrl, this));
+            StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverUrl, (image) => { GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").sprite = image; }));
 
             _bgImage.enabled = true;
             _bgImage.sprite = Sprite.Create((new Texture2D(1, 1)), new Rect(0, 0, 1, 1), Vector2.one / 2f);

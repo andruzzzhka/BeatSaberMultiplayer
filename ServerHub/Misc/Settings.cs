@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using ServerHub.Data;
 
 namespace ServerHub.Misc {
     [JsonObject(MemberSerialization.OptIn)]
@@ -198,6 +200,71 @@ namespace ServerHub.Misc {
         }
 
         [JsonObject(MemberSerialization.OptIn)]
+        public class RadioSettings
+        {
+            private bool _enableRadioChannel;
+            private string _channelName;
+            private string _channelIconUrl;
+            private BeatmapDifficulty _preferredDifficulty;
+            
+            private Action MarkDirty { get; }
+
+            [JsonProperty]
+            public bool EnableRadioChannel
+            {
+                get => _enableRadioChannel;
+                set
+                {
+                    _enableRadioChannel = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
+            public string ChannelName
+            {
+                get => _channelName;
+                set
+                {
+                    _channelName = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
+            public string ChannelIconUrl
+            {
+                get => _channelIconUrl;
+                set
+                {
+                    _channelIconUrl = value;
+                    MarkDirty();
+                }
+            }
+
+            [JsonProperty]
+            [JsonConverter(typeof(StringEnumConverter))]
+            public BeatmapDifficulty PreferredDifficulty
+            {
+                get => _preferredDifficulty;
+                set
+                {
+                    _preferredDifficulty = value;
+                    MarkDirty();
+                }
+            }
+
+            public RadioSettings(Action markDirty)
+            {
+                MarkDirty = markDirty;
+                _enableRadioChannel = false;
+                _channelName = "Radio Channel";
+                _channelIconUrl = "https://cdn.akaku.org/akaku-radio-icon.png";
+                _preferredDifficulty = BeatmapDifficulty.Expert;
+            }
+        }
+
+        [JsonObject(MemberSerialization.OptIn)]
         public class LoggerSettings {
             private string _logsDir;
 
@@ -370,6 +437,8 @@ namespace ServerHub.Misc {
         [JsonProperty]
         public ServerSettings Server { get; }
         [JsonProperty]
+        public RadioSettings Radio { get; }
+        [JsonProperty]
         public LoggerSettings Logger { get; }
         [JsonProperty]
         public AccessSettings Access { get; }
@@ -400,8 +469,10 @@ namespace ServerHub.Misc {
 
         private bool IsDirty { get; set; }
 
-        Settings() {
+        Settings()
+        {
             Server = new ServerSettings(MarkDirty);
+            Radio = new RadioSettings(MarkDirty);
             Logger = new LoggerSettings(MarkDirty);
             Access = new AccessSettings(MarkDirty);
             TournamentMode = new TournamentModeSettings(MarkDirty);

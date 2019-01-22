@@ -84,6 +84,8 @@ namespace BeatSaberMultiplayer
 
         IEnumerator WaitForControllers()
         {
+            if (!Config.Instance.SpectatorMode || Client.Instance.InRadioMode)
+                yield break;
             Misc.Logger.Info("Waiting for controllers...");
             yield return new WaitWhile(delegate() { return !Resources.FindObjectsOfTypeAll<Saber>().Any(); });
 
@@ -117,7 +119,7 @@ namespace BeatSaberMultiplayer
 
         private void PacketReceived(NetIncomingMessage msg)
         {
-            if (Config.Instance.SpectatorMode && _currentScene.name == "GameCore")
+            if (Config.Instance.SpectatorMode && !Client.Instance.InRadioMode && _currentScene.name == "GameCore")
             {
                 msg.Position = 0;
                 CommandType commandType = (CommandType)msg.ReadByte();

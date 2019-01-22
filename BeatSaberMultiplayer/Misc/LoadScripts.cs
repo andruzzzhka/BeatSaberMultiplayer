@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
+using UnityEngine.UI;
 
 namespace BeatSaberMultiplayer.Misc
 {
@@ -13,27 +15,38 @@ namespace BeatSaberMultiplayer.Misc
     {
         static public Dictionary<string, Sprite> _cachedSprites = new Dictionary<string, Sprite>();
 
-        static public IEnumerator LoadSprite(string spritePath, TableCell obj)
+        static public IEnumerator LoadSpriteCoroutine(string spritePath, Action<Sprite> done)
         {
             Texture2D tex;
 
+            Logger.Info("Loading sprite...");
+
             if (_cachedSprites.ContainsKey(spritePath))
             {
-                obj.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").sprite = _cachedSprites[spritePath];
+                done?.Invoke(_cachedSprites[spritePath]);
                 yield break;
             }
 
-            using (WWW www = new WWW(spritePath))
+            using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(spritePath))
             {
-                yield return www;
-                tex = www.texture;
-                var newSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), Vector2.one * 0.5f, 100, 1);
-                _cachedSprites.Add(spritePath, newSprite);
-                obj.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").sprite = newSprite;
+                yield return www.SendWebRequest();
+
+                if (www.isHttpError || www.isNetworkError)
+                {
+                    Logger.Warning("Unable to download sprite! Exception: "+www.error);
+                }
+                else
+                {
+                    Logger.Info("Received response...");
+                    tex = DownloadHandlerTexture.GetContent(www);
+                    var newSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), Vector2.one * 0.5f, 100, 1);
+                    _cachedSprites.Add(spritePath, newSprite);
+                    done?.Invoke(newSprite);
+                }
             }
         }
 
-        static public IEnumerator LoadAudio(string audioPath, object obj, string fieldName)
+        static public IEnumerator LoadAudioCoroutine(string audioPath, object obj, string fieldName)
         {
             using (var www = new WWW(audioPath))
             {

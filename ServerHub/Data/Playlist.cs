@@ -8,6 +8,8 @@ namespace ServerHub.Data
     {
         public string key { get; set; }
         public string songName { get; set; }
+        public string hash { get; set; }
+        public string levelId { get; set; }
     }
 
     public class Playlist

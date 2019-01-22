@@ -10,7 +10,7 @@ using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers
 {
-    class ServerHubNavigationController : VRUINavigationController
+    class MultiplayerNavigationController : VRUINavigationController
     {
         public event Action didFinishEvent;
 
@@ -19,7 +19,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
-
             if(firstActivation)
             {
                 if (activationType == ActivationType.AddedToHierarchy)

@@ -127,7 +127,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         IEnumerator DownloadSong(Song song)
         {
-            yield return SongDownloader.Instance.DownloadSongCoroutine(song);
+            yield return SongDownloader.Instance.DownloadSongCoroutine(song, null);
             Refresh();
         }
 

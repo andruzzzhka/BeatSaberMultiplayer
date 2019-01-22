@@ -138,7 +138,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             
             if (room.usePassword)
             {
-                cell.coverImage = Base64Sprites.lockedRoomIcon;
+                cell.coverImage = Sprites.lockedRoomIcon;
             }
             else
             {

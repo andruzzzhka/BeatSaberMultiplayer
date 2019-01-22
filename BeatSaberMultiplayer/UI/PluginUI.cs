@@ -2,6 +2,7 @@
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.ViewControllers;
+using BS_Utils.Gameplay;
 using CustomUI.BeatSaber;
 using CustomUI.Settings;
 using CustomUI.Utilities;
@@ -32,6 +33,9 @@ namespace BeatSaberMultiplayer.UI
         public ServerHubFlowCoordinator serverHubFlowCoordinator;
         public RoomCreationFlowCoordinator roomCreationFlowCoordinator;
         public RoomFlowCoordinator roomFlowCoordinator;
+        public ModeSelectionFlowCoordinator modeSelectionFlowCoordinator;
+        public ChannelSelectionFlowCoordinator channelSelectionFlowCoordinator;
+        public RadioFlowCoordinator radioFlowCoordinator;
 
         private TextMeshProUGUI _newVersionText;
         private Button _multiplayerButton;
@@ -91,6 +95,18 @@ namespace BeatSaberMultiplayer.UI
                 {
                     roomFlowCoordinator = new GameObject("RoomFlow").AddComponent<RoomFlowCoordinator>();
                 }
+                if (modeSelectionFlowCoordinator == null)
+                {
+                    modeSelectionFlowCoordinator = new GameObject("ModeSelectFlow").AddComponent<ModeSelectionFlowCoordinator>();
+                }
+                if (channelSelectionFlowCoordinator == null)
+                {
+                    channelSelectionFlowCoordinator = new GameObject("ChannelSelectFlow").AddComponent<ChannelSelectionFlowCoordinator>();
+                }
+                if (radioFlowCoordinator == null)
+                {
+                    radioFlowCoordinator = new GameObject("RadioFlow").AddComponent<RadioFlowCoordinator>();
+                }
 
                 CreateOnlineButton();
                 _multiplayerButton.interactable = SongLoader.AreSongsLoaded;
@@ -117,7 +133,7 @@ namespace BeatSaberMultiplayer.UI
             _multiplayerButton.transform.SetSiblingIndex(2);
 
             _multiplayerButton.SetButtonText("Online");
-            _multiplayerButton.SetButtonIcon(Base64Sprites.onlineIcon);
+            _multiplayerButton.SetButtonIcon(Sprites.onlineIcon);
 
             _multiplayerButton.onClick.AddListener(delegate ()
             {
@@ -125,7 +141,7 @@ namespace BeatSaberMultiplayer.UI
                 {
                     MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
 
-                    mainFlow.InvokeMethod("PresentFlowCoordinator", serverHubFlowCoordinator, null, false, false);
+                    mainFlow.InvokeMethod("PresentFlowCoordinator", modeSelectionFlowCoordinator, null, false, false);
                 }
                 catch (Exception e)
                 {

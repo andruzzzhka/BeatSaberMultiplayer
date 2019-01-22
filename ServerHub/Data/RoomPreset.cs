@@ -34,7 +34,7 @@ namespace ServerHub.Data
 
         public void Update()
         {
-            songs.Where(x => string.IsNullOrEmpty(x.HashMD5)).AsParallel().WithDegreeOfParallelism(4).ForAll(y => y.HashMD5 = FetchByID(y.Key).HashMD5);
+            songs.Where(x => string.IsNullOrEmpty(x.HashMD5)).AsParallel().WithDegreeOfParallelism(4).ForAll(y => { var task = FetchByID(y.Key); task.Wait(); y.HashMD5 = task.Result.HashMD5; });
         }
     }
 }

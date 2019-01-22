@@ -83,6 +83,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _roomManagementViewController.DestroyRoomPressed += DestroyRoomPressed;
 
                 _roomNavigationController = BeatSaberUI.CreateViewController<RoomNavigationController>();
+                _roomNavigationController.didFinishEvent += () => { LeaveRoom(); };
             }
             
             ProvideInitialViewControllers(_roomNavigationController, _roomManagementViewController, null);
@@ -402,7 +403,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     Logger.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={(BeatmapDifficulty)difficulty}");
 
                                     Client.Instance.MessageReceived -= PacketReceived;
-                                    menuSceneSetupData.StartStandardLevel(difficultyBeatmap, gameplayModifiers, playerSettings, null, null, (StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, gameplayModifiers); });
+                                    menuSceneSetupData.StartStandardLevel(difficultyBeatmap, gameplayModifiers, playerSettings, null, null, (StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, gameplayModifiers, false); });
                                     return;
                                 }
                                 else

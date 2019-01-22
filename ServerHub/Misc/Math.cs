@@ -1,4 +1,5 @@
-﻿using MathCore = System.Math;
+﻿using System.Linq;
+using MathCore = System.Math;
 
 namespace ServerHub.Misc {
     public static class Math {
@@ -24,6 +25,20 @@ namespace ServerHub.Misc {
         public static int Min(int a, int b)
         {
             return MathCore.Min(a, b);
+        }
+
+        public static float Median(float[] xs)
+        {
+            if (xs.Length > 0)
+            {
+                var ys = xs.OrderBy(x => x).ToList();
+                double mid = (ys.Count - 1) / 2.0;
+                return (ys[(int)(mid)] + ys[(int)(mid + 0.5)]) / 2;
+            }
+            else
+            {
+                return 0f;
+            }
         }
     }
 }

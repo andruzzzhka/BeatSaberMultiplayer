@@ -1,12 +1,9 @@
-﻿using BeatSaberMultiplayer.Data;
-using BeatSaberMultiplayer.Misc;
+﻿using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using IllusionPlugin;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace BeatSaberMultiplayer
@@ -26,6 +23,10 @@ namespace BeatSaberMultiplayer
 
         public void OnApplicationStart()
         {
+#if DEBUG
+            if (Environment.CommandLine.Contains("fpfc"))
+                QualitySettings.vSyncCount = 1;
+#endif
 
             if (File.Exists("MPLog.txt"))
                 File.Delete("MPLog.txt");
@@ -38,7 +39,7 @@ namespace BeatSaberMultiplayer
 
             SceneManager.activeSceneChanged += ActiveSceneChanged;
             if (Config.Load())
-                Logger.Info("Loaded config!");
+                Misc.Logger.Info("Loaded config!");
             else
                 Config.Create();
             try
@@ -47,18 +48,17 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Logger.Warning("Unable to load presets! Exception: "+e);
+                Misc.Logger.Warning("Unable to load presets! Exception: "+e);
             }
-            Base64Sprites.ConvertSprites();
+            Sprites.ConvertSprites();
             
         }
 
         private void ActiveSceneChanged(Scene from, Scene to)
         {
 #if DEBUG
-           Logger.Info($"Active scene changed from \"{from.name}\" to \"{to.name}\"");
+           Misc.Logger.Info($"Active scene changed from \"{from.name}\" to \"{to.name}\"");
 #endif
-            GetUserInfo.UpdateUserInfo();
             if (from.name == "EmptyTransition" && to.name == "Menu")
             {
                 PluginUI.OnLoad();

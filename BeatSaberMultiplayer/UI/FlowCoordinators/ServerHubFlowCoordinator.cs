@@ -14,13 +14,13 @@ using System.Threading.Tasks;
 using UnityEngine;
 using VRUI;
 using Lidgren.Network;
+using BS_Utils.Gameplay;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
     class ServerHubFlowCoordinator : FlowCoordinator
     {
-        MainFlowCoordinator _mainFlowCoordinator;
-        ServerHubNavigationController _serverHubNavigationController;
+        MultiplayerNavigationController _serverHubNavigationController;
 
         RoomListViewController _roomListViewController;
 
@@ -29,20 +29,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public bool doNotUpdate = false;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
-        {
-            if (_mainFlowCoordinator == null)
-                _mainFlowCoordinator = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
-
+        { 
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
                 AvatarController.LoadAvatar();
 
                 title = "Online Multiplayer";
 
-                _serverHubNavigationController = BeatSaberUI.CreateViewController<ServerHubNavigationController>();
+                _serverHubNavigationController = BeatSaberUI.CreateViewController<MultiplayerNavigationController>();
                 _serverHubNavigationController.didFinishEvent += () => {
-                    MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
-                    mainFlow.InvokeMethod("DismissFlowCoordinator", this, null, false);
+                    PluginUI.instance.modeSelectionFlowCoordinator.InvokeMethod("DismissFlowCoordinator", this, null, false);
                 };
 
                 _roomListViewController = BeatSaberUI.CreateViewController<RoomListViewController>();
@@ -93,6 +89,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
             PluginUI.instance.roomFlowCoordinator.JoinRoom(ip, port, roomId, usePassword, pass);
+            Client.Instance.InRadioMode = false;
             PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
             PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
         }

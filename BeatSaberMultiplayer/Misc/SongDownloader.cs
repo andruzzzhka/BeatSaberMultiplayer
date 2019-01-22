@@ -56,7 +56,12 @@ namespace BeatSaberMultiplayer.Misc
             _alreadyDownloadedSongs = levels.Select(x => new Song(x)).ToList();
         }
 
-        public IEnumerator DownloadSongCoroutine(Song songInfo)
+        public void DownloadSong(Song songInfo, Action callback, Action<float> progressChanged = null)
+        {
+            StartCoroutine(DownloadSongCoroutine(songInfo, callback, progressChanged));
+        }
+
+        public IEnumerator DownloadSongCoroutine(Song songInfo, Action callback, Action<float> progressChanged = null)
         {
             songInfo.songQueueState = SongQueueState.Downloading;
 
@@ -94,6 +99,7 @@ namespace BeatSaberMultiplayer.Misc
                 }
 
                 songInfo.downloadingProgress = asyncRequest.progress;
+                progressChanged?.Invoke(asyncRequest.progress);
             }
 
 
@@ -118,7 +124,7 @@ namespace BeatSaberMultiplayer.Misc
                     docPath = Application.dataPath;
                     docPath = docPath.Substring(0, docPath.Length - 5);
                     docPath = docPath.Substring(0, docPath.LastIndexOf("/"));
-                    customSongsPath = docPath + "/CustomSongs/" + songInfo.id + "/";
+                    customSongsPath = docPath + "/CustomSongs/MultiplayerSongs/" + songInfo.id + "/";
                     if (!Directory.Exists(customSongsPath))
                     {
                         Directory.CreateDirectory(customSongsPath);
@@ -138,6 +144,7 @@ namespace BeatSaberMultiplayer.Misc
                 Task extract = ExtractZipAsync(songInfo, zipStream, customSongsPath);
                 yield return new WaitWhile(() => !extract.IsCompleted);
                 songDownloaded?.Invoke(songInfo);
+                callback?.Invoke();
             }
         }
 
