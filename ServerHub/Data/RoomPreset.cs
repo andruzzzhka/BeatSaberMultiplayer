@@ -27,7 +27,7 @@ namespace ServerHub.Data
 
         public RoomSettings GetRoomSettings()
         {
-            settings.AvailableSongs = songs.ConvertAll(x => new SongInfo() { levelId = x.HashMD5, songName = x.Name });
+            settings.AvailableSongs = songs.ConvertAll(x => new SongInfo() { levelId = x.HashMD5, songName = x.Name, key = x.Key });
 
             return settings;
         }

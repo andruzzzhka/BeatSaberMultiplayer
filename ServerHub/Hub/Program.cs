@@ -250,7 +250,6 @@ namespace ServerHub.Hub
 
         static void ProgramLoop(object sender, HighResolutionTimerElapsedEventArgs e)
         {
-
             if(DateTime.Now.Subtract(lastNetworkStatsReset).TotalSeconds > 1f)
             {
                 lastNetworkStatsReset = DateTime.Now;
@@ -354,7 +353,7 @@ namespace ServerHub.Hub
                 help = "help - prints this text",
                 function = (comArgs) => {
                     string commands = $"{Environment.NewLine}Default:";
-                    foreach (var com in availableCommands)
+                    foreach (var com in availableCommands.Where(x => !string.IsNullOrEmpty(x.help)))
                     {
                         commands += $"{Environment.NewLine}> {com.help}";
                     }
@@ -441,6 +440,24 @@ namespace ServerHub.Hub
                             }
                         }
 
+                        if (RadioController.radioStarted)
+                        {
+                            clientsStr += $"{Environment.NewLine}├─Radio:";
+                            if (RadioController.radioClients.Where(x => x.playerConnection != null).Count() == 0)
+                            {
+                                clientsStr += $"{Environment.NewLine}│ No Clients";
+                            }
+                            else
+                            {
+                                List<Client> clients = new List<Client>(RadioController.radioClients.Where(x => x.playerConnection != null));
+                                foreach (var client in clients)
+                                {
+                                    IPEndPoint remote = (IPEndPoint)client.playerConnection.RemoteEndPoint;
+                                    clientsStr += $"{Environment.NewLine}│ [{client.playerConnection.Status} | {client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
+                                }
+                            }
+                        }
+
                         if (RoomsController.GetRoomsList().Count > 0)
                         {
                             foreach (var room in RoomsController.GetRoomsList())
@@ -474,7 +491,7 @@ namespace ServerHub.Hub
 
             availableCommands.Add(new Command()
             {
-                name = "blacklist ",
+                name = "blacklist",
                 help = "blacklist [add/remove] [nick/playerID/IP] - bans/unbans players with provided player name/SteamID/OculusID/IP",
                 function = (comArgs) => {
                     if (comArgs.Length == 2 && !string.IsNullOrEmpty(comArgs[1]))
@@ -925,8 +942,7 @@ namespace ServerHub.Hub
                                             "\n> radio set [name/iconurl/difficulty] [value] - set specified option to provided value" +
                                             "\n> radio queue list - lists songs in the radio queue" +
                                             "\n> radio queue remove [songName] - removes song with provided name from the radio queue" +
-                                            "\n> radio queue add song [key] - adds song to the queue" +
-                                            "\n> radio queue add playlist [path or url] - adds all songs from playlist to the radio queue";
+                                            "\n> radio queue add [song key or playlist path/url] - adds song or playlist to the queue";
                                 }
                             case "enable":
                                 {
@@ -1011,8 +1027,7 @@ namespace ServerHub.Hub
                                                 {
                                                     if (RadioController.radioStarted)
                                                     {
-                                                        string buffer = "\n┌─Now playing:\n│ ";
-                                                        buffer += RadioController.channelInfo.currentSong.songName;
+                                                        string buffer = $"\n┌─Now playing:\n│ {(!string.IsNullOrEmpty(RadioController.channelInfo.currentSong.key) ? RadioController.channelInfo.currentSong.key + ": " : "")} {RadioController.channelInfo.currentSong.songName}";
                                                         buffer += "\n├─Queue:";
 
                                                         if (RadioController.radioQueue.Count == 0)
@@ -1023,8 +1038,7 @@ namespace ServerHub.Hub
                                                         {
                                                             foreach (var song in RadioController.radioQueue)
                                                             {
-                                                                buffer += "\n│ ";
-                                                                buffer += song.songName;
+                                                                buffer += $"\n│ {(!string.IsNullOrEmpty(song.key) ? song.key+": " : "")} {song.songName}";
                                                             }
                                                         }
                                                         buffer += "\n└─";
@@ -1055,17 +1069,17 @@ namespace ServerHub.Hub
                                                     {
                                                         if (RadioController.radioStarted)
                                                         {
-                                                            string songName = string.Join(' ', comArgs.Skip(2));
-                                                            SongInfo songInfo = RadioController.radioQueue.FirstOrDefault(x => x.songName.ToLower().Contains(songName.ToLower()));
+                                                            string arg = string.Join(' ', comArgs.Skip(2));
+                                                            SongInfo songInfo = RadioController.radioQueue.FirstOrDefault(x => x.songName.ToLower().Contains(arg.ToLower()) || x.key == arg);
                                                             if (songInfo != null)
                                                             {
-                                                                RadioController.radioQueue = new Queue<SongInfo>(RadioController.radioQueue.Where(x => x != songInfo));
+                                                                RadioController.radioQueue = new Queue<SongInfo>(RadioController.radioQueue.Where(x => !x.songName.ToLower().Contains(arg.ToLower()) && x.key != arg));
                                                                 File.WriteAllText("RadioQueue.json", JsonConvert.SerializeObject(RadioController.radioQueue, Formatting.Indented));
                                                                 return $"Successfully removed \"{songInfo.songName}\" from queue!";
                                                             }
                                                             else
                                                             {
-                                                                return $"Queue doesn't contain \"{songName}\"!";
+                                                                return $"Queue doesn't contain \"{arg}\"!";
                                                             }
                                                         }
                                                         else
@@ -1077,33 +1091,23 @@ namespace ServerHub.Hub
                                                 break;
                                             case "add":
                                                 {
-                                                    if (comArgs.Length > 3)
+                                                    if (comArgs.Length > 2)
                                                     {
                                                         if (RadioController.radioStarted)
                                                         {
-                                                            switch (comArgs[2])
+                                                            string key = comArgs[2];
+                                                            Regex regex = new Regex(@"(\d+-\d+)");
+                                                            if (regex.IsMatch(key))
                                                             {
-                                                                case "song":
-                                                                    {
-                                                                        string key = comArgs[3];
-                                                                        Regex regex = new Regex(@"(\d+-\d+)");
-                                                                        if (regex.IsMatch(key))
-                                                                        {
-                                                                            RadioController.AddSongToQueueByKey(key);
-                                                                            return "Adding song to the queue...";
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            return "Song key is invalid!";
-                                                                        }
-                                                                    }
-                                                                case "playlist":
-                                                                    {
-                                                                        string playlistPath = string.Join(' ', comArgs.Skip(3));
+                                                                RadioController.AddSongToQueueByKey(key);
+                                                                return "Adding song to the queue...";
+                                                            }
+                                                            else
+                                                            {
+                                                                string playlistPath = string.Join(' ', comArgs.Skip(2));
 
-                                                                        RadioController.AddPlaylistToQueue(playlistPath);
-                                                                        return "Adding all songs from playlist to the queue...";
-                                                                    }
+                                                                RadioController.AddPlaylistToQueue(playlistPath);
+                                                                return "Adding all songs from playlist to the queue...";
                                                             }
                                                         }
                                                         else
@@ -1139,14 +1143,13 @@ namespace ServerHub.Hub
                         ServerInfo info = new ServerInfo()
                         {
                             Hostname = IP + ":" + Settings.Instance.Server.Port,
-                            Framerate = System.Math.Round(HubListener.Tickrate, 1),
-                            Memory = (int)(Process.GetCurrentProcess().WorkingSet64 / 1024 / 1024),
+                            Tickrate = (float)System.Math.Round(HubListener.Tickrate, 1),
+                            Memory = (float)System.Math.Round((Process.GetCurrentProcess().WorkingSet64 / 1024f / 1024f), 2),
                             Players = HubListener.hubClients.Count + RoomsController.GetRoomsList().Sum(x => x.roomClients.Count),
                             Uptime = (int)DateTime.Now.Subtract(serverStartTime).TotalSeconds,
-                            EntityCount = RoomsController.GetRoomsCount(),
-                            MaxPlayers = 99,
-                            NetworkIn = HubListener.ListenerServer.Statistics.ReceivedBytes,
-                            NetworkOut = HubListener.ListenerServer.Statistics.SentBytes
+                            RoomCount = RoomsController.GetRoomsCount(),
+                            NetworkIn = (int)networkBytesInLast,
+                            NetworkOut = (int)networkBytesOutLast
                         };
 
                         return JsonConvert.SerializeObject(info);
@@ -1174,11 +1177,117 @@ namespace ServerHub.Hub
                 name = "playerlist",
                 help = "",
                 function = (comArgs) => {
-                    List<RCONPlayerInfo> clients = new List<RCONPlayerInfo>();
 
-                    RoomsController.GetRoomsList().ForEach(x => clients.AddRange(x.roomClients.Select(y => new RCONPlayerInfo(y.playerInfo))));
+                    if (comArgs.Length == 0)
+                    {
+                        List<RCONPlayerInfo> hubClients = new List<RCONPlayerInfo>();
 
-                    return JsonConvert.SerializeObject(clients);
+                        hubClients.AddRange(HubListener.hubClients.Select(x => new RCONPlayerInfo(x)));
+
+                        return JsonConvert.SerializeObject(new
+                        {
+                            hubClients
+                        });
+                    }
+                    else if(comArgs.Length == 1)
+                    {
+                        if(uint.TryParse(comArgs[0], out uint roomId))
+                        {
+                            if (RoomsController.GetRoomsList().Any(x => x.roomId == roomId))
+                            {
+                                List<RCONPlayerInfo> roomClients = new List<RCONPlayerInfo>();
+
+                                roomClients = RoomsController.GetRoomsList().First(x => x.roomId == roomId).roomClients.Select(x => new RCONPlayerInfo(x)).ToList();
+
+                                return JsonConvert.SerializeObject(roomClients);
+                            }
+                            else
+                            {
+                                return "[]";
+                            }
+                        }
+                        else
+                        {
+                            return "[]";
+                        }
+                    }
+                    else
+                    {
+                        return "[]";
+                    }
+                }
+            });
+
+            availableCommands.Add(new Command()
+            {
+                name = "roomslist",
+                help = "",
+                function = (comArgs) => {
+                    List<RoomInfo> roomInfos = new List<RoomInfo>();
+                    roomInfos = RoomsController.GetRoomInfosList();
+
+                    return JsonConvert.SerializeObject(roomInfos);
+                }
+            });
+
+
+            availableCommands.Add(new Command()
+            {
+                name = "radioinfo",
+                help = "",
+                function = (comArgs) => {
+                    SongInfo currentSong = RadioController.channelInfo.currentSong;
+                    List<SongInfo> queuedSongs = new List<SongInfo>();
+                    List<RCONPlayerInfo> radioClients = new List<RCONPlayerInfo>();
+
+                    queuedSongs.AddRange(RadioController.radioQueue);
+                    radioClients.AddRange(RadioController.radioClients.Select(x => new RCONPlayerInfo(x)));
+
+                    return JsonConvert.SerializeObject(new
+                    {
+                        currentSong,
+                        queuedSongs,
+                        radioClients
+                    });
+                }
+            });
+
+            availableCommands.Add(new Command()
+            {
+                name = "getsettings",
+                help = "",
+                function = (comArgs) => {
+                    return JsonConvert.SerializeObject(Settings.Instance);
+                }
+            });
+
+            availableCommands.Add(new Command()
+            {
+                name = "setsettings",
+                help = "",
+                function = (comArgs) => {
+                    Settings.Instance.Load(string.Join(' ', comArgs));
+
+                    if (Settings.Instance.Radio.EnableRadioChannel && !RadioController.radioStarted)
+                        RadioController.StartRadioAsync();
+                    if (!Settings.Instance.Radio.EnableRadioChannel && RadioController.radioStarted)
+                        RadioController.StopRadio("Channel disabled from console!");
+
+                    Settings.Instance.Server.Tickrate = Misc.Math.Clamp(Settings.Instance.Server.Tickrate, 5, 150);
+                    HighResolutionTimer.LoopTimer.Interval = 1000f / Settings.Instance.Server.Tickrate;
+
+                    UpdateLists();
+
+                    return "";
+                }
+            });
+
+            availableCommands.Add(new Command()
+            {
+                name = "accesslist",
+                help = "",
+                function = (comArgs) => {
+                    return JsonConvert.SerializeObject(Settings.Instance.Access);
                 }
             });
 
@@ -1235,7 +1344,7 @@ namespace ServerHub.Hub
                 {
                     client.KickClient("You are not whitelisted!");
                 }
-                if (HubListener.IsWhitelisted(client.playerConnection.RemoteEndPoint, client.playerInfo))
+                if (HubListener.IsBlacklisted(client.playerConnection.RemoteEndPoint, client.playerInfo))
                 {
                     client.KickClient("You are banned!");
                 }

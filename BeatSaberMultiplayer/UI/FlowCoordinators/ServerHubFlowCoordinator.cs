@@ -124,9 +124,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             Misc.Logger.Info("Updating rooms list...");
             _serverHubClients.ForEach(x =>
             {
-                x.Abort();
-                x.ReceivedRoomsList -= ReceivedRoomsList;
-                x.ServerHubException -= ServerHubException;
+                if (x != null)
+                {
+                    x.Abort();
+                    x.ReceivedRoomsList -= ReceivedRoomsList;
+                    x.ServerHubException -= ServerHubException;
+                }
             });
             _serverHubClients.Clear();
 
@@ -209,6 +212,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             catch(Exception e)
             {
                 ServerHubException?.Invoke(this, e);
+                Abort();
             }
         }
 
@@ -233,8 +237,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                 }else if(status == NetConnectionStatus.Disconnected)
                                 {
-                                    Abort();
                                     ServerHubException?.Invoke(this, new Exception("ServerHub refused connection!"));
+                                    Abort();
                                 }
 
                             };
@@ -258,6 +262,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     NetworkClient.Shutdown("");
 
                                     ReceivedRoomsList?.Invoke(this, availableRooms);
+                                    Abort();
                                 }
                             };
                             break;
@@ -284,6 +289,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             NetworkClient.Shutdown("");
             availableRooms.Clear();
+            Destroy(gameObject);
         }
     }
 }

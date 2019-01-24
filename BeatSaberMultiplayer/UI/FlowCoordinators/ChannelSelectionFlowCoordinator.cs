@@ -107,9 +107,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 _channelClients.ForEach(x =>
                 {
-                    x.Abort();
-                    x.ReceivedResponse -= ReceivedResponse;
-                    x.ChannelException -= ChannelException;
+                    if (x != null)
+                    {
+                        x.Abort();
+                        x.ReceivedResponse -= ReceivedResponse;
+                        x.ChannelException -= ChannelException;
+                    }
                 });
                 _channelClients.Clear();
 
@@ -179,6 +182,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             catch (Exception e)
             {
                 ChannelException?.Invoke(this, e);
+                Abort();
             }
         }
 
@@ -204,8 +208,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 }
                                 else if (status == NetConnectionStatus.Disconnected)
                                 {
-                                    Abort();
                                     ChannelException?.Invoke(this, new Exception("Channel refused connection!"));
+                                    Abort();
                                 }
 
                             };
@@ -220,6 +224,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     received.ip = channelInfo.ip;
                                     received.port = channelInfo.port;
                                     ReceivedResponse?.Invoke(this, received);
+                                    Abort();
                                 }
                             };
                             break;
@@ -245,6 +250,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public void Abort()
         {
             NetworkClient.Shutdown("");
+            Destroy(gameObject);
         }
     }
 }

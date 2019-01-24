@@ -1,4 +1,6 @@
 ﻿using Lidgren.Network;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +18,9 @@ namespace ServerHub.Data
         public string name;
         public bool usePassword;
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public RoomState roomState;
+        [JsonConverter(typeof(StringEnumConverter))]
         public SongSelectionType songSelectionType;
         public PlayerInfo roomHost;
 

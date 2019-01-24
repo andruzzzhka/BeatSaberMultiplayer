@@ -56,12 +56,12 @@ namespace BeatSaberMultiplayer.Misc
             _alreadyDownloadedSongs = levels.Select(x => new Song(x)).ToList();
         }
 
-        public void DownloadSong(Song songInfo, Action callback, Action<float> progressChanged = null)
+        public void DownloadSong(Song songInfo, string subFolder, Action callback, Action<float> progressChanged = null)
         {
-            StartCoroutine(DownloadSongCoroutine(songInfo, callback, progressChanged));
+            StartCoroutine(DownloadSongCoroutine(songInfo, subFolder, callback, progressChanged));
         }
 
-        public IEnumerator DownloadSongCoroutine(Song songInfo, Action callback, Action<float> progressChanged = null)
+        public IEnumerator DownloadSongCoroutine(Song songInfo, string subFolder, Action callback, Action<float> progressChanged = null)
         {
             songInfo.songQueueState = SongQueueState.Downloading;
 
@@ -124,7 +124,7 @@ namespace BeatSaberMultiplayer.Misc
                     docPath = Application.dataPath;
                     docPath = docPath.Substring(0, docPath.Length - 5);
                     docPath = docPath.Substring(0, docPath.LastIndexOf("/"));
-                    customSongsPath = docPath + "/CustomSongs/MultiplayerSongs/" + songInfo.id + "/";
+                    customSongsPath = docPath + "/CustomSongs/"+subFolder+"/" + songInfo.id + "/";
                     if (!Directory.Exists(customSongsPath))
                     {
                         Directory.CreateDirectory(customSongsPath);

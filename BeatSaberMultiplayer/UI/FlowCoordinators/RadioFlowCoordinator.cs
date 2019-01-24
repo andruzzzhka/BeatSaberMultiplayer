@@ -346,7 +346,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             SongDownloader.Instance.RequestSongByLevelID(channelInfo.currentSong.levelId,
                             (song) =>
                             {
-                                SongDownloader.Instance.DownloadSong(song,
+                                SongDownloader.Instance.DownloadSong(song, "RadioSongs",
                                 () =>
                                 {
                                     SongLoader.Instance.RefreshSongs(false);
@@ -446,7 +446,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 SongDownloader.Instance.RequestSongByLevelID(info.levelId, 
                 (song) =>
                 {
-                    SongDownloader.Instance.DownloadSong(song,
+                    SongDownloader.Instance.DownloadSong(song, "RadioSongs",
                     () =>
                     {
                         SongLoader.Instance.RefreshSongs(false);

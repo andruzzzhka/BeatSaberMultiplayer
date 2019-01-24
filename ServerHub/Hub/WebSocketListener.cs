@@ -129,7 +129,7 @@ namespace ServerHub.Hub
             Server = new WebSocketServer(webSocketPort);
 
             Logger.Instance.Log($"Hosting WebSocket Server @ {Program.GetPublicIPv4()}:{webSocketPort}");
-
+            
             Server.AddWebSocketService<ListServices>("/");
             if (Settings.Instance.Server.EnableWebSocketRCON)
             {

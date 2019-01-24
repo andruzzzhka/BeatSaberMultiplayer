@@ -114,6 +114,8 @@ namespace ServerHub.Hub
             {
                 try
                 {
+                    Program.networkBytesInNow += msg.LengthBytes;
+
                     switch (msg.MessageType)
                     {
 
@@ -233,6 +235,7 @@ namespace ServerHub.Hub
                                             RoomsController.AddRoomListToMessage(outMsg);
 
                                             msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                            Program.networkBytesOutNow += outMsg.LengthBytes;
                                         }
                                         break;
                                     case CommandType.CreateRoom:
@@ -246,6 +249,7 @@ namespace ServerHub.Hub
                                                 outMsg.Write(roomId);
 
                                                 msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                                Program.networkBytesOutNow += outMsg.LengthBytes;
                                             }
                                         }
                                         break;
@@ -283,6 +287,7 @@ namespace ServerHub.Hub
                                                         joinedRoom.GetRoomInfo().AddToMessage(outMsg);
 
                                                         msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                                        Program.networkBytesOutNow += outMsg.LengthBytes;
                                                     }
                                                 }
                                             }
@@ -384,9 +389,6 @@ namespace ServerHub.Hub
                                             }
                                         }
                                         break;
-
-
-
                                     case CommandType.GetChannelInfo:
                                         {
                                             if (Settings.Instance.Radio.EnableRadioChannel)
@@ -396,26 +398,26 @@ namespace ServerHub.Hub
                                                 RadioController.channelInfo.AddToMessage(outMsg);
 
                                                 msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                                Program.networkBytesOutNow += outMsg.LengthBytes;
                                             }
                                         }
                                         break;
                                     case CommandType.JoinChannel:
                                         {
-                                            if (Settings.Instance.Radio.EnableRadioChannel)
+                                            NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
+                                            outMsg.Write((byte)CommandType.JoinChannel);
+                                            if (RadioController.ClientJoinedChannel(client))
                                             {
-                                                NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
-                                                outMsg.Write((byte)CommandType.JoinChannel);
-                                                if (RadioController.ClientJoinedChannel(client))
-                                                {
-                                                    outMsg.Write((byte)0);
-                                                }
-                                                else
-                                                {
-                                                    outMsg.Write((byte)1);
-                                                }
-
-                                                msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                                outMsg.Write((byte)0);
+                                                hubClients.Remove(client);
                                             }
+                                            else
+                                            {
+                                                outMsg.Write((byte)1);
+                                            }
+
+                                            msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                            Program.networkBytesOutNow += outMsg.LengthBytes;
                                         }
                                         break;
                                     case CommandType.GetSongDuration:
@@ -501,7 +503,7 @@ namespace ServerHub.Hub
         {
             try
             {
-                foreach(Client client in hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)))
+                foreach(Client client in hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioClients))
                 {
                     if(client.playerConnection.Status == NetConnectionStatus.Disconnected)
                     {
@@ -527,11 +529,6 @@ namespace ServerHub.Hub
                 Logger.Instance.Warning("PingTimerCallback Exception: "+e);
 #endif
             }
-        }
-
-        private static void ClientJoinedRoom(Client sender, uint room, string password)
-        {
-            
         }
 
         private static void ClientDisconnected(Client sender)

@@ -91,6 +91,7 @@ namespace ServerHub.Rooms
                         outMsg.Write((byte)CommandType.Disconnect);
                         outMsg.Write(reason);
                         radioClients[i].playerConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                        Program.networkBytesOutNow += outMsg.LengthBytes;
                     }
                 }
                 radioStarted = false;
@@ -171,7 +172,7 @@ namespace ServerHub.Rooms
                     {
                         if (song.levelId.Length >= 32)
                         {
-                            radioQueue.Enqueue(new SongInfo() { levelId = song.hash.ToUpper().Substring(0, 32), songName = song.songName });
+                            radioQueue.Enqueue(new SongInfo() { levelId = song.hash.ToUpper().Substring(0, 32), songName = song.songName, key = song.key });
                             continue;
                         }
                     }
@@ -180,7 +181,7 @@ namespace ServerHub.Rooms
                     {
                         if (song.levelId.Length >= 32)
                         {
-                            radioQueue.Enqueue(new SongInfo() { levelId = song.levelId.ToUpper().Substring(0, 32), songName = song.songName });
+                            radioQueue.Enqueue(new SongInfo() { levelId = song.levelId.ToUpper().Substring(0, 32), songName = song.songName, key = song.key });
                             continue;
                         }
                     }
@@ -230,6 +231,9 @@ namespace ServerHub.Rooms
                 return;
 
             channelInfo.playerCount = radioClients.Count;
+            channelInfo.name = Settings.Instance.Radio.ChannelName;
+            channelInfo.iconUrl = Settings.Instance.Radio.ChannelIconUrl;
+            channelInfo.preferredDifficulty = Settings.Instance.Radio.PreferredDifficulty;
 
             if (radioClients.Count == 0)
             {
@@ -370,6 +374,7 @@ namespace ServerHub.Rooms
                 try
                 {
                     radioClients[i].playerConnection.SendMessage(msg, deliveryMethod, (deliveryMethod == NetDeliveryMethod.UnreliableSequenced ? 1 : 0));
+                    Program.networkBytesOutNow += msg.LengthBytes;
                 }
                 catch (Exception e)
                 {

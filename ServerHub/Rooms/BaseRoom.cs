@@ -305,6 +305,7 @@ namespace ServerHub.Rooms
                 try
                 {
                     roomClients[i].playerConnection.SendMessage(msg, deliveryMethod, (deliveryMethod == NetDeliveryMethod.UnreliableSequenced ? 1 : 0));
+                    Program.networkBytesOutNow += msg.LengthBytes;
                 }
                 catch (Exception e)
                 {
@@ -325,8 +326,11 @@ namespace ServerHub.Rooms
             {
                 try
                 {
-                    if((excludeClients != null && !excludeClients.Contains(roomClients[i])) || excludeClients == null)
+                    if ((excludeClients != null && !excludeClients.Contains(roomClients[i])) || excludeClients == null)
+                    {
                         roomClients[i].playerConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                        Program.networkBytesOutNow += outMsg.LengthBytes;
+                    }
                 }
                 catch (Exception e)
                 {

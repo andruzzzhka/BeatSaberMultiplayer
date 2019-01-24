@@ -97,6 +97,7 @@ namespace ServerHub.Rooms
                             outMsg.Write((byte)JoinResult.Success);
 
                             client.playerConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                            Program.networkBytesOutNow += outMsg.LengthBytes;
 
                             client.joinedRoomID = room.roomId;
                             if (room.roomClients.Any(x => x.playerInfo == client.playerInfo))
@@ -120,6 +121,7 @@ namespace ServerHub.Rooms
                             outMsg.Write((byte)JoinResult.IncorrectPassword);
 
                             client.playerConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                            Program.networkBytesOutNow += outMsg.LengthBytes;
                             return false;
                         }
 
@@ -130,7 +132,8 @@ namespace ServerHub.Rooms
                         outMsg.Write((byte)JoinResult.Success);
 
                         client.playerConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
-                        
+                        Program.networkBytesOutNow += outMsg.LengthBytes;
+
                         client.joinedRoomID = room.roomId;
                         if (room.roomClients.Any(x => x.playerInfo == client.playerInfo))
                         {
@@ -154,6 +157,7 @@ namespace ServerHub.Rooms
                     outMsg.Write((byte)JoinResult.TooMuchPlayers);
 
                     client.playerConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                    Program.networkBytesOutNow += outMsg.LengthBytes;
                     return false;
                 }
             }
@@ -163,6 +167,7 @@ namespace ServerHub.Rooms
                 outMsg.Write((byte)JoinResult.RoomNotFound);
 
                 client.playerConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                Program.networkBytesOutNow += outMsg.LengthBytes;
                 return false;
             }
         } 

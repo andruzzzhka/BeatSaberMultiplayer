@@ -27,6 +27,7 @@ namespace ServerHub.Data
 
         public float playerProgress;
 
+        [NonSerialized]
         public byte[] playerAvatar;
 
         public PlayerInfo(string _name, ulong _id, byte[] _avatar = null)

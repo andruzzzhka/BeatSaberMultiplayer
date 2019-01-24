@@ -494,6 +494,21 @@ namespace ServerHub.Misc {
             }
         }
 
+        public bool Load(string json)
+        {
+            try
+            {
+                JsonConvert.PopulateObject(json, this);
+                MarkDirty();
+                return true;
+            }
+            catch (Exception e)
+            {
+                Misc.Logger.Instance.Exception("Unable to load settings! Exception: "+e);
+                return false;
+            }
+        }
+
         void MarkDirty() {
             IsDirty = true;
             Save();

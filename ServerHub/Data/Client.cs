@@ -16,17 +16,6 @@ using System.Timers;
 
 namespace ServerHub.Data
 {
-    public class StateObject
-    {
-        public Client client;
-        public int offset;
-        public byte[] buffer;
-
-        public StateObject(int BufferSize)
-        {
-            buffer = new byte[BufferSize];
-        }
-    }
 
     public class Client
     {
@@ -34,6 +23,7 @@ namespace ServerHub.Data
 
         public NetConnection playerConnection;
         public PlayerInfo playerInfo;
+        public DateTime joinTime;
 
         public uint joinedRoomID;
 
@@ -45,10 +35,18 @@ namespace ServerHub.Data
             this.playerInfo = playerInfo;
 
             active = true;
+            joinTime = DateTime.Now;
         }
 
         public void KickClient(string reason = "")
         {
+            NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
+            outMsg.Write((byte)CommandType.Disconnect);
+            outMsg.Write(reason);
+
+            playerConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+            Program.networkBytesOutNow += outMsg.LengthBytes;
+
             playerConnection.Disconnect(reason);
 
             ClientDisconnected?.Invoke(this);

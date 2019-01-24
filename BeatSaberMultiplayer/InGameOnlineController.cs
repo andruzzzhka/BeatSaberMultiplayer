@@ -310,8 +310,6 @@ namespace BeatSaberMultiplayer
                         _messageDisplayTime = msg.ReadFloat();
                         _messageDisplayText.fontSize = msg.ReadFloat();
 
-                        int messageSize = msg.ReadInt32();
-
                         _messageDisplayText.text = msg.ReadString();
                     };break;
             }

@@ -64,7 +64,7 @@ namespace ServerHub.Misc
             if (song == null)
                 return null;
 
-            SongInfo info = new SongInfo() { levelId = song.HashMD5.ToUpper(), songName = song.Name };
+            SongInfo info = new SongInfo() { levelId = song.HashMD5.ToUpper(), songName = song.Name, key = song.Key };
             return info;
         }
 
@@ -74,7 +74,7 @@ namespace ServerHub.Misc
             if (song == null)
                 return null;
 
-            SongInfo info = new SongInfo() { levelId = song.HashMD5.ToUpper(), songName = song.Name };
+            SongInfo info = new SongInfo() { levelId = song.HashMD5.ToUpper(), songName = song.Name, key = song.Key };
             return info;
         }
 
@@ -117,7 +117,7 @@ namespace ServerHub.Misc
                     } while (!found);
 
                     JsonResponseDetails jsonDetails = JsonConvert.DeserializeObject<JsonResponseDetails>(response);
-                    return new SongInfo() { levelId = jsonDetails.Song.HashMD5.ToUpper(), songName = jsonDetails.Song.Name };  
+                    return new SongInfo() { levelId = jsonDetails.Song.HashMD5.ToUpper(), songName = jsonDetails.Song.Name, key = jsonDetails.Song.Key };  
                 }
                 catch (Exception e)
                 {

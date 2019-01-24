@@ -1,6 +1,8 @@
 ﻿using ServerHub.Data;
+using ServerHub.Rooms;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ServerHub.Hub
@@ -26,27 +28,30 @@ namespace ServerHub.Hub
         public struct ServerInfo
         {
             public string Hostname { get; set; }
-            public int MaxPlayers { get; set; }
             public int Players { get; set; }
-            public int EntityCount { get; set; }
+            public int RoomCount { get; set; }
             public int Uptime { get; set; }
-            public double Framerate { get; set; }
-            public int Memory { get; set; }
+            public float Tickrate { get; set; }
+            public float Memory { get; set; }
             public int NetworkIn { get; set; }
             public int NetworkOut { get; set; }
         }
 
         public struct RCONPlayerInfo
         {
-            public string SteamID;
+            public string PlayerID;
             public string DisplayName;
-            public int Ping;
+            public string State;
+            public string Address;
+            public float ConnectedSeconds;
 
-            public RCONPlayerInfo(PlayerInfo player)
+            public RCONPlayerInfo(Client client)
             {
-                SteamID = player.playerId.ToString();
-                DisplayName = player.playerName;
-                Ping = 0;
+                PlayerID = client.playerInfo.playerIdString;
+                DisplayName = client.playerInfo.playerName;
+                State = client.playerInfo.playerState.ToString();
+                Address = client.playerConnection.RemoteEndPoint.ToString();
+                ConnectedSeconds = (float)DateTime.Now.Subtract(client.joinTime).TotalSeconds;
             }
         }
     }
