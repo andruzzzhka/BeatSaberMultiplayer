@@ -1,0 +1,101 @@
+<div ng-controller="AccessSettingsController" id="AccessSettingsController">
+
+	<div class="row">
+		<h2>
+			Blacklist
+		</h2>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<input id="blacklistInputText" class="form-control" placeholder="Enter PlayerID/Username/IP...">
+				<div class="input-group-btn">
+					<button ng-click="BanPlayer()" class="btn btn-default" type="button"><span class="glyphicon glyphicon-plus"></span></button>
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-6">
+			<button ng-click="Refresh()" class="btn btn-default pull-right" type="button"><span class="glyphicon glyphicon-refresh"></span></button>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="table-responsive">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Actions</th>
+	
+							<th class="text-right">Entry</th>
+						</tr>
+					</thead>
+					<tr ng-repeat="line in Blacklist">
+	
+						<td>
+							<div class="btn-group">
+								<button class="btn btn-default" type="button" ng-click="UnbanPlayer(line)">
+									<span class="glyphicon glyphicon-ok-circle"></span>
+									Unban
+								</button>
+							</div>
+						</td>
+	
+						<td class="text-left">
+							{{line}}
+						</td>
+	
+						<md-divider></md-divider>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<h2>
+			Whitelist
+		</h2>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<input id="whitelistInputText" class="form-control" placeholder="Enter PlayerID/Username/IP...">
+				<div class="input-group-btn">
+					<button ng-click="WhitelistPlayer()" class="btn btn-default" type="button"><span class="glyphicon glyphicon-plus"></span></button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="table-responsive">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Actions</th>
+	
+							<th class="text-right">Entry</th>
+						</tr>
+					</thead>
+					<tr ng-repeat="line in Whitelist">
+	
+						<td>
+							<div class="btn-group">
+								<button class="btn btn-default" type="button" ng-click="UnwhitelistPlayer(line)">
+									<span class="glyphicon glyphicon-ban-circle"></span>
+									Unwhitelist
+								</button>
+							</div>
+						</td>
+	
+						<td class="text-left">
+							{{line}}
+						</td>
+	
+						<md-divider></md-divider>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+
+</div>

@@ -1,0 +1,173 @@
+<div ng-controller="RadioController" id="RadioController">
+
+	<div class="row">
+		<div class="col-sm-12">
+				<h2>Current song:</h2>
+		</div>
+		<div class="col-sm-12">
+			<td>
+				<img class="song-cover" alt="" src="{{getJpgCoverUrl(CurrentSong.key)}}" err-SRC="{{getPngCoverUrl(CurrentSong.key)}}"">
+			</td>
+
+			<td>
+				<a href="https://beatsaver.com/browse/detail/{{CurrentSong.key}}">{{CurrentSong.songName}}</a>
+			</td>
+
+			<td style="text-align: right">
+				<a href="https://beatsaver.com/browse/detail/{{CurrentSong.key}}">{{CurrentSong.key}}</a>
+			</td>
+
+		</div>
+	</div>
+
+
+	<div class="row">
+		<div class="col-sm-12">
+			<h2>Radio queue:</h2>
+		</div>
+		
+
+		<div class="col-sm-6">
+			<div class="input-group">
+				<input ng-model="QueueInputText" id="queueInputText" class="form-control" placeholder="Enter song key or playlist URL...">
+				<div class="input-group-btn">
+					<button ng-click="AddToQueue()" class="btn btn-default" type="button"><span class="glyphicon glyphicon-plus"></span></button>
+				</div>
+
+				
+			</div>
+		</div>
+
+		<div class="col-sm-6">
+			<div class="btn-group pull-right">
+				<button ng-click="ClearQueue()" class="btn btn-default" type="button"><span class="glyphicon glyphicon-trash"></span> Clear</button>
+				<button ng-click="Refresh()" class="btn btn-default" type="button"><span class="glyphicon glyphicon-refresh"></span> Refresh</button>
+			</div>
+		</div>
+	</div>
+
+	
+	
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="table-responsive">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Actions</th>
+
+							<th>Image</th>
+							<th>Song Name</th>
+							<th class="text-right">BeatSaver Key</th>
+						</tr>
+					</thead>
+					<tr ng-repeat="line in Queue">
+
+						<td>
+							<div class="btn-group">
+								<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							    	<span class="glyphicon glyphicon-cog"></span> <span class="caret"></span>
+							  	</button>
+							  	<ul class="dropdown-menu">
+								    <li>
+								    	<a href ng-click="RemoveFromQueue(line.key)">
+								    		<span class="glyphicon glyphicon-trash"></span>
+								    		Remove
+								    	</a>
+								    </li>
+								</ul>
+							</div>
+						</td>
+
+						<td>
+							<img class="song-cover" alt="" src="{{getJpgCoverUrl(line.key)}}" err-SRC="{{getPngCoverUrl(line.key)}}"">
+						</td>
+
+						<td>
+							<a href="https://beatsaver.com/browse/detail/{{line.key}}">{{line.songName}}</a>
+						</td>
+
+						<td style="text-align: right">
+							<a href="https://beatsaver.com/browse/detail/{{line.key}}">{{line.key}}</a>
+						</td>
+
+						<md-divider></md-divider>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+
+	<div class="row">
+		<div class="col-sm-12">
+				<h2>Radio clients:</h2>
+		</div>
+		<div class="col-xs-6">
+			<input ng-model="ClientFilterText" class="form-control" placeholder="Filter..">
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="table-responsive">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Actions</th>
+
+							<th ng-click="Order( 'DisplayName' )" ng-class="SortClass( 'DisplayName' )">Username</th>
+							<th class="text-right" ng-click="Order( 'PlayerID' )" ng-class="SortClass( 'PlayerID' )">Player ID</th>
+							<th class="text-right" ng-click="Order( 'Address' )" ng-class="SortClass( 'Address' )">Address</th>
+							<th class="text-right" ng-click="Order( 'ConnectedSeconds' )" ng-class="SortClass( 'ConnectedSeconds' )">Duration</th>
+						</tr>
+					</thead>
+					<tr ng-repeat="line in Players | orderBy: OrderBy | filter:ClientFilterText" href="#/{{address}}/player/{{line.PlayerID}}/">
+
+						<td>
+							<div class="btn-group">
+								<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							    	<span class="glyphicon glyphicon-cog"></span> <span class="caret"></span>
+							  	</button>
+							  	<ul class="dropdown-menu">
+								    <li>
+								    	<a href="http://www.steamcommunity.com/profiles/{{line.PlayerID}}" target="_blank">
+											<span class="glyphicon glyphicon-info-sign"></span>
+											Steam Profile
+										</a>
+								    </li>
+								    <li class="divider"></li>
+								    <li>
+								    	<a href ng-click="BanPlayer(line.PlayerID)">
+								    		<span class="glyphicon glyphicon-trash"></span>
+								    		Ban
+								    	</a>
+								    </li>
+								</ul>
+							</div>
+						</td>
+
+						<td>
+							<a href="#/{{address}}/player/{{line.PlayerID}}/">{{line.DisplayName}}</a>
+						</td>
+
+						<td style="text-align: right">
+							<a href="#/{{address}}/player/{{line.PlayerID}}/">{{line.PlayerID}}</a>
+						</td>
+
+						<td class="text-right">
+							{{line.Address}}
+						</td>
+
+						<td class="text-right">
+							{{line.ConnectedSeconds | SecondsToDuration}}
+						</td>
+
+						<md-divider></md-divider>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+</div>

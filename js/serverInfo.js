@@ -9,6 +9,7 @@ function ServerInfoController($scope, rconService, $routeParams, $interval) {
   // TODO: move serverinfo to service
   $scope.serverinfo = {};
 
+  /*
   $scope.playersChart = {
     options: {
       chart: {
@@ -47,7 +48,7 @@ function ServerInfoController($scope, rconService, $routeParams, $interval) {
     },
     data: []
   };
-
+*/
   $scope.performanceChart = {
     options: {
       chart: {
@@ -56,7 +57,7 @@ function ServerInfoController($scope, rconService, $routeParams, $interval) {
         margin: {
           top: 30,
           right: 75,
-          bottom: 40,
+          bottom: 05,
           left: 75
         },
         color: [
@@ -71,13 +72,13 @@ function ServerInfoController($scope, rconService, $routeParams, $interval) {
         },
         useInteractiveGuideline: true,
         yAxis1: {
-          axisLabel: 'Framerate',
+          axisLabel: 'Tickrate',
           tickFormat: function(d) {
             return d3.format(',d')(d);
           }
         },
         yAxis2: {
-          axisLabel: 'Entities',
+          axisLabel: 'Memory Usage (MB)',
           tickFormat: function(d) {
             return d3.format(',d')(d);
           },
@@ -93,13 +94,13 @@ function ServerInfoController($scope, rconService, $routeParams, $interval) {
     },
     data: [
       {
-        key: 'Framerate',
+        key: 'Tickrate',
         type: "line",
         duration: 0,
         yAxis: 1,
         values: []
       }, {
-        key: 'Entities',
+        key: 'Memory',
         type: 'line',
         duration: 0,
         yAxis: 2,
@@ -116,7 +117,7 @@ function ServerInfoController($scope, rconService, $routeParams, $interval) {
         margin: {
           top: 0,
           right: 75,
-          bottom: 40,
+          bottom: 05,
           left: 75
         },
         useVoronoi: false,
@@ -175,54 +176,33 @@ function ServerInfoController($scope, rconService, $routeParams, $interval) {
     $scope.serverinfo = data;
 
     if ($scope.useCharts) {
-      _collectChartData(data);
-      _generateChartData();
-    }
-  }
-
-  function _collectChartData(data) {
-    // player chart
-    $scope.playersChart.data = [
-      {
-        key: 'Queued',
-        y: data.Queued
-      }, {
-        key: 'Joining',
-        y: data.Joining
-      }, {
-        key: 'Players',
-        y: data.Players
-      }, {
-        key: 'Free',
-        y: (data.MaxPlayers - (data.Joining + data.Players))
+      recordedData.push({ts: Date.now(), data: data});
+      if (recordedData.length > DATA_LIMIT) {
+        recordedData = recordedData.slice(Math.max(recordedData.length - DATA_LIMIT, 1));
       }
-    ];
-
-    recordedData.push({ts: Date.now(), data: data});
-    if (recordedData.length > DATA_LIMIT) {
-      recordedData = recordedData.slice(Math.max(recordedData.length - DATA_LIMIT, 1));
+      _generateChartData();
     }
   }
 
   function _generateChartData() {
 
-    var fpsChartValues = [];
-    var entChartValues = [];
+    var tickrateChartValues = [];
+    var memoryChartValues = [];
 
     var netInChartValues = [];
     var netOutChartValues = [];
 
     for (var i = 0; i < recordedData.length; i++) {
       var record = recordedData[i];
-      fpsChartValues.push({x: record.ts, y: record.data.Framerate});
-      entChartValues.push({x: record.ts, y: record.data.EntityCount});
+      tickrateChartValues.push({x: record.ts, y: record.data.Tickrate});
+      memoryChartValues.push({x: record.ts, y: record.data.Memory});
 
       netInChartValues.push({x: record.ts, y: record.data.NetworkIn});
       netOutChartValues.push({x: record.ts, y: record.data.NetworkOut});
     }
 
-    $scope.performanceChart.data[0].values = fpsChartValues;
-    $scope.performanceChart.data[1].values = entChartValues;
+    $scope.performanceChart.data[0].values = tickrateChartValues;
+    $scope.performanceChart.data[1].values = memoryChartValues;
 
     $scope.netChart.data[0].values = netInChartValues;
     $scope.netChart.data[1].values = netOutChartValues;

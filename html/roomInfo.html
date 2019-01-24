@@ -1,0 +1,79 @@
+<div ng-controller="RoomInfoController" id="RoomInfoController">
+
+	<div class="row">
+
+		<div class="col-lg-12">
+
+			<h2 class="center">
+				Room {{roomId}}: {{getRoomName()}}
+				<div class="btn-group pull-right">
+					<button ng-click="refresh()" class="btn btn-default" type="button"><i class="glyphicon glyphicon-refresh"></i></button>
+				</div>
+			</h2>
+
+		</div>
+	</div>
+
+	<div class="row">
+			<div class="col-sm-12">
+				<div class="table-responsive">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Actions</th>
+	
+								<th ng-click="Order( 'DisplayName' )" ng-class="SortClass( 'DisplayName' )">Username</th>
+								<th class="text-right" ng-click="Order( 'PlayerID' )" ng-class="SortClass( 'PlayerID' )">Steam ID</th>
+								<th class="text-right" ng-click="Order( 'Address' )" ng-class="SortClass( 'Address' )">Address</th>
+								<th class="text-right" ng-click="Order( 'ConnectedSeconds' )" ng-class="SortClass( 'ConnectedSeconds' )">Duration</th>
+							</tr>
+						</thead>
+						<tr ng-repeat="line in Players | orderBy: OrderBy | filter:FilterText" href="#/{{address}}/player/{{line.PlayerID}}/">
+	
+							<td>
+								<div class="btn-group">
+									<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										<span class="glyphicon glyphicon-cog"></span> <span class="caret"></span>
+									  </button>
+									  <ul class="dropdown-menu">
+										<li>
+											<a href="http://www.steamcommunity.com/profiles/{{line.PlayerID}}" target="_blank">
+												<span class="glyphicon glyphicon-info-sign"></span>
+												Steam Profile
+											</a>
+										</li>
+										<li class="divider"></li>
+										<li>
+											<a href ng-click="BanPlayer(line.PlayerID)">
+												<span class="glyphicon-ban-circle"></span>
+												Ban
+											</a>
+										</li>
+									</ul>
+								</div>
+							</td>
+	
+							<td>
+								<a href="#/{{address}}/player/{{line.PlayerID}}/">{{line.DisplayName}}</a>
+							</td>
+	
+							<td style="text-align: right">
+								<a href="#/{{address}}/player/{{line.PlayerID}}/">{{line.PlayerID}}</a>
+							</td>
+	
+							<td class="text-right">
+								{{line.Address}}
+							</td>
+	
+							<td class="text-right">
+								{{line.ConnectedSeconds | SecondsToDuration}}
+							</td>
+	
+							<md-divider></md-divider>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</div>
+	
+	</div>

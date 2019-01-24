@@ -117,8 +117,52 @@ function RconService() {
     }
   }
 
-  Service.getPlayers = function(scope, success) {
-    this.Request("playerlist", scope, function(response) {
+  Service.getPlayers = function(scope, success, roomId = 0) {
+    var command = "playerlist";
+    if(roomId != 0){
+      command += " "+roomId;
+    }
+    this.Request(command, scope, function(response) {
+      var players = JSON.parse(response.Message);
+
+      if (typeof success === 'function') {
+        success.call(scope, players);
+      }
+    });
+  }
+
+  Service.getRooms = function(scope, success) {
+    this.Request("roomslist", scope, function(response) {
+      var players = JSON.parse(response.Message);
+
+      if (typeof success === 'function') {
+        success.call(scope, players);
+      }
+    });
+  }
+
+  Service.getRadioInfo = function(scope, success) {
+    this.Request("radioinfo", scope, function(response) {
+      var players = JSON.parse(response.Message);
+
+      if (typeof success === 'function') {
+        success.call(scope, players);
+      }
+    });
+  }
+  
+  Service.getSettings = function(scope, success) {
+    this.Request("getsettings", scope, function(response) {
+      var players = JSON.parse(response.Message);
+
+      if (typeof success === 'function') {
+        success.call(scope, players);
+      }
+    });
+  }
+
+  Service.getAccessList = function(scope, success) {
+    this.Request("accesslist", scope, function(response) {
       var players = JSON.parse(response.Message);
 
       if (typeof success === 'function') {

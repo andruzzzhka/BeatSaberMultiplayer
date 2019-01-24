@@ -14,21 +14,56 @@ app.config(function($routeProvider) {
     templateUrl: "html/console.html",
     Nav: true
   });
-  $routeProvider.when("/:address/chat", {
-    Title: "Chat",
-    templateUrl: "html/chat.html",
+  $routeProvider.when("/:address/radiocontroller", {
+    Title: "Radio",
+    templateUrl: "html/radiocontroller.html",
     Nav: true
   });
-  $routeProvider.when("/:address/playerlist", {
-    Title: "Player List",
-    templateUrl: "html/playerlist.html",
+  $routeProvider.when("/:address/roomslist", {
+    Title: "Rooms List",
+    templateUrl: "html/roomslist.html",
+    Nav: true
+  });
+  $routeProvider.when("/:address/serversettings", {
+    Title: "Settings",
+    templateUrl: "html/serversettings.html",
+    Nav: true
+  });
+  $routeProvider.when("/:address/accessSettings", {
+    Title: "Access Settings",
+    templateUrl: "html/accessSettings.html",
     Nav: true
   });
   $routeProvider.when("/:address/player/:userid", {
     Title: "Player Info",
     templateUrl: "html/playerInfo.html"
   });
+  $routeProvider.when("/:address/room/:roomId", {
+    Title: "Room Info",
+    templateUrl: "html/roomInfo.html"
+  });
   $routeProvider.otherwise({redirectTo: '/home'});
+});
+
+app.directive('errSrc', function() {
+  return {
+    link: function (scope, element, attrs) {
+      var defaultSrc = attrs.src;
+      var alreadyChanged = false;
+      element.bind('error', function () {
+        if (!alreadyChanged) {
+          if (attrs.errSrc) {
+            element.attr('src', attrs.errSrc);
+            alreadyChanged = true;
+          }
+          else if (attrs.src) {
+            element.attr('src', defaultSrc);
+            alreadyChanged = true;
+          }
+        }
+      });
+    }
+  }
 });
 
 app.controller('RconController', RconController);

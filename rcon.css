@@ -149,3 +149,18 @@ a:hover
     padding: 15px;
 	line-height: 20px;
 }
+
+.song-cover
+{
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 5px;
+	width: 64px;
+}
+
+.modal-content
+{
+  color: #cfd2da;
+  background-color: #252830;
+  
+}

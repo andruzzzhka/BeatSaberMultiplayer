@@ -16,21 +16,17 @@
         <span class="glyphicon glyphicon-time"></span>
         {{serverinfo.Uptime|SecondsToDuration}}
       </p>
-      <p class="navbar-text" title="Map Name">
-        <span class="glyphicon glyphicon-globe"></span>
-        {{serverinfo.Map}}
-      </p>
-      <p class="navbar-text" title="Current Players/Maximum Players">
+      <p class="navbar-text" title="Current Players">
         <span class="glyphicon glyphicon-user"></span>
-        {{serverinfo.Players|number}}/{{serverinfo.MaxPlayers|number}}
+        {{serverinfo.Players|number}} players
       </p>
-      <p class="navbar-text" title="Framerate">
+      <p class="navbar-text" title="Tickrate">
         <span class="glyphicon glyphicon-hourglass"></span>
-        {{serverinfo.Framerate|number}}fps
+        {{serverinfo.Tickrate|number}} Hz
       </p>
-      <p class="navbar-text" title="Entity Count">
+      <p class="navbar-text" title="Room Count">
         <span class="glyphicon glyphicon-oil"></span>
-        {{serverinfo.EntityCount|number}}
+        {{serverinfo.RoomCount|number}}
       </p>
 
       <button class="btn btn-danger navbar-btn navbar-right" type="button" ng-click="Disconnect()">Disconnect</button>

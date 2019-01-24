@@ -3,7 +3,7 @@
   "description": "Game server Rcon, using websockets",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Facepunch/webrcon"
+    "url": "https://github.com/andruzzzhka/BeatSaberMultiplayer"
   },
   "scripts": {
     "server": "http-server -p 8888",

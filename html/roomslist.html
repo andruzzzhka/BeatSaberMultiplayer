@@ -1,0 +1,135 @@
+<div ng-controller="RoomsListController" id="RoomsListController">
+
+	<div class="row">
+		<div class="col-xs-6">
+			<input ng-model="FilterText" class="form-control" placeholder="Filter..">
+		</div>
+		<div class="col-xs-6">
+			<div class="btn-group pull-right">
+				<button ng-click="ShowModalSendMessage('*')" class="btn btn-default" type="button"><span class="glyphicon glyphicon-pencil"></span></button>
+				<button ng-click="Refresh()" class="btn btn-default" type="button"><span class="glyphicon glyphicon-refresh"></span></button>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="table-responsive">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Actions</th>
+
+							<th ng-click="Order( 'name' )" ng-class="SortClass( 'name' )">Room Name</th>
+							<th class="text-right" ng-click="Order( 'roomId' )" ng-class="SortClass( 'roomId' )">Room ID</th>
+							<th class="text-right" ng-click="Order( 'roomState' )" ng-class="SortClass( 'roomState' )">Room State</th>
+							<th class="text-right" ng-click="Order( 'players' )" ng-class="SortClass( 'players' )">Player Count</th>
+						</tr>
+					</thead>
+					<tr ng-repeat="line in Rooms | orderBy: OrderBy | filter:FilterText" href="#/{{address}}/room/{{line.roomId}}/">
+
+						<td>
+							<div class="btn-group">
+								<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true"
+								 aria-expanded="false">
+									<span class="glyphicon glyphicon-cog"></span> <span class="caret"></span>
+								</button>
+								<ul class="dropdown-menu">
+									<li>
+										<a href ng-click="ShowModalSendMessage(line.roomId)">
+											<span class="glyphicon glyphicon-pencil"></span>
+											Send Message
+										</a>
+									</li>
+									<li>
+										<a href ng-click="CloneRoom(line.roomId)">
+											<span class="glyphicon glyphicon-duplicate"></span>
+											Clone Room
+										</a>
+									</li>
+									<li>
+										<a href ng-click="ShowPresetNameModal(line.roomId)">
+											<span class="glyphicon glyphicon-floppy-disk"></span>
+											Save Room
+										</a>
+									</li>
+									<li class="divider"></li>
+									<li>
+										<a href ng-click="DestroyRoom(line.roomId)">
+											<span class="glyphicon glyphicon-trash"></span>
+											Destroy Room
+										</a>
+									</li>
+								</ul>
+							</div>
+						</td>
+
+						<td>
+							<a href="#/{{address}}/room/{{line.roomId}}/">{{line.name}}</a>
+						</td>
+
+						<td style="text-align: right">
+							<a href="#/{{address}}/room/{{line.roomId}}/">{{line.roomId}}</a>
+						</td>
+
+						<td class="text-right">
+							{{line.roomState}}
+						</td>
+
+						<td class="text-right">
+							{{line.players}}
+						</td>
+
+						<md-divider></md-divider>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="roomPresetNameInputModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="exampleModalLabel">New preset</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<input ng-model="PresetNameInput" id="presetNameInput" class="form-control" placeholder="Enter new preset name...">
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" ng-click="SaveRoom()">Save changes</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="messageInputModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="exampleModalLabel">Send message</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					Display time in seconds
+					<input type="text" ng-model="DisplayTimeInput" id="displayTimeInput" class="form-control" placeholder="10">
+					<hr />
+					Font size
+					<input type="text" ng-model="FontSizeInput" id="fontSizeInput" class="form-control" placeholder="8">
+					<hr />
+					Message text
+					<input type="text" ng-model="MessageTextInput" id="messageTextInput" class="form-control" placeholder="Hey guys!">
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" ng-click="SendMessage()">Send</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
