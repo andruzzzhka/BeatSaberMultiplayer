@@ -190,10 +190,10 @@ namespace ServerHub.Misc {
             [JsonProperty]
             public bool SendCrashReports
             {
-                get => _showTickEventExceptions;
+                get => _sendCrashReports;
                 set
                 {
-                    _showTickEventExceptions = value;
+                    _sendCrashReports = value;
                     MarkDirty();
                 }
             }
