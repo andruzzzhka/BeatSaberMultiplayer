@@ -180,7 +180,7 @@ namespace ServerHub.Hub
             {
                 SentrySdk.Init(o =>
                 {
-                    o.Dsn = new Dsn("https://512bb19e36bb47f68978f2b97662b9d0@sentry.io/1380208");
+                    o.Dsn = new Dsn("https://b197685d885e473cbecbf93d8dc8628a@sentry.io/1380202");
                     o.AttachStacktrace = true;
 #if DEBUG
                     o.Debug = true;
@@ -1288,7 +1288,7 @@ namespace ServerHub.Hub
                     if (!SentrySdk.IsEnabled && Settings.Instance.Server.SendCrashReports)
                         SentrySdk.Init(o => 
                         {
-                            o.Dsn = new Dsn("https://512bb19e36bb47f68978f2b97662b9d0@sentry.io/1380208");
+                            o.Dsn = new Dsn("https://b197685d885e473cbecbf93d8dc8628a@sentry.io/1380202");
                             o.AttachStacktrace = true;
 #if DEBUG
                             o.Debug = true;
