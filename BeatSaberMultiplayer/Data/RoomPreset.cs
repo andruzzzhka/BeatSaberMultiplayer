@@ -13,39 +13,9 @@ using UnityEngine;
 namespace BeatSaberMultiplayer.Data
 {
     [Serializable]
-    public class PresetSong
-    {
-        public string Key;
-        public string Name;
-        public string HashMD5;
-
-        public PresetSong()
-        {
-        }
-
-        public string GetHash()
-        {
-            if (SongLoader.AreSongsLoaded)
-            {
-                CustomLevel level = SongLoader.CustomLevels.FirstOrDefault(x => x.customSongInfo.path.Contains(Key));
-                if (level != null)
-                {
-                    HashMD5 = level.levelID.Substring(0, Math.Min(32, level.levelID.Length));
-                    return HashMD5;
-                }
-                else
-                    return "";
-            }
-            else
-                return ""; 
-        }
-    }
-
-    [Serializable]
     public class RoomPreset
     {
         public RoomSettings settings;
-        public List<PresetSong> songs;
 
         [NonSerialized]
         private string path;
@@ -58,7 +28,6 @@ namespace BeatSaberMultiplayer.Data
         public RoomPreset(RoomSettings roomSettings)
         {
             settings = roomSettings;
-            songs = roomSettings.AvailableSongs.ConvertAll(x => new PresetSong() { Name = x.songName, HashMD5 = x.levelId, Key = x.GetSongKey() });
         }
 
         public static RoomPreset LoadPreset(string path)
@@ -85,26 +54,7 @@ namespace BeatSaberMultiplayer.Data
 
         public RoomSettings GetRoomSettings()
         {
-            settings.AvailableSongs = songs.ConvertAll(x => new SongInfo() { levelId = (string.IsNullOrEmpty(x.HashMD5) ? x.GetHash() : x.HashMD5), songName = x.Name });
-
             return settings;
-        }
-
-        public void Update()
-        {
-            songs.Where(x => string.IsNullOrEmpty(x.HashMD5)).AsParallel().WithDegreeOfParallelism(4).ForAll(y => SongDownloader.Instance.RequestSongByKey(y.Key, UpdateSong));
-        }
-
-        public void UpdateSong(Song songInfo)
-        {
-            PresetSong presetSong = songs.FirstOrDefault(x => x.Key == songInfo.id);
-            if(presetSong != null)
-                presetSong.HashMD5 = songInfo.hash;
-
-            if(songs.All(x => !string.IsNullOrEmpty(x.HashMD5)))
-            {
-                SavePreset();
-            }
         }
 
         public void SavePreset()

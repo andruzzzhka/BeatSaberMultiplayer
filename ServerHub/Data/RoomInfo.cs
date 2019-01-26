@@ -9,7 +9,7 @@ using System.Text;
 namespace ServerHub.Data
 {
     public enum RoomState: byte {SelectingSong, Preparing, InGame, Results }
-    public enum SongSelectionType : byte { Manual,  Random, Voting }
+    public enum SongSelectionType : byte { Manual,  Random }
 
     public class RoomInfo
     {

@@ -144,6 +144,7 @@
     <Compile Include="DebugForm.cs" />
     <Compile Include="InGameOnlineController.cs" />
     <Compile Include="Misc\BeatSaverDownloaderHelper.cs" />
+    <Compile Include="Misc\ScrappedData.cs" />
     <Compile Include="Misc\Sprites.cs" />
     <Compile Include="Misc\Config.cs" />
     <Compile Include="Misc\CustomExtensions.cs" />
@@ -174,7 +175,6 @@
     <Compile Include="UI\UIElements\DownloadQueueTableCell.cs" />
     <Compile Include="UI\UIElements\CustomListViewController.cs" />
     <Compile Include="UI\ViewControllers\ChannelSelectionScreen\ChannelSelectionViewController.cs" />
-    <Compile Include="UI\ViewControllers\CreateRoomScreen\LeftRoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\PresetsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\MainRoomCreationViewController.cs" />
@@ -184,12 +184,10 @@
     <Compile Include="UI\ViewControllers\RadioScreen\ResultsScreenViewController.cs" />
     <Compile Include="UI\ViewControllers\RadioScreen\NextSongScreenViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
-    <Compile Include="UI\ViewControllers\RoomScreen\DownloadQueueViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\LeaderboardViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomManagementViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />
-    <Compile Include="UI\ViewControllers\RoomScreen\VotingViewController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
     <Compile Include="UI\ViewControllers\MultiplayerNavigationController.cs" />
   </ItemGroup>

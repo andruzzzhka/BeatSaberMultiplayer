@@ -16,11 +16,26 @@ namespace BeatSaberMultiplayer
                 {
                     noGlowMat = new Material(Resources.FindObjectsOfTypeAll<Material>().Where(m => m.name == "UINoGlow").First());
                     noGlowMat.name = "UINoGlowCustom";
-                };
+                }
                 return noGlowMat;
             }
         }
         private static Material noGlowMat;
+        
+        public static Material UIScreenMat
+        {
+            get
+            {
+                if (uiMat == null)
+                {
+                    uiMat = new Material(Resources.FindObjectsOfTypeAll<Material>().Where(m => m.name == "UIBlurredScreenGrab").First());
+                    uiMat.name = "UIBlurredScreenGrabCustom";
+                }
+                return uiMat;
+            }
+
+        }
+        private static Material uiMat;
 
         public static Sprite onlineIcon;
         public static Sprite lockedRoomIcon;

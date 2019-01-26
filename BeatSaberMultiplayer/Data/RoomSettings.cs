@@ -17,10 +17,7 @@ namespace BeatSaberMultiplayer.Data
         public SongSelectionType SelectionType;
         public int MaxPlayers;
         public bool NoFail;
-
-        [NonSerialized]
-        public List<SongInfo> AvailableSongs;
-
+        
         public RoomSettings()
         {
 
@@ -51,14 +48,6 @@ namespace BeatSaberMultiplayer.Data
 
             MaxPlayers = msg.ReadInt32();
             SelectionType = (SongSelectionType)msg.ReadByte();
-            int songsCount = msg.ReadInt32();
-
-            AvailableSongs = new List<SongInfo>();
-            for (int j = 0; j < songsCount; j++)
-            {
-
-                AvailableSongs.Add(new SongInfo(msg));
-            }
 
         }
         
@@ -76,12 +65,6 @@ namespace BeatSaberMultiplayer.Data
 
             msg.Write(MaxPlayers);
             msg.Write((byte)SelectionType);
-            msg.Write(AvailableSongs.Count);
-
-            for (int j = 0; j < AvailableSongs.Count; j++)
-            {
-                AvailableSongs[j].AddToMessage(msg);
-            }
         }
 
         public override bool Equals(object obj)

@@ -61,7 +61,7 @@ namespace BeatSaberMultiplayer.Misc
             StartCoroutine(DownloadSongCoroutine(songInfo, subFolder, callback, progressChanged));
         }
 
-        public IEnumerator DownloadSongCoroutine(Song songInfo, string subFolder, Action callback, Action<float> progressChanged = null)
+        public IEnumerator DownloadSongCoroutine(Song songInfo, string subFolder, Action callback, Action<float> progressChanged = null, CancellationTokenSource cancelToken = null)
         {
             songInfo.songQueueState = SongQueueState.Downloading;
 
@@ -95,7 +95,7 @@ namespace BeatSaberMultiplayer.Misc
                 {
                     www.Abort();
                     timeout = true;
-                    Logger.Error("Connection timed out!");
+                    Logger.Error("Download aborted!");
                 }
 
                 songInfo.downloadingProgress = asyncRequest.progress;

@@ -10,35 +10,138 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Image = UnityEngine.UI.Image;
 using VRUI;
+using BeatSaberMultiplayer.UI.FlowCoordinators;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
+    public enum TopButtonsState { Select, SortBy, Search, Mode };
+
     class SongSelectionViewController : VRUIViewController, TableView.IDataSource
     {
         public event Action<LevelSO> SongSelected;
+        public event Action SearchPressed;
+        public event Action<SortMode> SortPressed;
+        public event Action<BeatmapCharacteristicSO> ModePressed;
 
         private Button _pageUpButton;
         private Button _pageDownButton;
+
+        private Button _sortByButton;
+        private Button _searchButton;
+        private Button _modeButton;
+
+        private Button _defButton;
+        private Button _newButton;
+        private Button _diffButton;
+        
+        private Button _stdButton;
+        private Button _oneSbrButton;
+        private Button _noArrButton;
 
         TextMeshProUGUI _hostIsSelectingSongText;
 
         TableView _songsTableView;
         LevelListTableCell _songTableCellInstance;
-
         List<LevelSO> availableSongs = new List<LevelSO>();
+        private BeatmapCharacteristicSO[] _beatmapCharacteristics;
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
             if (firstActivation && type == ActivationType.AddedToHierarchy)
             {
+                _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
+
                 _songTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
+
+                _searchButton = this.CreateUIButton("CreditsButton", new Vector2(-20f, 36.25f), new Vector2(20f, 6f), () => { SearchPressed?.Invoke(); }, "Search");
+                _searchButton.SetButtonTextSize(3f);
+                _searchButton.ToggleWordWrapping(false);
+
+                _sortByButton = this.CreateUIButton("CreditsButton", new Vector2(0f, 36.25f), new Vector2(20f, 6f), () =>
+                {
+                    SelectTopButtons(TopButtonsState.SortBy);
+                }, "Sort By");
+                _sortByButton.SetButtonTextSize(3f);
+                _sortByButton.ToggleWordWrapping(false);
+
+                _modeButton = this.CreateUIButton("CreditsButton", new Vector2(20f, 36.25f), new Vector2(20f, 6f), () =>
+                {
+                    SelectTopButtons(TopButtonsState.Mode);
+                }, "Mode");
+                _modeButton.SetButtonTextSize(3f);
+                _modeButton.ToggleWordWrapping(false);
+
+                _defButton = this.CreateUIButton("CreditsButton", new Vector2(-20f, 36.25f), new Vector2(20f, 6f), () =>
+                {
+                    SelectTopButtons(TopButtonsState.Select);
+                    SortPressed?.Invoke(SortMode.Default);
+                },
+                "Default");
+
+                _defButton.SetButtonTextSize(3f);
+                _defButton.ToggleWordWrapping(false);
+                _defButton.gameObject.SetActive(false);
+
+                _newButton = this.CreateUIButton("CreditsButton", new Vector2(0f, 36.25f), new Vector2(20f, 6f), () =>
+                {
+                    SelectTopButtons(TopButtonsState.Select);
+                    SortPressed?.Invoke(SortMode.Newest);
+                }, "Newest");
+
+                _newButton.SetButtonTextSize(3f);
+                _newButton.ToggleWordWrapping(false);
+                _newButton.gameObject.SetActive(false);
+
+
+                _diffButton = this.CreateUIButton("CreditsButton", new Vector2(20f, 36.25f), new Vector2(20f, 6f), () =>
+                {
+                    SelectTopButtons(TopButtonsState.Select);
+                    SortPressed?.Invoke(SortMode.Difficulty);
+                }, "Difficulty");
+
+                _diffButton.SetButtonTextSize(3f);
+                _diffButton.ToggleWordWrapping(false);
+                _diffButton.gameObject.SetActive(false);
+
+                _stdButton = this.CreateUIButton("CreditsButton", new Vector2(-20f, 36.25f), new Vector2(20f, 6f), () =>
+                {
+                    SelectTopButtons(TopButtonsState.Select);
+                    ModePressed?.Invoke(_beatmapCharacteristics.First(x => x.characteristicName == "Standard"));
+                },
+                "Standard");
+
+                _stdButton.SetButtonTextSize(3f);
+                _stdButton.ToggleWordWrapping(false);
+                _stdButton.gameObject.SetActive(false);
+
+                _oneSbrButton = this.CreateUIButton("CreditsButton", new Vector2(0f, 36.25f), new Vector2(20f, 6f), () =>
+                {
+                    SelectTopButtons(TopButtonsState.Select);
+                    ModePressed?.Invoke(_beatmapCharacteristics.First(x => x.characteristicName == "One Saber"));
+                }, "One Saber");
+
+                _oneSbrButton.SetButtonTextSize(3f);
+                _oneSbrButton.ToggleWordWrapping(false);
+                _oneSbrButton.gameObject.SetActive(false);
+
+
+                _noArrButton = this.CreateUIButton("CreditsButton", new Vector2(20f, 36.25f), new Vector2(20f, 6f), () =>
+                {
+                    SelectTopButtons(TopButtonsState.Select);
+                    ModePressed?.Invoke(_beatmapCharacteristics.First(x => x.characteristicName == "No Arrows"));
+                }, "No Arrows");
+
+                _noArrButton.SetButtonTextSize(3f);
+                _noArrButton.ToggleWordWrapping(false);
+                _noArrButton.gameObject.SetActive(false);
 
                 _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -14f);
-                (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
+                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -12f);
+                (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
                 _pageUpButton.interactable = true;
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
@@ -50,8 +153,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
                 (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
                 (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
-                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 8f);
-                (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
+                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 6f);
+                (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
                 _pageDownButton.interactable = true;
                 _pageDownButton.onClick.AddListener(delegate ()
                 {
@@ -86,7 +189,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _hostIsSelectingSongText.fontSize = 8f;
                 _hostIsSelectingSongText.alignment = TextAlignmentOptions.Center;
                 _hostIsSelectingSongText.rectTransform.sizeDelta = new Vector2(120f, 6f);
-                
             }
             else
             {
@@ -133,6 +235,70 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _pageUpButton.gameObject.SetActive(isHost);
             _pageDownButton.gameObject.SetActive(isHost);
             _hostIsSelectingSongText.gameObject.SetActive(!isHost);
+        }
+
+        public void SelectTopButtons(TopButtonsState _newState)
+        {
+            switch (_newState)
+            {
+                case TopButtonsState.Select:
+                    {
+                        _sortByButton.gameObject.SetActive(true);
+                        _searchButton.gameObject.SetActive(true);
+                        _modeButton.gameObject.SetActive(true);
+
+                        _defButton.gameObject.SetActive(false);
+                        _newButton.gameObject.SetActive(false);
+                        _diffButton.gameObject.SetActive(false);
+
+                        _stdButton.gameObject.SetActive(false);
+                        _oneSbrButton.gameObject.SetActive(false);
+                        _noArrButton.gameObject.SetActive(false);
+                    }; break;
+                case TopButtonsState.SortBy:
+                    {
+                        _sortByButton.gameObject.SetActive(false);
+                        _searchButton.gameObject.SetActive(false);
+                        _modeButton.gameObject.SetActive(false);
+
+                        _defButton.gameObject.SetActive(true);
+                        _newButton.gameObject.SetActive(true);
+                        _diffButton.gameObject.SetActive(true);
+                        _diffButton.interactable = ScrappedData.Downloaded;
+
+                        _stdButton.gameObject.SetActive(false);
+                        _oneSbrButton.gameObject.SetActive(false);
+                        _noArrButton.gameObject.SetActive(false);
+                    }; break;
+                case TopButtonsState.Search:
+                    {
+                        _sortByButton.gameObject.SetActive(false);
+                        _searchButton.gameObject.SetActive(false);
+                        _modeButton.gameObject.SetActive(false);
+
+                        _defButton.gameObject.SetActive(false);
+                        _newButton.gameObject.SetActive(false);
+                        _diffButton.gameObject.SetActive(false);
+
+                        _stdButton.gameObject.SetActive(false);
+                        _oneSbrButton.gameObject.SetActive(false);
+                        _noArrButton.gameObject.SetActive(false);
+                    }; break;
+                case TopButtonsState.Mode:
+                    {
+                        _sortByButton.gameObject.SetActive(false);
+                        _searchButton.gameObject.SetActive(false);
+                        _modeButton.gameObject.SetActive(false);
+
+                        _defButton.gameObject.SetActive(false);
+                        _newButton.gameObject.SetActive(false);
+                        _diffButton.gameObject.SetActive(false);
+
+                        _stdButton.gameObject.SetActive(true);
+                        _oneSbrButton.gameObject.SetActive(true);
+                        _noArrButton.gameObject.SetActive(true);
+                    }; break;
+            }
         }
 
         public TableCell CellForRow(int row)

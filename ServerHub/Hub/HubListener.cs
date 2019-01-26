@@ -108,6 +108,7 @@ namespace ServerHub.Hub
                 Console.Title = _currentTitle;
             }
 
+            List<Client> allClients = hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioClients).ToList();
 
             NetIncomingMessage msg;
             while ((msg = ListenerServer.ReadMessage()) != null)
@@ -158,12 +159,13 @@ namespace ServerHub.Hub
                                 client.ClientDisconnected += ClientDisconnected;
 
                                 hubClients.Add(client);
+                                allClients.Add(client);
                                 Logger.Instance.Log($"{playerInfo.playerName} connected!");
                             };
                             break;
                         case NetIncomingMessageType.Data:
                             {
-                                Client client = hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).FirstOrDefault(x => x.playerConnection.RemoteEndPoint == msg.SenderEndPoint);
+                                Client client = allClients.FirstOrDefault(x => x.playerConnection.RemoteEndPoint.Equals(msg.SenderEndPoint));
 
                                 switch ((CommandType)msg.ReadByte())
                                 {
@@ -265,25 +267,10 @@ namespace ServerHub.Hub
                                                     BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
                                                     if (joinedRoom != null)
                                                     {
-#if DEBUG
-                                                        Logger.Instance.Log("Room exists!");
-#endif
                                                         NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
 
                                                         outMsg.Write((byte)CommandType.GetRoomInfo);
-
-                                                        bool includeSongList = (msg.ReadByte() == 1);
-
-                                                        if (includeSongList)
-                                                        {
-                                                            outMsg.Write((byte)1);
-                                                            joinedRoom.AddSongInfosToMessage(outMsg);
-                                                        }
-                                                        else
-                                                        {
-                                                            outMsg.Write((byte)0);
-                                                        }
-
+                                                        
                                                         joinedRoom.GetRoomInfo().AddToMessage(outMsg);
 
                                                         msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
@@ -303,11 +290,11 @@ namespace ServerHub.Hub
                                                 {
                                                     if (msg.LengthBytes < 16)
                                                     {
-                                                        joinedRoom.SetSelectedSong(client.playerInfo, null);
+                                                        joinedRoom.SetSelectedSongAsync(client.playerInfo, null);
                                                     }
                                                     else
                                                     {
-                                                        joinedRoom.SetSelectedSong(client.playerInfo, new SongInfo(msg));
+                                                        joinedRoom.SetSelectedSongAsync(client.playerInfo, new SongInfo(msg));
                                                     }
                                                 }
                                             }

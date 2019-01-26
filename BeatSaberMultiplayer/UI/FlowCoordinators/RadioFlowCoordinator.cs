@@ -92,7 +92,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             
             if (!Client.Instance.Connected || (Client.Instance.Connected && (Client.Instance.ip != ip || Client.Instance.port != port)))
             {
-                Client.Instance.Disconnect(true);
+                Client.Instance.Disconnect();
                 Client.Instance.Connect(ip, port);
                 Client.Instance.InRadioMode = true;
                 Client.Instance.ConnectedToServerHub += ConnectedToServerHub;
@@ -109,6 +109,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 if (joined)
                 {
+                    InGameOnlineController.Instance.needToSendUpdates = false;
                     Client.Instance.LeaveRoom();
                     joined = false;
                 }
@@ -161,6 +162,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 Client.Instance.RequestChannelInfo();
                                 Client.Instance.SendPlayerInfo();
                                 joined = true;
+                                InGameOnlineController.Instance.needToSendUpdates = true;
                             }
                             break;
                         case 1:
@@ -295,6 +297,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             break;
                         case CommandType.Disconnect:
                             {
+                                InGameOnlineController.Instance.needToSendUpdates = false;
                                 if (msg.LengthBytes > 3)
                                 {
                                     string reason = msg.ReadString();

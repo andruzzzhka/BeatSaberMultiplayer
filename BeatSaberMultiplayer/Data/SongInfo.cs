@@ -28,7 +28,7 @@ namespace BeatSaberMultiplayer.Data
         {
             originalLevels.Clear();
 
-            foreach (var item in Resources.FindObjectsOfTypeAll<LevelCollectionSO>().First().GetLevelsWithBeatmapCharacteristic(Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>().First(x => x.characteristicName == "Standard")).Where(y => y.levelID.Length < 32))
+            foreach (var item in SongLoader.CustomLevelCollectionSO.levels.Where(y => y.levelID.Length < 32))
             {
                 originalLevels.Add(BitConverter.ToString(HexConverter.GetStringHashBytes(item.levelID)).Replace("-", ""), item);
             }

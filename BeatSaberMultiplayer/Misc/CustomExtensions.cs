@@ -1,4 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.UI.UIElements;
+using HMUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +10,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Zenject;
 
 namespace BeatSaberMultiplayer.Misc
 {
@@ -15,7 +18,7 @@ namespace BeatSaberMultiplayer.Misc
     {
         public static void SetButtonStrokeColor(this Button btn, Color color)
         {
-            btn.GetComponentsInChildren<Image>().First(x => x.name == "Stroke").color = color;
+            btn.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").color = color;
         }
         
         public static int FindIndexInList(this List<PlayerInfo> list, PlayerInfo _player)

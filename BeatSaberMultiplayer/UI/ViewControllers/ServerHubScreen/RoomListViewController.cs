@@ -17,7 +17,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
     class RoomListViewController : VRUIViewController, TableView.IDataSource
     {
         public event Action createRoomButtonPressed;
-        public event Action<RoomInfo> selectedRoom;
+        public event Action<ServerHubRoom> selectedRoom;
 
         private Button _pageUpButton;
         private Button _pageDownButton;
@@ -26,7 +26,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
         TableView _serverTableView;
         LevelListTableCell _serverTableCellInstance;
 
-        List<RoomInfo> availableRooms = new List<RoomInfo>();
+        List<ServerHubRoom> availableRooms = new List<ServerHubRoom>();
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
@@ -101,15 +101,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
 
         }
 
-        public void SetRooms(List<ServerHubClient> serverHubs)
+        public void SetRooms(List<ServerHubRoom> rooms)
         {
-            if (serverHubs == null)
+            if (rooms == null)
             {
                 availableRooms.Clear();
             }
             else
             {
-                availableRooms = serverHubs.SelectMany(x => x.availableRooms).OrderByDescending(y => y.players).ToList();
+                availableRooms = rooms.OrderByDescending(y => y.roomInfo.players).ToList();
             }
 
             if (_serverTableView.dataSource != this)
@@ -134,7 +134,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             LevelListTableCell cell = Instantiate(_serverTableCellInstance);
             cell.reuseIdentifier = "ServerTableCell";
 
-            RoomInfo room = availableRooms[row];
+            RoomInfo room = availableRooms[row].roomInfo;
             
             if (room.usePassword)
             {

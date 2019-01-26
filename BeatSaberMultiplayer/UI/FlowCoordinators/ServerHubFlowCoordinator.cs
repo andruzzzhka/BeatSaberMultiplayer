@@ -18,6 +18,21 @@ using BS_Utils.Gameplay;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
+
+    struct ServerHubRoom
+    {
+        public string ip;
+        public int port;
+        public RoomInfo roomInfo;
+
+        public ServerHubRoom(string ip, int port, RoomInfo roomInfo)
+        {
+            this.ip = ip;
+            this.port = port;
+            this.roomInfo = roomInfo;
+        }
+    }
+
     class ServerHubFlowCoordinator : FlowCoordinator
     {
         MultiplayerNavigationController _serverHubNavigationController;
@@ -25,6 +40,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         RoomListViewController _roomListViewController;
 
         List<ServerHubClient> _serverHubClients = new List<ServerHubClient>();
+
+        List<ServerHubRoom> _roomsList = new List<ServerHubRoom>();
 
         public bool doNotUpdate = false;
 
@@ -72,17 +89,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        private void RoomSelected(RoomInfo selectedRoom)
+        private void RoomSelected(ServerHubRoom selectedRoom)
         {
-            foreach(ServerHubClient client in _serverHubClients.Where(x => x.serverHubAvailable))
-            {
-                int roomIndex = client.availableRooms.IndexOf(selectedRoom);
-                if (roomIndex >= 0)
-                {
-                    JoinRoom(client.ip, client.port, selectedRoom.roomId, selectedRoom.usePassword);
-                    break;
-                }
-            }
+            JoinRoom(selectedRoom.ip, selectedRoom.port, selectedRoom.roomInfo.roomId, selectedRoom.roomInfo.usePassword);
         }
 
         public void JoinRoom(string ip, int port, uint roomId, bool usePassword, string pass = "")
@@ -132,6 +141,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
             });
             _serverHubClients.Clear();
+            _roomsList.Clear();
 
             for (int i = 0; i < Config.Instance.ServerHubIPs.Length ; i++)
             {
@@ -158,10 +168,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void ReceivedRoomsList(ServerHubClient sender, List<RoomInfo> rooms)
         {
+            _roomsList.AddRange(rooms.Select(x => new ServerHubRoom(sender.ip, sender.port, x)));
             HMMainThreadDispatcher.instance.Enqueue(delegate ()
             {
-                Misc.Logger.Info($"Received {rooms.Count} rooms from {sender.ip}:{sender.port}");
-                _roomListViewController.SetRooms(_serverHubClients);
+                Misc.Logger.Info($"Received rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
+                _roomListViewController.SetRooms(_roomsList);
                 _serverHubNavigationController.SetLoadingState(false);
             });
         }
@@ -258,8 +269,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     {
                                         availableRooms.Add(new RoomInfo(msg));
                                     }
-
-                                    NetworkClient.Shutdown("");
 
                                     ReceivedRoomsList?.Invoke(this, availableRooms);
                                     Abort();

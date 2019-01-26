@@ -129,7 +129,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
 
             cell.songName = $"{preset.GetName()}";
-            cell.author = $"{preset.settings.Name}, {preset.songs.Count} songs";
+            cell.author = $"{preset.settings.Name}";
 
             cell.reuseIdentifier = "PresetCell";
 

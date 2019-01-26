@@ -265,37 +265,41 @@ namespace BeatSaberMultiplayer
                 {
                     if (ModelSaberAPI.cachedAvatars.ContainsKey(playerInfo.avatarHash))
                     {
-                        if (ModelSaberAPI.cachedAvatars[playerInfo.avatarHash].IsLoaded)
+                        CustomAvatar.CustomAvatar cachedAvatar = ModelSaberAPI.cachedAvatars[playerInfo.avatarHash];
+                        if (cachedAvatar != null)
                         {
-                            if (avatar != null)
+                            if (cachedAvatar.IsLoaded)
                             {
-                                Destroy(avatar.GameObject);
+                                if (avatar != null)
+                                {
+                                    Destroy(avatar.GameObject);
+                                }
+
+                                avatar = AvatarSpawner.SpawnAvatar(cachedAvatar, this);
+                                exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
+                                if (exclusionScript != null)
+                                    exclusionScript.SetVisible();
+
+                                currentAvatarHash = playerInfo.avatarHash;
                             }
-
-                            avatar = AvatarSpawner.SpawnAvatar(ModelSaberAPI.cachedAvatars[playerInfo.avatarHash], this);
-                            exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
-                            if (exclusionScript != null)
-                                exclusionScript.SetVisible();
-
-                            currentAvatarHash = playerInfo.avatarHash;
-                        }
-                        else if(!pendingAvatars.Contains(ModelSaberAPI.cachedAvatars[playerInfo.avatarHash]))
-                        {
-                            pendingAvatars.Add(ModelSaberAPI.cachedAvatars[playerInfo.avatarHash]);
-                            ModelSaberAPI.cachedAvatars[playerInfo.avatarHash].Load((CustomAvatar.CustomAvatar loadedAvatar, AvatarLoadResult result) =>
-                           {
-                               if (result == AvatarLoadResult.Completed)
+                            else if (!pendingAvatars.Contains(cachedAvatar))
+                            {
+                                pendingAvatars.Add(cachedAvatar);
+                                cachedAvatar.Load((CustomAvatar.CustomAvatar loadedAvatar, AvatarLoadResult result) =>
                                {
-                                   pendingAvatars.Remove(ModelSaberAPI.cachedAvatars[playerInfo.avatarHash]);
-                                   AvatarLoaded?.Invoke(ModelSaberAPI.cachedAvatars.First(x => x.Value == loadedAvatar).Key);
-                               }
-                           });
-                            AvatarLoaded += AvatarController_AvatarLoaded;
-                        }
-                        else
-                        {
-                            AvatarLoaded -= AvatarController_AvatarLoaded;
-                            AvatarLoaded += AvatarController_AvatarLoaded;
+                                   if (result == AvatarLoadResult.Completed)
+                                   {
+                                       pendingAvatars.Remove(ModelSaberAPI.cachedAvatars[playerInfo.avatarHash]);
+                                       AvatarLoaded?.Invoke(ModelSaberAPI.cachedAvatars.First(x => x.Value == loadedAvatar).Key);
+                                   }
+                               });
+                                AvatarLoaded += AvatarController_AvatarLoaded;
+                            }
+                            else
+                            {
+                                AvatarLoaded -= AvatarController_AvatarLoaded;
+                                AvatarLoaded += AvatarController_AvatarLoaded;
+                            }
                         }
                     }
                     else

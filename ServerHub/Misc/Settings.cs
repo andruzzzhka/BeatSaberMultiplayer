@@ -23,6 +23,7 @@ namespace ServerHub.Misc {
             private bool _showTickrateInTitle;
             private bool _allowEventMessages;
             private bool _showTickEventExceptions;
+            private bool _sendCrashReports;
 
             private Action MarkDirty { get; }
 
@@ -183,6 +184,20 @@ namespace ServerHub.Misc {
                 }
             }
 
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool SendCrashReports
+            {
+                get => _showTickEventExceptions;
+                set
+                {
+                    _showTickEventExceptions = value;
+                    MarkDirty();
+                }
+            }
+
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
@@ -196,6 +211,7 @@ namespace ServerHub.Misc {
                 _showTickrateInTitle = true;
                 _allowEventMessages = true;
                 _showTickEventExceptions = false;
+                _sendCrashReports = true;
             }
         }
 
@@ -409,20 +425,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
-            [JsonProperty]
-            public List<string> SongIDs
-            {
-                get => _songIDs;
-                set
-                {
-                    _songIDs = value;
-                    MarkDirty();
-                }
-            }
-
             public TournamentModeSettings(Action markDirty)
             {
                 MarkDirty = markDirty;
@@ -430,7 +432,6 @@ namespace ServerHub.Misc {
                 _roomNameTemplate = "Tournament Room {0}";
                 _rooms = 4;
                 _password = "";
-                _songIDs = new List<string>();
             }
         }
 

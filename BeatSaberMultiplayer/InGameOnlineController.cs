@@ -24,12 +24,13 @@ namespace BeatSaberMultiplayer
 {
     public class InGameOnlineController : MonoBehaviour
     {
-
         public static Quaternion oculusTouchRotOffset = Quaternion.Euler(-40f, 0f, 0f);
         public static Vector3 oculusTouchPosOffset = new Vector3(0f, 0f, 0.055f);
         public static Quaternion openVrRotOffset = Quaternion.Euler(-4.3f, 0f, 0f);
         public static Vector3 openVrPosOffset = new Vector3(0f, -0.008f, 0f);
         public static InGameOnlineController Instance;
+
+        public bool needToSendUpdates;
 
         private StandardLevelGameplayManager _gameManager;
         private ScoreController _scoreController;
@@ -45,8 +46,8 @@ namespace BeatSaberMultiplayer
         private float _messageDisplayTime;
 
         private string _currentScene;
-
         private bool loaded;
+        private int sendRateCounter;
 
         public static void OnLoad(Scene to)
         {
@@ -90,6 +91,7 @@ namespace BeatSaberMultiplayer
                         if (Client.Instance != null && Client.Instance.Connected)
                         {
                             StartCoroutine(WaitForControllers());
+                            needToSendUpdates = true;
                         }
                     }
                     else if (_currentScene == "Menu")
@@ -106,6 +108,7 @@ namespace BeatSaberMultiplayer
                             {
                                 PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
                             }
+                            needToSendUpdates = true;
                         }
                     }
                 }
@@ -152,7 +155,7 @@ namespace BeatSaberMultiplayer
 
                         int localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
 
-                        if (((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom()) && ! Client.Instance.InRadioMode)
+                        if (((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom()) && !Client.Instance.InRadioMode)
                         {
                             try
                             {
@@ -193,7 +196,7 @@ namespace BeatSaberMultiplayer
                             }
                         }
 
-                        if (_currentScene == "GameCore" && loaded && !Client.Instance.InRadioMode)
+                        if (_currentScene == "GameCore" && loaded)
                         {
                             if (_scoreDisplays.Count < 5)
                             {
@@ -250,50 +253,6 @@ namespace BeatSaberMultiplayer
 
                             }
                         }
-
-                        Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
-                        if (Client.Instance.playerInfo.avatarHash == null)
-                        {
-                            Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-                        }
-
-                        Client.Instance.playerInfo.headPos = GetXRNodeWorldPosRot(XRNode.Head).Position;
-                        Client.Instance.playerInfo.headRot = GetXRNodeWorldPosRot(XRNode.Head).Rotation;
-                        Client.Instance.playerInfo.leftHandPos = GetXRNodeWorldPosRot(XRNode.LeftHand).Position;
-                        Client.Instance.playerInfo.leftHandRot = GetXRNodeWorldPosRot(XRNode.LeftHand).Rotation;
-
-                        Client.Instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
-                        Client.Instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
-
-                        if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
-                        {
-                            Client.Instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
-                            Client.Instance.playerInfo.leftHandPos += oculusTouchPosOffset;
-                        }
-                        else if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
-                        {
-                            Client.Instance.playerInfo.leftHandRot *= openVrRotOffset;
-                            Client.Instance.playerInfo.leftHandPos += openVrPosOffset;
-                        }
-
-                        if (_currentScene == "GameCore" && loaded)
-                        {
-                            Client.Instance.playerInfo.playerProgress = audioTimeSync.songTime;
-                        }
-                        else
-                        {
-                            Client.Instance.playerInfo.playerProgress = 0;
-                        }
-
-                        if (Config.Instance.SpectatorMode)
-                        {
-                            Client.Instance.playerInfo.playerScore = 0;
-                            Client.Instance.playerInfo.playerEnergy = 0f;
-                            Client.Instance.playerInfo.playerCutBlocks = 0;
-                            Client.Instance.playerInfo.playerComboBlocks = 0;
-                        }
-
-                        Client.Instance.SendPlayerInfo();
                     }; break;
                 case CommandType.SetGameState:
                     {
@@ -326,6 +285,89 @@ namespace BeatSaberMultiplayer
                     _messageDisplayText.text = "";
                 }
             }
+
+            if (needToSendUpdates)
+            {
+                if (Client.Instance.Tickrate > 67.5f * (1f / 90 / Time.deltaTime))
+                {
+                    sendRateCounter = 0;
+                    UpdatePlayerInfo();
+#if DEBUG
+                    Misc.Logger.Info($"Full send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
+#endif
+                }
+                else if (Client.Instance.Tickrate > 37.5f * (1f / 90 / Time.deltaTime))
+                {
+                    sendRateCounter++;
+                    if (sendRateCounter >= 1)
+                    {
+                        sendRateCounter = 0;
+                        UpdatePlayerInfo();
+#if DEBUG
+                        Misc.Logger.Info($"Half send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
+#endif
+                    }
+                }
+                else
+                {
+                    sendRateCounter++;
+                    if (sendRateCounter >= 2)
+                    {
+                        sendRateCounter = 0;
+                        UpdatePlayerInfo();
+#if DEBUG
+                        Misc.Logger.Info($"One third send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
+#endif
+                    }
+                }
+            }
+        }
+
+        public void UpdatePlayerInfo()
+        {
+            Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+            if (Client.Instance.playerInfo.avatarHash == null)
+            {
+                Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+            }
+
+            Client.Instance.playerInfo.headPos = GetXRNodeWorldPosRot(XRNode.Head).Position;
+            Client.Instance.playerInfo.headRot = GetXRNodeWorldPosRot(XRNode.Head).Rotation;
+            Client.Instance.playerInfo.leftHandPos = GetXRNodeWorldPosRot(XRNode.LeftHand).Position;
+            Client.Instance.playerInfo.leftHandRot = GetXRNodeWorldPosRot(XRNode.LeftHand).Rotation;
+
+            Client.Instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
+            Client.Instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
+
+            if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
+            {
+                Client.Instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
+                Client.Instance.playerInfo.leftHandPos += oculusTouchPosOffset;
+            }
+            else if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
+            {
+                Client.Instance.playerInfo.leftHandRot *= openVrRotOffset;
+                Client.Instance.playerInfo.leftHandPos += openVrPosOffset;
+            }
+
+            if (_currentScene == "GameCore" && loaded)
+            {
+                Client.Instance.playerInfo.playerProgress = audioTimeSync.songTime;
+            }
+            else
+            {
+                Client.Instance.playerInfo.playerProgress = 0;
+            }
+
+            if (Config.Instance.SpectatorMode)
+            {
+                Client.Instance.playerInfo.playerScore = 0;
+                Client.Instance.playerInfo.playerEnergy = 0f;
+                Client.Instance.playerInfo.playerCutBlocks = 0;
+                Client.Instance.playerInfo.playerComboBlocks = 0;
+            }
+
+            Client.Instance.SendPlayerInfo();
         }
 
         private bool ShowAvatarsInGame()

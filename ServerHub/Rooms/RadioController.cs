@@ -369,17 +369,17 @@ namespace ServerHub.Rooms
 
         public static void BroadcastPacket(NetOutgoingMessage msg, NetDeliveryMethod deliveryMethod)
         {
-            for (int i = 0; i < radioClients.Count; i++)
+            if (radioClients.Count == 0)
+                return;
+
+            try
             {
-                try
-                {
-                    radioClients[i].playerConnection.SendMessage(msg, deliveryMethod, (deliveryMethod == NetDeliveryMethod.UnreliableSequenced ? 1 : 0));
-                    Program.networkBytesOutNow += msg.LengthBytes;
-                }
-                catch (Exception e)
-                {
-                    Logger.Instance.Warning($"Unable to send packet to {radioClients[i].playerInfo.playerName}! Exception: {e}");
-                }
+                HubListener.ListenerServer.SendMessage(msg, radioClients.Select(x => x.playerConnection).ToList(), deliveryMethod, (deliveryMethod == NetDeliveryMethod.UnreliableSequenced ? 1 : 0));
+                Program.networkBytesOutNow += msg.LengthBytes * radioClients.Count;
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.Warning($"Unable to send packet to players! Exception: {e}");
             }
         }
     }

@@ -2,6 +2,7 @@
 
 using ServerHub.Misc;
 using System.Collections.Generic;
+using System.Net;
 
 namespace System.Linq {
     public static class Extensions {

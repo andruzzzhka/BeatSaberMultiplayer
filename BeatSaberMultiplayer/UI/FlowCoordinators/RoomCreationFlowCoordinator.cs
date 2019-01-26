@@ -20,7 +20,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         RoomCreationServerHubsListViewController _serverHubsViewController;
         MainRoomCreationViewController _mainRoomCreationViewController;
-        LeftRoomCreationViewController _leftRoomCreationViewController;
         PresetsListViewController _presetsListViewController;
 
         LevelCollectionSO _levelCollection;
@@ -48,10 +47,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _mainRoomCreationViewController.LoadPresetPressed += LoadPresetPressed;
                 _mainRoomCreationViewController.keyboardDidFinishEvent += _mainRoomCreationViewController_keyboardDidFinishEvent;
                 _mainRoomCreationViewController.didFinishEvent += () => { DismissViewController(_mainRoomCreationViewController); SetLeftScreenViewController(null); };
-
-                _leftRoomCreationViewController = BeatSaberUI.CreateViewController<LeftRoomCreationViewController>();
-                _leftRoomCreationViewController.SetSongs(_levelCollection.GetLevelsWithBeatmapCharacteristic(_beatmapCharacteristics.First(x => x.characteristicName == "Standard")).ToList());
-
+                
                 _presetsListViewController = BeatSaberUI.CreateViewController<PresetsListViewController>();
                 _presetsListViewController.didFinishEvent += _presetsListViewController_didFinishEvent;
 
@@ -80,19 +76,17 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _selectedServerHub = serverHubClient;
             
             PresentViewController(_mainRoomCreationViewController);
-            SetLeftScreenViewController(_leftRoomCreationViewController);
         }
 
         public bool CheckRequirements()
         {
-            return _leftRoomCreationViewController.CheckRequirements() && _mainRoomCreationViewController.CheckRequirements();
+            return _mainRoomCreationViewController.CheckRequirements();
         }
         
         private void SavePreset(RoomSettings settings, string name)
         {
             RoomSettings presetSettings = new RoomSettings();
             presetSettings = settings;
-            presetSettings.AvailableSongs = _leftRoomCreationViewController.selectedSongs.Select(x => new SongInfo() { songName = x.songName + " " + x.songSubName, levelId = x.levelID.Substring(0, Math.Min(32, x.levelID.Length)), songDuration = x.audioClip.length }).ToList();
             RoomPreset preset = new RoomPreset(presetSettings);
             preset.SavePreset("UserData/RoomPresets/"+name+".json");
             PresetsCollection.ReloadPresets();
@@ -109,14 +103,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         private void _presetsListViewController_didFinishEvent(RoomPreset selectedPreset)
         {
             DismissViewController(_presetsListViewController);
-            SetLeftScreenViewController(_leftRoomCreationViewController);
 
             if (selectedPreset != null)
             {
                 RoomSettings settings = selectedPreset.GetRoomSettings();
 
                 _mainRoomCreationViewController.ApplyRoomSettings(settings);
-                _leftRoomCreationViewController.SelectSongs(settings.AvailableSongs.Select(x => x.levelId).ToList());
             }
         }
 
@@ -126,13 +118,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 return;
 
             _roomSettings = settings;
-            _roomSettings.AvailableSongs = _leftRoomCreationViewController.selectedSongs.Select(x => new SongInfo() { songName = x.songName + " " + x.songSubName, levelId = x.levelID.Substring(0, Math.Min(32, x.levelID.Length)), songDuration = x.audioClip.length }).ToList();
 
             _mainRoomCreationViewController.CreateButtonInteractable(false);
             
             if(!Client.Instance.Connected || (Client.Instance.Connected && (Client.Instance.ip != _selectedServerHub.ip || Client.Instance.port != _selectedServerHub.port)))
             {
-                Client.Instance.Disconnect(true);
+                Client.Instance.Disconnect();
                 Client.Instance.Connect(_selectedServerHub.ip, _selectedServerHub.port);
                 Client.Instance.ConnectedToServerHub += ConnectedToServerHub;
             }

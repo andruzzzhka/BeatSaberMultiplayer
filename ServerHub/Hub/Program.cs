@@ -17,6 +17,7 @@ using System.Diagnostics;
 using System.Text;
 using Lidgren.Network;
 using System.Text.RegularExpressions;
+using Sentry;
 
 namespace ServerHub.Hub
 {
@@ -30,7 +31,7 @@ namespace ServerHub.Hub
 
         private static long networkBytesInLast;
         private static long networkBytesOutLast;
-
+        
         private static DateTime lastNetworkStatsReset;
 
         public static List<IPAddressRange> blacklistedIPs;
@@ -175,6 +176,18 @@ namespace ServerHub.Hub
 
             ShutdownEventCatcher.Shutdown += OnShutdown;
 
+            if (Settings.Instance.Server.SendCrashReports)
+            {
+                SentrySdk.Init(o =>
+                {
+                    o.Dsn = new Dsn("https://512bb19e36bb47f68978f2b97662b9d0@sentry.io/1380208");
+                    o.AttachStacktrace = true;
+#if DEBUG
+                    o.Debug = true;
+#endif
+                });
+            }
+
             if (!Directory.Exists("RoomPresets"))
             {
                 try
@@ -188,7 +201,7 @@ namespace ServerHub.Hub
             }
 
             Settings.Instance.Server.Tickrate = Misc.Math.Clamp(Settings.Instance.Server.Tickrate, 5, 150);
-            HighResolutionTimer.LoopTimer.Interval = 1000/Settings.Instance.Server.Tickrate;
+            HighResolutionTimer.LoopTimer.Interval = 1000 / Settings.Instance.Server.Tickrate;
             HighResolutionTimer.LoopTimer.Elapsed += ProgramLoop;
             HighResolutionTimer.LoopTimer.Start();
 
@@ -246,6 +259,7 @@ namespace ServerHub.Hub
 
                 Logger.Instance.Log(ProcessCommand(parsedArgs[0].ToLower(), parsedArgs.Skip(1).ToArray()));
             }
+
         }
 
         static void ProgramLoop(object sender, HighResolutionTimerElapsedEventArgs e)
@@ -262,8 +276,6 @@ namespace ServerHub.Hub
 
         private static void CreateTournamentRooms()
         {
-            List<SongInfo> songs = BeatSaver.ConvertSongIDs(Settings.Instance.TournamentMode.SongIDs);
-
             for (int i = 0; i < Settings.Instance.TournamentMode.Rooms; i++)
             {
 
@@ -274,8 +286,7 @@ namespace ServerHub.Hub
                     Password = Settings.Instance.TournamentMode.Password,
                     NoFail = true,
                     MaxPlayers = 0,
-                    SelectionType = SongSelectionType.Manual,
-                    AvailableSongs = songs,
+                    SelectionType = SongSelectionType.Manual
                 };
 
                 uint id = RoomsController.CreateRoom(settings);
@@ -286,12 +297,10 @@ namespace ServerHub.Hub
 
         public static string ProcessCommand(string comName, string[] comArgs)
         {
-#if DEBUG
             if(comName == "crash")
             {
                 throw new Exception("Debug Exception");
             }
-#endif
 
             try
             {
@@ -664,9 +673,7 @@ namespace ServerHub.Hub
                                 string json = File.ReadAllText(path);
 
                                 RoomPreset preset = JsonConvert.DeserializeObject<RoomPreset>(json);
-
-                                preset.Update();
-
+                                
                                 uint roomId = RoomsController.CreateRoom(preset.GetRoomSettings());
 
                                 return "Created room with ID " + roomId;
@@ -1278,6 +1285,17 @@ namespace ServerHub.Hub
 
                     UpdateLists();
 
+                    if (!SentrySdk.IsEnabled && Settings.Instance.Server.SendCrashReports)
+                        SentrySdk.Init(o => 
+                        {
+                            o.Dsn = new Dsn("https://512bb19e36bb47f68978f2b97662b9d0@sentry.io/1380208");
+                            o.AttachStacktrace = true;
+#if DEBUG
+                            o.Debug = true;
+#endif
+                        });
+
+
                     return "";
                 }
             });
@@ -1300,7 +1318,7 @@ namespace ServerHub.Hub
                 name = "testroom",
                 help = "",
                 function = (comArgs) => {
-                    uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "test", NoFail = true, MaxPlayers = 4, SelectionType = Data.SongSelectionType.Manual, AvailableSongs = new System.Collections.Generic.List<Data.SongInfo>() { new Data.SongInfo() { levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "451ffd065cf0e6adc01b2c3eda375794".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "97b35d13bac139c089a0c9d9306c9d76".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a0d040d1a4fe833d5f9838d35777d302".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "61e3b11c1a4cd9185db46b1f7bb7ea54".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e2d35a81fc0c54c326b09892c8d5c038".ToUpper(), songName = "" } } }, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
+                    uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "test", NoFail = true, MaxPlayers = 4, SelectionType = SongSelectionType.Manual}, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
                     return "Created room with ID " + id;
                 }
             });
@@ -1310,7 +1328,7 @@ namespace ServerHub.Hub
                 name = "testroomwopass",
                 help = "",
                 function = (comArgs) => {
-                    uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = false, Password = "test", NoFail = false, MaxPlayers = 4, SelectionType = Data.SongSelectionType.Manual, AvailableSongs = new System.Collections.Generic.List<Data.SongInfo>() { new Data.SongInfo() { levelId = "07da4b5bc7795b08b87888b035760db7".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "451ffd065cf0e6adc01b2c3eda375794".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "97b35d13bac139c089a0c9d9306c9d76".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a0d040d1a4fe833d5f9838d35777d302".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "61e3b11c1a4cd9185db46b1f7bb7ea54".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e2d35a81fc0c54c326b09892c8d5c038".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "a8f8f95869b90a288a9ce4bdc260fa17".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "7dce2ba59bc69ec59e6ac455b98f3761".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "fbd77e71ce31329e5ebacde40c7401e0".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "7014f67926d216a6e2df026fa67017b0".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "51d0e56ecea0a98637c0323e7a3af7cf".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "9d1e4315971f6644ac94babdbd20e36a".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "9812c675def22f7405e0bf3422134756".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "1d46797ccb24acb86d0403828533df61".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "6ffccb03d75106c5911dd876dfd5f054".ToUpper(), songName = "" }, new Data.SongInfo() { levelId = "e3a97c826fab2ce5993dc2e71443b9aa".ToUpper(), songName = "" } } }, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
+                    uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = false, Password = "test", NoFail = false, MaxPlayers = 4, SelectionType = SongSelectionType.Manual}, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
                     return "Created room with ID " + id;
                 }
             });

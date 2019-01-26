@@ -51,6 +51,8 @@ namespace BeatSaberMultiplayer
                 Misc.Logger.Warning("Unable to load presets! Exception: "+e);
             }
             Sprites.ConvertSprites();
+
+            ScrappedData.Instance.DownloadScrappedData(null);
             
         }
 

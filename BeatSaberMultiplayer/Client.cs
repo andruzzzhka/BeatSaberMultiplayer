@@ -30,12 +30,9 @@ namespace BeatSaberMultiplayer
         public static event Action ClientJoinedRoom;
         public static event Action ClientLevelStarted;
         public static event Action ClientLeftRoom;
-        public static event Action ClientDestroyed;
         public static bool disableScoreSubmission;
-
-
+        
         public event Action ConnectedToServerHub;
-        public event Action<Exception> ServerHubException;
 
         public event Action<NetIncomingMessage> MessageReceived;
 
@@ -73,23 +70,16 @@ namespace BeatSaberMultiplayer
             DontDestroyOnLoad(this);
             GetUserInfo.UpdateUserInfo();
             playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
-            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { MaximumHandshakeAttempts = 2 };
+            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { MaximumHandshakeAttempts = 2, AutoFlushSendQueue = false };
             NetworkClient = new NetClient(Config);
             ClientCreated?.Invoke();
         }
 
-        public void Disconnect(bool dontDestroy = false)
+        public void Disconnect()
         {
             if (NetworkClient != null && NetworkClient.Status == NetPeerStatus.Running)
             {
                 NetworkClient.Shutdown("");
-            }
-
-            if (!dontDestroy)
-            {
-                instance = null;
-                ClientDestroyed?.Invoke();
-                Destroy(gameObject);
             }
             Connected = false;
         }
@@ -228,6 +218,14 @@ namespace BeatSaberMultiplayer
             }
         }
 
+        public void LateUpdate()
+        {
+            if(NetworkClient != null)
+            {
+                NetworkClient.FlushSendQueue();
+            }
+        }
+
         public void GetRooms()
         {
             if (Connected && NetworkClient != null)
@@ -340,13 +338,12 @@ namespace BeatSaberMultiplayer
             playerInfo.playerState = PlayerState.Lobby;
         }
 
-        public void RequestRoomInfo(bool requestSongList = true)
+        public void RequestRoomInfo()
         {
             if (Connected && NetworkClient != null)
             {
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.GetRoomInfo);
-                outMsg.Write((byte)(requestSongList ? 1 : 0));
 
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG

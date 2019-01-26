@@ -110,7 +110,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _editNameButton.onClick.RemoveAllListeners();
                 _editNameButton.onClick.AddListener(delegate ()
                 {
-                    _nameKeyboard._inputString = _roomName;
+                    _nameKeyboard.inputString = _roomName;
                     PluginUI.instance.roomCreationFlowCoordinator.PresentKeyboard(_nameKeyboard);
                 });
                 
@@ -125,7 +125,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _editPasswordButton.onClick.RemoveAllListeners();
                 _editPasswordButton.onClick.AddListener(delegate ()
                 {
-                    _passwordKeyboard._inputString = _roomPassword;
+                    _passwordKeyboard.inputString = _roomPassword;
                     PluginUI.instance.roomCreationFlowCoordinator.PresentKeyboard(_passwordKeyboard);
                 });
 
@@ -145,7 +145,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 (_savePresetButton.transform as RectTransform).anchoredPosition = new Vector2(-32f, -32.5f);
                 _savePresetButton.onClick.RemoveAllListeners();
                 _savePresetButton.onClick.AddListener(delegate () {
-                    _presetNameKeyboard._inputString = "NEW PRESET";
+                    _presetNameKeyboard.inputString = "NEW PRESET";
                     PluginUI.instance.roomCreationFlowCoordinator.PresentKeyboard(_presetNameKeyboard);
                 });
 

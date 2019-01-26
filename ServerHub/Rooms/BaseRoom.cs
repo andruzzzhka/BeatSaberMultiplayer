@@ -11,6 +11,7 @@ using System.Timers;
 using WebSocketSharp;
 using Newtonsoft.Json;
 using Lidgren.Network;
+using System.Threading.Tasks;
 
 namespace ServerHub.Rooms
 {
@@ -82,7 +83,6 @@ namespace ServerHub.Rooms
         public List<Client> roomClients = new List<Client>();
 
         private List<PlayerInfo> _readyPlayers = new List<PlayerInfo>();
-        private Dictionary<PlayerInfo, SongInfo> _votes = new Dictionary<PlayerInfo, SongInfo>();
 
         public RoomSettings roomSettings;
         public RoomState roomState;
@@ -95,10 +95,10 @@ namespace ServerHub.Rooms
 
         private DateTime _songStartTime;
         private DateTime _resultsStartTime;
-        private DateTime _votingStartTime;
 
         public const float resultsShowTime = 15f;
-        public const float votingTime = 30f;
+
+        private static Task<SongInfo> randomSongTask;
 
         public BaseRoom(uint id, RoomSettings settings, PlayerInfo host)
         {
@@ -109,16 +109,12 @@ namespace ServerHub.Rooms
 
         public virtual void StartRoom()
         {
-            HighResolutionTimer.LoopTimer.Elapsed += RoomLoop;
-            if (roomSettings.SelectionType == SongSelectionType.Voting)
-            {
-                _votingStartTime = DateTime.Now;
-            }
+            HighResolutionTimer.LoopTimer.Elapsed += RoomLoopAsync;
         }
 
         public virtual void StopRoom()
         {
-            HighResolutionTimer.LoopTimer.Elapsed -= RoomLoop;
+            HighResolutionTimer.LoopTimer.Elapsed -= RoomLoopAsync;
         }
 
         public virtual RoomInfo GetRoomInfo()
@@ -126,15 +122,8 @@ namespace ServerHub.Rooms
             return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, noFail = roomSettings.NoFail, roomHost = roomHost, roomState = roomState, songSelectionType = roomSettings.SelectionType, selectedSong = selectedSong, selectedDifficulty = selectedDifficulty };
         }
 
-        public void AddSongInfosToMessage(NetOutgoingMessage msg)
-        {
-            msg.Write(roomSettings.AvailableSongs.Count);
-            roomSettings.AvailableSongs.ForEach(x => x.AddToMessage(msg));
-        }
-
         public virtual void PlayerLeft(Client player)
         {
-            _votes.Remove(player.playerInfo);
             _readyPlayers.Remove(player.playerInfo);
             if(roomState == RoomState.Preparing)
                 UpdatePlayersReady();
@@ -152,8 +141,11 @@ namespace ServerHub.Rooms
             }
         }
 
-        public virtual void RoomLoop(object sender, HighResolutionTimerElapsedEventArgs e)
+        public virtual async void RoomLoopAsync(object sender, HighResolutionTimerElapsedEventArgs e)
         {
+            if (randomSongTask != null)
+                return;
+
             NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
             switch (roomState)
             {
@@ -188,11 +180,6 @@ namespace ServerHub.Rooms
 
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
                             BroadcastWebSocket(CommandType.SetSelectedSong, null);
-
-                            if(roomSettings.SelectionType == SongSelectionType.Voting)
-                            {
-                                _votingStartTime = DateTime.Now;
-                            }
                         }
                     }
                     break;
@@ -204,7 +191,10 @@ namespace ServerHub.Rooms
                                 {
                                     roomState = RoomState.Preparing;
                                     Random rand = new Random();
-                                    selectedSong = roomSettings.AvailableSongs[rand.Next(roomSettings.AvailableSongs.Count)];
+
+                                    randomSongTask = BeatSaver.GetRandomSong();
+                                    selectedSong = await randomSongTask;
+                                    randomSongTask = null;
 
                                     outMsg.Write((byte)CommandType.SetSelectedSong);
                                     selectedSong.AddToMessage(outMsg);
@@ -213,31 +203,6 @@ namespace ServerHub.Rooms
                                     
                                     BroadcastWebSocket(CommandType.SetSelectedSong, selectedSong);
                                     ReadyStateChanged(roomHost, true);
-                                }
-                                break;
-                            case SongSelectionType.Voting:
-                                {
-                                    if (DateTime.Now.Subtract(_votingStartTime).TotalSeconds >= votingTime)
-                                    {
-                                        roomState = RoomState.Preparing;
-                                        if (_votes.Count > 0)
-                                        {
-                                            selectedSong = _votes.GroupBy(x => x.Value).OrderByDescending(y => y.Count()).First().Key;
-                                        }
-                                        else
-                                        {
-                                            Random rand = new Random();
-                                            selectedSong = roomSettings.AvailableSongs[rand.Next(roomSettings.AvailableSongs.Count)];
-                                        }
-
-                                        outMsg.Write((byte)CommandType.SetSelectedSong);
-                                        selectedSong.AddToMessage(outMsg);
-
-                                        BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
-                                        
-                                        ReadyStateChanged(roomHost, true);
-                                        _votes.Clear();
-                                    }
                                 }
                                 break;
                         }
@@ -256,16 +221,8 @@ namespace ServerHub.Rooms
             {
                 case RoomState.SelectingSong:
                     {
-                        if (roomSettings.SelectionType == SongSelectionType.Voting)
-                        {
-                            outMsg.Write((float)DateTime.Now.Subtract(_votingStartTime).TotalSeconds);
-                            outMsg.Write(votingTime);
-                        }
-                        else
-                        {
-                            outMsg.Write((float)0);
-                            outMsg.Write((float)0);
-                        }
+                        outMsg.Write((float)0);
+                        outMsg.Write((float)0);
                     }
                     break;
                 case RoomState.Preparing:
@@ -290,7 +247,16 @@ namespace ServerHub.Rooms
 
             outMsg.Write(roomClients.Count);
 
-            roomClients.ForEach(x => x.playerInfo.AddToMessage(outMsg));
+            for(int i = 0; i < roomClients.Count; i++)
+            {
+                if(i < roomClients.Count)
+                {
+                    if (roomClients[i] != null)
+                    {
+                        roomClients[i].playerInfo.AddToMessage(outMsg);
+                    }
+                } 
+            }
 
             BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced);
 
@@ -300,17 +266,17 @@ namespace ServerHub.Rooms
 
         public virtual void BroadcastPacket(NetOutgoingMessage msg, NetDeliveryMethod deliveryMethod)
         {
-            for (int i = 0; i < roomClients.Count; i++)
+            if (roomClients.Count == 0)
+                return;
+
+            try
             {
-                try
-                {
-                    roomClients[i].playerConnection.SendMessage(msg, deliveryMethod, (deliveryMethod == NetDeliveryMethod.UnreliableSequenced ? 1 : 0));
-                    Program.networkBytesOutNow += msg.LengthBytes;
-                }
-                catch (Exception e)
-                {
-                    Logger.Instance.Warning($"Unable to send packet to {roomClients[i].playerInfo.playerName}! Exception: {e}");
-                }
+                HubListener.ListenerServer.SendMessage(msg, roomClients.Select(x => x.playerConnection).ToList(), deliveryMethod, (deliveryMethod == NetDeliveryMethod.UnreliableSequenced ? 1 : 0));
+                Program.networkBytesOutNow += msg.LengthBytes * roomClients.Count;
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.Warning($"Unable to send packet to players! Exception: {e}");
             }
         }
 
@@ -380,7 +346,7 @@ namespace ServerHub.Rooms
             service?.Sessions.BroadcastAsync(serialized, null);
         }
 
-        public virtual void SetSelectedSong(PlayerInfo sender, SongInfo song)
+        public virtual async void SetSelectedSongAsync(PlayerInfo sender, SongInfo song)
         {
             if (sender.Equals(roomHost))
             {
@@ -392,7 +358,6 @@ namespace ServerHub.Rooms
                 {
                     switch (roomSettings.SelectionType)
                     {
-                        case SongSelectionType.Voting:
                         case SongSelectionType.Manual:
                             {
 
@@ -403,17 +368,16 @@ namespace ServerHub.Rooms
 
                                 BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
                                 BroadcastWebSocket(CommandType.SetSelectedSong, null);
-                                if (roomSettings.SelectionType == SongSelectionType.Voting)
-                                {
-                                    _votingStartTime = DateTime.Now;
-                                }
                             }
                             break;
                         case SongSelectionType.Random:
                             {
                                 roomState = RoomState.Preparing;
                                 Random rand = new Random();
-                                selectedSong = roomSettings.AvailableSongs[rand.Next(0, roomSettings.AvailableSongs.Count - 1)];
+
+                                randomSongTask = BeatSaver.GetRandomSong();
+                                selectedSong = await randomSongTask;
+                                randomSongTask = null;
 
                                 outMsg.Write((byte)CommandType.SetSelectedSong);
                                 selectedSong.AddToMessage(outMsg);
@@ -427,35 +391,19 @@ namespace ServerHub.Rooms
                 }
                 else
                 {
-                    if (roomSettings.SelectionType == SongSelectionType.Voting)
-                    {
-                        _votes.Remove(sender);
-                        _votes.Add(sender, song);
-                    }
-                    else
-                    {
-                        roomState = RoomState.Preparing;
+                    roomState = RoomState.Preparing;
 
-                        outMsg.Write((byte)CommandType.SetSelectedSong);
-                        selectedSong.AddToMessage(outMsg);
+                    outMsg.Write((byte)CommandType.SetSelectedSong);
+                    selectedSong.AddToMessage(outMsg);
 
-                        BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
-                        BroadcastWebSocket(CommandType.SetSelectedSong, selectedSong);
-                        ReadyStateChanged(roomHost, true);
-                    }
+                    BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                    BroadcastWebSocket(CommandType.SetSelectedSong, selectedSong);
+                    ReadyStateChanged(roomHost, true);
                 }
             }
             else
             {
-                if (roomSettings.SelectionType == SongSelectionType.Voting)
-                {
-                    _votes.Remove(sender);
-                    _votes.Add(sender, song);
-                }
-                else
-                {
-                    Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to select song, but he is not the host");
-                }
+                Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to select song, but he is not the host");
             }
         }
 
