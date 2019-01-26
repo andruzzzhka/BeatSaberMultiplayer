@@ -24,7 +24,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         List<ChannelInfo> _channelInfos = new List<ChannelInfo>();
         int currentChannel = 0;
 
-        List<ChannelClient> _channelClients = new List<ChannelClient>();
+        List<RadioClient> _channelClients = new List<RadioClient>();
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -51,7 +51,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 channelSelectionViewController.joinPressedEvent += (channel) => 
                 {
                     PresentFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false, false);
-                    PluginUI.instance.radioFlowCoordinator.JoinChannel(channel.ip, channel.port);
+                    PluginUI.instance.radioFlowCoordinator.JoinChannel(channel.ip, channel.port, channel.channelId);
                     PluginUI.instance.radioFlowCoordinator.didFinishEvent -= () => { DismissFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false); };
                     PluginUI.instance.radioFlowCoordinator.didFinishEvent += () => { DismissFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false); };
                 };
@@ -116,10 +116,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 });
                 _channelClients.Clear();
 
-                for (int i = 0; i < channelInfos.Count; i++)
+                var groupedChannels = channelInfos.GroupBy(x => new { x.ip, x.port }).ToList();
+
+                for (int i = 0; i < groupedChannels.Count; i++)
                 {
-                    ChannelClient client = new GameObject("ChannelClient").AddComponent<ChannelClient>();
-                    client.channelInfo = channelInfos[i];
+                    RadioClient client = new GameObject("RadioClient").AddComponent<RadioClient>();
+
+                    client.channelInfos = groupedChannels[i].ToList();
                     client.ReceivedResponse += ReceivedResponse;
                     client.ChannelException += ChannelException;
                     _channelClients.Add(client);
@@ -131,12 +134,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         }
 
-        private void ChannelException(ChannelClient sender, Exception ex)
+        private void ChannelException(RadioClient sender, Exception ex)
         {
             Misc.Logger.Warning("Channel exception: "+ex);
         }
 
-        private void ReceivedResponse(ChannelClient sender, ChannelInfo info)
+        private void ReceivedResponse(RadioClient sender, ChannelInfo info)
         {
             channelSelectionViewController.SetLoadingState(false);
             _channelInfos.Add(info);
@@ -147,20 +150,20 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         }
     }
 
-    class ChannelClient : MonoBehaviour
+    class RadioClient : MonoBehaviour
     {
         private NetClient NetworkClient;
 
-        public ChannelInfo channelInfo;
+        public List<ChannelInfo> channelInfos;
 
-        public bool channelAvailable;
+        private int currentChannel = 0;
 
-        public event Action<ChannelClient, ChannelInfo> ReceivedResponse;
-        public event Action<ChannelClient, Exception> ChannelException;
+        public event Action<RadioClient, ChannelInfo> ReceivedResponse;
+        public event Action<RadioClient, Exception> ChannelException;
 
         public void Awake()
         {
-            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { ConnectionTimeout = 5 };
+            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { ConnectionTimeout = 5, MaximumHandshakeAttempts = 2 };
             NetworkClient = new NetClient(Config);
         }
 
@@ -175,9 +178,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 outMsg.Write(Plugin.pluginVersion);
                 new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).AddToMessage(outMsg);
 
-                Misc.Logger.Info($"Connecting to {channelInfo.ip}:{channelInfo.port}...");
+                Misc.Logger.Info($"Connecting to {channelInfos[0].ip}:{channelInfos[0].port}...");
 
-                NetworkClient.Connect(channelInfo.ip, channelInfo.port, outMsg);
+                NetworkClient.Connect(channelInfos[0].ip, channelInfos[0].port, outMsg);
             }
             catch (Exception e)
             {
@@ -203,6 +206,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 {
                                     NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                                     outMsg.Write((byte)CommandType.GetChannelInfo);
+                                    outMsg.Write(channelInfos[currentChannel].channelId);
 
                                     NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                 }
@@ -218,13 +222,30 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
                                 if ((CommandType)msg.ReadByte() == CommandType.GetChannelInfo)
                                 {
-                                    channelAvailable = true;
-                                    NetworkClient.Shutdown("");
                                     ChannelInfo received = new ChannelInfo(msg);
-                                    received.ip = channelInfo.ip;
-                                    received.port = channelInfo.port;
+                                    if(received.channelId == -1)
+                                    {
+                                        ChannelException?.Invoke(this, new Exception($"Channel with ID {channelInfos[currentChannel].channelId} not found!"));
+                                        Abort();
+                                        return;
+                                    }
+                                    received.ip = channelInfos[currentChannel].ip;
+                                    received.port = channelInfos[currentChannel].port;
                                     ReceivedResponse?.Invoke(this, received);
-                                    Abort();
+                                    if(channelInfos.Count - 1 > currentChannel)
+                                    {
+                                        currentChannel++;
+                                        
+                                        NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                                        outMsg.Write((byte)CommandType.GetChannelInfo);
+                                        outMsg.Write(channelInfos[currentChannel].channelId);
+
+                                        NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                    }
+                                    else
+                                    {
+                                        Abort();
+                                    }
                                 }
                             };
                             break;

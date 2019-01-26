@@ -70,9 +70,9 @@ namespace ServerHub.Hub
             ListenerServer = new NetServer(Config);
             ListenerServer.Start();
 
-            if (Settings.Instance.Radio.EnableRadioChannel)
+            if (Settings.Instance.Radio.EnableRadio)
             {
-                RadioController.StartRadioAsync();
+                RadioController.StartRadio();
             }
 
             if (Settings.Instance.Server.TryUPnP)
@@ -108,7 +108,7 @@ namespace ServerHub.Hub
                 Console.Title = _currentTitle;
             }
 
-            List<Client> allClients = hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioClients).ToList();
+            List<Client> allClients = hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioChannels.SelectMany(x => x.radioClients)).ToList();
 
             NetIncomingMessage msg;
             while ((msg = ListenerServer.ReadMessage()) != null)
@@ -378,11 +378,21 @@ namespace ServerHub.Hub
                                         break;
                                     case CommandType.GetChannelInfo:
                                         {
-                                            if (Settings.Instance.Radio.EnableRadioChannel)
+                                            if (Settings.Instance.Radio.EnableRadio && RadioController.radioStarted)
                                             {
+                                                int channelId = msg.ReadInt32();
+
                                                 NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
                                                 outMsg.Write((byte)CommandType.GetChannelInfo);
-                                                RadioController.channelInfo.AddToMessage(outMsg);
+
+                                                if (RadioController.radioChannels.Count > channelId)
+                                                {
+                                                    RadioController.radioChannels[channelId].channelInfo.AddToMessage(outMsg);
+                                                }
+                                                else
+                                                {
+                                                    new ChannelInfo() { channelId = -1, currentSong = new SongInfo(){ levelId = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" } }.AddToMessage(outMsg);
+                                                }
 
                                                 msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                                 Program.networkBytesOutNow += outMsg.LengthBytes;
@@ -391,9 +401,12 @@ namespace ServerHub.Hub
                                         break;
                                     case CommandType.JoinChannel:
                                         {
+                                            int channelId = msg.ReadInt32();
+                                            
                                             NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
                                             outMsg.Write((byte)CommandType.JoinChannel);
-                                            if (RadioController.ClientJoinedChannel(client))
+
+                                            if (RadioController.ClientJoinedChannel(client, channelId))
                                             {
                                                 outMsg.Write((byte)0);
                                                 hubClients.Remove(client);
@@ -409,11 +422,14 @@ namespace ServerHub.Hub
                                         break;
                                     case CommandType.GetSongDuration:
                                         {
-                                            if (RadioController.radioClients.Contains(client) && RadioController.requestingSongDuration)
+                                            foreach (RadioChannel channel in RadioController.radioChannels)
                                             {
-                                                SongInfo info = new SongInfo(msg);
-                                                if(info.levelId == RadioController.channelInfo.currentSong.levelId)
-                                                    RadioController.songDurationResponses.TryAdd(client, info.songDuration);
+                                                if (channel.radioClients.Contains(client) && channel.requestingSongDuration)
+                                                {
+                                                    SongInfo info = new SongInfo(msg);
+                                                    if (info.levelId == channel.channelInfo.currentSong.levelId)
+                                                        channel.songDurationResponses.TryAdd(client, info.songDuration);
+                                                }
                                             }
                                         }
                                         break;
@@ -490,7 +506,7 @@ namespace ServerHub.Hub
         {
             try
             {
-                foreach(Client client in hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioClients))
+                foreach(Client client in hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioChannels.SelectMany(x => x.radioClients)))
                 {
                     if(client.playerConnection.Status == NetConnectionStatus.Disconnected)
                     {

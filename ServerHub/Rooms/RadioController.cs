@@ -16,63 +16,20 @@ namespace ServerHub.Rooms
     {
         public static bool radioStarted;
 
-        public static List<Client> radioClients = new List<Client>();
+        public static List<RadioChannel> radioChannels = new List<RadioChannel>();
 
-        public static ChannelInfo channelInfo;
-
-        public static Queue<SongInfo> radioQueue = new Queue<SongInfo>();
-
-        public static Dictionary<Client, float> songDurationResponses = new Dictionary<Client, float>();
-        public static bool requestingSongDuration;
-
-        private static DateTime _songStartTime;
-        private static DateTime _resultsStartTime;
-        private static DateTime _nextSongScreenStartTime;
-
-        private static Task<SongInfo> randomSongTask;
-
-        public const float resultsShowTime = 15f;
-        public const float nextSongShowTime = 90f;
-
-        public static async Task StartRadioAsync()
+        public static void StartRadio()
         {
             if (!radioStarted)
             {
-                channelInfo = new ChannelInfo() { name = Settings.Instance.Radio.ChannelName, currentSong = null, preferredDifficulty = Settings.Instance.Radio.PreferredDifficulty, playerCount = 0, iconUrl = Settings.Instance.Radio.ChannelIconUrl, state = ChannelState.NextSong, ip = "", port = 0 };
-
-                if (File.Exists("RadioQueue.json"))
+                radioChannels.Clear();
+                for(int i = 0; i < Settings.Instance.Radio.RadioChannels.Count; i++)
                 {
-                    try
-                    {
-                        Queue<SongInfo> queue = JsonConvert.DeserializeObject<Queue<SongInfo>>(File.ReadAllText("RadioQueue.json"));
-                        if (queue != null)
-                            radioQueue = queue;
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Instance.Warning("Unable to load radio queue! Exception: " + e);
-                    }
+                    RadioChannel channel = new RadioChannel();
+                    radioChannels.Add(channel);
+
+                    channel.StartChannel(i);
                 }
-
-                if (radioQueue.Count > 0)
-                {
-                    channelInfo.currentSong = radioQueue.Dequeue();
-                    try
-                    {
-                        File.WriteAllText("RadioQueue.json", JsonConvert.SerializeObject(radioQueue, Formatting.Indented));
-                    }
-                    catch
-                    {
-
-                    }
-                }
-                else
-                {
-                    channelInfo.currentSong = await BeatSaver.GetRandomSong();
-                }
-
-                HighResolutionTimer.LoopTimer.Elapsed += RadioLoop;
-
                 radioStarted = true;
             }
         }
@@ -81,47 +38,37 @@ namespace ServerHub.Rooms
         {
             if (radioStarted)
             {
-                HighResolutionTimer.LoopTimer.Elapsed -= RadioLoop;
-
-                for (int i = 0; i < radioClients.Count; i++)
+                foreach(RadioChannel channel in radioChannels)
                 {
-                    if (radioClients.Count > i && radioClients[i] != null)
-                    {
-                        NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
-                        outMsg.Write((byte)CommandType.Disconnect);
-                        outMsg.Write(reason);
-                        radioClients[i].playerConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
-                        Program.networkBytesOutNow += outMsg.LengthBytes;
-                    }
+                    channel.StopChannel(reason);
                 }
                 radioStarted = false;
-                File.WriteAllText("RadioQueue.json", JsonConvert.SerializeObject(radioQueue, Formatting.Indented));
             }
         }
 
-        public static async void AddSongToQueueByKey(string songKey)
+        public static async void AddSongToQueueByKey(string songKey, int channelId)
         {
             SongInfo info = await BeatSaver.InfoFromID(songKey);
             if (info != null)
             {
-                radioQueue.Enqueue(info);
+                radioChannels[channelId].radioQueue.Enqueue(info);
                 Logger.Instance.Log("Successfully added songs to the queue!");
-                File.WriteAllText("RadioQueue.json", JsonConvert.SerializeObject(radioQueue, Formatting.Indented));
+                File.WriteAllText($"RadioQueue{channelId}.json", JsonConvert.SerializeObject(radioChannels[channelId].radioQueue, Formatting.Indented));
             }
         }
 
-        public static async void AddSongToQueueByHash(string hash)
+        public static async void AddSongToQueueByHash(string hash, int channelId)
         {
             SongInfo info = await BeatSaver.InfoFromHash(hash);
             if (info != null)
             {
-                radioQueue.Enqueue(info);
+                radioChannels[channelId].radioQueue.Enqueue(info);
                 Logger.Instance.Log("Successfully added songs to the queue!");
-                File.WriteAllText("RadioQueue.json", JsonConvert.SerializeObject(radioQueue, Formatting.Indented));
+                File.WriteAllText($"RadioQueue{channelId}.json", JsonConvert.SerializeObject(radioChannels[channelId].radioQueue, Formatting.Indented));
             }
         }
 
-        public static async void AddPlaylistToQueue(string path)
+        public static async void AddPlaylistToQueue(string path, int channelId)
         {
             bool remotePlaylist = path.ToLower().Contains("http://") || path.ToLower().Contains("https://");
             Playlist playlist = null;
@@ -172,7 +119,7 @@ namespace ServerHub.Rooms
                     {
                         if (song.levelId.Length >= 32)
                         {
-                            radioQueue.Enqueue(new SongInfo() { levelId = song.hash.ToUpper().Substring(0, 32), songName = song.songName, key = song.key });
+                            radioChannels[channelId].radioQueue.Enqueue(new SongInfo() { levelId = song.hash.ToUpper().Substring(0, 32), songName = song.songName, key = song.key });
                             continue;
                         }
                     }
@@ -181,7 +128,7 @@ namespace ServerHub.Rooms
                     {
                         if (song.levelId.Length >= 32)
                         {
-                            radioQueue.Enqueue(new SongInfo() { levelId = song.levelId.ToUpper().Substring(0, 32), songName = song.songName, key = song.key });
+                            radioChannels[channelId].radioQueue.Enqueue(new SongInfo() { levelId = song.levelId.ToUpper().Substring(0, 32), songName = song.songName, key = song.key });
                             continue;
                         }
                     }
@@ -190,12 +137,12 @@ namespace ServerHub.Rooms
                     {
                         SongInfo info = await BeatSaver.InfoFromID(song.key);
                         if(info != null)
-                            radioQueue.Enqueue(info);
+                            radioChannels[channelId].radioQueue.Enqueue(info);
                         continue;
                     }
                 }
                 Logger.Instance.Log("Successfully added all songs from playlist to the queue!");
-                File.WriteAllText("RadioQueue.json", JsonConvert.SerializeObject(radioQueue, Formatting.Indented));
+                File.WriteAllText($"RadioQueue{channelId}.json", JsonConvert.SerializeObject(radioChannels[channelId].radioQueue, Formatting.Indented));
             }
             catch (Exception e)
             {
@@ -204,182 +151,32 @@ namespace ServerHub.Rooms
             }
         }
 
-        public static bool ClientJoinedChannel(Client client)
+        public static bool ClientJoinedChannel(Client client, int channelId)
         {
-            if (Settings.Instance.Radio.EnableRadioChannel && radioStarted)
+            if (Settings.Instance.Radio.EnableRadio && radioStarted)
             {
-                radioClients.Add(client);
-                if (radioClients.Count == 1 && channelInfo.state == ChannelState.NextSong)
-                    _nextSongScreenStartTime = DateTime.Now;
-                return true;
+                if (radioChannels.Count > channelId)
+                {
+                    radioChannels[channelId].radioClients.Add(client);
+                    if (radioChannels[channelId].radioClients.Count == 1 && radioChannels[channelId].channelInfo.state == ChannelState.NextSong)
+                        radioChannels[channelId].nextSongScreenStartTime = DateTime.Now;
+                    return true;
+                }
+                else
+                    return false;
             }
             else
-            {
                 return false;
-            }
         }
 
         public static void ClientLeftChannel(Client client)
         {
-            if(radioClients.Contains(client))
-                radioClients.Remove(client);
-        }
-
-        public static async void RadioLoop(object sender, HighResolutionTimerElapsedEventArgs e)
-        {
-            if (randomSongTask != null)
-                return;
-
-            channelInfo.playerCount = radioClients.Count;
-            channelInfo.name = Settings.Instance.Radio.ChannelName;
-            channelInfo.iconUrl = Settings.Instance.Radio.ChannelIconUrl;
-            channelInfo.preferredDifficulty = Settings.Instance.Radio.PreferredDifficulty;
-
-            if (radioClients.Count == 0)
+            foreach(RadioChannel channel in radioChannels)
             {
-                channelInfo.state = ChannelState.NextSong;
-                return;
-            }
-
-            NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
-            switch (channelInfo.state)
-            {
-                case ChannelState.InGame:  //--> Results
-                    {
-                        if (DateTime.Now.Subtract(_songStartTime).TotalSeconds >= channelInfo.currentSong.songDuration)
-                        {
-                            channelInfo.state = ChannelState.Results;
-                            _resultsStartTime = DateTime.Now;
-
-                            outMsg.Write((byte)CommandType.GetChannelInfo);
-
-                            outMsg.Write((byte)0);
-                            channelInfo.AddToMessage(outMsg);
-
-                            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
-                            Logger.Instance.Log("Radio: Going to Results");
-
-                        }
-                    }
-                    break;
-                case ChannelState.Results: //--> NextSong
-                    {
-                        if (DateTime.Now.Subtract(_resultsStartTime).TotalSeconds >= resultsShowTime)
-                        {
-                            channelInfo.state = ChannelState.NextSong;
-
-                            if (radioQueue.Count > 0)
-                            {
-                                channelInfo.currentSong = radioQueue.Dequeue();
-                                try
-                                {
-                                    File.WriteAllText("RadioQueue.json", JsonConvert.SerializeObject(radioQueue, Formatting.Indented));
-                                }
-                                catch
-                                {
-
-                                }
-                            }
-                            else
-                            {
-                                randomSongTask = BeatSaver.GetRandomSong();
-                                channelInfo.currentSong = await randomSongTask;
-                                randomSongTask = null;
-                            }
-
-                            outMsg.Write((byte)CommandType.SetSelectedSong);
-                            channelInfo.currentSong.AddToMessage(outMsg);
-
-                            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
-                            _nextSongScreenStartTime = DateTime.Now;
-                            Logger.Instance.Log("Radio: Going to NextSongs");
-                        }
-                    }
-                    break;
-                case ChannelState.NextSong:  //--> InGame
-                    {
-                        if (DateTime.Now.Subtract(_nextSongScreenStartTime).TotalSeconds >= nextSongShowTime)
-                        {
-                            channelInfo.state = ChannelState.InGame;
-
-                            outMsg.Write((byte)CommandType.StartLevel);
-                            outMsg.Write((byte)Settings.Instance.Radio.PreferredDifficulty);
-
-                            channelInfo.currentSong.songDuration = Misc.Math.Median(songDurationResponses.Values.ToArray());
-                            songDurationResponses.Clear();
-                            requestingSongDuration = false;
-
-                            channelInfo.currentSong.AddToMessage(outMsg);
-
-                            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
-                            _songStartTime = DateTime.Now;
-                            Logger.Instance.Log("Radio: Going to InGame");
-                        }
-                        else if (DateTime.Now.Subtract(_nextSongScreenStartTime).TotalSeconds >= nextSongShowTime*0.75 && !requestingSongDuration)
-                        {
-
-                            outMsg.Write((byte)CommandType.GetSongDuration);
-                            channelInfo.currentSong.AddToMessage(outMsg);
-                            songDurationResponses.Clear();
-                            requestingSongDuration = true;
-
-                            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
-                            Logger.Instance.Log("Radio: Requested song duration");
-                        }
-
-                    }
-                    break;
-            }
-
-            if (outMsg.LengthBytes > 0)
-            {
-                outMsg = HubListener.ListenerServer.CreateMessage();
-            }
-
-            outMsg.Write((byte)CommandType.UpdatePlayerInfo);
-
-            switch (channelInfo.state)
-            {
-                case ChannelState.NextSong:
-                    {
-                        outMsg.Write((float)DateTime.Now.Subtract(_nextSongScreenStartTime).TotalSeconds);
-                        outMsg.Write(nextSongShowTime);
-                    }
-                    break;
-                case ChannelState.InGame:
-                    {
-                        outMsg.Write((float)DateTime.Now.Subtract(_songStartTime).TotalSeconds);
-                        outMsg.Write(channelInfo.currentSong.songDuration);
-                    }
-                    break;
-                case ChannelState.Results:
-                    {
-                        outMsg.Write((float)DateTime.Now.Subtract(_resultsStartTime).TotalSeconds);
-                        outMsg.Write(resultsShowTime);
-                    }
-                    break;
-            }
-
-            outMsg.Write(radioClients.Count);
-
-            radioClients.ForEach(x => x.playerInfo.AddToMessage(outMsg));
-
-            BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced);
-        }
-
-        public static void BroadcastPacket(NetOutgoingMessage msg, NetDeliveryMethod deliveryMethod)
-        {
-            if (radioClients.Count == 0)
-                return;
-
-            try
-            {
-                HubListener.ListenerServer.SendMessage(msg, radioClients.Select(x => x.playerConnection).ToList(), deliveryMethod, (deliveryMethod == NetDeliveryMethod.UnreliableSequenced ? 1 : 0));
-                Program.networkBytesOutNow += msg.LengthBytes * radioClients.Count;
-            }
-            catch (Exception e)
-            {
-                Logger.Instance.Warning($"Unable to send packet to players! Exception: {e}");
+                if (channel.radioClients.Contains(client))
+                {
+                    channel.radioClients.Remove(client);
+                }
             }
         }
     }

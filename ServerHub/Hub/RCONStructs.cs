@@ -37,6 +37,14 @@ namespace ServerHub.Hub
             public int NetworkOut { get; set; }
         }
 
+        public struct RCONChannelInfo
+        {
+            public string name { get; set; }
+            public string icon { get; set; }
+            public string currentSong { get; set; }
+            public int queueLength { get; set; }
+        }
+
         public struct RCONPlayerInfo
         {
             public string PlayerID;

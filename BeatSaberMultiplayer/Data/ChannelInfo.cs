@@ -12,6 +12,7 @@ namespace BeatSaberMultiplayer.Data
 
     public class ChannelInfo
     {
+        public int channelId;
         public string name;
         public string iconUrl;
         public ChannelState state;
@@ -23,14 +24,14 @@ namespace BeatSaberMultiplayer.Data
 
         public ChannelInfo(JSONNode jsonNode)
         {
-            name = jsonNode["name"];
-            iconUrl = jsonNode["icon"];
+            channelId = jsonNode["channelId"];
             ip = jsonNode["ip"];
             port = jsonNode["port"];
         }
 
         public ChannelInfo(NetIncomingMessage msg)
         {
+            channelId = msg.ReadInt32();
             name = msg.ReadString();
             iconUrl = msg.ReadString();
             state = (ChannelState)msg.ReadByte();
@@ -46,6 +47,7 @@ namespace BeatSaberMultiplayer.Data
 
         public void AddToMessage(NetOutgoingMessage msg)
         {
+            msg.Write(channelId);
             msg.Write(name);
             msg.Write(iconUrl);
             msg.Write((byte)state);

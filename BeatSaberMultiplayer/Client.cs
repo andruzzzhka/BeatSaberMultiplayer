@@ -270,7 +270,7 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void JoinRadioChannel()
+        public void JoinRadioChannel(int channelId)
         {
             if (Connected && NetworkClient != null)
             {
@@ -280,6 +280,7 @@ namespace BeatSaberMultiplayer
 
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.JoinChannel);
+                outMsg.Write(channelId);
 
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
@@ -352,12 +353,13 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void RequestChannelInfo()
+        public void RequestChannelInfo(int channelId)
         {
             if (Connected && NetworkClient != null)
             {
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.GetChannelInfo);
+                outMsg.Write(channelId);
 
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG

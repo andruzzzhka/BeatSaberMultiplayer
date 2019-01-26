@@ -12,6 +12,7 @@ namespace ServerHub.Data
 
     public class ChannelInfo
     {
+        public int channelId;
         public string name;
         public string iconUrl;
         public ChannelState state;
@@ -28,11 +29,14 @@ namespace ServerHub.Data
 
         public ChannelInfo(NetIncomingMessage msg)
         {
+            channelId = msg.ReadInt32();
             name = msg.ReadString();
             iconUrl = msg.ReadString();
             state = (ChannelState)msg.ReadByte();
             if (state != ChannelState.Voting)
+            {
                 currentSong = new SongInfo(msg);
+            }
             else
                 currentSong = null;
             preferredDifficulty = (BeatmapDifficulty)msg.ReadByte();
@@ -41,6 +45,7 @@ namespace ServerHub.Data
 
         public void AddToMessage(NetOutgoingMessage msg)
         {
+            msg.Write(channelId);
             msg.Write(name);
             msg.Write(iconUrl);
             msg.Write((byte)state);

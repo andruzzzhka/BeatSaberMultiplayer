@@ -246,6 +246,12 @@ namespace ServerHub.Hub
                 }
             }
 
+            if(Settings.Instance.Radio.RadioChannels.Count == 0)
+            {
+                Settings.Instance.Radio.EnableRadio = false;
+                Settings.Instance.Radio.RadioChannels.Add(new Settings.ChannelSettings());
+            }
+
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");
 
@@ -452,13 +458,13 @@ namespace ServerHub.Hub
                         if (RadioController.radioStarted)
                         {
                             clientsStr += $"{Environment.NewLine}├─Radio:";
-                            if (RadioController.radioClients.Where(x => x.playerConnection != null).Count() == 0)
+                            if (RadioController.radioChannels.Sum(y => y.radioClients.Where(x => x.playerConnection != null).Count()) == 0)
                             {
                                 clientsStr += $"{Environment.NewLine}│ No Clients";
                             }
                             else
                             {
-                                List<Client> clients = new List<Client>(RadioController.radioClients.Where(x => x.playerConnection != null));
+                                List<Client> clients = new List<Client>(RadioController.radioChannels.SelectMany(y => y.radioClients.Where(x => x.playerConnection != null)));
                                 foreach (var client in clients)
                                 {
                                     IPEndPoint remote = (IPEndPoint)client.playerConnection.RemoteEndPoint;
@@ -946,28 +952,28 @@ namespace ServerHub.Hub
                                     return  "\n> radio help - prints this text" +
                                             "\n> radio enable - enables radio channel in settings and starts it" +
                                             "\n> radio disable - disables radio channel in settings and stops it" +
-                                            "\n> radio set [name/iconurl/difficulty] [value] - set specified option to provided value" +
-                                            "\n> radio queue list - lists songs in the radio queue" +
-                                            "\n> radio queue remove [songName] - removes song with provided name from the radio queue" +
-                                            "\n> radio queue add [song key or playlist path/url] - adds song or playlist to the queue";
+                                            "\n> radio [channelId] set [name/iconurl/difficulty] [value] - set specified option to provided value" +
+                                            "\n> radio [channelId] queue list - lists songs in the radio queue" +
+                                            "\n> radio [channelId] queue remove [songName] - removes song with provided name from the radio queue" +
+                                            "\n> radio [channelId] queue add [song key or playlist path/url] - adds song or playlist to the queue";
                                 }
                             case "enable":
                                 {
-                                    if (!Settings.Instance.Radio.EnableRadioChannel)
+                                    if (!Settings.Instance.Radio.EnableRadio)
                                     {
-                                        Settings.Instance.Radio.EnableRadioChannel = true;
+                                        Settings.Instance.Radio.EnableRadio = true;
                                         Settings.Instance.Save();
                                     }
                                     if (!RadioController.radioStarted)
                                     {
-                                        RadioController.StartRadioAsync();
+                                        RadioController.StartRadio();
                                     }
                                 }; break;
                             case "disable":
                                 {
-                                    if (Settings.Instance.Radio.EnableRadioChannel)
+                                    if (Settings.Instance.Radio.EnableRadio)
                                     {
-                                        Settings.Instance.Radio.EnableRadioChannel = false;
+                                        Settings.Instance.Radio.EnableRadio = false;
                                         Settings.Instance.Save();
                                     }
                                     if (RadioController.radioStarted)
@@ -975,162 +981,182 @@ namespace ServerHub.Hub
                                         RadioController.StopRadio("Channel disabled from console!");
                                     }
                                 }; break;
-                            case "set":
+                            default:
                                 {
-                                    if (comArgs.Length > 2)
+                                    int channelId;
+                                    if(int.TryParse(comArgs[0], out channelId))
                                     {
-                                        switch (comArgs[1].ToLower())
+                                        if (RadioController.radioChannels.Count <= channelId)
                                         {
-                                            case "name":
-                                                {
-                                                    Settings.Instance.Radio.ChannelName = string.Join(' ', comArgs.Skip(2));
-                                                    Settings.Instance.Save();
 
-                                                    if (RadioController.radioStarted)
-                                                        RadioController.channelInfo.name = Settings.Instance.Radio.ChannelName;
-
-                                                    return $"Channel name set to \"{Settings.Instance.Radio.ChannelName}\"!";
-                                                }
-                                            case "iconurl":
-                                                {
-                                                    Settings.Instance.Radio.ChannelIconUrl = string.Join(' ', comArgs.Skip(2));
-                                                    Settings.Instance.Save();
-
-                                                    if (RadioController.radioStarted)
-                                                        RadioController.channelInfo.iconUrl = Settings.Instance.Radio.ChannelIconUrl;
-
-                                                    return $"Channel icon URL set to \"{Settings.Instance.Radio.ChannelIconUrl}\"!";
-                                                }
-                                            case "difficulty":
-                                                {
-                                                    BeatmapDifficulty difficulty = BeatmapDifficulty.Easy;
-
-                                                    if (Enum.TryParse(comArgs[2], true, out difficulty))
+                                            switch (comArgs[1])
+                                            {
+                                                case "set":
                                                     {
+                                                        if (comArgs.Length > 2)
+                                                        {
+                                                            switch (comArgs[1].ToLower())
+                                                            {
+                                                                case "name":
+                                                                    {
+                                                                        Settings.Instance.Radio.RadioChannels[channelId].ChannelName = string.Join(' ', comArgs.Skip(2));
+                                                                        Settings.Instance.Save();
 
-                                                        Settings.Instance.Radio.PreferredDifficulty = difficulty;
-                                                        Settings.Instance.Save();
+                                                                        if (RadioController.radioStarted)
+                                                                            RadioController.radioChannels[channelId].channelInfo.name = Settings.Instance.Radio.RadioChannels[channelId].ChannelName;
 
-                                                        if (RadioController.radioStarted)
-                                                            RadioController.channelInfo.preferredDifficulty = Settings.Instance.Radio.PreferredDifficulty;
+                                                                        return $"Channel name set to \"{Settings.Instance.Radio.RadioChannels[channelId].ChannelName}\"!";
+                                                                    }
+                                                                case "iconurl":
+                                                                    {
+                                                                        Settings.Instance.Radio.RadioChannels[channelId].ChannelIconUrl = string.Join(' ', comArgs.Skip(2));
+                                                                        Settings.Instance.Save();
 
-                                                        return $"Channel preferred difficulty set to \"{Settings.Instance.Radio.PreferredDifficulty}\"!";
-                                                    }
-                                                    else
-                                                        return $"Unable to parse difficulty name!\nAvailable difficulties:\n> Easy\n> Normal\n> Hard\n> Expert\n> ExpertPlus";
-                                                }
-                                            default:
-                                                return $"Unable to parse option name!\nAvaiable options:\n> name\n> iconurl\n> difficulty";
+                                                                        if (RadioController.radioStarted)
+                                                                            RadioController.radioChannels[channelId].channelInfo.iconUrl = Settings.Instance.Radio.RadioChannels[channelId].ChannelIconUrl;
+
+                                                                        return $"Channel icon URL set to \"{Settings.Instance.Radio.RadioChannels[channelId].ChannelIconUrl}\"!";
+                                                                    }
+                                                                case "difficulty":
+                                                                    {
+                                                                        BeatmapDifficulty difficulty = BeatmapDifficulty.Easy;
+
+                                                                        if (Enum.TryParse(comArgs[2], true, out difficulty))
+                                                                        {
+
+                                                                            Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty = difficulty;
+                                                                            Settings.Instance.Save();
+
+                                                                            if (RadioController.radioStarted)
+                                                                                RadioController.radioChannels[channelId].channelInfo.preferredDifficulty = Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty;
+
+                                                                            return $"Channel preferred difficulty set to \"{Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty}\"!";
+                                                                        }
+                                                                        else
+                                                                            return $"Unable to parse difficulty name!\nAvailable difficulties:\n> Easy\n> Normal\n> Hard\n> Expert\n> ExpertPlus";
+                                                                    }
+                                                                default:
+                                                                    return $"Unable to parse option name!\nAvaiable options:\n> name\n> iconurl\n> difficulty";
+                                                            }
+                                                        }
+                                                    }; break;
+                                                case "queue":
+                                                    {
+                                                        if (comArgs.Length > 1)
+                                                        {
+                                                            switch (comArgs[1].ToLower())
+                                                            {
+                                                                case "list":
+                                                                    {
+                                                                        if (RadioController.radioStarted)
+                                                                        {
+                                                                            string buffer = $"\n┌─Now playing:\n│ {(!string.IsNullOrEmpty(RadioController.radioChannels[channelId].channelInfo.currentSong.key) ? RadioController.radioChannels[channelId].channelInfo.currentSong.key + ": " : "")} {RadioController.radioChannels[channelId].channelInfo.currentSong.songName}";
+                                                                            buffer += "\n├─Queue:";
+
+                                                                            if (RadioController.radioChannels[channelId].radioQueue.Count == 0)
+                                                                            {
+                                                                                buffer += "\n│ No songs";
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                foreach (var song in RadioController.radioChannels[channelId].radioQueue)
+                                                                                {
+                                                                                    buffer += $"\n│ {(!string.IsNullOrEmpty(song.key) ? song.key + ": " : "")} {song.songName}";
+                                                                                }
+                                                                            }
+                                                                            buffer += "\n└─";
+
+                                                                            return buffer;
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            return "Radio channel is stopped!";
+                                                                        }
+                                                                    }
+                                                                case "clear":
+                                                                    {
+                                                                        if (RadioController.radioStarted)
+                                                                        {
+                                                                            RadioController.radioChannels[channelId].radioQueue.Clear();
+
+                                                                            return "Queue cleared!";
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            return "Radio channel is stopped!";
+                                                                        }
+                                                                    }
+                                                                case "remove":
+                                                                    {
+                                                                        if (comArgs.Length > 2)
+                                                                        {
+                                                                            if (RadioController.radioStarted)
+                                                                            {
+                                                                                string arg = string.Join(' ', comArgs.Skip(2));
+                                                                                SongInfo songInfo = RadioController.radioChannels[channelId].radioQueue.FirstOrDefault(x => x.songName.ToLower().Contains(arg.ToLower()) || x.key == arg);
+                                                                                if (songInfo != null)
+                                                                                {
+                                                                                    RadioController.radioChannels[channelId].radioQueue = new Queue<SongInfo>(RadioController.radioChannels[channelId].radioQueue.Where(x => !x.songName.ToLower().Contains(arg.ToLower()) && x.key != arg));
+                                                                                    File.WriteAllText("RadioQueue.json", JsonConvert.SerializeObject(RadioController.radioChannels[channelId].radioQueue, Formatting.Indented));
+                                                                                    return $"Successfully removed \"{songInfo.songName}\" from queue!";
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    return $"Queue doesn't contain \"{arg}\"!";
+                                                                                }
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                return "Radio channel is stopped!";
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    break;
+                                                                case "add":
+                                                                    {
+                                                                        if (comArgs.Length > 2)
+                                                                        {
+                                                                            if (RadioController.radioStarted)
+                                                                            {
+                                                                                string key = comArgs[2];
+                                                                                Regex regex = new Regex(@"(\d+-\d+)");
+                                                                                if (regex.IsMatch(key))
+                                                                                {
+                                                                                    RadioController.AddSongToQueueByKey(key, channelId);
+                                                                                    return "Adding song to the queue...";
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    string playlistPath = string.Join(' ', comArgs.Skip(2));
+
+                                                                                    RadioController.AddPlaylistToQueue(playlistPath, channelId);
+                                                                                    return "Adding all songs from playlist to the queue...";
+                                                                                }
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                return "Radio channel is stopped!";
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    break;
+                                                                default:
+                                                                    return $"Unable to parse option name!\nAvaiable options:\n> list\n> add\n> remove";
+                                                            }
+                                                        }
+                                                    };
+                                                    break;
+                                            }
                                         }
-                                    }
-                                }; break;
-                            case "queue":
-                                {
-                                    if (comArgs.Length > 1)
-                                    {
-                                        switch (comArgs[1].ToLower())
+                                        else
                                         {
-                                            case "list":
-                                                {
-                                                    if (RadioController.radioStarted)
-                                                    {
-                                                        string buffer = $"\n┌─Now playing:\n│ {(!string.IsNullOrEmpty(RadioController.channelInfo.currentSong.key) ? RadioController.channelInfo.currentSong.key + ": " : "")} {RadioController.channelInfo.currentSong.songName}";
-                                                        buffer += "\n├─Queue:";
-
-                                                        if (RadioController.radioQueue.Count == 0)
-                                                        {
-                                                            buffer += "\n│ No songs";
-                                                        }
-                                                        else
-                                                        {
-                                                            foreach (var song in RadioController.radioQueue)
-                                                            {
-                                                                buffer += $"\n│ {(!string.IsNullOrEmpty(song.key) ? song.key+": " : "")} {song.songName}";
-                                                            }
-                                                        }
-                                                        buffer += "\n└─";
-
-                                                        return buffer;
-                                                    }
-                                                    else
-                                                    {
-                                                        return "Radio channel is stopped!";
-                                                    }
-                                                }
-                                            case "clear":
-                                                {
-                                                    if (RadioController.radioStarted)
-                                                    {
-                                                        RadioController.radioQueue.Clear();
-
-                                                        return "Queue cleared!";
-                                                    }
-                                                    else
-                                                    {
-                                                        return "Radio channel is stopped!";
-                                                    }
-                                                }
-                                            case "remove":
-                                                {
-                                                    if (comArgs.Length > 2)
-                                                    {
-                                                        if (RadioController.radioStarted)
-                                                        {
-                                                            string arg = string.Join(' ', comArgs.Skip(2));
-                                                            SongInfo songInfo = RadioController.radioQueue.FirstOrDefault(x => x.songName.ToLower().Contains(arg.ToLower()) || x.key == arg);
-                                                            if (songInfo != null)
-                                                            {
-                                                                RadioController.radioQueue = new Queue<SongInfo>(RadioController.radioQueue.Where(x => !x.songName.ToLower().Contains(arg.ToLower()) && x.key != arg));
-                                                                File.WriteAllText("RadioQueue.json", JsonConvert.SerializeObject(RadioController.radioQueue, Formatting.Indented));
-                                                                return $"Successfully removed \"{songInfo.songName}\" from queue!";
-                                                            }
-                                                            else
-                                                            {
-                                                                return $"Queue doesn't contain \"{arg}\"!";
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            return "Radio channel is stopped!";
-                                                        }
-                                                    }
-                                                }
-                                                break;
-                                            case "add":
-                                                {
-                                                    if (comArgs.Length > 2)
-                                                    {
-                                                        if (RadioController.radioStarted)
-                                                        {
-                                                            string key = comArgs[2];
-                                                            Regex regex = new Regex(@"(\d+-\d+)");
-                                                            if (regex.IsMatch(key))
-                                                            {
-                                                                RadioController.AddSongToQueueByKey(key);
-                                                                return "Adding song to the queue...";
-                                                            }
-                                                            else
-                                                            {
-                                                                string playlistPath = string.Join(' ', comArgs.Skip(2));
-
-                                                                RadioController.AddPlaylistToQueue(playlistPath);
-                                                                return "Adding all songs from playlist to the queue...";
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            return "Radio channel is stopped!";
-                                                        }
-                                                    }
-                                                }
-                                                break;
-                                            default:
-                                                return $"Unable to parse option name!\nAvaiable options:\n> list\n> add\n> remove";
+                                            return $"Channel with ID {channelId} doesn't exist!";
                                         }
-                                    }
-                                };
-                                break;
 
+                                    }
+
+
+                                };  break;
                         }
                     }
                     return $"Command help: radio [help]";
@@ -1237,25 +1263,45 @@ namespace ServerHub.Hub
                 }
             });
 
+            availableCommands.Add(new Command()
+            {
+                name = "channelslist",
+                help = "",
+                function = (comArgs) => {
+                    List<RCONChannelInfo> channelInfos = new List<RCONChannelInfo>();
+                    foreach(RadioChannel channel in RadioController.radioChannels)
+                    {
+                        channelInfos.Add(new RCONChannelInfo() { name = channel.channelInfo.name, icon = channel.channelInfo.iconUrl, currentSong = channel.channelInfo.currentSong.songName, queueLength = channel.radioQueue.Count });
+                    }
+
+                    return JsonConvert.SerializeObject(channelInfos);
+                }
+            });
 
             availableCommands.Add(new Command()
             {
-                name = "radioinfo",
+                name = "channelinfo",
                 help = "",
                 function = (comArgs) => {
-                    SongInfo currentSong = RadioController.channelInfo.currentSong;
-                    List<SongInfo> queuedSongs = new List<SongInfo>();
-                    List<RCONPlayerInfo> radioClients = new List<RCONPlayerInfo>();
 
-                    queuedSongs.AddRange(RadioController.radioQueue);
-                    radioClients.AddRange(RadioController.radioClients.Select(x => new RCONPlayerInfo(x)));
-
-                    return JsonConvert.SerializeObject(new
+                    if (int.TryParse(comArgs[0], out int channelId))
                     {
-                        currentSong,
-                        queuedSongs,
-                        radioClients
-                    });
+
+                        SongInfo currentSong = RadioController.radioChannels[channelId].channelInfo.currentSong;
+                        List<SongInfo> queuedSongs = new List<SongInfo>();
+                        List<RCONPlayerInfo> radioClients = new List<RCONPlayerInfo>();
+
+                        queuedSongs.AddRange(RadioController.radioChannels[channelId].radioQueue);
+                        radioClients.AddRange(RadioController.radioChannels[channelId].radioClients.Select(x => new RCONPlayerInfo(x)));
+
+                        return JsonConvert.SerializeObject(new
+                        {
+                            currentSong,
+                            queuedSongs,
+                            radioClients
+                        });
+                    }
+                    else return "[]";
                 }
             });
 
@@ -1275,9 +1321,9 @@ namespace ServerHub.Hub
                 function = (comArgs) => {
                     Settings.Instance.Load(string.Join(' ', comArgs));
 
-                    if (Settings.Instance.Radio.EnableRadioChannel && !RadioController.radioStarted)
-                        RadioController.StartRadioAsync();
-                    if (!Settings.Instance.Radio.EnableRadioChannel && RadioController.radioStarted)
+                    if (Settings.Instance.Radio.EnableRadio && !RadioController.radioStarted)
+                        RadioController.StartRadio();
+                    if (!Settings.Instance.Radio.EnableRadio && RadioController.radioStarted)
                         RadioController.StopRadio("Channel disabled from console!");
 
                     Settings.Instance.Server.Tickrate = Misc.Math.Clamp(Settings.Instance.Server.Tickrate, 5, 150);

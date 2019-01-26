@@ -43,6 +43,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         
         string ip;
         int port;
+        int channelId;
         bool joined;
 
         ChannelInfo channelInfo;
@@ -85,10 +86,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             ProvideInitialViewControllers(_radioNavController, null, null);
         }
 
-        public void JoinChannel(string ip, int port)
+        public void JoinChannel(string ip, int port, int channelId)
         {
             this.ip = ip;
             this.port = port;
+            this.channelId = channelId;
             
             if (!Client.Instance.Connected || (Client.Instance.Connected && (Client.Instance.ip != ip || Client.Instance.port != port)))
             {
@@ -135,7 +137,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             Client.Instance.MessageReceived += MessageReceived;
             if (!joined)
             {
-                Client.Instance.JoinRadioChannel();
+                Client.Instance.JoinRadioChannel(channelId);
             }
         }
 
@@ -143,7 +145,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             joined = true;
             Client.Instance.MessageReceived += MessageReceived;
-            Client.Instance.RequestChannelInfo();
+            Client.Instance.RequestChannelInfo(channelId);
         }
 
         private void MessageReceived(NetIncomingMessage msg)
@@ -159,7 +161,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
 
                                 Client.Instance.playerInfo.playerState = PlayerState.Room;
-                                Client.Instance.RequestChannelInfo();
+                                Client.Instance.RequestChannelInfo(channelId);
                                 Client.Instance.SendPlayerInfo();
                                 joined = true;
                                 InGameOnlineController.Instance.needToSendUpdates = true;
