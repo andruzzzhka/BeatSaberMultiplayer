@@ -29,6 +29,7 @@ namespace ServerHub.Rooms
                     radioChannels.Add(channel);
 
                     channel.StartChannel(i);
+                    WebSocketListener.AddChannel(channel);
                 }
                 radioStarted = true;
             }

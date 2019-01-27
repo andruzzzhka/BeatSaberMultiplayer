@@ -509,7 +509,7 @@ namespace ServerHub.Misc {
                 MarkClean();
                 return true;
             }
-            catch (IOException) {
+            catch {
                 return false;
             }
         }

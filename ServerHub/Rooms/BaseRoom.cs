@@ -15,17 +15,6 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Rooms
 {
-    public struct WebSocketPacket
-    {
-        public string commandType;
-        public object data;
-
-        public WebSocketPacket(CommandType command, object d)
-        {
-            commandType = command.ToString();
-            data = d;
-        }
-    }
 
     public struct ReadyPlayers
     {
@@ -35,18 +24,6 @@ namespace ServerHub.Rooms
         {
             readyPlayers = ready;
             roomClients = clients;
-        }
-    }
-
-    public struct SongWithDifficulty
-    {
-        public SongInfo song;
-        public byte difficulty;
-
-        public SongWithDifficulty(SongInfo songInfo, byte diff)
-        {
-            song = songInfo;
-            difficulty = diff;
         }
     }
 

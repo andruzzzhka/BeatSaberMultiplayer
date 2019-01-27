@@ -121,6 +121,9 @@ namespace ServerHub.Rooms
                             channelInfo.AddToMessage(outMsg);
 
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+
+                            if (radioClients.Count > 0)
+                                BroadcastWebSocket(CommandType.GetChannelInfo, channelInfo);
                         }
                     }
                     break;
@@ -154,6 +157,9 @@ namespace ServerHub.Rooms
 
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
                             nextSongScreenStartTime = DateTime.Now;
+
+                            if (radioClients.Count > 0)
+                                BroadcastWebSocket(CommandType.SetSelectedSong, channelInfo.currentSong);
                         }
                     }
                     break;
@@ -174,6 +180,9 @@ namespace ServerHub.Rooms
 
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
                             songStartTime = DateTime.Now;
+
+                            if (radioClients.Count > 0)
+                                BroadcastWebSocket(CommandType.StartLevel, new SongWithDifficulty(channelInfo.currentSong, (byte)channelInfo.preferredDifficulty));
                         }
                         else if (DateTime.Now.Subtract(nextSongScreenStartTime).TotalSeconds >= Settings.Instance.Radio.NextSongPrepareTime * 0.75 && !requestingSongDuration)
                         {
@@ -184,6 +193,9 @@ namespace ServerHub.Rooms
                             requestingSongDuration = true;
 
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+
+                            if (radioClients.Count > 0)
+                                BroadcastWebSocket(CommandType.GetSongDuration, channelInfo.currentSong);
                         }
 
                     }
@@ -224,6 +236,9 @@ namespace ServerHub.Rooms
             radioClients.ForEach(x => x.playerInfo.AddToMessage(outMsg));
 
             BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced);
+
+            if (radioClients.Count > 0)
+                BroadcastWebSocket(CommandType.UpdatePlayerInfo, radioClients.Select(x => x.playerInfo).ToArray());
         }
 
         public void BroadcastPacket(NetOutgoingMessage msg, NetDeliveryMethod deliveryMethod)
@@ -239,6 +254,37 @@ namespace ServerHub.Rooms
             catch (Exception e)
             {
                 Logger.Instance.Warning($"Unable to send packet to players! Exception: {e}");
+            }
+        }
+
+        public virtual void BroadcastWebSocket(CommandType commandType, object data)
+        {
+            if (WebSocketListener.Server == null || !Settings.Instance.Server.EnableWebSocketRoomInfo)
+                return;
+
+            WebSocketPacket packet = new WebSocketPacket(commandType, data);
+            string serialized = JsonConvert.SerializeObject(packet);
+
+            var service = WebSocketListener.Server.WebSocketServices[$"/channel/{channelId}"];
+            service?.Sessions.BroadcastAsync(serialized, null);
+        }
+
+        public virtual void OnOpenWebSocket()
+        {
+            if (WebSocketListener.Server == null || !Settings.Instance.Server.EnableWebSocketRoomInfo)
+                return;
+
+            var service = WebSocketListener.Server.WebSocketServices[$"/channel/{channelId}"];
+
+            try
+            {
+                WebSocketPacket packet = new WebSocketPacket(CommandType.GetChannelInfo, channelInfo);
+                string serialized = JsonConvert.SerializeObject(packet);
+                service?.Sessions.BroadcastAsync(serialized, null);
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.Warning("Unable to send ChannelInfo to WebSocket client! Exception: " + e);
             }
         }
     }

@@ -45,6 +45,20 @@ namespace ServerHub.Hub
             public string difficulty { get; set; }
             public string currentSong { get; set; }
             public int queueLength { get; set; }
+
+            public RCONChannelInfo(string _path)
+            {
+                string[] split = _path.Split('/');
+                int _id = Convert.ToInt32(split[split.Length - 1]);
+
+                RadioChannel _channel = RadioController.radioChannels.First(x => x.channelId == _id);
+                channelId = _channel.channelInfo.channelId;
+                name = _channel.channelInfo.name;
+                icon = _channel.channelInfo.iconUrl;
+                difficulty = _channel.channelInfo.preferredDifficulty.ToString();
+                currentSong = _channel.channelInfo.currentSong == null ? "NULL" : _channel.channelInfo.currentSong.songName;
+                queueLength = _channel.radioQueue.Count;
+            }
         }
 
         public struct RCONPlayerInfo

@@ -51,7 +51,14 @@ namespace ServerHub.Data
             msg.Write((byte)state);
             if (state != ChannelState.Voting)
             {
-                currentSong.AddToMessage(msg);
+                if (currentSong != null)
+                {
+                    currentSong.AddToMessage(msg);
+                }
+                else
+                {
+                    new SongInfo() { songName = "Selecting song...", levelId = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" }.AddToMessage(msg);
+                }
             }
             msg.Write((byte)preferredDifficulty);
             msg.Write(playerCount);

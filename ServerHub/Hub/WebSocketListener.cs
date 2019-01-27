@@ -9,14 +9,40 @@ using static ServerHub.Hub.RCONStructs;
 using System.Linq;
 using WebSocketSharp.Server;
 using System.Reflection;
+using ServerHub.Data;
 
 namespace ServerHub.Hub
 {
+    public struct WebSocketPacket
+    {
+        public string commandType;
+        public object data;
+
+        public WebSocketPacket(CommandType command, object d)
+        {
+            commandType = command.ToString();
+            data = d;
+        }
+    }
+
+    public struct SongWithDifficulty
+    {
+        public SongInfo song;
+        public byte difficulty;
+
+        public SongWithDifficulty(SongInfo songInfo, byte diff)
+        {
+            song = songInfo;
+            difficulty = diff;
+        }
+    }
+
     public struct ServerHubInfo
     {
         public string Version;
         public int TotalClients;
         public List<WSRoomInfo> Rooms;
+        public List<RCONChannelInfo> RadioChannels;
     }
 
     public struct WSRoomInfo
@@ -52,12 +78,14 @@ namespace ServerHub.Hub
                         paths.Remove("/" + Settings.Instance.Server.RCONPassword);
                     }
 
-                    List<WSRoomInfo> rooms = paths.ConvertAll(x => new WSRoomInfo(x));
+                    List<WSRoomInfo> rooms = paths.Where(x => x.Contains("room")).Select(x => new WSRoomInfo(x)).ToList();
+                    List<RCONChannelInfo> channels = paths.Where(x => x.Contains("channel")).Select(x => new RCONChannelInfo(x)).ToList();
                     ServerHubInfo info = new ServerHubInfo()
                     {
                         Version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
-                        TotalClients = HubListener.hubClients.Count + RoomsController.GetRoomsList().Sum(x => x.roomClients.Count),
-                        Rooms = rooms
+                        TotalClients = HubListener.hubClients.Count + RoomsController.GetRoomsList().Sum(x => x.roomClients.Count) + RadioController.radioChannels.Sum(x => x.radioClients.Count),
+                        Rooms = rooms,
+                        RadioChannels = channels
                     };
                     Send(JsonConvert.SerializeObject(info));
                 }catch(Exception e)
@@ -78,9 +106,17 @@ namespace ServerHub.Hub
             string[] split = Context.RequestUri.AbsolutePath.Split('/');
             int _id = Convert.ToInt32(split[split.Length - 1]);
 
-            BaseRoom _room = RoomsController.GetRoomsList().Find(room => room.roomId == _id);
-            if(_room != null)
-                _room.OnOpenWebSocket();
+            if (split[split.Length - 2] == "room")
+            {
+                BaseRoom _room = RoomsController.GetRoomsList().FirstOrDefault(room => room.roomId == _id);
+                if (_room != null)
+                    _room.OnOpenWebSocket();
+            }else if(split[split.Length - 2] == "channel")
+            {
+                RadioChannel _channel = RadioController.radioChannels.FirstOrDefault(channel => channel.channelId == _id);
+                if (_channel != null)
+                    _channel.OnOpenWebSocket();
+            }
         }
     }
 
@@ -154,11 +190,22 @@ namespace ServerHub.Hub
                 {
                     paths.Remove("/" + Settings.Instance.Server.RCONPassword);
                 }
+                
+                List<WSRoomInfo> rooms = paths.Where(x => x.Contains("room")).Select(x => new WSRoomInfo(x)).ToList();
+                List<RCONChannelInfo> channels = paths.Where(x => x.Contains("channel")).Select(x => new RCONChannelInfo(x)).ToList();
 
-                List<WSRoomInfo> rooms = paths.ConvertAll(x => new WSRoomInfo(x));
-                string data = JsonConvert.SerializeObject(rooms);
+                string data = JsonConvert.SerializeObject(new { rooms, channels });
 
                 Server.WebSocketServices["/"].Sessions.BroadcastAsync(data, null);
+            }
+        }
+
+        public static void AddChannel(RadioChannel channel)
+        {
+            if (Server != null && Settings.Instance.Server.EnableWebSocketRoomInfo)
+            {
+                Server.AddWebSocketService<Broadcast>($"/channel/{channel.channelId}");
+                BroadcastState();
             }
         }
 
