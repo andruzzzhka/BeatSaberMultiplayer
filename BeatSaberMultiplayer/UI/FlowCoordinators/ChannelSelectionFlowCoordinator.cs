@@ -69,7 +69,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             yield return null;
 
-            UnityWebRequest www = UnityWebRequest.Get("http://192.168.0.157:222/radioChannels");
+            UnityWebRequest www = UnityWebRequest.Get("https://radio.assistant.moe/Channels/");
 
             Misc.Logger.Info("Requesting channels list...");
             channelSelectionViewController.SetLoadingState(true);

@@ -21,7 +21,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 }
                 else
                 {
-                    _scoreText.text = "DONE";
+                    _scoreText.text = "DOWNLOADED";
                 }
             }
         }
