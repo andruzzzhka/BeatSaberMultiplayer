@@ -19,11 +19,13 @@ function ServerSettingsController($scope, rconService, $interval) {
 			}
 
 			for (key in settings.Radio) {
+				if (!Array.isArray(settings.Radio[key])) {
 				var option = {
 					name: key,
 					value: settings.Radio[key]
 				}
 				$scope.Radio.push(option);
+			}
 			}
 
 			for (key in settings.Access) {

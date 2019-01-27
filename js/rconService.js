@@ -141,8 +141,18 @@ function RconService() {
     });
   }
 
-  Service.getRadioInfo = function(scope, success) {
-    this.Request("radioinfo", scope, function(response) {
+  Service.getChannelsList = function(scope, success) {
+    this.Request("channelslist", scope, function(response) {
+      var players = JSON.parse(response.Message);
+
+      if (typeof success === 'function') {
+        success.call(scope, players);
+      }
+    });
+  }
+
+  Service.getChannelInfo = function(scope, channelId, success) {
+    this.Request("channelinfo "+channelId, scope, function(response) {
       var players = JSON.parse(response.Message);
 
       if (typeof success === 'function') {

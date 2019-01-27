@@ -1,0 +1,55 @@
+<div ng-controller="ChannelsListController" id="ChannelsListController">
+
+	<div class="row">
+		<div class="col-xs-6">
+			<input ng-model="FilterText" class="form-control" placeholder="Filter..">
+		</div>
+		<div class="col-xs-6">
+			<button ng-click="Refresh()" class="btn btn-default pull-right" type="button"><span class="glyphicon glyphicon-refresh"></span></button>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="table-responsive">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Icon</th>
+
+							<th ng-click="Order( 'name' )" ng-class="SortClass( 'name' )">Room Name</th>
+							<th class="text-right" ng-click="Order( 'channelId' )" ng-class="SortClass( 'channelId' )">Channel ID</th>
+							<th class="text-right" ng-click="Order( 'currentSong' )" ng-class="SortClass( 'currentSong' )">Current Song</th>
+							<th class="text-right" ng-click="Order( 'queueLength' )" ng-class="SortClass( 'queueLength' )">Queue Length</th>
+						</tr>
+					</thead>
+					<tr ng-repeat="line in Channels | orderBy: OrderBy | filter:FilterText" href="#/{{address}}/channel/{{line.channelId}}/">
+
+						<td>
+							<img class="song-cover" alt="" src="{{line.icon}}">
+						</td>
+
+						<td>
+							<a href="#/{{address}}/channel/{{line.channelId}}/">{{line.name}}</a>
+						</td>
+
+						<td style="text-align: right">
+							<a href="#/{{address}}/channel/{{line.channelId}}/">{{line.channelId}}</a>
+						</td>
+
+						<td class="text-right">
+							{{line.currentSong}}
+						</td>
+
+						<td class="text-right">
+							{{line.queueLength}}
+						</td>
+
+						<md-divider></md-divider>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+</div>

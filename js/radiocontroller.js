@@ -1,9 +1,9 @@
 
 app.controller( 'RadioController',  RadioController );
 
-function RadioController( $scope, rconService, $interval )
+function RadioController( $scope, rconService, $routeParams )
 {
-
+	$scope.channelId = $routeParams.channelId;
 	$scope.songsCache = [];
 
 	$scope.Output = [];
@@ -11,11 +11,12 @@ function RadioController( $scope, rconService, $interval )
 
 	$scope.Refresh = function ()
 	{
-		rconService.getRadioInfo($scope, function ( info )
+		rconService.getChannelInfo($scope, $scope.channelId, function ( info )
 		{
 			$scope.Players = info.radioClients;
 			$scope.Queue = info.queuedSongs;
 			$scope.CurrentSong = info.currentSong;
+			$scope.ChannelInfo = info.channelInfo;
 		});
 	}
 
@@ -49,14 +50,14 @@ function RadioController( $scope, rconService, $interval )
 
 	$scope.RemoveFromQueue = function ( id )
 	{
-		rconService.Command( 'radio queue remove ' + id );
+		rconService.Command( 'radio '+$scope.channelId+' queue remove ' + id );
 
 		$scope.Refresh();
 	}
 
 	$scope.ClearQueue = function ()
 	{
-		rconService.Command('radio queue clear');
+		rconService.Command('radio '+$scope.channelId+' queue clear');
 
 		$scope.Refresh();
 	}
@@ -65,18 +66,20 @@ function RadioController( $scope, rconService, $interval )
 	{
 		if($("#queueInputText").val() != "")
 		{
-			rconService.Command( 'radio queue add ' + $("#queueInputText").val() );
+			rconService.Command( 'radio '+$scope.channelId+' queue add ' + $("#queueInputText").val() );
 
 			$scope.Refresh();
 		}
 	}
 
+	$scope.Save = function ()
+	{
+		rconService.Command( 'radio '+$scope.channelId+' set name ' + $("#ChannelNameTextInput").val() );
+		rconService.Command( 'radio '+$scope.channelId+' set iconurl ' + $("#ChannelIconTextInput").val() );
+		rconService.Command( 'radio '+$scope.channelId+' set difficulty ' + $("#DifficultyTextInput").val() );
+
+		$scope.Refresh();
+	}
+
 	rconService.InstallService( $scope, $scope.Refresh )
-
-	// var timer = $interval( function ()
-	// {
-	// 	//$scope.Refresh();
-	// }.bind( this ), 1000 );
-
-	//$scope.$on( '$destroy', function () { $interval.cancel( timer ) } )
 }

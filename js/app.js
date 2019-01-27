@@ -14,9 +14,9 @@ app.config(function($routeProvider) {
     templateUrl: "html/console.html",
     Nav: true
   });
-  $routeProvider.when("/:address/radiocontroller", {
-    Title: "Radio",
-    templateUrl: "html/radiocontroller.html",
+  $routeProvider.when("/:address/channelslist", {
+    Title: "Channels List",
+    templateUrl: "html/channelslist.html",
     Nav: true
   });
   $routeProvider.when("/:address/roomslist", {
@@ -33,6 +33,10 @@ app.config(function($routeProvider) {
     Title: "Access Settings",
     templateUrl: "html/accessSettings.html",
     Nav: true
+  });
+  $routeProvider.when("/:address/channel/:channelId", {
+    Title: "Radio Channel",
+    templateUrl: "html/radiocontroller.html",
   });
   $routeProvider.when("/:address/player/:userid", {
     Title: "Player Info",

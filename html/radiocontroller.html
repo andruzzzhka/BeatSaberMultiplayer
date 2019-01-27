@@ -6,7 +6,7 @@
 		</div>
 		<div class="col-sm-12">
 			<td>
-				<img class="song-cover" alt="" src="{{getJpgCoverUrl(CurrentSong.key)}}" err-SRC="{{getPngCoverUrl(CurrentSong.key)}}"">
+				<img class="song-cover" alt="" src="{{getJpgCoverUrl(CurrentSong.key)}}" err-SRC="{{getPngCoverUrl(CurrentSong.key)}}">
 			</td>
 
 			<td>
@@ -23,7 +23,7 @@
 
 	<div class="row">
 		<div class="col-sm-12">
-			<h2>Radio queue:</h2>
+			<h2>Channel queue:</h2>
 		</div>
 		
 
@@ -101,7 +101,7 @@
 
 	<div class="row">
 		<div class="col-sm-12">
-				<h2>Radio clients:</h2>
+				<h2>Channel clients:</h2>
 		</div>
 		<div class="col-xs-6">
 			<input ng-model="ClientFilterText" class="form-control" placeholder="Filter..">
@@ -170,4 +170,60 @@
 		</div>
 	</div>
 
+	<div class="row">
+		<div class="col-sm-12">
+				<h2>Channel settings:</h2>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="table-responsive">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Option Name</th>
+							<th class="text-right">Option Value</th>
+						</tr>
+					</thead>
+					<tr>
+						<td>
+							Channel Name
+						</td>
+						<td style="text-align: right">
+							<input id="ChannelNameTextInput" class="form-control" value="{{ChannelInfo.name}}">
+						</td>
+						<md-divider></md-divider>
+					</tr>
+					
+					<tr>
+						<td>
+							Channel Icon URL
+						</td>
+						<td style="text-align: right">
+							<input id="ChannelIconTextInput" class="form-control" value="{{ChannelInfo.icon}}">
+						</td>
+						<md-divider></md-divider>
+					</tr>
+
+					<tr>
+						<td>
+							Preferred Difficulty
+						</td>
+						<td style="text-align: right">
+							<input id="DifficultyTextInput" class="form-control" value="{{ChannelInfo.difficulty}}">
+						</td>
+						<md-divider></md-divider>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-xs-6">
+			<button ng-click="Save()" class="btn btn-success" type="button"><span class="glyphicon glyphicon-floppy-disk"></span>
+				Save settings</button>
+		</div>
+	</div>
 </div>
