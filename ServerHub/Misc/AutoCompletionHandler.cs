@@ -44,33 +44,34 @@ namespace ServerHub.Misc
                         case "message":
                             return RoomsController.GetRoomsList().Select(x => x.roomId.ToString()).Where(x => (x.StartsWith(parsedArgs[1]) || string.IsNullOrEmpty(parsedArgs[1]))).ToArray();
                         case "radio":
-                            return new string[] { "help", "enable", "disable", "set", "queue" }.Where(x => (x.StartsWith(parsedArgs[1]) || string.IsNullOrEmpty(parsedArgs[1])) && parsedArgs[1] != x).ToArray();
+                            return new string[] { "help", "enable", "disable", "list" }.Where(x => (x.StartsWith(parsedArgs[1]) || string.IsNullOrEmpty(parsedArgs[1])) && parsedArgs[1] != x).ToArray();
                         default:
                             return null;
                     }
                 }
                 else if (parsedArgs.Count == 3)
                 {
-                    if (parsedArgs[0] == "radio")
+                    if(parsedArgs[0] == "radio")
                     {
-                        switch (parsedArgs[1])
-                        {
-                            case "set":
-                                return new string[] { "name", "iconurl", "difficulty" }.Where(x => x.StartsWith(parsedArgs[2]) || string.IsNullOrEmpty(parsedArgs[2])).ToArray();
-                            case "queue":
-                                return new string[] { "list", "clear", "remove", "add" }.Where(x => x.StartsWith(parsedArgs[2]) || string.IsNullOrEmpty(parsedArgs[2])).ToArray();
-                            default:
-                                return null;
-                        }
+                        
+                        return new string[] { "set", "queue" }.Where(x => (x.StartsWith(parsedArgs[2]) || string.IsNullOrEmpty(parsedArgs[2])) && parsedArgs[2] != x).ToArray();
                     }
                     else
                         return null;
                 }
                 else if (parsedArgs.Count == 4)
                 {
-                    if (parsedArgs[0] == "radio" && parsedArgs[1] == "queue" && parsedArgs[3] == "add")
+                    if (parsedArgs[0] == "radio")
                     {
-                        return new string[] { "song", "playlist" }.Where(x => x.StartsWith(parsedArgs[3]) || string.IsNullOrEmpty(parsedArgs[3])).ToArray();
+                        switch (parsedArgs[2])
+                        {
+                            case "set":
+                                return new string[] { "name", "iconurl", "difficulty" }.Where(x => x.StartsWith(parsedArgs[3]) || string.IsNullOrEmpty(parsedArgs[3])).ToArray();
+                            case "queue":
+                                return new string[] { "list", "clear", "remove", "add" }.Where(x => x.StartsWith(parsedArgs[3]) || string.IsNullOrEmpty(parsedArgs[3])).ToArray();
+                            default:
+                                return null;
+                        }
                     }
                     else
                         return null;

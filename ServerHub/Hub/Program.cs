@@ -968,7 +968,8 @@ namespace ServerHub.Hub
                                     {
                                         RadioController.StartRadio();
                                     }
-                                }; break;
+                                    return "Radio started!";
+                                };
                             case "disable":
                                 {
                                     if (Settings.Instance.Radio.EnableRadio)
@@ -980,7 +981,24 @@ namespace ServerHub.Hub
                                     {
                                         RadioController.StopRadio("Channel disabled from console!");
                                     }
-                                }; break;
+                                    return "Radio stopped!";
+                                };
+                            case "list":
+                                {
+                                    if (Settings.Instance.Radio.EnableRadio && RadioController.radioStarted)
+                                    {
+                                        string buffer = "\nChannels list:";
+                                        foreach (RadioChannel channel in RadioController.radioChannels)
+                                        {
+                                            buffer += $"\n{channel.channelId}: {channel.channelInfo.name} - Now playing: ({channel.channelInfo.currentSong.key}) {channel.channelInfo.currentSong.songName}";
+                                        }
+                                        return buffer;
+                                    }
+                                    else
+                                    {
+                                        return "Radio stopped!";
+                                    }
+                                };
                             default:
                                 {
                                     int channelId;
@@ -993,13 +1011,13 @@ namespace ServerHub.Hub
                                             {
                                                 case "set":
                                                     {
-                                                        if (comArgs.Length > 2)
+                                                        if (comArgs.Length > 3)
                                                         {
-                                                            switch (comArgs[1].ToLower())
+                                                            switch (comArgs[2].ToLower())
                                                             {
                                                                 case "name":
                                                                     {
-                                                                        Settings.Instance.Radio.RadioChannels[channelId].ChannelName = string.Join(' ', comArgs.Skip(2));
+                                                                        Settings.Instance.Radio.RadioChannels[channelId].ChannelName = string.Join(' ', comArgs.Skip(3));
                                                                         Settings.Instance.Save();
 
                                                                         if (RadioController.radioStarted)
@@ -1009,7 +1027,7 @@ namespace ServerHub.Hub
                                                                     }
                                                                 case "iconurl":
                                                                     {
-                                                                        Settings.Instance.Radio.RadioChannels[channelId].ChannelIconUrl = string.Join(' ', comArgs.Skip(2));
+                                                                        Settings.Instance.Radio.RadioChannels[channelId].ChannelIconUrl = string.Join(' ', comArgs.Skip(3));
                                                                         Settings.Instance.Save();
 
                                                                         if (RadioController.radioStarted)
@@ -1021,7 +1039,7 @@ namespace ServerHub.Hub
                                                                     {
                                                                         BeatmapDifficulty difficulty = BeatmapDifficulty.Easy;
 
-                                                                        if (Enum.TryParse(comArgs[2], true, out difficulty))
+                                                                        if (Enum.TryParse(comArgs[3], true, out difficulty))
                                                                         {
 
                                                                             Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty = difficulty;
@@ -1042,9 +1060,9 @@ namespace ServerHub.Hub
                                                     }; break;
                                                 case "queue":
                                                     {
-                                                        if (comArgs.Length > 1)
+                                                        if (comArgs.Length > 2)
                                                         {
-                                                            switch (comArgs[1].ToLower())
+                                                            switch (comArgs[2].ToLower())
                                                             {
                                                                 case "list":
                                                                     {
@@ -1088,11 +1106,11 @@ namespace ServerHub.Hub
                                                                     }
                                                                 case "remove":
                                                                     {
-                                                                        if (comArgs.Length > 2)
+                                                                        if (comArgs.Length > 3)
                                                                         {
                                                                             if (RadioController.radioStarted)
                                                                             {
-                                                                                string arg = string.Join(' ', comArgs.Skip(2));
+                                                                                string arg = string.Join(' ', comArgs.Skip(3));
                                                                                 SongInfo songInfo = RadioController.radioChannels[channelId].radioQueue.FirstOrDefault(x => x.songName.ToLower().Contains(arg.ToLower()) || x.key == arg);
                                                                                 if (songInfo != null)
                                                                                 {
@@ -1114,11 +1132,11 @@ namespace ServerHub.Hub
                                                                     break;
                                                                 case "add":
                                                                     {
-                                                                        if (comArgs.Length > 2)
+                                                                        if (comArgs.Length > 3)
                                                                         {
                                                                             if (RadioController.radioStarted)
                                                                             {
-                                                                                string key = comArgs[2];
+                                                                                string key = comArgs[3];
                                                                                 Regex regex = new Regex(@"(\d+-\d+)");
                                                                                 if (regex.IsMatch(key))
                                                                                 {
@@ -1127,7 +1145,7 @@ namespace ServerHub.Hub
                                                                                 }
                                                                                 else
                                                                                 {
-                                                                                    string playlistPath = string.Join(' ', comArgs.Skip(2));
+                                                                                    string playlistPath = string.Join(' ', comArgs.Skip(3));
 
                                                                                     RadioController.AddPlaylistToQueue(playlistPath, channelId);
                                                                                     return "Adding all songs from playlist to the queue...";
@@ -1146,6 +1164,8 @@ namespace ServerHub.Hub
                                                         }
                                                     };
                                                     break;
+                                                default:
+                                                    return $"Command help: radio [help]";
                                             }
                                         }
                                         else
@@ -1271,7 +1291,7 @@ namespace ServerHub.Hub
                     List<RCONChannelInfo> channelInfos = new List<RCONChannelInfo>();
                     foreach(RadioChannel channel in RadioController.radioChannels)
                     {
-                        channelInfos.Add(new RCONChannelInfo() { channelId = channel.channelId, name = channel.channelInfo.name, icon = channel.channelInfo.iconUrl, currentSong = channel.channelInfo.currentSong.songName, queueLength = channel.radioQueue.Count });
+                        channelInfos.Add(new RCONChannelInfo() { channelId = channel.channelId, name = channel.channelInfo.name, icon = channel.channelInfo.iconUrl, difficulty = channel.channelInfo.preferredDifficulty.ToString(), currentSong = channel.channelInfo.currentSong.songName, queueLength = channel.radioQueue.Count });
                     }
 
                     return JsonConvert.SerializeObject(channelInfos);
@@ -1294,11 +1314,14 @@ namespace ServerHub.Hub
                         queuedSongs.AddRange(RadioController.radioChannels[channelId].radioQueue);
                         radioClients.AddRange(RadioController.radioChannels[channelId].radioClients.Select(x => new RCONPlayerInfo(x)));
 
+                        RCONChannelInfo channelInfo = new RCONChannelInfo() { channelId = RadioController.radioChannels[channelId].channelId, name = RadioController.radioChannels[channelId].channelInfo.name, icon = RadioController.radioChannels[channelId].channelInfo.iconUrl, difficulty = RadioController.radioChannels[channelId].channelInfo.preferredDifficulty.ToString(), currentSong = RadioController.radioChannels[channelId].channelInfo.currentSong.songName, queueLength = RadioController.radioChannels[channelId].radioQueue.Count };
+
                         return JsonConvert.SerializeObject(new
                         {
                             currentSong,
                             queuedSongs,
-                            radioClients
+                            radioClients,
+                            channelInfo
                         });
                     }
                     else return "[]";

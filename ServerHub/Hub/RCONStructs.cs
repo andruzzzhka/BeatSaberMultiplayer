@@ -42,6 +42,7 @@ namespace ServerHub.Hub
             public int channelId { get; set; }
             public string name { get; set; }
             public string icon { get; set; }
+            public string difficulty { get; set; }
             public string currentSong { get; set; }
             public int queueLength { get; set; }
         }
