@@ -18,7 +18,7 @@ using UnityEngine;
 namespace BeatSaberMultiplayer
 {
 
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, GetSongDuration }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration }
 
     public class Client : MonoBehaviour
     {
@@ -79,6 +79,12 @@ namespace BeatSaberMultiplayer
         {
             if (NetworkClient != null && NetworkClient.Status == NetPeerStatus.Running)
             {
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.Disconnect);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                NetworkClient.FlushSendQueue();
+
                 NetworkClient.Shutdown("");
             }
             Connected = false;
@@ -108,11 +114,11 @@ namespace BeatSaberMultiplayer
             while ((msg = NetworkClient.ReadMessage()) != null)
             {
                 float packetTime = (float)DateTime.UtcNow.Subtract(_lastPacketTime).TotalMilliseconds;
-                if (packetTime > 1f)
+                if (packetTime > 3f)
                 {
                     _averagePacketTimes.Add(packetTime);
 
-                    if(_averagePacketTimes.Count > 150)
+                    if(_averagePacketTimes.Count > 300)
                         _averagePacketTimes.RemoveAt(0);
 
                     Tickrate = (float)Math.Round(1000f/_averagePacketTimes.Average(), 2);
@@ -128,6 +134,9 @@ namespace BeatSaberMultiplayer
                             {
                                 Connected = true;
                                 ConnectedToServerHub?.Invoke();
+                            }else
+                            {
+                                Misc.Logger.Info("New connection state: "+status);
                             }
                         }
                         break;

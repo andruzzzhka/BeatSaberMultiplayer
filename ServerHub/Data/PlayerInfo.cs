@@ -50,6 +50,7 @@ namespace ServerHub.Data
             playerComboBlocks = msg.ReadUInt32();
             playerTotalBlocks = msg.ReadUInt32();
             playerEnergy = msg.ReadFloat();
+            playerProgress = msg.ReadFloat();
 
             playerAvatar = msg.ReadBytes(100);
         }
@@ -66,6 +67,7 @@ namespace ServerHub.Data
             msg.Write(playerComboBlocks);
             msg.Write(playerTotalBlocks);
             msg.Write(playerEnergy);
+            msg.Write(playerProgress);
 
             msg.Write(playerAvatar);
         }

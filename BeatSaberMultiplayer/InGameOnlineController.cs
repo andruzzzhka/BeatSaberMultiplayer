@@ -48,6 +48,7 @@ namespace BeatSaberMultiplayer
         private string _currentScene;
         private bool loaded;
         private int sendRateCounter;
+        private int fixedSendRate = 0;
 
         public static void OnLoad(Scene to)
         {
@@ -285,10 +286,34 @@ namespace BeatSaberMultiplayer
                     _messageDisplayText.text = "";
                 }
             }
+            
+            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+            {
+                if (Input.GetKeyDown(KeyCode.Keypad0))
+                {
+                    fixedSendRate = 0;
+                    Misc.Logger.Info($"Variable send rate");
+                }
+                else if(Input.GetKeyDown(KeyCode.Keypad1))
+                {
+                    fixedSendRate = 1;
+                    Misc.Logger.Info($"Forced full send rate");
+                }
+                else if (Input.GetKeyDown(KeyCode.Keypad2))
+                {
+                    fixedSendRate = 2;
+                    Misc.Logger.Info($"Forced half send rate");
+                }
+                else if(Input.GetKeyDown(KeyCode.Keypad3))
+                {
+                    fixedSendRate = 3;
+                    Misc.Logger.Info($"Forced one third send rate");
+                }
+            }
 
             if (needToSendUpdates)
             {
-                if (Client.Instance.Tickrate > 67.5f * (1f / 90 / Time.deltaTime))
+                if (fixedSendRate == 1 || (fixedSendRate == 0 && Client.Instance.Tickrate > 67.5f * (1f / 90 / Time.deltaTime)))
                 {
                     sendRateCounter = 0;
                     UpdatePlayerInfo();
@@ -296,7 +321,7 @@ namespace BeatSaberMultiplayer
                     Misc.Logger.Info($"Full send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
 #endif
                 }
-                else if (Client.Instance.Tickrate > 37.5f * (1f / 90 / Time.deltaTime))
+                else if (fixedSendRate == 2 || (fixedSendRate == 0 && Client.Instance.Tickrate > 37.5f * (1f / 90 / Time.deltaTime)))
                 {
                     sendRateCounter++;
                     if (sendRateCounter >= 1)
@@ -308,7 +333,7 @@ namespace BeatSaberMultiplayer
 #endif
                     }
                 }
-                else
+                else if (fixedSendRate == 3 || (fixedSendRate == 0 && Client.Instance.Tickrate <= 37.5f * (1f / 90 / Time.deltaTime)))
                 {
                     sendRateCounter++;
                     if (sendRateCounter >= 2)
@@ -354,7 +379,7 @@ namespace BeatSaberMultiplayer
             {
                 Client.Instance.playerInfo.playerProgress = audioTimeSync.songTime;
             }
-            else
+            else if(Client.Instance.playerInfo.playerState != PlayerState.DownloadingSongs)
             {
                 Client.Instance.playerInfo.playerProgress = 0;
             }

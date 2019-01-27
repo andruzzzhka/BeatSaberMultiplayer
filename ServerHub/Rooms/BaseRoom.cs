@@ -127,7 +127,7 @@ namespace ServerHub.Rooms
             _readyPlayers.Remove(player.playerInfo);
             if(roomState == RoomState.Preparing)
                 UpdatePlayersReady();
-
+            
             roomClients.Remove(player);
             if (roomClients.Count > 0)
             {

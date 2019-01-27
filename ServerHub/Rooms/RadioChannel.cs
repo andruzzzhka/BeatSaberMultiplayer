@@ -121,8 +121,6 @@ namespace ServerHub.Rooms
                             channelInfo.AddToMessage(outMsg);
 
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
-                            Logger.Instance.Log("Radio: Going to Results");
-
                         }
                     }
                     break;
@@ -156,7 +154,6 @@ namespace ServerHub.Rooms
 
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
                             nextSongScreenStartTime = DateTime.Now;
-                            Logger.Instance.Log("Radio: Going to NextSongs");
                         }
                     }
                     break;
@@ -177,7 +174,6 @@ namespace ServerHub.Rooms
 
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
                             songStartTime = DateTime.Now;
-                            Logger.Instance.Log("Radio: Going to InGame");
                         }
                         else if (DateTime.Now.Subtract(nextSongScreenStartTime).TotalSeconds >= Settings.Instance.Radio.NextSongPrepareTime * 0.75 && !requestingSongDuration)
                         {
@@ -188,7 +184,6 @@ namespace ServerHub.Rooms
                             requestingSongDuration = true;
 
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
-                            Logger.Instance.Log("Radio: Requested song duration");
                         }
 
                     }

@@ -986,7 +986,7 @@ namespace ServerHub.Hub
                                     int channelId;
                                     if(int.TryParse(comArgs[0], out channelId))
                                     {
-                                        if (RadioController.radioChannels.Count <= channelId)
+                                        if (RadioController.radioChannels.Count > channelId)
                                         {
 
                                             switch (comArgs[1])
@@ -1271,7 +1271,7 @@ namespace ServerHub.Hub
                     List<RCONChannelInfo> channelInfos = new List<RCONChannelInfo>();
                     foreach(RadioChannel channel in RadioController.radioChannels)
                     {
-                        channelInfos.Add(new RCONChannelInfo() { name = channel.channelInfo.name, icon = channel.channelInfo.iconUrl, currentSong = channel.channelInfo.currentSong.songName, queueLength = channel.radioQueue.Count });
+                        channelInfos.Add(new RCONChannelInfo() { channelId = channel.channelId, name = channel.channelInfo.name, icon = channel.channelInfo.iconUrl, currentSong = channel.channelInfo.currentSong.songName, queueLength = channel.radioQueue.Count });
                     }
 
                     return JsonConvert.SerializeObject(channelInfos);

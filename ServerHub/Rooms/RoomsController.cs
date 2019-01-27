@@ -77,7 +77,7 @@ namespace ServerHub.Rooms
         public static bool ClientJoined(Client client, uint roomId, string password)
         {
 #if DEBUG
-            Logger.Instance.Log("Client joining room " + roomId);
+            Logger.Instance.Log($"Client joining room {roomId}");
 #endif
 
             NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
@@ -137,8 +137,8 @@ namespace ServerHub.Rooms
                         client.joinedRoomID = room.roomId;
                         if (room.roomClients.Any(x => x.playerInfo == client.playerInfo))
                         {
-                            Client loggedIn = room.roomClients.Find(x => x.playerInfo == client.playerInfo);
-                            if (loggedIn.playerConnection != client.playerConnection)
+                            Client loggedIn = room.roomClients.Find(x => x.playerInfo.Equals(client.playerInfo));
+                            if (!loggedIn.playerConnection.Equals(client.playerConnection))
                             {
                                 loggedIn.KickClient("You logged in from another location");
                             }
@@ -182,12 +182,15 @@ namespace ServerHub.Rooms
 
         public static void ClientLeftRoom(Client client)
         {
-            BaseRoom room = rooms.Find(x => x.roomId == client.joinedRoomID);
-            if (room != null)
+            foreach (BaseRoom room in rooms)
             {
-                room.PlayerLeft(client);
+                if (room.roomClients.Contains(client))
+                {
+                    room.PlayerLeft(client);
+                    client.joinedRoomID = 0;
+                    return;
+                }
             }
-            client.joinedRoomID = 0;
         }
 
         public static int GetRoomsCount()

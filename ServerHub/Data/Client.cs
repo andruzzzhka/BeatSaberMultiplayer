@@ -17,7 +17,7 @@ using System.Timers;
 namespace ServerHub.Data
 {
 
-    public class Client
+    public class Client : IEquatable<Client>
     {
         public event Action<Client> ClientDisconnected;
 
@@ -51,6 +51,28 @@ namespace ServerHub.Data
 
             ClientDisconnected?.Invoke(this);
             active = false;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if(obj is Client)
+            {
+                return (((Client)obj).playerConnection.RemoteEndPoint.Equals(playerConnection.RemoteEndPoint));
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return playerConnection.RemoteEndPoint.GetHashCode();
+        }
+
+        public bool Equals(Client other)
+        {
+            return other.playerConnection.RemoteEndPoint.Equals(playerConnection.RemoteEndPoint);
         }
     }
 }

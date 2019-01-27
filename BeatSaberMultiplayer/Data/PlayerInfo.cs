@@ -55,6 +55,7 @@ namespace BeatSaberMultiplayer.Data
             playerComboBlocks = msg.ReadUInt32();
             playerTotalBlocks = msg.ReadUInt32();
             playerEnergy = msg.ReadFloat();
+            playerProgress = msg.ReadFloat();
 
             byte[] avatar = msg.ReadBytes(100);
 
@@ -81,6 +82,7 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(playerComboBlocks);
             msg.Write(playerTotalBlocks);
             msg.Write(playerEnergy);
+            msg.Write(playerProgress);
 
             msg.Write(Serialization.Combine(
                             Serialization.ToBytes(rightHandPos),

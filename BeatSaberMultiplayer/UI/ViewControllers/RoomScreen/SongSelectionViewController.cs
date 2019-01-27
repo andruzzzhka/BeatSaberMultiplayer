@@ -189,6 +189,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _hostIsSelectingSongText.fontSize = 8f;
                 _hostIsSelectingSongText.alignment = TextAlignmentOptions.Center;
                 _hostIsSelectingSongText.rectTransform.sizeDelta = new Vector2(120f, 6f);
+
+                SelectTopButtons(TopButtonsState.Select);
             }
             else
             {
@@ -235,6 +237,12 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _pageUpButton.gameObject.SetActive(isHost);
             _pageDownButton.gameObject.SetActive(isHost);
             _hostIsSelectingSongText.gameObject.SetActive(!isHost);
+
+            SelectTopButtons(TopButtonsState.Select);
+
+            _sortByButton.gameObject.SetActive(isHost);
+            _searchButton.gameObject.SetActive(isHost);
+            _modeButton.gameObject.SetActive(isHost);
         }
 
         public void SelectTopButtons(TopButtonsState _newState)

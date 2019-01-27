@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Hub
 {
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, GetSongDuration }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration }
 
     public static class HubListener
     {
@@ -171,7 +171,11 @@ namespace ServerHub.Hub
                                 {
                                     case CommandType.Disconnect:
                                         {
-                                            msg.SenderConnection.Disconnect("Disconnected");
+                                            if (client != null)
+                                            {
+                                                allClients.Remove(client);
+                                                ClientDisconnected(client);
+                                            }
                                         }
                                         break;
                                     case CommandType.UpdatePlayerInfo:
@@ -433,6 +437,11 @@ namespace ServerHub.Hub
                                             }
                                         }
                                         break;
+                                    case CommandType.LeaveChannel:
+                                        {
+                                            if(RadioController.radioStarted && client !=  null)
+                                                RadioController.ClientLeftChannel(client);
+                                        }; break;
                                 }
                             };
                             break;
@@ -449,12 +458,13 @@ namespace ServerHub.Hub
                             {
                                 NetConnectionStatus status = (NetConnectionStatus)msg.ReadByte();
 
-                                Client client = hubClients.FirstOrDefault(x => x.playerConnection.RemoteEndPoint == msg.SenderEndPoint);
+                                Client client = allClients.FirstOrDefault(x => x.playerConnection.RemoteEndPoint.Equals(msg.SenderEndPoint));
 
                                 if (client != null)
                                 {
                                     if (status == NetConnectionStatus.Disconnected)
                                     {
+                                        allClients.Remove(client);
                                         ClientDisconnected(client);
                                     }
                                 }
@@ -506,11 +516,15 @@ namespace ServerHub.Hub
         {
             try
             {
-                foreach(Client client in hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioChannels.SelectMany(x => x.radioClients)))
+                List<Client> allClients = hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioChannels.SelectMany(x => x.radioClients)).ToList();
+                for (int i = 0; i < allClients.Count; i++)
                 {
-                    if(client.playerConnection.Status == NetConnectionStatus.Disconnected)
+                    if (allClients.Count > i && allClients[i] != null)
                     {
-                        ClientDisconnected(client);
+                        if (allClients[i].playerConnection.Status == NetConnectionStatus.Disconnected)
+                        {
+                            ClientDisconnected(allClients[i]);
+                        }
                     }
                 }
 
