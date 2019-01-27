@@ -66,21 +66,25 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 });
                 _pageDownButton.interactable = false;
 
-                _downloadProgressTableView = new GameObject().AddComponent<TableView>();
-                _downloadProgressTableView.transform.SetParent(rectTransform, false);
+                RectTransform container = new GameObject("Content", typeof(RectTransform)).transform as RectTransform;
+                container.SetParent(rectTransform, false);
+                container.anchorMin = new Vector2(0.15f, 0.5f);
+                container.anchorMax = new Vector2(0.85f, 0.5f);
+                container.sizeDelta = new Vector2(0f, 56f);
+                container.anchoredPosition = new Vector2(0f, -3f);
+
+                _downloadProgressTableView = new GameObject("CustomTableView").AddComponent<TableView>();
+                _downloadProgressTableView.gameObject.AddComponent<RectMask2D>();
+                _downloadProgressTableView.transform.SetParent(container, false);
 
                 _downloadProgressTableView.SetPrivateField("_isInitialized", false);
                 _downloadProgressTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
                 _downloadProgressTableView.Init();
 
-                RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _downloadProgressTableView.transform, false);
-                viewportMask.transform.DetachChildren();
-                _downloadProgressTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
-
-                (_downloadProgressTableView.transform as RectTransform).anchorMin = new Vector2(0.15f, 0.5f);
-                (_downloadProgressTableView.transform as RectTransform).anchorMax = new Vector2(0.85f, 0.5f);
-                (_downloadProgressTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 56f);
-                (_downloadProgressTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
+                (_downloadProgressTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
+                (_downloadProgressTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
+                (_downloadProgressTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
+                (_downloadProgressTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
 
                 ReflectionUtil.SetPrivateField(_downloadProgressTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_downloadProgressTableView, "_pageDownButton", _pageDownButton);

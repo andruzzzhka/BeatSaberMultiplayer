@@ -10,6 +10,7 @@ using BeatSaberMultiplayer.Data;
 using UnityEngine;
 using TMPro;
 using CustomUI.BeatSaber;
+using System.Collections;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 {
@@ -62,21 +63,25 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 });
                 _pageDownButton.interactable = false;
 
-                _presetsTableView = new GameObject().AddComponent<TableView>();
-                _presetsTableView.transform.SetParent(rectTransform, false);
+                RectTransform container = new GameObject("Content", typeof(RectTransform)).transform as RectTransform;
+                container.SetParent(rectTransform, false);
+                container.anchorMin = new Vector2(0.3f, 0.5f);
+                container.anchorMax = new Vector2(0.7f, 0.5f);
+                container.sizeDelta = new Vector2(0f, 60f);
+                container.anchoredPosition = new Vector2(0f, -3f);
+
+                _presetsTableView = new GameObject("CustomTableView").AddComponent<TableView>();
+                _presetsTableView.gameObject.AddComponent<RectMask2D>();
+                _presetsTableView.transform.SetParent(container, false);
 
                 _presetsTableView.SetPrivateField("_isInitialized", false);
                 _presetsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
                 _presetsTableView.Init();
-
-                RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _presetsTableView.transform, false);
-                viewportMask.transform.DetachChildren();
-                _presetsTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
-
-                (_presetsTableView.transform as RectTransform).anchorMin = new Vector2(0.3f, 0.5f);
-                (_presetsTableView.transform as RectTransform).anchorMax = new Vector2(0.7f, 0.5f);
-                (_presetsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 60f);
-                (_presetsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
+                
+                (_presetsTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
+                (_presetsTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
+                (_presetsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
+                (_presetsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
 
                 ReflectionUtil.SetPrivateField(_presetsTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_presetsTableView, "_pageDownButton", _pageDownButton);
@@ -116,8 +121,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     _presetsTableView.ReloadData();
                 }
 
-                _presetsTableView.ScrollToRow(0, false);
+                StartCoroutine(ScrollWithDelay());
             }
+        }
+
+        IEnumerator ScrollWithDelay()
+        {
+            yield return null;
+            yield return null;
+
+            _presetsTableView.ScrollToRow(0, false);
         }
 
         public TableCell CellForRow(int row)

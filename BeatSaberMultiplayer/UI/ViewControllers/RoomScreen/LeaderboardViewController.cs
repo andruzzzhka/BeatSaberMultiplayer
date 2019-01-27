@@ -3,8 +3,10 @@ using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using CustomUI.BeatSaber;
 using HMUI;
+using SongLoaderPlugin;
 using SongLoaderPlugin.OverrideClasses;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,13 +22,15 @@ namespace BeatSaberMultiplayer
         private TableView _leaderboardTableView;
         private LeaderboardTableCell _leaderboardTableCellInstance;
         private TextMeshProUGUI _timerText;
+        private Button _pageUpButton;
+        private Button _pageDownButton;
 
         LevelListTableCell _songTableCell;
 
-        PlayerInfo[] _playerInfos;
+        List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
+        List<LeaderboardTableCell> _tableCells = new List<LeaderboardTableCell>();
 
-        private LevelSO _selectedSong;
-        public LevelSO SelectedSong { get { return _selectedSong; } set { SetSong(value); } }
+        public LevelSO _selectedSong;
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
@@ -35,11 +39,44 @@ namespace BeatSaberMultiplayer
                 _songTableCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")));
                 (_songTableCell.transform as RectTransform).anchoredPosition = new Vector2(18f, 39f);
 
+                _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
+                (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
+                (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
+                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -12f);
+                (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
+                _pageUpButton.interactable = true;
+                _pageUpButton.onClick.AddListener(delegate ()
+                {
+                    _leaderboardTableView.PageScrollUp();
+
+                });
+                _pageUpButton.interactable = false;
+
+                _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
+                (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
+                (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
+                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 6f);
+                (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
+                _pageDownButton.interactable = true;
+                _pageDownButton.onClick.AddListener(delegate ()
+                {
+                    _leaderboardTableView.PageScrollDown();
+
+                });
+                _pageDownButton.interactable = false;
+
                 _leaderboardTableCellInstance = Resources.FindObjectsOfTypeAll<LeaderboardTableCell>().First(x => (x.name == "LeaderboardTableCell"));
 
-                _leaderboardTableView = new GameObject().AddComponent<TableView>();
+                RectTransform container = new GameObject("Content", typeof(RectTransform)).transform as RectTransform;
+                container.SetParent(rectTransform, false);
+                container.anchorMin = new Vector2(0.15f, 0.5f);
+                container.anchorMax = new Vector2(0.85f, 0.5f);
+                container.sizeDelta = new Vector2(0f, 56f);
+                container.anchoredPosition = new Vector2(0f, -3f);
 
-                _leaderboardTableView.transform.SetParent(rectTransform, false);
+                _leaderboardTableView = new GameObject("CustomTableView").AddComponent<TableView>();
+                _leaderboardTableView.gameObject.AddComponent<RectMask2D>();
+                _leaderboardTableView.transform.SetParent(container, false);
 
                 _leaderboardTableView.SetPrivateField("_isInitialized", false);
                 _leaderboardTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
@@ -49,10 +86,15 @@ namespace BeatSaberMultiplayer
                 viewportMask.transform.DetachChildren();
                 _leaderboardTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 
-                (_leaderboardTableView.transform as RectTransform).anchorMin = new Vector2(0.2f, 0.5f);
-                (_leaderboardTableView.transform as RectTransform).anchorMax = new Vector2(0.8f, 0.5f);
-                (_leaderboardTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 60f);
-                (_leaderboardTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
+                (_leaderboardTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
+                (_leaderboardTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
+                (_leaderboardTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
+                (_leaderboardTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
+
+                ReflectionUtil.SetPrivateField(_leaderboardTableView, "_pageUpButton", _pageUpButton);
+                ReflectionUtil.SetPrivateField(_leaderboardTableView, "_pageDownButton", _pageDownButton);
+
+                _leaderboardTableView.dataSource = this;
 
                 _timerText = BeatSaberUI.CreateText(rectTransform, "", new Vector2(0f, 34f));
                 _timerText.fontSize = 8f;
@@ -62,34 +104,76 @@ namespace BeatSaberMultiplayer
 
         }
 
-        public void SetLeaderboard(PlayerInfo[] _playerInfos)
+        public void SetLeaderboard(List<PlayerInfo> players)
         {
-            this._playerInfos = _playerInfos.Where(x => x.playerState == PlayerState.Game || (x.playerState == PlayerState.Room && x.playerScore > 0)).OrderByDescending(x => x.playerScore).ToArray();
-
-            if (_leaderboardTableView != null)
+            int prevCount = _playerInfos.Count;
+            _playerInfos.Clear();
+            if (players != null)
             {
-
-                if (_leaderboardTableView.dataSource != this)
+                _playerInfos.AddRange(players.Where(x => x.playerState == PlayerState.Game || (x.playerState == PlayerState.Room && x.playerScore > 0)).OrderByDescending(x => x.playerScore));
+            }
+            
+            if (prevCount != _playerInfos.Count)
+            {
+                for (int i = 0; i < _tableCells.Count; i++)
                 {
-                    _leaderboardTableView.dataSource = this;
+                    Destroy(_tableCells[i].gameObject);
                 }
-                else
+                _tableCells.Clear();
+                _leaderboardTableView.RefreshTable(false);
+                if (prevCount == 0 && _playerInfos.Count > 0)
                 {
-                    _leaderboardTableView.ReloadData();
+                    StartCoroutine(ScrollWithDelay());
+                }
+            }
+            else
+            {
+                for (int i = 0; i < _playerInfos.Count; i++)
+                {
+                    if (_tableCells.Count > i)
+                    {
+                        _tableCells[i].playerName = _playerInfos[i].playerName;
+                        _tableCells[i].score = (int)_playerInfos[i].playerScore;
+                        _tableCells[i].rank = i + 1;
+                        _tableCells[i].showFullCombo = false;
+                    }
                 }
             }
         }
 
-        public void SetSong(LevelSO song)
+        IEnumerator ScrollWithDelay()
+        {
+            yield return null;
+            yield return null;
+
+            _leaderboardTableView.ScrollToRow(0, false);
+        }
+
+        public void SetSong(SongInfo info)
         {
             if (_songTableCell == null)
                 return;
+            
+            _selectedSong = SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID.StartsWith(info.levelId));
 
-            _songTableCell.coverImage = song.coverImage;
-            _songTableCell.songName = $"{song.songName}\n<size=80%>{song.songSubName}</size>";
-            _songTableCell.author = song.songAuthorName;
+            if (_selectedSong != null)
+            {
+                _songTableCell.songName = _selectedSong.songName + "\n<size=80%>" + _selectedSong.songSubName + "</size>";
+                _songTableCell.author = _selectedSong.songAuthorName;
+                _songTableCell.coverImage = _selectedSong.coverImage;
+            }
+            else
+            {
+                _songTableCell.songName = info.songName;
+                _songTableCell.author = "Loading info...";
+                SongDownloader.Instance.RequestSongByLevelID(info.levelId, (song) =>
+                {
+                    _songTableCell.songName = $"{song.songName}\n<size=80%>{song.songSubName}</size>";
+                    _songTableCell.author = song.authorName;
+                    StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverUrl, (cover) => { _songTableCell.coverImage = cover; }));
 
-            _selectedSong = song;
+                });
+            }
         }
 
         public void SetTimer(float time, bool results)
@@ -118,12 +202,13 @@ namespace BeatSaberMultiplayer
             cell.rank = row + 1;
             cell.showFullCombo = false;
 
+            _tableCells.Add(cell);
             return cell;
         }
 
         public int NumberOfRows()
         {
-            return Math.Min(_playerInfos.Length, 10);
+            return _playerInfos.Count;
         }
 
         public float RowHeight()

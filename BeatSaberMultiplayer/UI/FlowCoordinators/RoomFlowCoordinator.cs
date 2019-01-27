@@ -407,12 +407,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                         {
                                             case RoomState.InGame:
                                                 playerInfos = playerInfos.Where(x => x.playerScore > 0 && x.playerState == PlayerState.Game).ToList();
-                                                UpdateLeaderboard(playerInfos.ToArray(), currentTime, totalTime, false);
+                                                UpdateLeaderboard(playerInfos, currentTime, totalTime, false);
                                                 break;
 
                                             case RoomState.Results:
                                                 playerInfos = playerInfos.Where(x => x.playerScore > 0 && (x.playerState == PlayerState.Game || x.playerState == PlayerState.Room)).ToList();
-                                                UpdateLeaderboard(playerInfos.ToArray(), currentTime, totalTime, true);
+                                                UpdateLeaderboard(playerInfos, currentTime, totalTime, true);
                                                 break;
 
                                             case RoomState.Preparing:
@@ -503,7 +503,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         if (_roomNavigationController.viewControllers.IndexOf(_leaderboardViewController) == -1)
                             PopAllViewControllers(_roomNavigationController);
 
-                        ShowLeaderboard(new PlayerInfo[0], _levelCollection.levels.FirstOrDefault(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                        ShowLeaderboard(null, roomInfo.selectedSong);
+                        _roomManagementViewController.UpdatePlayerList(null);
                     }
                     break;
                 case RoomState.Results:
@@ -511,7 +512,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         if(_roomNavigationController.viewControllers.IndexOf(_leaderboardViewController) == -1)
                             PopAllViewControllers(_roomNavigationController);
 
-                        ShowLeaderboard(new PlayerInfo[0], _levelCollection.levels.FirstOrDefault(x => x.levelID.StartsWith(roomInfo.selectedSong.levelId)));
+                        ShowLeaderboard(null, roomInfo.selectedSong);
+                        _roomManagementViewController.UpdatePlayerList(null);
                     }
                     break;
             }
@@ -721,8 +723,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     },
                     (progress) =>
                     {
-                        _difficultySelectionViewController.SetProgressBarState(true, progress);
-                        Client.Instance.playerInfo.playerProgress = 100f*progress;
+                        float clampedProgress = Math.Min(progress, 0.99f);
+                        _difficultySelectionViewController.SetProgressBarState(true, clampedProgress);
+                        Client.Instance.playerInfo.playerProgress = 100f* clampedProgress;
                     });
                 });
             }
@@ -749,7 +752,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        public void ShowLeaderboard(PlayerInfo[] playerInfos, LevelSO  song)
+        public void ShowLeaderboard(List<PlayerInfo> playerInfos, SongInfo song)
         {
             if (_leaderboardViewController == null)
             {
@@ -759,16 +762,22 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 PushViewControllerToNavigationController(_roomNavigationController, _leaderboardViewController, null, true);
             }
-            if (song != null && song is CustomLevel)
+
+            LevelSO level = _levelCollection.levels.FirstOrDefault(x => x.levelID.StartsWith(song.levelId));
+
+            if (level != null)
             {
-                SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)song, SongLoaded);
-            }
-            else
-            {
-                PreviewPlayer.CrossfadeTo(song.audioClip, song.previewStartTime, (song.audioClip.length - song.previewStartTime), 1f);
+                if (level is CustomLevel)
+                {
+                    SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level, SongLoaded);
+                }
+                else
+                {
+                    PreviewPlayer.CrossfadeTo(level.audioClip, level.previewStartTime, (level.audioClip.length - level.previewStartTime), 1f);
+                }
             }
             _leaderboardViewController.SetLeaderboard(playerInfos);
-            _leaderboardViewController.SelectedSong = song;
+            _leaderboardViewController.SetSong(song);
         }
 
         public void HideLeaderboard()
@@ -783,7 +792,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             PreviewPlayer.CrossfadeToDefault();
         }
 
-        public void UpdateLeaderboard(PlayerInfo[] playerInfos, float currentTime, float totalTime, bool results)
+        public void UpdateLeaderboard(List<PlayerInfo> playerInfos, float currentTime, float totalTime, bool results)
         {
             if (_leaderboardViewController != null)
             {

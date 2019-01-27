@@ -41,7 +41,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         private Image _progressBackground;
         private Image _progressBarImage;
         private TextMeshProUGUI _progressText;
-        private TextMeshProUGUI _nowPlayingText;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
