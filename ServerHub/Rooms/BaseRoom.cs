@@ -134,8 +134,6 @@ namespace ServerHub.Rooms
                             _resultsStartTime = DateTime.Now;
                             
                             outMsg.Write((byte)CommandType.GetRoomInfo);
-
-                            outMsg.Write((byte)0);
                             GetRoomInfo().AddToMessage(outMsg);
                             
                             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);

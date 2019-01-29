@@ -37,7 +37,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
         private bool _firstVote;
 
-        public bool basicInfoSet;
+        IDifficultyBeatmap lastSong;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -74,7 +74,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
         public void SetSongInfo(SongInfo songInfo, BeatmapDifficulty difficulty)
         {
-            basicInfoSet = true;
+            lastSong = null;
 
             _songNameText.text = songInfo.songName;
             _scoreText.text = ScoreFormatter.Format(0);
@@ -94,44 +94,48 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
         public void SetSongInfo(IDifficultyBeatmap songInfo, LevelCompletionResults results)
         {
-            basicInfoSet = false;
-
-            _songNameText.text = $"{songInfo.level.songName} <size=80%>{songInfo.level.songSubName}</size>";
-            _scoreText.text = ScoreFormatter.Format(results.score);
-            _difficultyText.text = songInfo.difficulty.Name();
-            _rankText.text = RankModel.GetRankName(results.rank);
-            _goodCutsText.text = $"{results.goodCutsCount}<size=50%> / {songInfo.beatmapData.notesCount}";
-            _fullComboText.gameObject.SetActive(results.fullCombo);
-
-            if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "BeatSaver Downloader"))
+            if (lastSong != songInfo)
             {
-                _firstVote = true;
+                Misc.Logger.Info("Updating song info on results screen!");
+                lastSong = songInfo;
 
-                _favButton.onClick.RemoveAllListeners();
-                _favButton.onClick.AddListener(() => ToggleFavorite(songInfo.level.levelID));
+                _songNameText.text = $"{songInfo.level.songName} <size=80%>{songInfo.level.songSubName}</size>";
+                _scoreText.text = ScoreFormatter.Format(results.score);
+                _difficultyText.text = songInfo.difficulty.Name();
+                _rankText.text = RankModel.GetRankName(results.rank);
+                _goodCutsText.text = $"{results.goodCutsCount}<size=50%> / {songInfo.beatmapData.notesCount}";
+                _fullComboText.gameObject.SetActive(results.fullCombo);
 
-                BeatSaverDownloaderHelper.LoadDownloaderConfig();
-                _favButton.interactable = true;
-                _favButton.SetButtonIcon(BeatSaverDownloaderHelper.favoriteSongs.Any(x => x == songInfo.level.levelID) ? Sprites.removeFromFavorites : Sprites.addToFavorites);
-                
-                VoteType vote = BeatSaverDownloaderHelper.GetVoteForSong(songInfo.level.levelID);
-
-                _upvoteButton.interactable = false;
-                _downvoteButton.interactable = false;
-                _ratingText.text = "LOADING...";
-
-                SongDownloader.Instance.RequestSongByLevelID(songInfo.level.levelID.Substring(0, 32), (song) =>
+                if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "BeatSaver Downloader"))
                 {
-                    _ratingText.text = (int.Parse(song.upvotes) - int.Parse(song.downvotes)).ToString();
+                    _firstVote = true;
 
-                    _upvoteButton.interactable = (vote != VoteType.Upvote && BeatSaverDownloaderHelper.apiAccessToken != BeatSaverDownloaderHelper.apiTokenPlaceholder);
-                    _downvoteButton.interactable = (vote != VoteType.Downvote && BeatSaverDownloaderHelper.apiAccessToken != BeatSaverDownloaderHelper.apiTokenPlaceholder);
+                    _favButton.onClick.RemoveAllListeners();
+                    _favButton.onClick.AddListener(() => ToggleFavorite(songInfo.level.levelID));
 
-                    _upvoteButton.onClick.RemoveAllListeners();
-                    _downvoteButton.onClick.RemoveAllListeners();
-                    _upvoteButton.onClick.AddListener(() => StartCoroutine(VoteForSong(song.id, songInfo.level.levelID, true)));
-                    _downvoteButton.onClick.AddListener(() => StartCoroutine(VoteForSong(song.id, songInfo.level.levelID, false)));
-                });
+                    BeatSaverDownloaderHelper.LoadDownloaderConfig();
+                    _favButton.interactable = true;
+                    _favButton.SetButtonIcon(BeatSaverDownloaderHelper.favoriteSongs.Any(x => x == songInfo.level.levelID) ? Sprites.removeFromFavorites : Sprites.addToFavorites);
+
+                    VoteType vote = BeatSaverDownloaderHelper.GetVoteForSong(songInfo.level.levelID);
+
+                    _upvoteButton.interactable = false;
+                    _downvoteButton.interactable = false;
+                    _ratingText.text = "LOADING...";
+
+                    SongDownloader.Instance.RequestSongByLevelID(songInfo.level.levelID.Substring(0, 32), (song) =>
+                    {
+                        _ratingText.text = (int.Parse(song.upvotes) - int.Parse(song.downvotes)).ToString();
+
+                        _upvoteButton.interactable = (vote != VoteType.Upvote && BeatSaverDownloaderHelper.apiAccessToken != BeatSaverDownloaderHelper.apiTokenPlaceholder);
+                        _downvoteButton.interactable = (vote != VoteType.Downvote && BeatSaverDownloaderHelper.apiAccessToken != BeatSaverDownloaderHelper.apiTokenPlaceholder);
+
+                        _upvoteButton.onClick.RemoveAllListeners();
+                        _downvoteButton.onClick.RemoveAllListeners();
+                        _upvoteButton.onClick.AddListener(() => StartCoroutine(VoteForSong(song.id, songInfo.level.levelID, true)));
+                        _downvoteButton.onClick.AddListener(() => StartCoroutine(VoteForSong(song.id, songInfo.level.levelID, false)));
+                    });
+                }
             }
         }
 

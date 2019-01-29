@@ -599,7 +599,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public void UpdateResultsScreen()
         {
             _resultsScreenViewController.SetTimer(currentTime, totalTime);
-            if(_resultsScreenViewController.basicInfoSet && lastDifficulty != null && lastResults != null)
+            if(lastDifficulty != null && lastResults != null)
                 _resultsScreenViewController.SetSongInfo(lastDifficulty, lastResults);
         }
 

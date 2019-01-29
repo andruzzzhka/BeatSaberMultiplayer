@@ -101,7 +101,7 @@ namespace ServerHub.Rooms
                     }
                     else
                     {
-                        Logger.Instance.Error("Unable to add playlist to queue! File does not exist!");
+                        Logger.Instance.Error($"Unable to add playlist to queue! File \"{path}\" does not exist!");
                         return;
                     }
                 }
