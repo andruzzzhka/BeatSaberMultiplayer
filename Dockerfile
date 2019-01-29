@@ -8,8 +8,6 @@ COPY . ./
 # Restore Project Packages
 RUN dotnet restore
 
-# andruzzzhka
-
 # Enter the Server Project and build
 RUN cd ServerHub && \
   dotnet publish -f netcoreapp2.0 -o out -r linux-x64 && \
@@ -43,6 +41,6 @@ WORKDIR /app
 COPY --from=builder /app/ServerHub/out .
 
 # Start the process
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=1 CMD nc -w 5 -vz localhost 3700
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=1 CMD nc -w 5 -uvz localhost 3700
 EXPOSE 3700
 CMD ["./ServerHub"]
