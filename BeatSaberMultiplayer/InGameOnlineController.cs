@@ -38,7 +38,7 @@ namespace BeatSaberMultiplayer
         private PauseMenuManager _pauseMenuManager;
         public AudioTimeSyncController audioTimeSync;
 
-        private List<AvatarController> _avatars = new List<AvatarController>();
+        private List<OnlinePlayerController> _players = new List<OnlinePlayerController>();
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
         private GameObject _scoreScreen;
 
@@ -152,7 +152,7 @@ namespace BeatSaberMultiplayer
                             }
                         }
 
-                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "Menu")).OrderByDescending(x => x.playerScore).ToList();
+                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "Menu")).OrderByDescending(x => x.playerId).ToList();
 
                         int localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
 
@@ -160,45 +160,50 @@ namespace BeatSaberMultiplayer
                         {
                             try
                             {
-                                if (_avatars.Count > playerInfos.Count)
+                                int index = 0;
+                                OnlinePlayerController player = null;
+                                foreach (PlayerInfo info in playerInfos)
                                 {
-                                    for (int i = playerInfos.Count; i < _avatars.Count; i++)
-                                    {
-                                        if (_avatars[i] != null && _avatars[i].gameObject != null)
-                                            Destroy(_avatars[i].gameObject);
-                                    }
-                                    _avatars.RemoveAll(x => x == null || x.gameObject == null);
-                                }
-                                else if (_avatars.Count < playerInfos.Count)
-                                {
-                                    for (int i = 0; i < (playerInfos.Count - _avatars.Count); i++)
-                                    {
-                                        _avatars.Add(new GameObject("Avatar").AddComponent<AvatarController>());
-                                    }
-                                }
+                                    player = _players.FirstOrDefault(x => x != null && x.PlayerInfo.Equals(info));
 
-                                List<PlayerInfo> _playerInfosByID = playerInfos.OrderBy(x => x.playerId).ToList();
-
-                                for (int i = 0; i < playerInfos.Count; i++)
-                                {
-                                    if (_currentScene == "GameCore")
+                                    if(player != null)
                                     {
-                                        _avatars[i].SetPlayerInfo(_playerInfosByID[i], (i - _playerInfosByID.FindIndexInList(Client.Instance.playerInfo)) * 3f, Client.Instance.playerInfo.Equals(_playerInfosByID[i]));
+                                        player.PlayerInfo = info;
+                                        player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 3f : 0f);
                                     }
                                     else
                                     {
-                                        _avatars[i].SetPlayerInfo(_playerInfosByID[i], 0f, Client.Instance.playerInfo.Equals(_playerInfosByID[i]));
+                                        player = new GameObject("OnlinePlayerController").AddComponent<OnlinePlayerController>();
+
+                                        player.PlayerInfo = info;
+                                        player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 3f : 0f);
+
+                                        _players.Add(player);
+                                    }
+                                    
+                                    index++;
+                                }
+                                
+                                if(_players.Count > playerInfos.Count)
+                                {
+                                    foreach(OnlinePlayerController controller in _players.Where(x => !playerInfos.Any(y => y.Equals(x.PlayerInfo))))
+                                    {
+                                        Destroy(controller.gameObject);
                                     }
                                 }
                             }
                             catch (Exception e)
                             {
-                                Console.WriteLine($"AVATARS EXCEPTION: {e}");
+                                Console.WriteLine($"PlayerControllers exception: {e}");
                             }
                         }
 
+                        localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
+
                         if (_currentScene == "GameCore" && loaded)
                         {
+                            playerInfos = playerInfos.OrderByDescending(x => x.playerScore).ToList();
+
                             if (_scoreDisplays.Count < 5)
                             {
                                 _scoreScreen = new GameObject("ScoreScreen");
@@ -317,7 +322,7 @@ namespace BeatSaberMultiplayer
                 {
                     sendRateCounter = 0;
                     UpdatePlayerInfo();
-#if DEBUG
+#if DEBUG && VERBOSE
                     Misc.Logger.Info($"Full send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
 #endif
                 }
@@ -328,7 +333,7 @@ namespace BeatSaberMultiplayer
                     {
                         sendRateCounter = 0;
                         UpdatePlayerInfo();
-#if DEBUG
+#if DEBUG && VERBOSE
                         Misc.Logger.Info($"Half send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
 #endif
                     }
@@ -340,7 +345,7 @@ namespace BeatSaberMultiplayer
                     {
                         sendRateCounter = 0;
                         UpdatePlayerInfo();
-#if DEBUG
+#if DEBUG && VERBOSE
                         Misc.Logger.Info($"One third send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
 #endif
                     }
@@ -423,16 +428,18 @@ namespace BeatSaberMultiplayer
         {
             try
             {
-                Misc.Logger.Info("Destroying avatars");
-                for (int i = 0; i < _avatars.Count; i++)
+#if DEBUG
+                Misc.Logger.Info("Destroying player controllers...");
+#endif
+                for (int i = 0; i < _players.Count; i++)
                 {
-                    if (_avatars[i] != null)
-                        Destroy(_avatars[i].gameObject);
+                    if (_players[i] != null)
+                        Destroy(_players[i].gameObject);
                 }
-                _avatars.Clear();
+                _players.Clear();
             }catch(Exception e)
             {
-                Misc.Logger.Exception($"Unable to destroy avatars! Exception: {e}");
+                Misc.Logger.Exception($"Unable to destroy player controllers! Exception: {e}");
             }
         }
 

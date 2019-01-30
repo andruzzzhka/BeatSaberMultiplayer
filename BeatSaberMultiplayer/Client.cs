@@ -50,6 +50,8 @@ namespace BeatSaberMultiplayer
 
         DateTime _lastPacketTime;
         List<float> _averagePacketTimes = new List<float>();
+        
+        private List<NetIncomingMessage> _receivedMessages = new List<NetIncomingMessage>();
 
         public float Tickrate;
 
@@ -103,127 +105,160 @@ namespace BeatSaberMultiplayer
             playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
             playerInfo.AddToMessage(outMsg);
 
-            Misc.Logger.Info($"Connecting to {ip}:{port}...");
+            Misc.Logger.Info($"Connecting to {ip}:{port} with player name \"{playerInfo.playerName}\" and ID {playerInfo.playerId}");
 
             NetworkClient.Connect(ip, port, outMsg);
         }
 
         public void Update()
         {
-            NetIncomingMessage msg;
-            while ((msg = NetworkClient.ReadMessage()) != null)
+            if (NetworkClient.ReadMessages(_receivedMessages) > 0)
             {
-                float packetTime = (float)DateTime.UtcNow.Subtract(_lastPacketTime).TotalMilliseconds;
-                if (packetTime > 3f)
+                try
                 {
-                    _averagePacketTimes.Add(packetTime);
+                    float packetTime = (float)DateTime.UtcNow.Subtract(_lastPacketTime).TotalMilliseconds;
+                    if (packetTime > 2f)
+                    {
+                        _averagePacketTimes.Add(packetTime);
 
-                    if(_averagePacketTimes.Count > 300)
-                        _averagePacketTimes.RemoveAt(0);
+                        if (_averagePacketTimes.Count > 300)
+                            _averagePacketTimes.RemoveAt(0);
 
-                    Tickrate = (float)Math.Round(1000f/_averagePacketTimes.Average(), 2);
-                }
-                _lastPacketTime = DateTime.UtcNow;
-                switch (msg.MessageType)
-                {
-                    case NetIncomingMessageType.StatusChanged:
+                        Tickrate = (float)Math.Round(1000f / _averagePacketTimes.Average(), 2);
+                    }
+                    _lastPacketTime = DateTime.UtcNow;
+
+                    NetIncomingMessage lastUpdate = _receivedMessages.LastOrDefault(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
+
+                    if (lastUpdate != null)
+                    {
+                        _receivedMessages.RemoveAll(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
+
+                        foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
                         {
-                            NetConnectionStatus status = (NetConnectionStatus)msg.ReadByte();
-
-                            if (status == NetConnectionStatus.Connected && !Connected)
+                            try
                             {
-                                Connected = true;
-                                ConnectedToServerHub?.Invoke();
-                            }else
+                                lastUpdate.Position = 0;
+                                nextDel.Invoke(lastUpdate);
+                            }
+                            catch (Exception e)
                             {
-                                Misc.Logger.Info("New connection state: "+status);
+                                Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
                             }
                         }
-                        break;
-                    case NetIncomingMessageType.Data:
+                    }
+
+                    foreach (NetIncomingMessage msg in _receivedMessages)
+                    {
+                        switch (msg.MessageType)
                         {
-                            CommandType commandType = (CommandType)msg.PeekByte();
-
-                            if (commandType == CommandType.Disconnect)
-                            {
-#if DEBUG
-                                Misc.Logger.Info("Disconnecting...");
-#endif
-                                Disconnect();
-
-                                foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                            case NetIncomingMessageType.StatusChanged:
                                 {
-                                    try
+                                    NetConnectionStatus status = (NetConnectionStatus)msg.ReadByte();
+
+                                    if (status == NetConnectionStatus.Connected && !Connected)
                                     {
-                                        msg.Position = 0;
-                                        nextDel.Invoke(msg);
+                                        Connected = true;
+                                        ConnectedToServerHub?.Invoke();
                                     }
-                                    catch (Exception e)
+                                    else
                                     {
-                                        Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
+                                        Misc.Logger.Info("New connection state: " + status);
                                     }
                                 }
-
-                                return;
-                            }
-                            else if (commandType == CommandType.SendEventMessage)
-                            {
-                                string header = msg.ReadString();
-                                string data = msg.ReadString();
-
-#if DEBUG
-                                Misc.Logger.Info($"Received event message! Header=\"{header}\", Data=\"{data}\"");
-#endif
-                                EventMessageReceived?.Invoke(header, data);
-                            }
-                            else
-                            {
-                                foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                                break;
+                            case NetIncomingMessageType.Data:
                                 {
-                                    try
-                                    {
-                                        msg.Position = 0;
-                                        nextDel.Invoke(msg);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
-                                    }
-                                }
-                            }
+                                    CommandType commandType = (CommandType)msg.PeekByte();
 
-
-                            if (commandType == CommandType.JoinRoom)
-                            {
-                                msg.Position = 8;
-                                if (msg.PeekByte() == 0)
-                                    ClientJoinedRoom?.Invoke();
-                            }
-                            else if (commandType == CommandType.StartLevel)
-                            {
-                                if (playerInfo.playerState == PlayerState.Room)
-                                    ClientLevelStarted?.Invoke();
-                            }
-                        };
-                        break;
-                        
-                    case NetIncomingMessageType.WarningMessage:
-                        Misc.Logger.Warning(msg.ReadString());
-                        break;
-                    case NetIncomingMessageType.ErrorMessage:
-                        Misc.Logger.Error(msg.ReadString());
-                        break;
+                                    if (commandType == CommandType.Disconnect)
+                                    {
 #if DEBUG
-                    case NetIncomingMessageType.VerboseDebugMessage:
-                    case NetIncomingMessageType.DebugMessage:
-                        Misc.Logger.Info(msg.ReadString());
-                        break;
-                    default:
-                        Misc.Logger.Info("Unhandled message type: " + msg.MessageType);
-                        break;
+                                        Misc.Logger.Info("Disconnecting...");
+#endif
+                                        Disconnect();
+
+                                        foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                                        {
+                                            try
+                                            {
+                                                msg.Position = 0;
+                                                nextDel.Invoke(msg);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
+                                            }
+                                        }
+
+                                        return;
+                                    }
+                                    else if (commandType == CommandType.SendEventMessage)
+                                    {
+                                        string header = msg.ReadString();
+                                        string data = msg.ReadString();
+
+#if DEBUG
+                                        Misc.Logger.Info($"Received event message! Header=\"{header}\", Data=\"{data}\"");
+#endif
+                                        EventMessageReceived?.Invoke(header, data);
+                                    }
+                                    else
+                                    {
+                                        foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                                        {
+                                            try
+                                            {
+                                                msg.Position = 0;
+                                                nextDel.Invoke(msg);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
+                                            }
+                                        }
+                                    }
+
+
+                                    if (commandType == CommandType.JoinRoom)
+                                    {
+                                        msg.Position = 8;
+                                        if (msg.PeekByte() == 0)
+                                            ClientJoinedRoom?.Invoke();
+                                    }
+                                    else if (commandType == CommandType.StartLevel)
+                                    {
+                                        if (playerInfo.playerState == PlayerState.Room)
+                                            ClientLevelStarted?.Invoke();
+                                    }
+                                };
+                                break;
+
+                            case NetIncomingMessageType.WarningMessage:
+                                Misc.Logger.Warning(msg.ReadString());
+                                break;
+                            case NetIncomingMessageType.ErrorMessage:
+                                Misc.Logger.Error(msg.ReadString());
+                                break;
+#if DEBUG
+                            case NetIncomingMessageType.VerboseDebugMessage:
+                            case NetIncomingMessageType.DebugMessage:
+                                Misc.Logger.Info(msg.ReadString());
+                                break;
+                            default:
+                                Misc.Logger.Info("Unhandled message type: " + msg.MessageType);
+                                break;
+#endif
+                        }
+                        NetworkClient.Recycle(msg);
+                    }
+                }catch(Exception e)
+                {
+#if DEBUG
+                    Misc.Logger.Exception($"Exception on message received event: {e}");
 #endif
                 }
-                NetworkClient.Recycle(msg);
+                _receivedMessages.Clear();
             }
         }
 

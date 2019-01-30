@@ -363,6 +363,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     Logger.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={(BeatmapDifficulty)difficulty}");
 
                                     Client.Instance.MessageReceived -= PacketReceived;
+
+                                    try
+                                    {
+                                        BS_Utils.Gameplay.Gamemode.NextLevelIsIsolated("Beat Saber Multiplayer");
+                                    }
+                                    catch
+                                    {
+
+                                    }
+
                                     menuSceneSetupData.StartStandardLevel(difficultyBeatmap, gameplayModifiers, playerSettings, null, null, (StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, gameplayModifiers, false); });
                                     return;
                                 }

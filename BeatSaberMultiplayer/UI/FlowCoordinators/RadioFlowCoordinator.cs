@@ -245,6 +245,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
                                 (levelLoaded) =>
                                 {
+
+                                    try
+                                    {
+                                        BS_Utils.Gameplay.Gamemode.NextLevelIsIsolated("Beat Saber Multiplayer");
+                                    }
+                                    catch
+                                    {
+
+                                    }
+
                                     StartLevel(levelLoaded, (BeatmapDifficulty)difficulty);
                                 });
                             }

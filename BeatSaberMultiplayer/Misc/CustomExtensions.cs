@@ -21,9 +21,9 @@ namespace BeatSaberMultiplayer.Misc
             btn.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").color = color;
         }
         
-        public static int FindIndexInList(this List<PlayerInfo> list, PlayerInfo _player)
+        public static int FindIndexInList<T>(this List<T> list, T b)
         {
-            return list.FindIndex(x => (x.playerId == _player.playerId) && (x.playerName == _player.playerName));
+            return list.FindIndex(x => x.Equals(b));
         }
 
         public static TextMeshPro CreateWorldText(Transform parent, string text="TEXT")

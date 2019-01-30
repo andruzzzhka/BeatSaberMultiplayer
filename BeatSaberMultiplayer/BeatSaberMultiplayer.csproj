@@ -158,6 +158,7 @@
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
     <Compile Include="OnlineVRController.cs" />
+    <Compile Include="OnlinePlayerController.cs" />
     <Compile Include="PlayerInfoDisplay.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

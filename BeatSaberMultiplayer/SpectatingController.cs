@@ -24,10 +24,9 @@ namespace BeatSaberMultiplayer
 
         private Scene _currentScene;
 
-        private Dictionary<PlayerInfo, List<PlayerInfo>> _playerInfos = new Dictionary<PlayerInfo, List<PlayerInfo>>();
+        private Dictionary<ulong, List<PlayerInfo>> _playerInfos = new Dictionary<ulong, List<PlayerInfo>>();
 
-        private PlayerInfo _spectatedPlayer;
-        private AvatarController _spectatedPlayerAvatar;
+        private OnlinePlayerController _spectatedPlayer;
         
         private ScoreController _scoreController;
         public AudioTimeSyncController audioTimeSync;
@@ -86,6 +85,7 @@ namespace BeatSaberMultiplayer
         {
             if (!Config.Instance.SpectatorMode || Client.Instance.InRadioMode)
                 yield break;
+
             Misc.Logger.Info("Waiting for controllers...");
             yield return new WaitWhile(delegate() { return !Resources.FindObjectsOfTypeAll<Saber>().Any(); });
 
@@ -135,17 +135,17 @@ namespace BeatSaberMultiplayer
                         try
                         {
                             PlayerInfo player = new PlayerInfo(msg);
-                            if (_playerInfos.ContainsKey(player))
+                            if (_playerInfos.ContainsKey(player.playerId))
                             {
-                                if(_playerInfos[player].Count >= 3 * Client.Instance.Tickrate)
+                                if(_playerInfos[player.playerId].Count >= 3 * Client.Instance.Tickrate)
                                 {
-                                    _playerInfos[player].RemoveAt(0);
+                                    _playerInfos[player.playerId].RemoveAt(0);
                                 }
-                                _playerInfos[player].Add(player);
+                                _playerInfos[player.playerId].Add(player);
                             }
                             else
                             {
-                                _playerInfos.Add(player, new List<PlayerInfo>() { player});
+                                _playerInfos.Add(player.playerId, new List<PlayerInfo>() { player});
                             }
                         }
                         catch (Exception e)
@@ -159,87 +159,76 @@ namespace BeatSaberMultiplayer
 
                     if (_playerInfos.Count > 1 && _spectatedPlayer == null)
                     {
-                        _spectatedPlayer = _playerInfos.First(x => !x.Key.Equals(Client.Instance.playerInfo)).Value.Last();
-                        Misc.Logger.Info("Spectating " + _spectatedPlayer.playerName);
+                        _spectatedPlayer.PlayerInfo = _playerInfos.First(x => !x.Key.Equals(Client.Instance.playerInfo)).Value.Last();
+                        Misc.Logger.Info("Spectating " + _spectatedPlayer.PlayerInfo.playerName);
                     }
                     
                     if (_spectatedPlayer != null)
                     {
-                        float minOffset = _playerInfos[_spectatedPlayer].Min(x => Math.Abs(x.playerProgress - audioTimeSync.songTime));
+                        float minOffset = _playerInfos[_spectatedPlayer.PlayerInfo.playerId].Min(x => Math.Abs(x.playerProgress - audioTimeSync.songTime));
                         
-                        int index = _playerInfos[_spectatedPlayer].FindIndex(x => Math.Abs(x.playerProgress - audioTimeSync.songTime) == minOffset);
+                        int index = _playerInfos[_spectatedPlayer.PlayerInfo.playerId].FindIndex(x => Math.Abs(x.playerProgress - audioTimeSync.songTime) == minOffset);
                         PlayerInfo lerpTo;
                         float lerpProgress;
                         
-                        if(_playerInfos[_spectatedPlayer][index].playerProgress - audioTimeSync.songTime > 0f)
+                        if(_playerInfos[_spectatedPlayer.PlayerInfo.playerId][index].playerProgress - audioTimeSync.songTime > 0f)
                         {
-                            _spectatedPlayer = _playerInfos[_spectatedPlayer][index];
-                            lerpTo = _playerInfos[_spectatedPlayer][index - 1];
+                            _spectatedPlayer.PlayerInfo = _playerInfos[_spectatedPlayer.PlayerInfo.playerId][index];
+                            lerpTo = _playerInfos[_spectatedPlayer.PlayerInfo.playerId][index - 1];
 
-                            lerpProgress = Remap(audioTimeSync.songTime, lerpTo.playerProgress, _spectatedPlayer.playerProgress, 0f, 1f);
+                            lerpProgress = Remap(audioTimeSync.songTime, lerpTo.playerProgress, _spectatedPlayer.PlayerInfo.playerProgress, 0f, 1f);
                         }
                         else
                         {
-                            _spectatedPlayer = _playerInfos[_spectatedPlayer][index + 1];
-                            lerpTo = _playerInfos[_spectatedPlayer][index];
+                            _spectatedPlayer.PlayerInfo = _playerInfos[_spectatedPlayer.PlayerInfo.playerId][index + 1];
+                            lerpTo = _playerInfos[_spectatedPlayer.PlayerInfo.playerId][index];
 
-                            lerpProgress = Remap(audioTimeSync.songTime, lerpTo.playerProgress, _spectatedPlayer.playerProgress, 0f, 1f);
+                            lerpProgress = Remap(audioTimeSync.songTime, lerpTo.playerProgress, _spectatedPlayer.PlayerInfo.playerProgress, 0f, 1f);
                         }
                         
-                        if (_spectatedPlayer != null)
+                        _spectatedPlayer.PlayerInfo.leftHandPos = Vector3.Lerp(_spectatedPlayer.PlayerInfo.leftHandPos, lerpTo.leftHandPos, 0);
+                        _spectatedPlayer.PlayerInfo.rightHandPos = Vector3.Lerp(_spectatedPlayer.PlayerInfo.rightHandPos, lerpTo.rightHandPos, 0);
+
+                        _spectatedPlayer.PlayerInfo.leftHandRot = Quaternion.Lerp(_spectatedPlayer.PlayerInfo.leftHandRot, lerpTo.leftHandRot, 0);
+                        _spectatedPlayer.PlayerInfo.rightHandRot = Quaternion.Lerp(_spectatedPlayer.PlayerInfo.rightHandRot, lerpTo.rightHandRot, 0);
+                                                    
+                        if (_leftController != null && _rightController != null)
                         {
-                            _spectatedPlayer.leftHandPos = Vector3.Lerp(_spectatedPlayer.leftHandPos, lerpTo.leftHandPos, 0);
-                            _spectatedPlayer.rightHandPos = Vector3.Lerp(_spectatedPlayer.rightHandPos, lerpTo.rightHandPos, 0);
+                            _leftController.SetPlayerInfo(_spectatedPlayer.PlayerInfo);
+                            _rightController.SetPlayerInfo(_spectatedPlayer.PlayerInfo);
+                        }
 
-                            _spectatedPlayer.leftHandRot = Quaternion.Lerp(_spectatedPlayer.leftHandRot, lerpTo.leftHandRot, 0);
-                            _spectatedPlayer.rightHandRot = Quaternion.Lerp(_spectatedPlayer.rightHandRot, lerpTo.rightHandRot, 0);
+                        if(_scoreController != null)
+                        {
+                            _scoreController.SetPrivateField("_prevFrameScore", (int)_spectatedPlayer.PlayerInfo.playerScore);
+                            _scoreController.SetPrivateField("_baseScore", (int)lerpTo.playerScore);
+                            _scoreController.SetPrivateField("_combo", (int)lerpTo.playerComboBlocks);
+                        }
 
-                            if (_spectatedPlayerAvatar == null)
-                            {
-                                _spectatedPlayerAvatar = new GameObject("Avatar").AddComponent<AvatarController>();
-                                _spectatedPlayerAvatar.forcePlayerInfo = true;
-                            }
+                        if(_playerController != null)
+                        {
+                            _playerController.OverrideHeadPos(_spectatedPlayer.PlayerInfo.headPos);
+                        }
 
-                            _spectatedPlayerAvatar.SetPlayerInfo(_spectatedPlayer, 0f, false);
-                            
-                            if (_leftController != null && _rightController != null)
-                            {
-                                _leftController.SetPlayerInfo(_spectatedPlayer);
-                                _rightController.SetPlayerInfo(_spectatedPlayer);
-                            }
-
-                            if(_scoreController != null)
-                            {
-                                _scoreController.SetPrivateField("_prevFrameScore", (int)_spectatedPlayer.playerScore);
-                                _scoreController.SetPrivateField("_baseScore", (int)lerpTo.playerScore);
-                                _scoreController.SetPrivateField("_combo", (int)lerpTo.playerComboBlocks);
-                            }
-
-                            if(_playerController != null)
-                            {
-                                _playerController.OverrideHeadPos(_spectatedPlayer.headPos);
-                            }
-
-                            if (_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime > 2.5f)
-                            {
+                        if (_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - audioTimeSync.songTime > 2.5f)
+                        {
 #if DEBUG
-                                if(_playerInfos[_spectatedPlayer].Last().playerProgress > 2f)
-                                    Misc.Logger.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
+                            if(_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress > 2f)
+                                Misc.Logger.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - audioTimeSync.songTime}");
 #endif
-                                SetPositionInSong(_playerInfos[_spectatedPlayer].Last().playerProgress - 1f);
-                                InGameOnlineController.Instance.PauseSong();
-                                _paused = true;
-                            }
-                            else
-                            if (_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime < 1.5f && (audioTimeSync.songLength - audioTimeSync.songTime) > 3f)
-                            {
+                            SetPositionInSong(_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - 1f);
+                            InGameOnlineController.Instance.PauseSong();
+                            _paused = true;
+                        }
+                        else
+                        if (_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - audioTimeSync.songTime < 1.5f && (audioTimeSync.songLength - audioTimeSync.songTime) > 3f)
+                        {
 #if DEBUG
-                                if (_playerInfos[_spectatedPlayer].Last().playerProgress > 2f)
-                                    Misc.Logger.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime}");
+                            if (_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress > 2f)
+                                Misc.Logger.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - audioTimeSync.songTime}");
 #endif
-                                InGameOnlineController.Instance.PauseSong();
-                                _paused = true;
-                            }
+                            InGameOnlineController.Instance.PauseSong();
+                            _paused = true;
                         }
                     }
                 }
@@ -248,9 +237,9 @@ namespace BeatSaberMultiplayer
 
         public void DestroyAvatar()
         {
-            if(_spectatedPlayerAvatar != null && _spectatedPlayerAvatar.gameObject != null)
+            if(_spectatedPlayer != null)
             {
-                Destroy(_spectatedPlayerAvatar.gameObject);
+                Destroy(_spectatedPlayer.gameObject);
             }
         }
 
@@ -260,29 +249,29 @@ namespace BeatSaberMultiplayer
             {
                 if (Input.GetKeyDown(KeyCode.KeypadMultiply))
                 {
-                    int index = _playerInfos.Keys.ToList().FindIndexInList(_spectatedPlayer);
+                    int index = _playerInfos.Keys.ToList().FindIndexInList(_spectatedPlayer.PlayerInfo.playerId);
                     if (index >= _playerInfos.Count - 1)
                     {
                         index = 0;
                     }
 
-                    _spectatedPlayer = _playerInfos.Keys.ElementAt(index);
+                    _spectatedPlayer.PlayerInfo = _playerInfos[_playerInfos.Keys.ElementAt(index)].Last();
                 }
 
                 if (Input.GetKeyDown(KeyCode.KeypadDivide))
                 {
-                    int index = _playerInfos.Keys.ToList().FindIndexInList(_spectatedPlayer);
+                    int index = _playerInfos.Keys.ToList().FindIndexInList(_spectatedPlayer.PlayerInfo.playerId);
                     if (index <= 0)
                     {
                         index = _playerInfos.Count - 1;
                     }
 
-                    _spectatedPlayer = _playerInfos.Keys.ElementAt(index);
+                    _spectatedPlayer.PlayerInfo = _playerInfos[_playerInfos.Keys.ElementAt(index)].Last();
                 }
 
                 if (_paused)
                 {
-                    if(_playerInfos[_spectatedPlayer].Last().playerProgress - audioTimeSync.songTime > 1.9f)
+                    if(_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - audioTimeSync.songTime > 1.9f)
                     {
                         Misc.Logger.Info("Resuming song...");
                         InGameOnlineController.Instance.ResumeSong();
