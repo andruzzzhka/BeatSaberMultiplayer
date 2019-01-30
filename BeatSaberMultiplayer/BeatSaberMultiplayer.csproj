@@ -198,7 +198,6 @@
     <EmbeddedResource Include="Assets\LockedRoom.png" />
     <EmbeddedResource Include="Assets\OnlineIcon.png" />
     <EmbeddedResource Include="Assets\RadioIcon.png" />
-    <EmbeddedResource Include="Assets\RoomsIcon.png" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\WhitePixel.png" />
@@ -208,6 +207,9 @@
     <EmbeddedResource Include="Assets\RemoveFromFavorites.png" />
     <EmbeddedResource Include="Assets\ThumbDown.png" />
     <EmbeddedResource Include="Assets\ThumbUp.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\RoomsIcon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -43,9 +43,10 @@ namespace BeatSaberMultiplayer
         public static Sprite removeFromFavorites;
         public static Sprite whitePixel;
 
+        //by elliotttate#9942
         public static Sprite roomsIcon;
 
-        //https://www.flaticon.com/free-icon/radio_727249
+        //by elliotttate#9942
         public static Sprite radioIcon;
 
         //https://www.flaticon.com/free-icon/thumbs-up_70420
