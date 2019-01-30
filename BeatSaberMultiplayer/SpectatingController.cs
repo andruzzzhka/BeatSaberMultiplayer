@@ -156,6 +156,11 @@ namespace BeatSaberMultiplayer
                         }
                     }
 
+                    if(_spectatedPlayer == null)
+                    {
+                        _spectatedPlayer = new GameObject("PlayerController").AddComponent<OnlinePlayerController>();
+                        _spectatedPlayer.noInterpolation = true;
+                    }
 
                     if (_playerInfos.Count > 1 && _spectatedPlayer == null)
                     {
@@ -163,7 +168,7 @@ namespace BeatSaberMultiplayer
                         Misc.Logger.Info("Spectating " + _spectatedPlayer.PlayerInfo.playerName);
                     }
                     
-                    if (_spectatedPlayer != null)
+                    if (_spectatedPlayer.PlayerInfo != null)
                     {
                         float minOffset = _playerInfos[_spectatedPlayer.PlayerInfo.playerId].Min(x => Math.Abs(x.playerProgress - audioTimeSync.songTime));
                         

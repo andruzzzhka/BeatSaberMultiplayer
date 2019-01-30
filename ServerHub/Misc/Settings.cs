@@ -384,7 +384,6 @@ namespace ServerHub.Misc {
             private string _roomNameTemplate;
             private int _rooms;
             private string _password;
-            private List<string> _songIDs;
 
             private Action MarkDirty { get; }
 

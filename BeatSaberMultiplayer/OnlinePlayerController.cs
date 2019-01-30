@@ -21,7 +21,7 @@ namespace BeatSaberMultiplayer
             set
             {
                 UpdatePrevPosRot(value);
-                if (_info != null)
+                if (_info != null && value != null && !noInterpolation)
                 {
                     _info.playerName = value.playerName;
                     _info.playerName = value.playerName;
@@ -39,7 +39,6 @@ namespace BeatSaberMultiplayer
                     _info = value;
                 }
             }
-
         }
 
         public AvatarController avatar;
@@ -78,21 +77,19 @@ namespace BeatSaberMultiplayer
 
         public void FixedUpdate()
         {
-            if (syncStartInfo != null && syncEndInfo != null && _info != null)
+            if (syncStartInfo != null && syncEndInfo != null && _info != null && !noInterpolation)
             {
                 syncTime += Time.fixedDeltaTime;
 
-                lerpProgress = Mathf.Clamp(syncTime / syncDelay, 0f, 2f);
+                lerpProgress = syncTime / syncDelay;
 
-                _info.headPos = Vector3.LerpUnclamped(syncStartInfo.headPos, syncEndInfo.headPos, lerpProgress);
-                _info.leftHandPos = Vector3.LerpUnclamped(syncStartInfo.leftHandPos, syncEndInfo.leftHandPos, lerpProgress);
-                _info.rightHandPos = Vector3.LerpUnclamped(syncStartInfo.rightHandPos, syncEndInfo.rightHandPos, lerpProgress);
+                _info.headPos = Vector3.Lerp(syncStartInfo.headPos, syncEndInfo.headPos, lerpProgress);
+                _info.leftHandPos = Vector3.Lerp(syncStartInfo.leftHandPos, syncEndInfo.leftHandPos, lerpProgress);
+                _info.rightHandPos = Vector3.Lerp(syncStartInfo.rightHandPos, syncEndInfo.rightHandPos, lerpProgress);
 
-                _info.headRot = Quaternion.LerpUnclamped(syncStartInfo.headRot, syncEndInfo.headRot, lerpProgress);
-                _info.leftHandRot = Quaternion.LerpUnclamped(syncStartInfo.leftHandRot, syncEndInfo.leftHandRot, lerpProgress);
-                _info.rightHandRot = Quaternion.LerpUnclamped(syncStartInfo.rightHandRot, syncEndInfo.rightHandRot, lerpProgress);
-
-                Misc.Logger.Info($"SyncDelay: {(syncDelay * 1000).ToString("0.0")}, FUPS: {1f/Time.fixedDeltaTime}");
+                _info.headRot = Quaternion.Lerp(syncStartInfo.headRot, syncEndInfo.headRot, lerpProgress);
+                _info.leftHandRot = Quaternion.Lerp(syncStartInfo.leftHandRot, syncEndInfo.leftHandRot, lerpProgress);
+                _info.rightHandRot = Quaternion.Lerp(syncStartInfo.rightHandRot, syncEndInfo.rightHandRot, lerpProgress);
             }
         }
 
@@ -106,7 +103,7 @@ namespace BeatSaberMultiplayer
 
         public void UpdatePrevPosRot(PlayerInfo newPlayerInfo)
         {
-            if (newPlayerInfo == null || _info == null)
+            if (newPlayerInfo == null || _info == null || noInterpolation)
                 return;
 
             syncTime = 0;
