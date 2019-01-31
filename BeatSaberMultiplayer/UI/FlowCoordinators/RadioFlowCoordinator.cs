@@ -388,6 +388,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 });
                             });
                         }
+
+                        Client.Instance.playerInfo.playerScore = 0;
+                        Client.Instance.playerInfo.playerEnergy = 0f;
+                        Client.Instance.playerInfo.playerCutBlocks = 0;
+                        Client.Instance.playerInfo.playerComboBlocks = 0;
                     }
                     break;
                 case ChannelState.InGame:

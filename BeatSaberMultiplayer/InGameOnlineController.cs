@@ -30,15 +30,17 @@ namespace BeatSaberMultiplayer
         public static Vector3 oculusTouchPosOffset = new Vector3(0f, 0f, 0.055f);
         public static Quaternion openVrRotOffset = Quaternion.Euler(-4.3f, 0f, 0f);
         public static Vector3 openVrPosOffset = new Vector3(0f, -0.008f, 0f);
+
         public static InGameOnlineController Instance;
 
         public bool needToSendUpdates;
 
+        public AudioTimeSyncController audioTimeSync;
         private StandardLevelGameplayManager _gameManager;
         private ScoreController _scoreController;
         private GameEnergyCounter _energyController;
         private PauseMenuManager _pauseMenuManager;
-        public AudioTimeSyncController audioTimeSync;
+        private VRPlatformHelper _vrPlatformHelper;
 
         private List<OnlinePlayerController> _players = new List<OnlinePlayerController>();
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
@@ -76,9 +78,11 @@ namespace BeatSaberMultiplayer
                 _messageDisplayText.enableWordWrapping = false;
                 _messageDisplayText.alignment = TextAlignmentOptions.Center;
                 DontDestroyOnLoad(_messageDisplayText.gameObject);
+
+                CustomAvatar.Plugin.Instance.PlayerAvatarManager.AvatarChanged += PlayerAvatarManager_AvatarChanged;
             }
         }
-
+        
         public void ActiveSceneChanged(Scene from, Scene to)
         {
             try
@@ -372,9 +376,24 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void UpdatePlayerInfo()
+        private void PlayerAvatarManager_AvatarChanged(CustomAvatar.CustomAvatar obj)
         {
             Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+
+            if (Client.Instance.playerInfo.avatarHash == null)
+            {
+                Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+            }
+        }
+
+        public void UpdatePlayerInfo()
+        {
+
+            if (Client.Instance.playerInfo.avatarHash == null)
+            {
+                Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+            }
+
             if (Client.Instance.playerInfo.avatarHash == null)
             {
                 Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
@@ -388,12 +407,17 @@ namespace BeatSaberMultiplayer
             Client.Instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
             Client.Instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
 
-            if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
+            if(_vrPlatformHelper == null)
+            {
+                _vrPlatformHelper = PersistentSingleton<VRPlatformHelper>.instance;
+            }
+
+            if (_vrPlatformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
             {
                 Client.Instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
                 Client.Instance.playerInfo.leftHandPos += oculusTouchPosOffset;
             }
-            else if (PersistentSingleton<VRPlatformHelper>.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
+            else if (_vrPlatformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
             {
                 Client.Instance.playerInfo.leftHandRot *= openVrRotOffset;
                 Client.Instance.playerInfo.leftHandPos += openVrPosOffset;

@@ -68,7 +68,6 @@ namespace BeatSaberMultiplayer
 
         public void Update()
         {
-
             if (avatar != null)
             {
                 avatar.SetPlayerInfo(_info, avatarOffset, Client.Instance.playerInfo.Equals(_info));
