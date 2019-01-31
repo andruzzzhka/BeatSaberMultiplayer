@@ -14,10 +14,10 @@ then
 fi
 
 # Build Docker Image
-docker build -t andruzzzhka/serverhub:latest .
+docker build -t lolpants/serverhub:latest .
 
 # Tag with Version Number
-docker tag andruzzzhka/serverhub andruzzzhka/serverhub:$tag
+docker tag lolpants/serverhub lolpants/serverhub:$tag
 
 # Push Image
-docker push andruzzzhka/serverhub:latest
+docker push lolpants/serverhub:latest
