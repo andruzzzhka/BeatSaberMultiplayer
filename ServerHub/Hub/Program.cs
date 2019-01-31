@@ -204,23 +204,22 @@ namespace ServerHub.Hub
             HighResolutionTimer.LoopTimer.Interval = 1000 / Settings.Instance.Server.Tickrate;
             HighResolutionTimer.LoopTimer.Elapsed += ProgramLoop;
             HighResolutionTimer.LoopTimer.Start();
-
-            IP = GetPublicIPv4();
-
+            
             VersionChecker.CheckForUpdates();
 
             ReadLine.AutoCompletionHandler = new AutoCompletionHandler();
             ReadLine.HistoryEnabled = true;
             SetupCommands();
-
-            Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
-            serverStartTime = DateTime.Now;
-
-
+            
             ListenerThread = new Thread(HubListener.Start);
 
             ListenerThread.Start();
             HubListener.Listen = true;
+
+            IP = GetPublicIPv4();
+
+            Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
+            serverStartTime = DateTime.Now;
 
             foreach (IPlugin plugin in plugins)
             {
@@ -249,7 +248,7 @@ namespace ServerHub.Hub
             if(Settings.Instance.Radio.RadioChannels.Count == 0)
             {
                 Settings.Instance.Radio.EnableRadio = false;
-                Settings.Instance.Radio.RadioChannels.Add(new Settings.ChannelSettings());
+                Settings.Instance.Radio.RadioChannels.Add(new Settings.ChannelSettings() { JoinMessages = new List<string>() { "{0} joined us!" } });
             }
 
             Logger.Instance.Warning($"Use [Help] to display commands");
@@ -877,10 +876,27 @@ namespace ServerHub.Hub
                                         outMsg.Write(displayTime);
                                         outMsg.Write(fontSize);
                                         outMsg.Write(message);
+                                        outMsg.Write((byte)MessagePosition.Top);
 
                                         x.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
-                                        x.BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(displayTime, fontSize, message));
+                                        x.BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(displayTime, fontSize, message, MessagePosition.Top));
                                         output += $"\nSent message to all players in room {x.roomId}!";
+                                    });
+
+                                    List<RadioChannel> channels = RadioController.radioChannels;
+                                    channels.ForEach((x) =>
+                                    {
+
+                                        NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
+                                        outMsg.Write((byte)CommandType.DisplayMessage);
+                                        outMsg.Write(displayTime);
+                                        outMsg.Write(fontSize);
+                                        outMsg.Write(message);
+                                        outMsg.Write((byte)MessagePosition.Top);
+
+                                        x.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                                        x.BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(displayTime, fontSize, message, MessagePosition.Top));
+                                        output += $"\nSent message to all players in radio channel {x.channelId}: \"{x.channelInfo.name}\"!";
                                     });
                                     return output;
                                 }
@@ -908,9 +924,10 @@ namespace ServerHub.Hub
                                             outMsg.Write(displayTime);
                                             outMsg.Write(fontSize);
                                             outMsg.Write(message);
+                                            outMsg.Write((byte)MessagePosition.Top);
 
                                             room.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
-                                            room.BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(displayTime, fontSize, message));
+                                            room.BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(displayTime, fontSize, message, MessagePosition.Top));
                                             return $"Sent message \"{string.Join(" ", comArgs.Skip(3).ToArray())}\" to all players in room {roomId}!";
                                         }
                                         else
@@ -1440,7 +1457,15 @@ namespace ServerHub.Hub
 
         public static string GetPublicIPv4() {
             using (var client = new WebClient()) {
-                return client.DownloadString("https://api.ipify.org");
+                try
+                {
+                    return client.DownloadString("https://api.ipify.org");
+                }
+                catch
+                {
+                    Logger.Instance.Warning($"Unable to fetch public IP!");
+                    return "127.0.0.1";
+                }
             }
         }
     }

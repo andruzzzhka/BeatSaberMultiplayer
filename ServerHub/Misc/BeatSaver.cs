@@ -79,9 +79,14 @@ namespace ServerHub.Misc
         }
 
 
-        public static List<SongInfo> ConvertSongIDs(List<string> ids)
+        public static async Task<List<SongInfo>> ConvertSongIDsAsync(List<string> ids)
         {
-            List<SongInfo> songs = ids.AsParallel().WithDegreeOfParallelism(4).Select(id => { var task = InfoFromID(id); task.Wait(); return task.Result; }).ToList();
+            List<SongInfo> songs = new List<SongInfo>();
+            foreach (string  id  in ids)
+            {
+                songs.Add(await InfoFromID(id));
+            }
+
             return songs.Where(song => song != null).ToList();
         }
 

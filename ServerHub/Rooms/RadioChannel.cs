@@ -21,6 +21,7 @@ namespace ServerHub.Rooms
         public ChannelInfo channelInfo;
 
         public Queue<SongInfo> radioQueue = new Queue<SongInfo>();
+        public List<SongInfo> defaultSongs = new List<SongInfo>();
 
         public Dictionary<Client, float> songDurationResponses = new Dictionary<Client, float>();
         public bool requestingSongDuration;
@@ -30,6 +31,11 @@ namespace ServerHub.Rooms
         public DateTime nextSongScreenStartTime;
 
         private Task<SongInfo> randomSongTask;
+
+        private SongInfo lastSong;
+
+        private const float joinMessageDisplayTime = 3f;
+        private const float joinMessageFontSize = 2.5f;
 
         public async void StartChannel(int newChannelId)
         {
@@ -65,7 +71,15 @@ namespace ServerHub.Rooms
             }
             else
             {
-                channelInfo.currentSong = await BeatSaver.GetRandomSong();
+                if (Settings.Instance.Radio.RadioChannels[channelId].DefaultSongIDs.Count > 0)
+                {
+                    defaultSongs = await BeatSaver.ConvertSongIDsAsync(Settings.Instance.Radio.RadioChannels[channelId].DefaultSongIDs);
+                    channelInfo.currentSong = defaultSongs.Random();
+                }
+                else
+                {
+                    channelInfo.currentSong = await BeatSaver.GetRandomSong();
+                }
             }
 
             HighResolutionTimer.LoopTimer.Elapsed += RadioLoop;
@@ -87,6 +101,35 @@ namespace ServerHub.Rooms
                 }
             }
             File.WriteAllText($"RadioQueue{channelId}.json", JsonConvert.SerializeObject(radioQueue, Formatting.Indented));
+        }
+
+        public void ClientJoined(Client client)
+        {
+            radioClients.Add(client);
+            if (radioClients.Count == 1 && channelInfo.state == ChannelState.NextSong)
+                nextSongScreenStartTime = DateTime.Now;
+
+            if (Settings.Instance.Radio.RadioChannels[channelId].JoinMessages.Count > 0)
+            {
+                try
+                {
+                    NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
+
+                    string message = string.Format(Settings.Instance.Radio.RadioChannels[channelId].JoinMessages.Random(), client.playerInfo.playerName);
+
+                    outMsg.Write((byte)CommandType.DisplayMessage);
+                    outMsg.Write(joinMessageDisplayTime);
+                    outMsg.Write(joinMessageFontSize);
+                    outMsg.Write(message);
+                    outMsg.Write((byte)MessagePosition.Bottom);
+
+                    BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                    BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(joinMessageDisplayTime, joinMessageFontSize, message, MessagePosition.Bottom));
+                }catch(Exception e)
+                {
+                    Logger.Instance.Warning($"Unable to send join message! Exception: {e}");
+                }
+            }
         }
 
         public async void RadioLoop(object sender, HighResolutionTimerElapsedEventArgs e)
@@ -147,9 +190,17 @@ namespace ServerHub.Rooms
                             }
                             else
                             {
-                                randomSongTask = BeatSaver.GetRandomSong();
-                                channelInfo.currentSong = await randomSongTask;
-                                randomSongTask = null;
+                                if (defaultSongs.Count > 1)
+                                {
+                                    channelInfo.currentSong = defaultSongs.Random(lastSong);
+                                }
+                                else
+                                {
+                                    randomSongTask = BeatSaver.GetRandomSong();
+                                    channelInfo.currentSong = await randomSongTask;
+                                    randomSongTask = null;
+                                }
+                                lastSong = channelInfo.currentSong;
                             }
 
                             outMsg.Write((byte)CommandType.SetSelectedSong);

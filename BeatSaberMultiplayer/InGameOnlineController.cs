@@ -22,6 +22,8 @@ using VRUI;
 
 namespace BeatSaberMultiplayer
 {
+    public enum MessagePosition : byte { Top, Bottom };
+
     public class InGameOnlineController : MonoBehaviour
     {
         public static Quaternion oculusTouchRotOffset = Quaternion.Euler(-40f, 0f, 0f);
@@ -66,7 +68,7 @@ namespace BeatSaberMultiplayer
 
                 Client.ClientCreated += ClientCreated;
                 _currentScene = SceneManager.GetActiveScene().name;
-
+                
                 _messageDisplayText = CustomExtensions.CreateWorldText(transform, "");
                 transform.position = new Vector3(0f, 3.75f, 3.75f);
                 transform.rotation = Quaternion.Euler(-30f, 0f, 0f);
@@ -276,6 +278,23 @@ namespace BeatSaberMultiplayer
                         _messageDisplayText.fontSize = msg.ReadFloat();
 
                         _messageDisplayText.text = msg.ReadString();
+
+                        if(msg.LengthBits - msg.Position >= 8)
+                        {
+                            MessagePosition position = (MessagePosition)msg.ReadByte();
+                            
+                            switch (position)
+                            {
+                                case MessagePosition.Top:
+                                    _messageDisplayText.transform.position = new Vector3(0f, 3.75f, 3.75f);
+                                    _messageDisplayText.transform.rotation = Quaternion.Euler(-30f, 0f, 0f);
+                                    break;
+                                case MessagePosition.Bottom:
+                                    _messageDisplayText.transform.position = new Vector3(0f, 0f, 2.25f);
+                                    _messageDisplayText.transform.rotation = Quaternion.Euler(30f, 0f, 0f);
+                                    break;
+                            }
+                        }
                     };break;
             }
         }

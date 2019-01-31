@@ -41,4 +41,7 @@
     </None>
     <None Remove="Properties\**" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="Hub\Program.cs~RFa10d04e.TMP" />
+  </ItemGroup>
 </Project>

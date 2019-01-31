@@ -36,6 +36,16 @@ namespace System.Linq {
         {
             return list[rnd.Next(list.Count)];
         }
+
+        public static T Random<T>(this List<T> list, T except)
+        {
+            T item = list[rnd.Next(list.Count)];
+            while (item.Equals(except))
+            {
+                item = list[rnd.Next(list.Count)];
+            }
+            return item;
+        }
     }
 
 }

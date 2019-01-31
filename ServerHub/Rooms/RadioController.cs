@@ -158,9 +158,7 @@ namespace ServerHub.Rooms
             {
                 if (radioChannels.Count > channelId)
                 {
-                    radioChannels[channelId].radioClients.Add(client);
-                    if (radioChannels[channelId].radioClients.Count == 1 && radioChannels[channelId].channelInfo.state == ChannelState.NextSong)
-                        radioChannels[channelId].nextSongScreenStartTime = DateTime.Now;
+                    radioChannels[channelId].ClientJoined(client);
                     return true;
                 }
                 else

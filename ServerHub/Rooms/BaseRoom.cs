@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Rooms
 {
+    public enum MessagePosition : byte { Top, Bottom };
 
     public struct ReadyPlayers
     {
@@ -32,12 +33,14 @@ namespace ServerHub.Rooms
         float displayTime;
         float fontSize;
         string message;
+        MessagePosition position;
 
-        public DisplayMessage(float displayTime, float fontSize, string message)
+        public DisplayMessage(float displayTime, float fontSize, string message, MessagePosition position)
         {
             this.displayTime = displayTime;
             this.fontSize = fontSize;
             this.message = message;
+            this.position = position;
         }
     }
 

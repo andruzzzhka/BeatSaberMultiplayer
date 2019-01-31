@@ -26,7 +26,7 @@ namespace ServerHub.Misc {
             private bool _showTickEventExceptions;
             private bool _sendCrashReports;
 
-            private Action MarkDirty { get; }
+            internal Action MarkDirty { get; set; }
 
             /// <summary>
             /// Remember to Save after changing the value
@@ -38,7 +38,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _port = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
             
@@ -52,7 +52,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _tickrate = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -69,7 +69,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _tryUPnP = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -83,7 +83,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _enableWebSocketServer = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -97,7 +97,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _enableWebSocketRoomInfo = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -111,7 +111,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _enableWebSocketRCON = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
             
@@ -125,7 +125,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _rconPassword = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -139,7 +139,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _webSocketPort = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -153,7 +153,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _showTickrateInTitle = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -167,7 +167,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _allowEventMessages = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -181,7 +181,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _showTickEventExceptions = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -195,7 +195,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _sendCrashReports = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -224,7 +224,7 @@ namespace ServerHub.Misc {
             private float _resultsShowTime;
             private ObservableCollection<ChannelSettings> _radioChannels;
 
-            private Action MarkDirty { get; }
+            internal Action MarkDirty { get; set; }
 
             [JsonProperty]
             public bool EnableRadio
@@ -233,7 +233,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _enableRadio = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -244,7 +244,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _nextSongPrepareTime = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -255,7 +255,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _resultsShowTime = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -269,7 +269,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _radioChannels = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -280,7 +280,7 @@ namespace ServerHub.Misc {
                 _nextSongPrepareTime = 90f;
                 _resultsShowTime = 15f;
                 _radioChannels = new ObservableCollection<ChannelSettings>();
-                _radioChannels.CollectionChanged += (sender, e) => { MarkDirty(); };
+                _radioChannels.CollectionChanged += (sender, e) => { MarkDirty?.Invoke(); };
             }
         }
         
@@ -290,12 +290,16 @@ namespace ServerHub.Misc {
             public string ChannelIconUrl;
             [JsonConverter(typeof(StringEnumConverter))]
             public BeatmapDifficulty PreferredDifficulty;
+            public List<string> JoinMessages;
+            public List<string> DefaultSongIDs;
             
             public ChannelSettings()
             {
                 ChannelName = "Radio Channel";
                 ChannelIconUrl = "https://cdn.akaku.org/akaku-radio-icon.png";
                 PreferredDifficulty = BeatmapDifficulty.Expert;
+                JoinMessages = new List<string>();
+                DefaultSongIDs = new List<string>();
             }
         }
 
@@ -303,8 +307,8 @@ namespace ServerHub.Misc {
         public class LoggerSettings {
             private string _logsDir;
 
-            private Action MarkDirty { get; }
-        
+            internal Action MarkDirty { get; set; }
+
             /// <summary>
             /// Remember to Save after changing the value
             /// </summary>
@@ -313,7 +317,7 @@ namespace ServerHub.Misc {
                 get => _logsDir;
                 set {
                     _logsDir = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -327,12 +331,10 @@ namespace ServerHub.Misc {
         public class AccessSettings
         {
             private List<string> _blacklist;
-
             private bool _whitelistEnabled;
-
             private List<string> _whitelist;
 
-            private Action MarkDirty { get; }
+            internal Action MarkDirty { get; set; }
 
             [JsonProperty]
             public List<string> Blacklist
@@ -341,7 +343,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _blacklist = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -352,7 +354,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _whitelistEnabled = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -363,7 +365,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _whitelist = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -385,7 +387,7 @@ namespace ServerHub.Misc {
             private int _rooms;
             private string _password;
 
-            private Action MarkDirty { get; }
+            internal Action MarkDirty { get; set; }
 
             /// <summary>
             /// Remember to Save after changing the value
@@ -397,7 +399,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _enabled = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -411,7 +413,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _roomNameTemplate = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -425,7 +427,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _rooms = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -439,7 +441,7 @@ namespace ServerHub.Misc {
                 set
                 {
                     _password = value;
-                    MarkDirty();
+                    MarkDirty?.Invoke();
                 }
             }
 
@@ -454,15 +456,15 @@ namespace ServerHub.Misc {
         }
 
         [JsonProperty]
-        public ServerSettings Server { get; }
+        public ServerSettings Server { get; internal set; }
         [JsonProperty]
-        public RadioSettings Radio { get; }
+        public RadioSettings Radio { get; internal set; }
         [JsonProperty]
-        public LoggerSettings Logger { get; }
+        public LoggerSettings Logger { get; internal set; }
         [JsonProperty]
-        public AccessSettings Access { get; }
+        public AccessSettings Access { get; internal set; }
         [JsonProperty]
-        public TournamentModeSettings TournamentMode { get; }
+        public TournamentModeSettings TournamentMode { get; internal set; }
 
         private static Settings _instance;
 
@@ -474,10 +476,11 @@ namespace ServerHub.Misc {
                 try {
                     FileLocation?.Directory?.Create();
                     _instance = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(FileLocation?.FullName));
+                    _instance.SetMakeDirtyAction();
                     _instance.MarkDirty();
                 }
                 catch (Exception ex) {
-                    _instance = new Settings();
+                    _instance = CreateNewInstance();
                     _instance.Save();
                     Misc.Logger.Instance.Exception(ex);
                 }
@@ -490,12 +493,31 @@ namespace ServerHub.Misc {
 
         Settings()
         {
-            Server = new ServerSettings(MarkDirty);
-            Radio = new RadioSettings(MarkDirty);
-            Logger = new LoggerSettings(MarkDirty);
-            Access = new AccessSettings(MarkDirty);
-            TournamentMode = new TournamentModeSettings(MarkDirty);
-            MarkDirty();
+
+        }
+
+        private void SetMakeDirtyAction()
+        {
+            Server.MarkDirty = MarkDirty;
+            Radio.MarkDirty = MarkDirty;
+            Logger.MarkDirty = MarkDirty;
+            Access.MarkDirty = MarkDirty;
+            TournamentMode.MarkDirty = MarkDirty;
+        }
+
+        private static Settings CreateNewInstance()
+        {
+            Settings instance = new Settings();
+
+            instance.Server = new ServerSettings(instance.MarkDirty);
+            instance.Radio = new RadioSettings(instance.MarkDirty);
+            instance.Logger = new LoggerSettings(instance.MarkDirty);
+            instance.Access = new AccessSettings(instance.MarkDirty);
+            instance.TournamentMode = new TournamentModeSettings(instance.MarkDirty);
+
+            instance.MarkDirty();
+
+            return instance;
         }
 
         public bool Save() {
