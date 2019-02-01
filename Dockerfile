@@ -42,5 +42,5 @@ COPY --from=builder /app/ServerHub/out .
 
 # Start the process
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=1 CMD nc -w 5 -uvz localhost 3700
-EXPOSE 3700
+EXPOSE 3700/udp
 CMD ["./ServerHub"]
