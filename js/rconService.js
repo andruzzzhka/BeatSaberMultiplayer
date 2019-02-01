@@ -16,8 +16,20 @@ function RconService() {
   var LastIndex = 1001;
 
   Service.Connect = function(addr, pass) {
-    this.Socket = new WebSocket("ws://" + addr + "/" + pass);
-    this.Address = addr;
+    console.log("Protocol: "+document.location.protocol);
+
+    if(document.location.protocol == "http:")
+    {
+      console.log("Trying to connect to WebSocket...");
+      this.Socket = new WebSocket("ws://" + addr + "/" + pass);
+      this.Address = addr;
+    }
+    else if(document.location.protocol == "https:")
+    {
+      console.log("Trying to connect to Secure WebSocket...");
+      this.Socket = new WebSocket("wss://" + addr + "/" + pass);
+      this.Address = addr;
+    }
 
     this.Socket.onmessage = function(e) {
       var data = angular.fromJson(e.data);
