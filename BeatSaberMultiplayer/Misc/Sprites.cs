@@ -42,6 +42,7 @@ namespace BeatSaberMultiplayer
         public static Sprite addToFavorites;
         public static Sprite removeFromFavorites;
         public static Sprite whitePixel;
+        public static Sprite doubleArrow;
 
         //by elliotttate#9942
         public static Sprite roomsIcon;
@@ -62,6 +63,7 @@ namespace BeatSaberMultiplayer
             roomsIcon =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RoomsIcon.png");
             radioIcon =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RadioIcon.png");
             whitePixel =          CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.WhitePixel.png");
+            doubleArrow =       CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.DoubleArrowIcon.png");
             addToFavorites =      CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.AddToFavorites.png");
             removeFromFavorites = CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RemoveFromFavorites.png");
             thumbUp =             CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.ThumbUp.png");

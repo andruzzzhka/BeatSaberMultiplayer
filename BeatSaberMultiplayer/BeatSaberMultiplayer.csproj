@@ -212,6 +212,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Assets\RoomsIcon.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\DoubleArrowIcon.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y $(TargetDir)BeatSaberMultiplayer.dll  "C:\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins"

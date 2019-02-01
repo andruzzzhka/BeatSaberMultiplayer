@@ -28,6 +28,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         private Button _pageUpButton;
         private Button _pageDownButton;
 
+        private Button _fastPageUpButton;
+        private Button _fastPageDownButton;
+
         private Button _sortByButton;
         private Button _searchButton;
         private Button _modeButton;
@@ -137,12 +140,41 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _noArrButton.ToggleWordWrapping(false);
                 _noArrButton.gameObject.SetActive(false);
 
+                _fastPageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
+                (_fastPageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
+                (_fastPageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
+                (_fastPageUpButton.transform as RectTransform).anchoredPosition = new Vector2(-26f, -12f);
+                (_fastPageUpButton.transform as RectTransform).sizeDelta = new Vector2(8f, 6f);
+                _fastPageUpButton.GetComponentsInChildren<RectTransform>().First(x => x.name == "BG").sizeDelta = new Vector2(8f, 6f);
+                _fastPageUpButton.GetComponentsInChildren<Image>().First(x => x.name == "Arrow").sprite = Sprites.doubleArrow;
+                _fastPageUpButton.onClick.AddListener(delegate ()
+                {
+                    for (int i = 0; i < 10; i++)
+                    {
+                        _songsTableView.PageScrollUp();
+                    }
+                });
+
+                _fastPageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
+                (_fastPageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
+                (_fastPageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
+                (_fastPageDownButton.transform as RectTransform).anchoredPosition = new Vector2(-26f, 6f);
+                (_fastPageDownButton.transform as RectTransform).sizeDelta = new Vector2(8f, 6f);
+                _fastPageDownButton.GetComponentsInChildren<RectTransform>().First(x => x.name == "BG").sizeDelta = new Vector2(8f, 6f);
+                _fastPageDownButton.GetComponentsInChildren<Image>().First(x => x.name == "Arrow").sprite = Sprites.doubleArrow;
+                _fastPageDownButton.onClick.AddListener(delegate ()
+                {
+                    for (int i = 0; i < 10; i++)
+                    {
+                        _songsTableView.PageScrollDown();
+                    }
+                });
+
                 _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -12f);
                 (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
-                _pageUpButton.interactable = true;
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
                     _songsTableView.PageScrollUp();
@@ -155,7 +187,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
                 (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 6f);
                 (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
-                _pageDownButton.interactable = true;
                 _pageDownButton.onClick.AddListener(delegate ()
                 {
                     _songsTableView.PageScrollDown();
@@ -336,6 +367,63 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public float RowHeight()
         {
             return 10f;
+        }
+
+
+
+        RectTransform selectedItem;
+        int selectedIndex = 0;
+
+        void Update()
+        {
+            if (selectedItem == null)
+            {
+                selectedItem = (RectTransform)transform.GetChild(selectedIndex);
+                Misc.Logger.Info($"Selected {selectedItem.name}: {selectedItem.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault()?.text}");
+            }
+
+            if (Input.GetKeyDown(KeyCode.KeypadPlus))
+            {
+                selectedIndex++;
+                if (selectedIndex >= transform.childCount)
+                    selectedIndex = 0;
+                selectedItem = (RectTransform)transform.GetChild(selectedIndex);
+                Misc.Logger.Info($"Selected {selectedItem.name}: {selectedItem.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault()?.text}");
+            }
+            else if (Input.GetKeyDown(KeyCode.KeypadMinus))
+            {
+                selectedIndex--;
+                if (selectedIndex < 0)
+                    selectedIndex = transform.childCount - 1;
+                selectedItem = (RectTransform)transform.GetChild(selectedIndex);
+                Misc.Logger.Info($"Selected {selectedItem.name}: {selectedItem.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault()?.text}");
+            }
+
+            if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                if (selectedItem != null)
+                    selectedItem.anchoredPosition += new Vector2(0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f), 0f);
+                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
+            }
+            else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                if (selectedItem != null)
+                    selectedItem.anchoredPosition -= new Vector2(0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f), 0f);
+                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
+            }
+
+            if (Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                if (selectedItem != null)
+                    selectedItem.anchoredPosition += new Vector2(0f, 0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f));
+                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
+            }
+            else if (Input.GetKeyDown(KeyCode.DownArrow))
+            {
+                if (selectedItem != null)
+                    selectedItem.anchoredPosition -= new Vector2(-0f, 0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f));
+                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
+            }
         }
     }
 }

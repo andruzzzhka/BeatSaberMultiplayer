@@ -44,8 +44,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 channelSelectionViewController.prevPressedEvent += () =>
                 {
                     currentChannel--;
-                    if (currentChannel <= 0)
-                        currentChannel = _channelInfos.Count -1;
+                    if (currentChannel < 0)
+                        currentChannel = _channelInfos.Count - 1;
                     channelSelectionViewController.SetContent(_channelInfos[currentChannel]);
                 };
                 channelSelectionViewController.joinPressedEvent += (channel) => 

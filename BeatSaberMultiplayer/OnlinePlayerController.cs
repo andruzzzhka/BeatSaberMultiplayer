@@ -29,7 +29,6 @@ namespace BeatSaberMultiplayer
                     _info.playerComboBlocks = value.playerComboBlocks;
                     _info.playerCutBlocks = value.playerCutBlocks;
                     _info.playerEnergy = value.playerEnergy;
-                    _info.playerProgress = value.playerProgress;
                     _info.playerScore = value.playerScore;
                     _info.playerState = value.playerState;
                     _info.playerTotalBlocks = value.playerTotalBlocks;
@@ -89,6 +88,8 @@ namespace BeatSaberMultiplayer
                 _info.headRot = Quaternion.Lerp(syncStartInfo.headRot, syncEndInfo.headRot, lerpProgress);
                 _info.leftHandRot = Quaternion.Lerp(syncStartInfo.leftHandRot, syncEndInfo.leftHandRot, lerpProgress);
                 _info.rightHandRot = Quaternion.Lerp(syncStartInfo.rightHandRot, syncEndInfo.rightHandRot, lerpProgress);
+
+                _info.playerProgress = Mathf.Lerp(syncStartInfo.playerProgress, syncEndInfo.playerProgress, lerpProgress);
             }
         }
 
