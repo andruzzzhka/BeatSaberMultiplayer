@@ -64,6 +64,15 @@ namespace ServerHub.Hub
         }
 #endif
 
+        static private SentryEvent CrashReportBeforeSend(SentryEvent e)
+        {
+            foreach (LogMessage logEntry in Logger.Instance.logHistory.TakeLast(20))
+            {
+                e.AddBreadcrumb(logEntry.Message, "Logger", "default", null, Sentry.Protocol.BreadcrumbLevel.Info);
+            }
+            return e;
+        }
+
         static private void OnShutdown(ShutdownEventArgs obj) {
             foreach (IPlugin plugin in plugins)
             {
@@ -182,10 +191,12 @@ namespace ServerHub.Hub
                 {
                     o.Dsn = new Dsn("https://b197685d885e473cbecbf93d8dc8628a@sentry.io/1380202");
                     o.AttachStacktrace = true;
+                    o.BeforeSend = CrashReportBeforeSend;
 #if DEBUG
                     o.Debug = true;
 #endif
                 });
+                
             }
 
             if (!Directory.Exists("RoomPresets"))
