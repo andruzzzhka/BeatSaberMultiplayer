@@ -324,8 +324,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 if (Client.Instance.playerInfo.playerState == PlayerState.DownloadingSongs)
                                     return;
                                 
-                                lastSelectedSong = "";
-
                                 Client.Instance.playerInfo.playerComboBlocks = 0;
                                 Client.Instance.playerInfo.playerCutBlocks = 0;
                                 Client.Instance.playerInfo.playerEnergy = 0f;
