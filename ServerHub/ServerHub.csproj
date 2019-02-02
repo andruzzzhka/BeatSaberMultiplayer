@@ -24,7 +24,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="ReadLine" Version="2.0.1" />
     <PackageReference Include="Sentry" Version="1.1.2" />
-    <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Logs\**" />
@@ -43,5 +42,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="Hub\Program.cs~RFa10d04e.TMP" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="WebSocket-Sharp\" />
   </ItemGroup>
 </Project>
