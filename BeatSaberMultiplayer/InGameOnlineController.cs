@@ -171,8 +171,8 @@ namespace BeatSaberMultiplayer
                                 foreach (PlayerInfo info in playerInfos)
                                 {
                                     player = _players.FirstOrDefault(x => x != null && x.PlayerInfo.Equals(info));
-
-                                    if(player != null)
+                                    
+                                    if (player != null)
                                     {
                                         player.PlayerInfo = info;
                                         player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 3f : 0f);
@@ -180,7 +180,7 @@ namespace BeatSaberMultiplayer
                                     else
                                     {
                                         player = new GameObject("OnlinePlayerController").AddComponent<OnlinePlayerController>();
-
+                                        
                                         player.PlayerInfo = info;
                                         player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 3f : 0f);
 
@@ -190,12 +190,13 @@ namespace BeatSaberMultiplayer
                                     index++;
                                 }
                                 
-                                if(_players.Count > playerInfos.Count)
+                                if (_players.Count > playerInfos.Count)
                                 {
-                                    foreach(OnlinePlayerController controller in _players.Where(x => !playerInfos.Any(y => y.Equals(x.PlayerInfo))))
+                                    foreach (OnlinePlayerController controller in _players.Where(x => !playerInfos.Any(y => y.Equals(x.PlayerInfo))))
                                     {
                                         Destroy(controller.gameObject);
                                     }
+                                    _players.RemoveAll(x => x == null || x.destroyed || x.gameObject == null);
                                 }
                             }
                             catch (Exception e)
@@ -389,9 +390,12 @@ namespace BeatSaberMultiplayer
         public void UpdatePlayerInfo()
         {
 
-            if (Client.Instance.playerInfo.avatarHash == null)
+            if (Client.Instance.playerInfo.avatarHash == null || Client.Instance.playerInfo.avatarHash == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
             {
                 Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+#if DEBUG
+                Misc.Logger.Info("Updating avatar hash...");
+#endif
             }
 
             if (Client.Instance.playerInfo.avatarHash == null)

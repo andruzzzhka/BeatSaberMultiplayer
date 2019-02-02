@@ -44,6 +44,7 @@ namespace BeatSaberMultiplayer
 
         public float avatarOffset;
         public bool noInterpolation = false;
+        public bool destroyed = false;
 
         private PlayerInfo _info;
 
@@ -98,6 +99,7 @@ namespace BeatSaberMultiplayer
 #if DEBUG
             Misc.Logger.Info("Destroying player controller");
 #endif
+            destroyed = true;
             Destroy(avatar.gameObject);
         }
 
