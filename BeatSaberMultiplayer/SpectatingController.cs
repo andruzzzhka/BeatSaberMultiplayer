@@ -94,12 +94,10 @@ namespace BeatSaberMultiplayer
 
             var saberB = Resources.FindObjectsOfTypeAll<Saber>().First(x => x.saberType == Saber.SaberType.SaberB);
             _leftController = saberB.GetPrivateField<VRController>("_vrController").gameObject.AddComponent<OnlineVRController>();
-            _leftController.forcePlayerInfo = true;
             saberB.SetPrivateField("_vrController", _leftController);
 
             var saberA = Resources.FindObjectsOfTypeAll<Saber>().First(x => x.saberType == Saber.SaberType.SaberA);
             _rightController = saberA.GetPrivateField<VRController>("_vrController").gameObject.AddComponent<OnlineVRController>();
-            _rightController.forcePlayerInfo = true;
             saberA.SetPrivateField("_vrController", _rightController);
 
             _playerController = Resources.FindObjectsOfTypeAll<PlayerController>().First();
@@ -199,8 +197,8 @@ namespace BeatSaberMultiplayer
                                                     
                         if (_leftController != null && _rightController != null)
                         {
-                            _leftController.SetPlayerInfo(_spectatedPlayer.PlayerInfo);
-                            _rightController.SetPlayerInfo(_spectatedPlayer.PlayerInfo);
+                            _leftController.owner = _spectatedPlayer;
+                            _rightController.owner = _spectatedPlayer;
                         }
 
                         if(_scoreController != null)

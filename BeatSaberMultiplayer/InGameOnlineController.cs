@@ -175,14 +175,14 @@ namespace BeatSaberMultiplayer
                                     if(player != null)
                                     {
                                         player.PlayerInfo = info;
-                                        player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 3f : 0f);
+                                        player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 5f : 0f);
                                     }
                                     else
                                     {
                                         player = new GameObject("OnlinePlayerController").AddComponent<OnlinePlayerController>();
 
                                         player.PlayerInfo = info;
-                                        player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 3f : 0f);
+                                        player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 5f : 0f);
 
                                         _players.Add(player);
                                     }
@@ -416,16 +416,16 @@ namespace BeatSaberMultiplayer
             if (_vrPlatformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
             {
                 Client.Instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
-                Client.Instance.playerInfo.leftHandPos += oculusTouchPosOffset;
+                Client.Instance.playerInfo.leftHandPos += Client.Instance.playerInfo.leftHandRot * oculusTouchPosOffset;
                 Client.Instance.playerInfo.rightHandRot *= oculusTouchRotOffset;
-                Client.Instance.playerInfo.rightHandPos += oculusTouchPosOffset;
+                Client.Instance.playerInfo.rightHandPos += Client.Instance.playerInfo.rightHandRot * oculusTouchPosOffset;
             }
             else if (_vrPlatformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
             {
                 Client.Instance.playerInfo.leftHandRot *= openVrRotOffset;
-                Client.Instance.playerInfo.leftHandPos += openVrPosOffset;
+                Client.Instance.playerInfo.leftHandPos += Client.Instance.playerInfo.leftHandRot * openVrPosOffset;
                 Client.Instance.playerInfo.rightHandRot *= openVrRotOffset;
-                Client.Instance.playerInfo.rightHandPos += openVrPosOffset;
+                Client.Instance.playerInfo.rightHandPos += Client.Instance.playerInfo.rightHandRot * openVrPosOffset;
             }
 
             if (_currentScene == "GameCore" && loaded)

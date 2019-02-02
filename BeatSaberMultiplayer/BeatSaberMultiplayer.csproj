@@ -157,7 +157,10 @@
     <Compile Include="Misc\SongDownloader.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
-    <Compile Include="OnlineVRController.cs" />
+    <Compile Include="OverriddenClasses\OnlineAudioTimeController.cs" />
+    <Compile Include="OverriddenClasses\OnlineBeatmapCallbackController.cs" />
+    <Compile Include="OverriddenClasses\OnlineBeatmapSpawnController.cs" />
+    <Compile Include="OverriddenClasses\OnlineVRController.cs" />
     <Compile Include="OnlinePlayerController.cs" />
     <Compile Include="PlayerInfoDisplay.cs" />
     <Compile Include="Plugin.cs" />
