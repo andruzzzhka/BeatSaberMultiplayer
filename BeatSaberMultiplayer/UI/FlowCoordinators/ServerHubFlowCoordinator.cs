@@ -194,6 +194,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public bool serverHubAvailable;
         public int availableRoomsCount;
+        public int playersCount;
 
         public List<RoomInfo> availableRooms = new List<RoomInfo>();
 
@@ -272,6 +273,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     }
 
                                     availableRoomsCount = availableRooms.Count;
+                                    playersCount = availableRooms.Sum(x => x.players);
                                     ReceivedRoomsList?.Invoke(this, availableRooms);
                                     Abort();
                                 }

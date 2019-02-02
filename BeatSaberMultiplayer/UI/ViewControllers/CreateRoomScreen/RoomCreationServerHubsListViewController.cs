@@ -133,7 +133,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
             cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
             cell.songName = $"{client.ip}:{client.port}";
-            cell.author = $"{client.availableRoomsCount} rooms";
+            cell.author = $"{client.playersCount} players, {client.availableRoomsCount} rooms";
 
             return cell;
         }
