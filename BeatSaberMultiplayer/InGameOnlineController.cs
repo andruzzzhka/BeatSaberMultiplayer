@@ -394,7 +394,7 @@ namespace BeatSaberMultiplayer
             {
                 Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
 #if DEBUG
-                Misc.Logger.Info("Updating avatar hash...");
+                Misc.Logger.Info("Updating avatar hash... New hash: "+(Client.Instance.playerInfo.avatarHash == null ? "NULL" : Client.Instance.playerInfo.avatarHash));
 #endif
             }
 

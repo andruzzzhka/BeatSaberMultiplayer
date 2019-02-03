@@ -49,8 +49,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         { 
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
-                AvatarController.LoadAvatar();
-
                 title = "Online Multiplayer";
 
                 _serverHubNavigationController = BeatSaberUI.CreateViewController<MultiplayerNavigationController>();
