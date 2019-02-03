@@ -124,7 +124,8 @@ namespace BeatSaberMultiplayer.UI
         private void CreateOnlineButton()
         {
             _newVersionText = BeatSaberUI.CreateText(_mainMenuRectTransform, "A new version of the mod\nis available!", new Vector2(18.25f, 30f));
-            _newVersionText.fontSize = 6f;
+            _newVersionText.fontSize = 5f;
+            _newVersionText.lineSpacing = -30;
             _newVersionText.alignment = TextAlignmentOptions.Center;
             _newVersionText.gameObject.SetActive(false);
 
@@ -193,6 +194,7 @@ namespace BeatSaberMultiplayer.UI
                 {
                     Misc.Logger.Info($"A new version of the mod is available!\nNew version: {(string)latestRelease["tag_name"]}\nCurrent version: {Plugin.instance.Version}");
                     _newVersionText.gameObject.SetActive(true);
+                    _newVersionText.text = $"Version {(string)latestRelease["tag_name"]}\nis available!\nCurrent version: {Plugin.instance.Version}";
                 }
             }
         }
