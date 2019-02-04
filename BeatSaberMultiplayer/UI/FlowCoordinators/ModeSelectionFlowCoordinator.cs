@@ -22,7 +22,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 title = "Select Mode";
 
-                AvatarController.LoadAvatar();
+                AvatarController.LoadAvatars();
 
                 _multiplayerNavController = BeatSaberUI.CreateViewController<MultiplayerNavigationController>();
                 _multiplayerNavController.didFinishEvent += () => {

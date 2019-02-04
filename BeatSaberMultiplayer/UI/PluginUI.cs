@@ -1,6 +1,7 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
+using BeatSaberMultiplayer.UI.UIElements;
 using BeatSaberMultiplayer.UI.ViewControllers;
 using BS_Utils.Gameplay;
 using CustomUI.BeatSaber;
@@ -39,6 +40,7 @@ namespace BeatSaberMultiplayer.UI
 
         private TextMeshProUGUI _newVersionText;
         private Button _multiplayerButton;
+        private MultiplayerListViewController _publicAvatarOption;
 
         public static void OnLoad()
         {
@@ -155,21 +157,80 @@ namespace BeatSaberMultiplayer.UI
         {
             var onlineSubMenu = SettingsUI.CreateSubMenu("Multiplayer");
 
-            var avatarsInGame = onlineSubMenu.AddBool("Show Avatars In Game");
+            var avatarsInGame = onlineSubMenu.AddBool("Show Avatars In Game", "Show avatars of other players while playing a song");
             avatarsInGame.GetValue += delegate { return Config.Instance.ShowAvatarsInGame; };
             avatarsInGame.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInGame = value; };
 
-            var avatarsInRoom = onlineSubMenu.AddBool("Show Avatars In Room");
+            var avatarsInRoom = onlineSubMenu.AddBool("Show Avatars In Room", "Show avatars of other players while in room");
             avatarsInRoom.GetValue += delegate { return Config.Instance.ShowAvatarsInRoom; };
             avatarsInRoom.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInRoom = value; };
 
-            var downloadAvatars = onlineSubMenu.AddBool("Download Other Players Avatars");
+            var downloadAvatars = onlineSubMenu.AddBool("Download Other Players Avatars", "Download other players avatars from ModelSaber");
             downloadAvatars.GetValue += delegate { return Config.Instance.DownloadAvatars; };
             downloadAvatars.SetValue += delegate (bool value) { Config.Instance.DownloadAvatars = value; };
 
+            var separateAvatar = onlineSubMenu.AddBool("Separate Avatar For Multiplayer", "Use avatar specified in \"Public Avatar\" instead of your current avatar");
+            separateAvatar.GetValue += delegate { return Config.Instance.SeparateAvatarForMultiplayer; };
+            separateAvatar.SetValue += delegate (bool value) { Config.Instance.SeparateAvatarForMultiplayer = value; };
+
+            _publicAvatarOption = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>((RectTransform)onlineSubMenu.transform, "Public Avatar");
+            _publicAvatarOption.OnEnable();
+            _publicAvatarOption.ValueChanged += (e) => { Config.Instance.PublicAvatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.AvatarLoader.Avatars[e]).Key; };
+            _publicAvatarOption.maxValue = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count - 1;
+            _publicAvatarOption.textForValues = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Select(x => (string.IsNullOrEmpty(x.Name) ? "" : x.Name)).ToArray();
+
+            if (ModelSaberAPI.cachedAvatars.TryGetValue(Config.Instance.PublicAvatarHash, out CustomAvatar.CustomAvatar avatar))
+            { 
+                _publicAvatarOption.Value = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().IndexOf(avatar);
+            }
+            else
+            {
+                if (ModelSaberAPI.isCalculatingHashes)
+                {
+                    ModelSaberAPI.hashesCalculated -= UpdateSelectedAvatar;
+                    ModelSaberAPI.hashesCalculated += UpdateSelectedAvatar;
+                }
+                _publicAvatarOption.Value = 0;
+            }
+
+            _publicAvatarOption.UpdateText();
+            LoadAllAvatars();
+            
             var spectatorMode = onlineSubMenu.AddBool("Spectator Mode (Beta)");
             spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
             spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
+        }
+
+        void UpdateSelectedAvatar()
+        {
+            if (ModelSaberAPI.cachedAvatars.TryGetValue(Config.Instance.PublicAvatarHash, out CustomAvatar.CustomAvatar avatar))
+            {
+                _publicAvatarOption.Value = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().IndexOf(avatar);
+            }
+        }
+
+        void LoadAllAvatars(Action callback = null)
+        {
+            Misc.Logger.Info($"Loading all avatars...");
+            foreach (var avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
+            {
+                if (!avatar.IsLoaded)
+                {
+                    avatar.Load((loadedAvatar, result) => {
+                        if (result == CustomAvatar.AvatarLoadResult.Completed)
+                        {
+                            UpdateAvatarsList();
+                            Misc.Logger.Info($"Loading avatar \"{loadedAvatar.Name}\"!");
+                        }
+                    });
+                }
+            }
+        }
+
+        void UpdateAvatarsList()
+        {
+            _publicAvatarOption.textForValues = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Select(x => (string.IsNullOrEmpty(x.Name) ? "" : x.Name)).ToArray();
+            _publicAvatarOption.UpdateText();
         }
 
         IEnumerator CheckVersion()

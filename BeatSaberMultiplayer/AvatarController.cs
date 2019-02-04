@@ -46,7 +46,7 @@ namespace BeatSaberMultiplayer
 
         public PosRot RightPosRot => new PosRot(RightHandPos, RightHandRot);
 
-        public static void LoadAvatar()
+        public static void LoadAvatars()
         {
             if (defaultAvatarInstance == null)
             {
@@ -91,22 +91,6 @@ namespace BeatSaberMultiplayer
             if (!defaultAvatarInstance.IsLoaded)
             {
                 defaultAvatarInstance.Load(null);
-            }
-            
-            foreach(CustomAvatar.CustomAvatar avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
-            {
-                Task.Run(() =>
-                {
-                    string hash;
-                    if (SongDownloader.CreateMD5FromFile(avatar.FullPath, out hash))
-                    {
-                        ModelSaberAPI.cachedAvatars.Add(hash, avatar);
-#if DEBUG
-                        Misc.Logger.Info("Hashed avatar "+avatar.Name+"! Hash: "+hash);
-#endif
-                    }
-                }).ConfigureAwait(false);
-
             }
         }
 
@@ -154,26 +138,29 @@ namespace BeatSaberMultiplayer
         {
             try
             {
-                if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "CameraPlus") && _camera == null)
+                if (playerNameText != null)
                 {
-                    _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name.StartsWith("CamPlus_"));
-                }
-
-                if (_camera != null)
-                {
-                    if (Config.Instance.SpectatorMode)
+                    if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "CameraPlus") && _camera == null)
                     {
-                        playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
+                        _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name.StartsWith("CamPlus_"));
                     }
-                }
-                else
-                {
-                    playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
+
+                    if (_camera != null)
+                    {
+                        if (Config.Instance.SpectatorMode)
+                        {
+                            playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
+                        }
+                    }
+                    else
+                    {
+                        playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
+                    }
                 }
             }
             catch(Exception e)
             {
-                Misc.Logger.Warning("Unable to rotate text to the camera! Exception: "+e);
+                Misc.Logger.Warning($"Unable to rotate text to the camera! Exception: {e}");
             }
 
         }

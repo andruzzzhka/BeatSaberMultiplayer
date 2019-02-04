@@ -15,6 +15,8 @@ namespace BeatSaberMultiplayer {
         [SerializeField] private bool _showAvatarsInGame;
         [SerializeField] private bool _showAvatarsInRoom;
         [SerializeField] private bool _downloadAvatars;
+        [SerializeField] private bool _separateAvatarForMultiplayer;
+        [SerializeField] private string _publicAvatarHash;
         [SerializeField] private bool _spectatorMode;
         [SerializeField] private int _maxSimultaneousDownloads;
         [SerializeField] private string _beatSaverURL;
@@ -121,6 +123,33 @@ namespace BeatSaberMultiplayer {
             }
         }
 
+        public bool SeparateAvatarForMultiplayer
+        {
+            get { return _separateAvatarForMultiplayer; }
+            set
+            {
+                _separateAvatarForMultiplayer = value;
+                MarkDirty();
+            }
+        }
+
+        public string PublicAvatarHash
+        {
+            get { return _publicAvatarHash; }
+            set
+            {
+                if (value == null)
+                {
+                    _publicAvatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+                }
+                else
+                {
+                    _publicAvatarHash = value;
+                }
+                MarkDirty();
+            }
+        }
+
         public bool SpectatorMode
         {
             get { return _spectatorMode; }
@@ -159,6 +188,8 @@ namespace BeatSaberMultiplayer {
             _showAvatarsInRoom = true;
             _downloadAvatars = true;
             _spectatorMode = false;
+            _separateAvatarForMultiplayer = false;
+            _publicAvatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             _maxSimultaneousDownloads = ModPrefs.GetInt("BeatSaverDownloader", "maxSimultaneousDownloads", 3);
             _beatSaverURL = ModPrefs.GetString("BeatSaverDownloader", "beatsaverURL", "https://beatsaver.com");
             IsDirty = true;

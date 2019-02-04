@@ -379,11 +379,14 @@ namespace BeatSaberMultiplayer
 
         private void PlayerAvatarManager_AvatarChanged(CustomAvatar.CustomAvatar obj)
         {
-            Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
-
-            if (Client.Instance.playerInfo.avatarHash == null)
+            if (!Config.Instance.SeparateAvatarForMultiplayer)
             {
-                Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+                Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+
+                if (Client.Instance.playerInfo.avatarHash == null)
+                {
+                    Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+                }
             }
         }
 
@@ -392,7 +395,14 @@ namespace BeatSaberMultiplayer
 
             if (Client.Instance.playerInfo.avatarHash == null || Client.Instance.playerInfo.avatarHash == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
             {
-                Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+                if (Config.Instance.SeparateAvatarForMultiplayer)
+                {
+                    Client.Instance.playerInfo.avatarHash = Config.Instance.PublicAvatarHash;
+                }
+                else
+                {
+                    Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+                }
 #if DEBUG
                 Misc.Logger.Info("Updating avatar hash... New hash: "+(Client.Instance.playerInfo.avatarHash == null ? "NULL" : Client.Instance.playerInfo.avatarHash));
 #endif

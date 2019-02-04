@@ -160,7 +160,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             }
             else
             {
-                _songSelectionList.textForValues = new string[] { "Manual", "Random", "Voting" };
+                _songSelectionList.textForValues = new string[] { "Manual", "Random" };
                 _songSelectionList.UpdateText();
                 _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
             }
