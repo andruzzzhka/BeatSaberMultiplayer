@@ -19,6 +19,8 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
         private List<NoteController> _activeNotes = new List<NoteController>();
         private List<ObstacleController> _activeObstacles = new List<ObstacleController>();
+        private Vector3 _defaultBigCuttableSize = new Vector3(0.8f, 0.5f, 1f);
+        private Vector3 _defaultSmallCuttableSize = new Vector3(0.35f, 0.35f, 0.35f);
 
         public void Init(OnlinePlayerController newOwner, OnlineBeatmapCallbackController callbackController, OnlineAudioTimeController syncController)
         {
@@ -130,6 +132,8 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     noteJump.SetPrivateField("_playerController", owner);
                     noteJump.SetPrivateField("_audioTimeSyncController", onlineSyncController);
                     basicNoteController.GetComponent<NoteFloorMovement>().SetPrivateField("_audioTimeSyncController", onlineSyncController);
+                    basicNoteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "BigCuttable").size = _defaultBigCuttableSize * 1.65f;
+                    basicNoteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "SmallCuttable").size = _defaultSmallCuttableSize * 1.65f;
                     basicNoteController.noteDidFinishJumpEvent += ResetControllers;
                     basicNoteController.noteWasCutEvent += (controller, info) => { ResetControllers(controller); };
                     basicNoteController.noteDidDissolveEvent += ResetControllers;
@@ -148,21 +152,31 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             return transform.right * num + new Vector3(0f, LineYPosForLineLayer(noteLineLayer), 0f);
         }
 
-        public void ResetControllers(NoteController controller)
+        public void ResetControllers(NoteController noteController)
         {
-            var noteJump = controller.GetComponent<NoteJump>();
+            var noteJump = noteController.GetComponent<NoteJump>();
             noteJump.SetPrivateField("_playerController", _localPlayer);
             noteJump.SetPrivateField("_audioTimeSyncController", _localSyncController);
-            controller.GetComponent<NoteFloorMovement>().SetPrivateField("_audioTimeSyncController", _localSyncController);
-            if(_activeNotes != null)
-            _activeNotes.Remove(controller);
+            noteController.GetComponent<NoteFloorMovement>().SetPrivateField("_audioTimeSyncController", _localSyncController);
+
+            noteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "BigCuttable").size = _defaultBigCuttableSize;
+            noteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "SmallCuttable").size = _defaultSmallCuttableSize;
+
+            noteController.noteDidFinishJumpEvent -= ResetControllers;
+            noteController.noteWasCutEvent -= (controller, info) => { ResetControllers(controller); };
+            noteController.noteDidDissolveEvent -= ResetControllers;
+
+            if (_activeNotes != null)
+                _activeNotes.Remove(noteController);
         }
 
         public void ResetControllers(ObstacleController controller)
         {
             controller.SetPrivateField("_playerController", _localPlayer);
             controller.SetPrivateField("_audioTimeSyncController", _localSyncController);
-            if(_activeObstacles != null)
+            controller.finishedMovementEvent -= ResetControllers;
+            controller.didDissolveEvent -= ResetControllers;
+            if (_activeObstacles != null)
                 _activeObstacles.Remove(controller);
         }
 

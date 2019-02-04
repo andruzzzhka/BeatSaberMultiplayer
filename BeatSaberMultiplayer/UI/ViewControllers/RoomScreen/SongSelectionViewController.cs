@@ -271,6 +271,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _songsTableView.gameObject.SetActive(isHost);
             _pageUpButton.gameObject.SetActive(isHost);
             _pageDownButton.gameObject.SetActive(isHost);
+            _fastPageUpButton.gameObject.SetActive(isHost);
+            _fastPageDownButton.gameObject.SetActive(isHost);
+
             _hostIsSelectingSongText.gameObject.SetActive(!isHost);
 
             SelectTopButtons(TopButtonsState.Select);
@@ -367,63 +370,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public float RowHeight()
         {
             return 10f;
-        }
-
-
-
-        RectTransform selectedItem;
-        int selectedIndex = 0;
-
-        void Update()
-        {
-            if (selectedItem == null)
-            {
-                selectedItem = (RectTransform)transform.GetChild(selectedIndex);
-                Misc.Logger.Info($"Selected {selectedItem.name}: {selectedItem.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault()?.text}");
-            }
-
-            if (Input.GetKeyDown(KeyCode.KeypadPlus))
-            {
-                selectedIndex++;
-                if (selectedIndex >= transform.childCount)
-                    selectedIndex = 0;
-                selectedItem = (RectTransform)transform.GetChild(selectedIndex);
-                Misc.Logger.Info($"Selected {selectedItem.name}: {selectedItem.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault()?.text}");
-            }
-            else if (Input.GetKeyDown(KeyCode.KeypadMinus))
-            {
-                selectedIndex--;
-                if (selectedIndex < 0)
-                    selectedIndex = transform.childCount - 1;
-                selectedItem = (RectTransform)transform.GetChild(selectedIndex);
-                Misc.Logger.Info($"Selected {selectedItem.name}: {selectedItem.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault()?.text}");
-            }
-
-            if (Input.GetKeyDown(KeyCode.RightArrow))
-            {
-                if (selectedItem != null)
-                    selectedItem.anchoredPosition += new Vector2(0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f), 0f);
-                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
-            }
-            else if (Input.GetKeyDown(KeyCode.LeftArrow))
-            {
-                if (selectedItem != null)
-                    selectedItem.anchoredPosition -= new Vector2(0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f), 0f);
-                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
-            }
-
-            if (Input.GetKeyDown(KeyCode.UpArrow))
-            {
-                if (selectedItem != null)
-                    selectedItem.anchoredPosition += new Vector2(0f, 0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f));
-                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
-            }
-            else if (Input.GetKeyDown(KeyCode.DownArrow))
-            {
-                if (selectedItem != null)
-                    selectedItem.anchoredPosition -= new Vector2(-0f, 0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f));
-                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
-            }
         }
     }
 }
