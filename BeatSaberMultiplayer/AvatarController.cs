@@ -46,7 +46,7 @@ namespace BeatSaberMultiplayer
 
         public PosRot RightPosRot => new PosRot(RightHandPos, RightHandRot);
 
-        public static void LoadAvatar()
+        public static void LoadAvatars()
         {
             if (defaultAvatarInstance == null)
             {
@@ -91,22 +91,6 @@ namespace BeatSaberMultiplayer
             if (!defaultAvatarInstance.IsLoaded)
             {
                 defaultAvatarInstance.Load(null);
-            }
-            
-            foreach(CustomAvatar.CustomAvatar avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
-            {
-                Task.Run(() =>
-                {
-                    string hash;
-                    if (SongDownloader.CreateMD5FromFile(avatar.FullPath, out hash))
-                    {
-                        ModelSaberAPI.cachedAvatars.Add(hash, avatar);
-#if DEBUG
-                        Misc.Logger.Info("Hashed avatar "+avatar.Name+"! Hash: "+hash);
-#endif
-                    }
-                }).ConfigureAwait(false);
-
             }
         }
 
@@ -154,26 +138,29 @@ namespace BeatSaberMultiplayer
         {
             try
             {
-                if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "CameraPlus") && _camera == null)
+                if (playerNameText != null)
                 {
-                    _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name.StartsWith("CamPlus_"));
-                }
-
-                if (_camera != null)
-                {
-                    if (Config.Instance.SpectatorMode)
+                    if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "CameraPlus") && _camera == null)
                     {
-                        playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
+                        _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name.StartsWith("CamPlus_"));
                     }
-                }
-                else
-                {
-                    playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
+
+                    if (_camera != null)
+                    {
+                        if (Config.Instance.SpectatorMode)
+                        {
+                            playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
+                        }
+                    }
+                    else
+                    {
+                        playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
+                    }
                 }
             }
             catch(Exception e)
             {
-                Misc.Logger.Warning("Unable to rotate text to the camera! Exception: "+e);
+                Misc.Logger.Warning($"Unable to rotate text to the camera! Exception: {e}");
             }
 
         }
@@ -202,22 +189,25 @@ namespace BeatSaberMultiplayer
             {
 
                 playerInfo = _playerInfo;
-                
-                if (isLocal)
+
+                if (playerNameText != null)
                 {
-                    playerNameText.gameObject.SetActive(false);
+                    if (isLocal)
+                    {
+                        playerNameText.gameObject.SetActive(false);
 #if !DEBUG
                     if (avatar != null)
                     {
                         Destroy(avatar.GameObject);
                     }
 #endif
+                    }
+                    else
+                    {
+                        playerNameText.gameObject.SetActive(true);
+                    }
                 }
-                else
-                {
-                    playerNameText.gameObject.SetActive(true);
-                }
-
+                
                 if (playerNameText == null)
                 {
                     return;
@@ -228,23 +218,15 @@ namespace BeatSaberMultiplayer
                     if (ModelSaberAPI.cachedAvatars.ContainsKey(playerInfo.avatarHash))
                     {
                         CustomAvatar.CustomAvatar cachedAvatar = ModelSaberAPI.cachedAvatars[playerInfo.avatarHash];
+                        
                         if (cachedAvatar != null)
                         {
-                            if (cachedAvatar.IsLoaded)
+                            if (pendingAvatars.Contains(cachedAvatar))
                             {
-                                if (avatar != null)
-                                {
-                                    Destroy(avatar.GameObject);
-                                }
-
-                                avatar = AvatarSpawner.SpawnAvatar(cachedAvatar, this);
-                                exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
-                                if (exclusionScript != null)
-                                    exclusionScript.SetVisible();
-
-                                currentAvatarHash = playerInfo.avatarHash;
+                                AvatarLoaded -= AvatarController_AvatarLoaded;
+                                AvatarLoaded += AvatarController_AvatarLoaded;
                             }
-                            else if (!pendingAvatars.Contains(cachedAvatar))
+                            else if (!pendingAvatars.Contains(cachedAvatar) && !cachedAvatar.IsLoaded)
                             {
                                 if (avatar != null)
                                 {
@@ -255,7 +237,7 @@ namespace BeatSaberMultiplayer
                                 exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
                                 if (exclusionScript != null)
                                     exclusionScript.SetVisible();
-
+                                
                                 pendingAvatars.Add(cachedAvatar);
                                 cachedAvatar.Load((CustomAvatar.CustomAvatar loadedAvatar, AvatarLoadResult result) =>
                                {
@@ -269,8 +251,17 @@ namespace BeatSaberMultiplayer
                             }
                             else
                             {
-                                AvatarLoaded -= AvatarController_AvatarLoaded;
-                                AvatarLoaded += AvatarController_AvatarLoaded;
+                                if (avatar != null)
+                                {
+                                    Destroy(avatar.GameObject);
+                                }
+                                
+                                avatar = AvatarSpawner.SpawnAvatar(cachedAvatar, this);
+                                exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
+                                if (exclusionScript != null)
+                                    exclusionScript.SetVisible();
+                                
+                                currentAvatarHash = playerInfo.avatarHash;
                             }
                         }
                     }
@@ -303,21 +294,16 @@ namespace BeatSaberMultiplayer
                 Vector3 offsetVector = new Vector3(offset, 0f, 0f);
                 
                 HeadPos = playerInfo.headPos + offsetVector;
-                
                 RightHandPos = playerInfo.rightHandPos + offsetVector;
-                
                 LeftHandPos = playerInfo.leftHandPos + offsetVector;
-                
+
                 HeadRot = playerInfo.headRot;
-                
                 RightHandRot = playerInfo.rightHandRot;
-
                 LeftHandRot = playerInfo.leftHandRot;
-
+                
                 transform.position = HeadPos;
 
                 playerNameText.text = playerInfo.playerName;
-                
             }
             catch (Exception e)
             {

@@ -1,4 +1,4 @@
-﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.OverriddenClasses;
 using BS_Utils.Gameplay;
 using System;
@@ -51,6 +51,7 @@ namespace BeatSaberMultiplayer
 
         public float avatarOffset;
         public bool noInterpolation = false;
+        public bool destroyed = false;
 
         private PlayerInfo _info;
 
@@ -154,6 +155,8 @@ namespace BeatSaberMultiplayer
 #if DEBUG
             Misc.Logger.Info("Destroying player controller");
 #endif
+            destroyed = true;
+            
             if (avatar != null)
             {
                 Destroy(avatar.gameObject);

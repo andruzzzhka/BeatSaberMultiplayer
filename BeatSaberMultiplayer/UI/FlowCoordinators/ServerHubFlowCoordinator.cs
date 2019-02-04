@@ -49,8 +49,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         { 
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
-                AvatarController.LoadAvatar();
-
                 title = "Online Multiplayer";
 
                 _serverHubNavigationController = BeatSaberUI.CreateViewController<MultiplayerNavigationController>();
@@ -75,6 +73,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             PresentFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, false, false);
             PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients.Where(x => x.serverHubAvailable).ToList());
 
+            PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent -= RoomCreationFlowCoordinator_didFinishEvent;
             PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent += RoomCreationFlowCoordinator_didFinishEvent;
         }
 

@@ -39,9 +39,10 @@ namespace ServerHub.Rooms
         {
             if (radioStarted)
             {
-                foreach(RadioChannel channel in radioChannels)
+                for (int i = 0; i < radioChannels.Count; i++)
                 {
-                    channel.StopChannel(reason);
+                    if(i < radioChannels.Count && radioChannels[i] != null)
+                        radioChannels[i].StopChannel(reason);
                 }
                 radioStarted = false;
             }

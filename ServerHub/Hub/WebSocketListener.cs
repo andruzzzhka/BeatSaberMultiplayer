@@ -171,13 +171,14 @@ namespace ServerHub.Hub
             {
                 Server.AddWebSocketService<RCONBehaviour>("/"+Settings.Instance.Server.RCONPassword);
             }
+            Server.ReuseAddress = true;
             Server.Start();
         }
 
-        public static void Stop()
+        public static void Stop(WebSocketSharp.CloseStatusCode code = WebSocketSharp.CloseStatusCode.Away, string reason = "")
         {
             if(Server != null)
-                Server.Stop();
+                Server.Stop(code, reason);
         }
 
         public static void BroadcastState()

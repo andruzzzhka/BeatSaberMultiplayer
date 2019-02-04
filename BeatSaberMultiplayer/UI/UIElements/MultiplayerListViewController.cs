@@ -18,19 +18,18 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         private TextMeshProUGUI _valueText;
 
-        public string[] textForValues;
+        public string[] textForValues = new string[0];
 
         public int _value;
 
-        public int Value { get { return _value; } set { _value = value; _valueText.text = (textForValues.Length > _value) ? textForValues[_value] : _value.ToString(); UpdateButtons(); } }
+        public int Value { get { return _value; } set { _value = value;
+                Misc.Logger.Info("TEXT LENGTH: " + textForValues.Length); if (_valueText != null) _valueText.text = (textForValues != null && textForValues.Length > _value) ? textForValues[_value] : _value.ToString(); UpdateButtons(); } }
 
         public int minValue = 0;
         public int maxValue = 999;
 
         public void OnEnable()
         {
-            textForValues = new string[0];
-
             _incButton = GetComponentsInChildren<Button>().First(x => x.name == "IncButton");
             _incButton.onClick.RemoveAllListeners();
             _incButton.onClick.AddListener(delegate()
@@ -39,6 +38,9 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 ValueChanged?.Invoke(_value);
 
                 UpdateButtons();
+                Misc.Logger.Info("TEXT LENGTH: " + textForValues.Length+"\nValue: "+_value);
+                if(textForValues.Length > _value)
+                    Misc.Logger.Info("TEXT: " + textForValues[_value]);
                 _valueText.text = (textForValues.Length > _value) ? textForValues[_value] : _value.ToString();
             });
 
@@ -60,6 +62,9 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         public void UpdateButtons()
         {
+            if (_incButton == null || _decButton == null)
+                return;
+
             if (_value <= minValue)
             {
                 _decButton.interactable = false;
@@ -81,6 +86,8 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         public void UpdateText()
         {
+            if (_valueText == null)
+                return;
             _valueText.text = (textForValues.Length > _value) ? textForValues[_value] : _value.ToString();
         }
 

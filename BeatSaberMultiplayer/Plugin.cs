@@ -61,17 +61,24 @@ namespace BeatSaberMultiplayer
 #if DEBUG
            Misc.Logger.Info($"Active scene changed from \"{from.name}\" to \"{to.name}\"");
 #endif
-            if (from.name == "EmptyTransition" && to.name == "Menu")
+            try
             {
-                PluginUI.OnLoad();
-                InGameOnlineController.OnLoad(to);
-                SpectatingController.OnLoad();
-            }
-            else
+                if (from.name == "EmptyTransition" && to.name == "Menu")
+                {
+                    ModelSaberAPI.HashAllAvatars();
+                    PluginUI.OnLoad();
+                    InGameOnlineController.OnLoad(to);
+                    SpectatingController.OnLoad();
+                }
+                else
+                {
+                    InGameOnlineController.Instance?.ActiveSceneChanged(from, to);
+                    if (Config.Instance.SpectatorMode)
+                        SpectatingController.Instance?.ActiveSceneChanged(from, to);
+                }
+            }catch(Exception e)
             {
-                InGameOnlineController.Instance?.ActiveSceneChanged(from, to);
-                if(Config.Instance.SpectatorMode)
-                    SpectatingController.Instance?.ActiveSceneChanged(from, to);
+                Misc.Logger.Exception("Exception on active scene change: "+e);
             }
         }
 

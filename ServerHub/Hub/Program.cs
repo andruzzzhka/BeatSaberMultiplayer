@@ -58,7 +58,8 @@ namespace ServerHub.Hub
             List<BaseRoom> rooms = new List<BaseRoom>(RoomsController.GetRoomsList());
             foreach (BaseRoom room in rooms)
             {
-                RoomsController.DestroyRoom(room.roomId, "ServerHub exception occured!");
+                if(room != null)
+                    RoomsController.DestroyRoom(room.roomId, "ServerHub exception occured!");
             }
             HubListener.Stop("ServerHub exception occured!");
         }
@@ -432,7 +433,8 @@ namespace ServerHub.Hub
                         List<BaseRoom> rooms = new List<BaseRoom>(RoomsController.GetRoomsList());
                         foreach (BaseRoom room in rooms)
                         {
-                            RoomsController.DestroyRoom(room.roomId, "ServerHub is shutting down...");
+                            if (room != null)
+                                RoomsController.DestroyRoom(room.roomId, "ServerHub exception occured!");
                         }
                         HubListener.Stop();
                     }

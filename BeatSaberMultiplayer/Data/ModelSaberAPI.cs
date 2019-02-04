@@ -14,9 +14,12 @@ namespace BeatSaberMultiplayer.Misc
     public static class ModelSaberAPI
     {
         public static event Action<string> avatarDownloaded;
+        public static event Action hashesCalculated;
 
         public static Dictionary<string, CustomAvatar.CustomAvatar> cachedAvatars = new Dictionary<string, CustomAvatar.CustomAvatar>();
         public static List<string> queuedAvatars = new List<string>();
+
+        public static bool isCalculatingHashes;
 
         public static IEnumerator DownloadAvatarCoroutine(string hash, Action<string> callback)
         {
@@ -95,8 +98,6 @@ namespace BeatSaberMultiplayer.Misc
                     timeout = true;
                     Logger.Error("Connection timed out!");
                 }
-                
-                //songInfo.downloadingProgress = asyncRequest.progress;
             }
 
 
@@ -141,6 +142,43 @@ namespace BeatSaberMultiplayer.Misc
                     callback?.Invoke(null);
                     yield break;
                 }
+            }
+        }
+
+        public static void HashAllAvatars()
+        {
+            if (cachedAvatars.Count != CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count)
+            {
+                isCalculatingHashes = true;
+                Misc.Logger.Info("Hashing all avatars...");
+                try
+                {
+                    foreach (CustomAvatar.CustomAvatar avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
+                    {
+                        Task.Run(() =>
+                        {
+                            string hash;
+                            if (SongDownloader.CreateMD5FromFile(avatar.FullPath, out hash))
+                            {
+                                if (!cachedAvatars.ContainsKey(hash))
+                                {
+                                    cachedAvatars.Add(hash, avatar);
+#if DEBUG
+                                Misc.Logger.Info("Hashed avatar "+avatar.Name+"! Hash: "+hash);
+#endif
+                            }
+                            }
+                        }).ConfigureAwait(false);
+
+                    }
+                    Misc.Logger.Info("All avatars hashed!");
+                    hashesCalculated?.Invoke();
+                }
+                catch(Exception e)
+                {
+                    Misc.Logger.Warning($"Unable to hash avatars! Exception: {e}");
+                }
+                isCalculatingHashes = false;
             }
         }
 

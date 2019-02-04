@@ -132,7 +132,7 @@ namespace ServerHub.Rooms
                 case RoomState.InGame:
                     {
                         if ((DateTime.Now.Subtract(_songStartTime).TotalSeconds >= selectedSong.songDuration) ||
-                            (DateTime.Now.Subtract(_songStartTime).TotalSeconds >= 10f && !roomSettings.NoFail && roomClients.All(x => x.playerInfo.playerState != PlayerState.Game)))
+                            (DateTime.Now.Subtract(_songStartTime).TotalSeconds >= 10f && roomClients.All(x => x.playerInfo.playerState != PlayerState.Game)))
                         {
                             roomState = RoomState.Results;
                             _resultsStartTime = DateTime.Now;
@@ -169,7 +169,6 @@ namespace ServerHub.Rooms
                             case SongSelectionType.Random:
                                 {
                                     roomState = RoomState.Preparing;
-                                    Random rand = new Random();
 
                                     randomSongTask = BeatSaver.GetRandomSong();
                                     selectedSong = await randomSongTask;

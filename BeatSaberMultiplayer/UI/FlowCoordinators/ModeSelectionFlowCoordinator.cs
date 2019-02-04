@@ -22,6 +22,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 title = "Select Mode";
 
+                AvatarController.LoadAvatars();
+
                 _multiplayerNavController = BeatSaberUI.CreateViewController<MultiplayerNavigationController>();
                 _multiplayerNavController.didFinishEvent += () => {
                     MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
