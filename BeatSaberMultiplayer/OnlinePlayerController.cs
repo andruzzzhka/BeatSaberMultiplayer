@@ -70,9 +70,8 @@ namespace BeatSaberMultiplayer
                 avatar = new GameObject("AvatarController").AddComponent<AvatarController>();
                 syncStartInfo = _info;
                 syncEndInfo = _info;
-
-                Misc.Logger.Info("Scene name: " + SceneManager.GetActiveScene().name);
-                if (SceneManager.GetActiveScene().name != "Menu" && !Client.Instance.playerInfo.Equals(PlayerInfo))
+                
+                if (SceneManager.GetActiveScene().name != "Menu" && !Client.Instance.playerInfo.Equals(PlayerInfo) && Config.Instance.ShowOtherPlayersBlocks)
                 {
                     SpawnBeatmapControllers();
                     SpawnSabers();

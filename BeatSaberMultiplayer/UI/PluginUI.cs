@@ -161,6 +161,10 @@ namespace BeatSaberMultiplayer.UI
             avatarsInGame.GetValue += delegate { return Config.Instance.ShowAvatarsInGame; };
             avatarsInGame.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInGame = value; };
 
+            var blocksInGame = onlineSubMenu.AddBool("Show Other Players Blocks", "Show other players blocks while playing a song\n<color=red>Requires \"Show Avatars In Game\"</color>");
+            blocksInGame.GetValue += delegate { return Config.Instance.ShowOtherPlayersBlocks; };
+            blocksInGame.SetValue += delegate (bool value) { Config.Instance.ShowOtherPlayersBlocks = value; };
+
             var avatarsInRoom = onlineSubMenu.AddBool("Show Avatars In Room", "Show avatars of other players while in room");
             avatarsInRoom.GetValue += delegate { return Config.Instance.ShowAvatarsInRoom; };
             avatarsInRoom.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInRoom = value; };
@@ -196,7 +200,7 @@ namespace BeatSaberMultiplayer.UI
             _publicAvatarOption.UpdateText();
             LoadAllAvatars();
             
-            var spectatorMode = onlineSubMenu.AddBool("Spectator Mode (Beta)");
+            var spectatorMode = onlineSubMenu.AddBool("Spectator Mode (Beta)", "Watch other players playing a song (e.g. tournaments)\n<color=red>You can't play songs while \"Spectator Mode\" is on!</color>");
             spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
             spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
         }

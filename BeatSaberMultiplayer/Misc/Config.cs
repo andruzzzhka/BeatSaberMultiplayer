@@ -13,6 +13,7 @@ namespace BeatSaberMultiplayer {
         [SerializeField] private string[] _serverHubIPs;
         [SerializeField] private int[] _serverHubPorts;
         [SerializeField] private bool _showAvatarsInGame;
+        [SerializeField] private bool _showOtherPlayersBlocks;
         [SerializeField] private bool _showAvatarsInRoom;
         [SerializeField] private bool _downloadAvatars;
         [SerializeField] private bool _separateAvatarForMultiplayer;
@@ -103,6 +104,16 @@ namespace BeatSaberMultiplayer {
             }
         }
 
+        public bool ShowOtherPlayersBlocks
+        {
+            get { return _showOtherPlayersBlocks; }
+            set
+            {
+                _showOtherPlayersBlocks = value;
+                MarkDirty();
+            }
+        }
+
         public bool ShowAvatarsInRoom
         {
             get { return _showAvatarsInRoom; }
@@ -185,6 +196,7 @@ namespace BeatSaberMultiplayer {
             _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "hub.auros.red", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.ligma.site", "hub.jogi-server.de", "beatsaberhub.freddi.xyz" };
             _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700 };
             _showAvatarsInGame = false;
+            _showOtherPlayersBlocks = false;
             _showAvatarsInRoom = true;
             _downloadAvatars = true;
             _spectatorMode = false;
