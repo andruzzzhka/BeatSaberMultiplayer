@@ -48,8 +48,22 @@ namespace BeatSaberMultiplayer.Data
             maxPlayers = msg.ReadInt32();
             if (roomState != RoomState.SelectingSong)
             {
-                selectedDifficulty = msg.ReadByte();
-                selectedSong = new SongInfo(msg);
+                try
+                {
+                    selectedDifficulty = msg.ReadByte();
+                    if (selectedDifficulty != 255)
+                    {
+                        selectedSong = new SongInfo(msg);
+                    }
+                    else
+                    {
+                        selectedSong = null;
+                    }
+                }
+                catch
+                {
+
+                }
             }
         }
 
@@ -74,6 +88,10 @@ namespace BeatSaberMultiplayer.Data
             {
                 msg.Write(selectedDifficulty);
                 selectedSong.AddToMessage(msg);
+            }
+            else
+            {
+                msg.Write((byte)255);
             }
         }
 

@@ -169,7 +169,6 @@ namespace ServerHub.Rooms
                             case SongSelectionType.Random:
                                 {
                                     roomState = RoomState.Preparing;
-                                    Random rand = new Random();
 
                                     randomSongTask = BeatSaver.GetRandomSong();
                                     selectedSong = await randomSongTask;

@@ -78,6 +78,10 @@ namespace ServerHub.Data
                 msg.Write(selectedDifficulty);
                 selectedSong.AddToMessage(msg);
             }
+            else
+            {
+                msg.Write((byte)255);
+            }
         }
 
         public override bool Equals(object obj)
