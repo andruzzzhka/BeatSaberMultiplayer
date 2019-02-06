@@ -23,6 +23,7 @@ namespace ServerHub.Misc {
             private int _webSocketPort;
             private bool _showTickrateInTitle;
             private bool _allowEventMessages;
+            private bool _allowVoiceChat;
             private bool _showTickEventExceptions;
             private bool _sendCrashReports;
 
@@ -175,6 +176,20 @@ namespace ServerHub.Misc {
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
+            public bool AllowVoiceChat
+            {
+                get => _allowVoiceChat;
+                set
+                {
+                    _allowVoiceChat = value;
+                    MarkDirty?.Invoke();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
             public bool ShowTickEventExceptions
             {
                 get => _showTickEventExceptions;
@@ -211,6 +226,7 @@ namespace ServerHub.Misc {
                 _webSocketPort = 3701;
                 _showTickrateInTitle = true;
                 _allowEventMessages = true;
+                _allowVoiceChat = true;
                 _showTickEventExceptions = false;
                 _sendCrashReports = true;
             }

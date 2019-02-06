@@ -52,7 +52,23 @@ namespace BeatSaberMultiplayer
         private string _currentScene;
         private bool loaded;
         private int sendRateCounter;
+        private int voipSendRateCounter;
         private int fixedSendRate = 0;
+
+
+        NSpeex.SpeexDecoder speexDec = new NSpeex.SpeexDecoder(NSpeex.BandMode.Wide);
+        NSpeex.SpeexEncoder speexEnc = new NSpeex.SpeexEncoder(NSpeex.BandMode.Wide);
+
+        public bool isRecording;
+
+        private AudioCapture voiceChatCapture;
+        private WritableAudioPlayer voiceChatPlayer;
+
+        byte[] outBuffer = new byte[960];
+
+        short[] outBufferShort = new short[960];
+        short[] prevOutBufferShort = new short[960];
+        float[] outBufferFloat = new float[960];
 
         public static void OnLoad(Scene to)
         {
@@ -79,10 +95,50 @@ namespace BeatSaberMultiplayer
                 _messageDisplayText.alignment = TextAlignmentOptions.Center;
                 DontDestroyOnLoad(_messageDisplayText.gameObject);
 
+                voiceChatCapture = new AudioCapture(16000, 640);
+                
+                voiceChatCapture.OnDataRead += (data, offset, len) => {
+                    if (!isRecording)
+                        return;
+
+                    data.ToShortArray(outBufferShort, offset, len);
+                    int resLen = speexEnc.Encode(outBufferShort, 0, len, outBuffer, 0, 640);
+
+                    if (Client.Instance.voipData == null)
+                    {
+                        Client.Instance.voipData = new VoIPData(Client.Instance.playerInfo.playerId, outBuffer.Take(resLen).ToArray());
+                    }
+                    else
+                    {
+                        if (Client.Instance.voipData.voipSamples == null || Client.Instance.voipData.voipSamples.Length < resLen)
+                            Client.Instance.voipData.voipSamples = new byte[resLen];
+                        Buffer.BlockCopy(outBuffer, 0, Client.Instance.voipData.voipSamples, 0, resLen);
+                    }
+                };
+
+                voiceChatPlayer = new GameObject("Voice Chat Player").AddComponent<WritableAudioPlayer>();
+                DontDestroyOnLoad(voiceChatPlayer.gameObject);
+
                 CustomAvatar.Plugin.Instance.PlayerAvatarManager.AvatarChanged += PlayerAvatarManager_AvatarChanged;
             }
         }
-        
+
+        public void InputAudioDeviceChanged(CSCore.CoreAudioAPI.MMDevice newDevice)
+        {
+            if (voiceChatCapture != null)
+            {
+                voiceChatCapture.ChangeDevice(newDevice);
+            }
+        }
+
+        public void VoiceChatVolumeChanged(float volume)
+        {
+            if (voiceChatPlayer != null)
+            {
+                voiceChatPlayer.SetVolume(volume);
+            }
+        }
+
         public void ActiveSceneChanged(Scene from, Scene to)
         {
             try
@@ -171,7 +227,7 @@ namespace BeatSaberMultiplayer
                                 foreach (PlayerInfo info in playerInfos)
                                 {
                                     player = _players.FirstOrDefault(x => x != null && x.PlayerInfo.Equals(info));
-                                    
+
                                     if (player != null)
                                     {
                                         player.PlayerInfo = info;
@@ -180,16 +236,16 @@ namespace BeatSaberMultiplayer
                                     else
                                     {
                                         player = new GameObject("OnlinePlayerController").AddComponent<OnlinePlayerController>();
-                                        
+
                                         player.PlayerInfo = info;
                                         player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 5f : 0f);
 
                                         _players.Add(player);
                                     }
-                                    
+
                                     index++;
                                 }
-                                
+
                                 if (_players.Count > playerInfos.Count)
                                 {
                                     foreach (OnlinePlayerController controller in _players.Where(x => !playerInfos.Any(y => y.Equals(x.PlayerInfo))))
@@ -266,7 +322,37 @@ namespace BeatSaberMultiplayer
 
                             }
                         }
-                    }; break;
+                    }
+                    break;
+                case CommandType.UpdateVoIPData:
+                    {
+                        if (!Config.Instance.EnableVoiceChat)
+                            return;
+
+                        int playersCount = msg.ReadInt32();
+
+                        for (int j = 0; j < playersCount; j++)
+                        {
+                            try
+                            {
+                                VoIPData data = new VoIPData(msg);
+
+                                if (data.voipSamples != null && data.voipSamples.Length > 0 && data.playerId != Client.Instance.playerInfo.playerId)
+                                {
+                                    int resLen = speexDec.Decode(data.voipSamples, 0, data.voipSamples.Length, outBufferShort, 0, false);
+                                    CustomExtensions.ToFloatArray(outBufferShort, outBufferFloat, resLen);
+                                    voiceChatPlayer.PlayAudio(outBufferFloat, 0, resLen, data.playerId);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+#if DEBUG
+                                Misc.Logger.Exception($"Unable to parse VoIPData! Excpetion: {e}");
+#endif
+                            }
+                        }
+                    }
+                    break;
                 case CommandType.SetGameState:
                     {
                         if (_currentScene == "GameCore" && loaded)
@@ -284,12 +370,13 @@ namespace BeatSaberMultiplayer
 
                         _messageDisplayText.text = msg.ReadString();
 
-                        if(msg.LengthBits - msg.Position >= 8)
+                        if (msg.LengthBits - msg.Position >= 8)
                         {
                             MessagePosition position = (MessagePosition)msg.ReadByte();
-                            
+
                             switch (position)
                             {
+                                default:
                                 case MessagePosition.Top:
                                     _messageDisplayText.transform.position = new Vector3(0f, 3.75f, 3.75f);
                                     _messageDisplayText.transform.rotation = Quaternion.Euler(-30f, 0f, 0f);
@@ -300,13 +387,30 @@ namespace BeatSaberMultiplayer
                                     break;
                             }
                         }
-                    };break;
+                    }; break;
+            }
+        }
+
+        public void FixedUpdate()
+        {
+            voiceChatCapture.Poll();
+
+            if (isRecording)
+            {
+                if (voipSendRateCounter >= 2)
+                {
+                    if (Client.Instance.voipData.voipSamples == null)
+                        Client.Instance.voipData.voipSamples = new byte[0];
+                    Client.Instance.SendVoIPData();
+                    voipSendRateCounter = 0;
+                }
+                voipSendRateCounter++;
             }
         }
 
         public void Update()
         {
-            if(_messageDisplayTime > 0f)
+            if (_messageDisplayTime > 0f)
             {
                 _messageDisplayTime -= Time.deltaTime;
                 if(_messageDisplayTime <= 0f)
@@ -315,7 +419,52 @@ namespace BeatSaberMultiplayer
                     _messageDisplayText.text = "";
                 }
             }
-            
+
+            if (Config.Instance.EnableVoiceChat)
+            {
+                if (!Config.Instance.PushToTalk)
+                {
+                    isRecording = true;
+                }
+                else
+                {
+                    switch (Config.Instance.PushToTalkButton)
+                    {
+                        case 0:
+                            isRecording = ControllersHelper.GetLeftGrip();
+                            break;
+                        case 1:
+                            isRecording = ControllersHelper.GetRightGrip();
+                            break;
+                        case 2:
+                            isRecording = VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                            break;
+                        case 3:
+                            isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f;
+                            break;
+                        case 4:
+                            isRecording = ControllersHelper.GetLeftGrip() && ControllersHelper.GetRightGrip();
+                            break;
+                        case 5:
+                            isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f && VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                            break;
+                        case 6:
+                            isRecording = ControllersHelper.GetLeftGrip() || ControllersHelper.GetRightGrip();
+                            break;
+                        case 7:
+                            isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f || VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                            break;
+                        default:
+                            isRecording = Input.anyKey;
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                isRecording = false;
+            }
+
             if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
             {
                 if (Input.GetKeyDown(KeyCode.Keypad0))
@@ -665,19 +814,29 @@ namespace BeatSaberMultiplayer
 
         private void NoteWasCutEvent(NoteData arg1, NoteCutInfo arg2, int score)
         {
-            if (arg2.allIsOK)
+            if (arg1.noteType == NoteType.Bomb)
             {
-                Client.Instance.playerInfo.playerCutBlocks++;
-                Client.Instance.playerInfo.playerTotalBlocks++;
+                Client.Instance.playerInfo.hitsLastUpdate.Add(new HitData(arg1, true, arg2));
             }
             else
             {
-                Client.Instance.playerInfo.playerTotalBlocks++;
+                if (arg2.allIsOK)
+                {
+                    Client.Instance.playerInfo.hitsLastUpdate.Add(new HitData(arg1, true, arg2));
+                    Client.Instance.playerInfo.playerCutBlocks++;
+                    Client.Instance.playerInfo.playerTotalBlocks++;
+                }
+                else
+                {
+                    Client.Instance.playerInfo.hitsLastUpdate.Add(new HitData(arg1, true, arg2));
+                    Client.Instance.playerInfo.playerTotalBlocks++;
+                }
             }
         }
 
         private void NoteWasMissedEvent(NoteData arg1, int arg2)
         {
+            Client.Instance.playerInfo.hitsLastUpdate.Add(new HitData(arg1, false));
             Client.Instance.playerInfo.playerTotalBlocks++;
         }
 

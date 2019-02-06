@@ -90,11 +90,13 @@ namespace ServerHub.Rooms
         public virtual void StartRoom()
         {
             HighResolutionTimer.LoopTimer.Elapsed += RoomLoopAsync;
+            HighResolutionTimer.VoIPTimer.Elapsed += BroadcastVoIPData;
         }
 
         public virtual void StopRoom()
         {
             HighResolutionTimer.LoopTimer.Elapsed -= RoomLoopAsync;
+            HighResolutionTimer.VoIPTimer.Elapsed -= BroadcastVoIPData;
         }
 
         public virtual RoomInfo GetRoomInfo()
@@ -140,7 +142,7 @@ namespace ServerHub.Rooms
                             outMsg.Write((byte)CommandType.GetRoomInfo);
                             GetRoomInfo().AddToMessage(outMsg);
                             
-                            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 
                             if (roomClients.Count > 0)
                                 BroadcastWebSocket(CommandType.GetRoomInfo, GetRoomInfo());
@@ -157,7 +159,7 @@ namespace ServerHub.Rooms
                             outMsg.Write((byte)CommandType.SetSelectedSong);
                             outMsg.Write((int)0);
 
-                            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                             BroadcastWebSocket(CommandType.SetSelectedSong, null);
                         }
                     }
@@ -177,7 +179,7 @@ namespace ServerHub.Rooms
                                     outMsg.Write((byte)CommandType.SetSelectedSong);
                                     selectedSong.AddToMessage(outMsg);
 
-                                    BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                                    BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                     
                                     BroadcastWebSocket(CommandType.SetSelectedSong, selectedSong);
                                     ReadyStateChanged(roomHost, true);
@@ -236,20 +238,42 @@ namespace ServerHub.Rooms
                 } 
             }
 
-            BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced);
+            BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
 
             if (roomClients.Count > 0)
                 BroadcastWebSocket(CommandType.UpdatePlayerInfo, roomClients.Select(x => x.playerInfo).ToArray());
         }
 
-        public virtual void BroadcastPacket(NetOutgoingMessage msg, NetDeliveryMethod deliveryMethod)
+        public virtual void BroadcastVoIPData(object sender, HighResolutionTimerElapsedEventArgs e)
+        {
+            if (!Settings.Instance.Server.AllowVoiceChat)
+                return;
+
+            NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
+
+            outMsg.Write((byte)CommandType.UpdateVoIPData);
+            outMsg.Write(roomClients.Count(x => x != null && x.playerVoIP != null && x.playerVoIP.voipSamples != null && x.playerVoIP.voipSamples.Length > 0));
+            
+            for(int i = 0; i < roomClients.Count; i++)
+            {
+                if(roomClients.Count > i && roomClients[i] != null && roomClients[i].playerVoIP != null && roomClients[i].playerVoIP.voipSamples != null && roomClients[i].playerVoIP.voipSamples.Length > 0)
+                {
+                    roomClients[i].playerVoIP.AddToMessage(outMsg);
+                    roomClients[i].playerVoIP = null;
+                }
+            }
+
+            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableSequenced, 2);
+        }
+
+        public virtual void BroadcastPacket(NetOutgoingMessage msg, NetDeliveryMethod deliveryMethod, int seqChannel)
         {
             if (roomClients.Count == 0)
                 return;
 
             try
             {
-                HubListener.ListenerServer.SendMessage(msg, roomClients.Select(x => x.playerConnection).ToList(), deliveryMethod, (deliveryMethod == NetDeliveryMethod.UnreliableSequenced ? 1 : 0));
+                HubListener.ListenerServer.SendMessage(msg, roomClients.Select(x => x.playerConnection).ToList(), deliveryMethod, seqChannel);
                 Program.networkBytesOutNow += msg.LengthBytes * roomClients.Count;
             }
             catch (Exception e)
@@ -344,7 +368,7 @@ namespace ServerHub.Rooms
                                 outMsg.Write((byte)CommandType.SetSelectedSong);
                                 outMsg.Write((int)0);
 
-                                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                 BroadcastWebSocket(CommandType.SetSelectedSong, null);
                             }
                             break;
@@ -360,7 +384,7 @@ namespace ServerHub.Rooms
                                 outMsg.Write((byte)CommandType.SetSelectedSong);
                                 selectedSong.AddToMessage(outMsg);
 
-                                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                 BroadcastWebSocket(CommandType.SetSelectedSong, selectedSong);
                                 ReadyStateChanged(roomHost, true);
                             }
@@ -374,7 +398,7 @@ namespace ServerHub.Rooms
                     outMsg.Write((byte)CommandType.SetSelectedSong);
                     selectedSong.AddToMessage(outMsg);
 
-                    BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                    BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                     BroadcastWebSocket(CommandType.SetSelectedSong, selectedSong);
                     ReadyStateChanged(roomHost, true);
                 }
@@ -400,7 +424,7 @@ namespace ServerHub.Rooms
                 outMsg.Write(selectedDifficulty);
                 selectedSong.AddToMessage(outMsg);
                 
-                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                 BroadcastWebSocket(CommandType.StartLevel, songWithDifficulty);
 
                 roomState = RoomState.InGame;
@@ -424,7 +448,7 @@ namespace ServerHub.Rooms
                 outMsg.Write((byte)CommandType.TransferHost);
                 roomHost.AddToMessage(outMsg);
 
-                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
             else
             {
@@ -441,7 +465,7 @@ namespace ServerHub.Rooms
             outMsg.Write((byte)CommandType.TransferHost);
             roomHost.AddToMessage(outMsg);
 
-            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
         }
 
         public virtual void ReadyStateChanged(PlayerInfo sender, bool ready)
@@ -469,7 +493,7 @@ namespace ServerHub.Rooms
             outMsg.Write(_readyPlayers.Count);
             outMsg.Write(roomClients.Count);
 
-            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             BroadcastWebSocket(CommandType.PlayerReady, new ReadyPlayers(_readyPlayers.Count, roomClients.Count));
         }
 

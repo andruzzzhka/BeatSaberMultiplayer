@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Hub
 {
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData }
 
     public static class HubListener
     {
@@ -183,6 +183,19 @@ namespace ServerHub.Hub
                                             if (client != null)
                                             {
                                                 client.playerInfo = new PlayerInfo(msg);
+                                            }
+                                        }
+                                        break;
+                                    case CommandType.UpdateVoIPData:
+                                        {
+                                            if (!Settings.Instance.Server.AllowVoiceChat)
+                                                return;
+
+                                            if (client != null)
+                                            {
+                                                VoIPData data = new VoIPData(msg);
+                                                if (data.playerId == client.playerInfo.playerId)
+                                                    client.playerVoIP = data;
                                             }
                                         }
                                         break;

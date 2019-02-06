@@ -47,5 +47,21 @@ namespace BeatSaberMultiplayer.Misc
                 null, args, null, null);
             return (T)instance;
         }
+
+        public static void ToShortArray(this float[] input, short[] output, int offset, int len)
+        {
+            for (int i = 0; i < len; ++i)
+            {
+                output[i] = (short)Mathf.Clamp((int)(input[i + offset] * 32767.0f), short.MinValue, short.MaxValue);
+            }
+        }
+
+        public static void ToFloatArray(this short[] input, float[] output, int length)
+        {
+            for (int i = 0; i < length; ++i)
+            {
+                output[i] = input[i] / (float)short.MaxValue;
+            }
+        }
     }
 }

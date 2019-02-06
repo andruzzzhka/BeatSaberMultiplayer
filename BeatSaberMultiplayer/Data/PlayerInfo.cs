@@ -11,6 +11,86 @@ namespace BeatSaberMultiplayer.Data
 {
     public enum PlayerState: byte { Disconnected, Lobby, Room, Game, Spectating, DownloadingSongs }
 
+    public struct HitData
+    {
+        public float objectTime;
+
+        public bool noteWasCut;
+        public bool speedOK;
+        public bool directionOK;
+        public bool saberTypeOK;
+        public bool wasCutTooSoon;
+        public bool isSaberA;
+        public bool reserved1;
+        public bool reserved2;
+
+        public HitData(NoteData data, bool noteWasCut, NoteCutInfo info = null)
+        {
+            objectTime = data.time;
+
+            this.noteWasCut = noteWasCut;
+
+            if (noteWasCut)
+            {
+                isSaberA = info.saberType == Saber.SaberType.SaberA;
+                speedOK = info.speedOK;
+                directionOK = info.directionOK;
+                saberTypeOK = info.saberTypeOK;
+                wasCutTooSoon = info.wasCutTooSoon;
+            }
+            else
+            {
+                isSaberA = false;
+                speedOK = false;
+                directionOK = false;
+                saberTypeOK = false;
+                wasCutTooSoon = false;
+            }
+
+            reserved1 = reserved2 = false;
+        }
+
+        public HitData(NetIncomingMessage msg)
+        {
+            objectTime = msg.ReadFloat();
+
+            noteWasCut = msg.ReadBoolean();
+            isSaberA = msg.ReadBoolean();
+            speedOK = msg.ReadBoolean();
+            directionOK = msg.ReadBoolean();
+            saberTypeOK = msg.ReadBoolean();
+            wasCutTooSoon = msg.ReadBoolean();
+            reserved1 = msg.ReadBoolean();
+            reserved2 = msg.ReadBoolean();
+        }
+
+        public void AddToMessage(NetOutgoingMessage msg)
+        {
+            msg.Write(objectTime);
+
+            msg.Write(noteWasCut);
+            msg.Write(isSaberA);
+            msg.Write(speedOK);
+            msg.Write(directionOK);
+            msg.Write(saberTypeOK);
+            msg.Write(wasCutTooSoon);
+            msg.Write(reserved1);
+            msg.Write(reserved2);
+        }
+
+        public NoteCutInfo GetCutInfo()
+        {
+            if (noteWasCut)
+            {
+                return new NoteCutInfo(speedOK, directionOK, saberTypeOK, wasCutTooSoon, 3f, Vector3.down, isSaberA ? Saber.SaberType.SaberA : Saber.SaberType.SaberB, 0, 0, 0, Vector3.zero, Vector3.down, null, 0f);
+            }
+            else
+            {
+                return null;
+            }
+        }
+    }
+
     public class PlayerInfo
     {
         public string playerName;
@@ -25,6 +105,8 @@ namespace BeatSaberMultiplayer.Data
         public float playerEnergy;
 
         public float playerProgress;
+
+        public List<HitData> hitsLastUpdate = new List<HitData>();
 
         public Vector3 headPos;
         public Vector3 rightHandPos;
@@ -50,12 +132,21 @@ namespace BeatSaberMultiplayer.Data
 
             playerState = (PlayerState)msg.ReadByte();
 
-            playerScore = msg.ReadUInt32();
-            playerCutBlocks = msg.ReadUInt32();
-            playerComboBlocks = msg.ReadUInt32();
-            playerTotalBlocks = msg.ReadUInt32();
+            playerScore = msg.ReadVariableUInt32();
+            playerCutBlocks = msg.ReadVariableUInt32();
+            playerComboBlocks = msg.ReadVariableUInt32();
+            playerTotalBlocks = msg.ReadVariableUInt32();
             playerEnergy = msg.ReadFloat();
             playerProgress = msg.ReadFloat();
+
+            hitsLastUpdate.Clear();
+
+            byte hitsCount = msg.ReadByte();
+
+            for(int i = 0; i < hitsCount; i++)
+            {
+                hitsLastUpdate.Add(new HitData(msg));
+            }
 
             byte[] avatar = msg.ReadBytes(100);
 
@@ -77,12 +168,19 @@ namespace BeatSaberMultiplayer.Data
 
             msg.Write((byte)playerState);
 
-            msg.Write(playerScore);
-            msg.Write(playerCutBlocks);
-            msg.Write(playerComboBlocks);
-            msg.Write(playerTotalBlocks);
+            msg.Write(playerScore, 24);
+            msg.Write(playerCutBlocks, 19);
+            msg.Write(playerComboBlocks, 18);
+            msg.Write(playerTotalBlocks, 19);
             msg.Write(playerEnergy);
             msg.Write(playerProgress);
+
+            msg.Write((byte)hitsLastUpdate.Count);
+
+            for (int i = 0; i < (byte)hitsLastUpdate.Count; i++)
+            {
+                hitsLastUpdate[i].AddToMessage(msg);
+            }
 
             msg.Write(Serialization.Combine(
                             Serialization.ToBytes(rightHandPos),

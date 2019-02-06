@@ -22,8 +22,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         public int _value;
 
-        public int Value { get { return _value; } set { _value = value;
-                Misc.Logger.Info("TEXT LENGTH: " + textForValues.Length); if (_valueText != null) _valueText.text = (textForValues != null && textForValues.Length > _value) ? textForValues[_value] : _value.ToString(); UpdateButtons(); } }
+        public int Value { get { return _value; } set { _value = value; if (_valueText != null) _valueText.text = (textForValues != null && textForValues.Length > _value) ? textForValues[_value] : _value.ToString(); UpdateButtons(); } }
 
         public int minValue = 0;
         public int maxValue = 999;
@@ -38,9 +37,6 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 ValueChanged?.Invoke(_value);
 
                 UpdateButtons();
-                Misc.Logger.Info("TEXT LENGTH: " + textForValues.Length+"\nValue: "+_value);
-                if(textForValues.Length > _value)
-                    Misc.Logger.Info("TEXT: " + textForValues[_value]);
                 _valueText.text = (textForValues.Length > _value) ? textForValues[_value] : _value.ToString();
             });
 

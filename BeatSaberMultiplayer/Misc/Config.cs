@@ -22,6 +22,12 @@ namespace BeatSaberMultiplayer {
         [SerializeField] private int _maxSimultaneousDownloads;
         [SerializeField] private string _beatSaverURL;
 
+        [SerializeField] private bool _enableVoiceChat;
+        [SerializeField] private float _voiceChatVolume;
+        [SerializeField] private string _inputDevice;
+        [SerializeField] private bool _pushToTalk;
+        [SerializeField] private int _pushToTalkButton;
+
 
         private static Config _instance;
 
@@ -191,6 +197,56 @@ namespace BeatSaberMultiplayer {
             }
         }
 
+        public bool EnableVoiceChat
+        {
+            get { return _enableVoiceChat; }
+            set
+            {
+                _enableVoiceChat = value;
+                MarkDirty();
+            }
+        }
+
+        public float VoiceChatVolume
+        {
+            get { return _voiceChatVolume; }
+            set
+            {
+                _voiceChatVolume = value;
+                MarkDirty();
+            }
+        }
+
+        public bool PushToTalk
+        {
+            get { return _pushToTalk; }
+            set
+            {
+                _pushToTalk = value;
+                MarkDirty();
+            }
+        }
+
+        public int PushToTalkButton
+        {
+            get { return _pushToTalkButton; }
+            set
+            {
+                _pushToTalkButton = value;
+                MarkDirty();
+            }
+        }
+
+        public string InputDevice
+        {
+            get { return _inputDevice; }
+            set
+            {
+                _inputDevice = value;
+                MarkDirty();
+            }
+        }
+
         Config()
         {
             _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "hub.auros.red", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.ligma.site", "hub.jogi-server.de", "beatsaberhub.freddi.xyz" };
@@ -204,6 +260,13 @@ namespace BeatSaberMultiplayer {
             _publicAvatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             _maxSimultaneousDownloads = ModPrefs.GetInt("BeatSaverDownloader", "maxSimultaneousDownloads", 3);
             _beatSaverURL = ModPrefs.GetString("BeatSaverDownloader", "beatsaverURL", "https://beatsaver.com");
+
+            _enableVoiceChat = true;
+            _voiceChatVolume = 0.8f;
+            _pushToTalk = true;
+            _pushToTalkButton = 0;
+            _inputDevice = "";
+
             IsDirty = true;
         }
 

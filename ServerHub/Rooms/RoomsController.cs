@@ -63,7 +63,7 @@ namespace ServerHub.Rooms
                 outMsg.Write((byte)CommandType.Disconnect);
                 outMsg.Write(reason);
 
-                room.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                room.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                 rooms.Remove(room);
 
                 return true;

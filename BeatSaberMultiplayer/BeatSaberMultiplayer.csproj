@@ -45,6 +45,9 @@
     <Reference Include="BS_Utils">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BS_Utils.dll</HintPath>
     </Reference>
+    <Reference Include="CSCore">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\CSCore.dll</HintPath>
+    </Reference>
     <Reference Include="CustomAvatar">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\CustomAvatar.dll</HintPath>
     </Reference>
@@ -60,6 +63,9 @@
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="NSpeex">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\NSpeex.dll</HintPath>
     </Reference>
     <Reference Include="SongLoaderPlugin">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\SongLoaderPlugin.dll</HintPath>
@@ -93,6 +99,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.InputModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.InputModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.JSONSerializeModule.dll</HintPath>
     </Reference>
@@ -125,6 +135,10 @@
     <Reference Include="UnityEngine.WebModule">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.WebModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.XRModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.XRModule.dll</HintPath>
+    </Reference>
     <Reference Include="Zenject, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Zenject.dll</HintPath>
@@ -141,9 +155,12 @@
     <Compile Include="Data\RoomPreset.cs" />
     <Compile Include="Data\RoomSettings.cs" />
     <Compile Include="Data\SongInfo.cs" />
+    <Compile Include="Data\VoIPData.cs" />
     <Compile Include="DebugForm.cs" />
     <Compile Include="InGameOnlineController.cs" />
+    <Compile Include="Misc\AudioCapture.cs" />
     <Compile Include="Misc\BeatSaverDownloaderHelper.cs" />
+    <Compile Include="Misc\ControllersHelper.cs" />
     <Compile Include="Misc\ScrappedData.cs" />
     <Compile Include="Misc\Sprites.cs" />
     <Compile Include="Misc\Config.cs" />
@@ -157,6 +174,7 @@
     <Compile Include="Misc\SongDownloader.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
+    <Compile Include="Misc\WritableAudioPlayer.cs" />
     <Compile Include="OverriddenClasses\OnlineAudioTimeController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapCallbackController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapSpawnController.cs" />

@@ -22,6 +22,7 @@ namespace ServerHub.Misc
     public class HighResolutionTimer
     {
         public static HighResolutionTimer LoopTimer { get; private set; } = new HighResolutionTimer(1000 / 30f);
+        public static HighResolutionTimer VoIPTimer { get; private set; } = new HighResolutionTimer(1000 / 30f);
 
         /// <summary>
         /// Tick time length in [ms]

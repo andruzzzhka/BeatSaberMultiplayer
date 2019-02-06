@@ -25,6 +25,8 @@ namespace ServerHub.Data
         public PlayerInfo playerInfo;
         public DateTime joinTime;
 
+        public VoIPData playerVoIP;
+
         public uint joinedRoomID;
 
         public bool active;

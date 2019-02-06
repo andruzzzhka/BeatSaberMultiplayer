@@ -216,7 +216,8 @@ namespace ServerHub.Hub
             HighResolutionTimer.LoopTimer.Interval = 1000 / Settings.Instance.Server.Tickrate;
             HighResolutionTimer.LoopTimer.Elapsed += ProgramLoop;
             HighResolutionTimer.LoopTimer.Start();
-            
+            HighResolutionTimer.VoIPTimer.Start();
+
             VersionChecker.CheckForUpdates();
 
             ReadLine.AutoCompletionHandler = new AutoCompletionHandler();
@@ -891,7 +892,7 @@ namespace ServerHub.Hub
                                         outMsg.Write(message);
                                         outMsg.Write((byte)MessagePosition.Top);
 
-                                        x.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                                        x.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                         x.BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(displayTime, fontSize, message, MessagePosition.Top));
                                         output += $"\nSent message to all players in room {x.roomId}!";
                                     });
@@ -939,7 +940,7 @@ namespace ServerHub.Hub
                                             outMsg.Write(message);
                                             outMsg.Write((byte)MessagePosition.Top);
 
-                                            room.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered);
+                                            room.BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                             room.BroadcastWebSocket(CommandType.DisplayMessage, new DisplayMessage(displayTime, fontSize, message, MessagePosition.Top));
                                             return $"Sent message \"{string.Join(" ", comArgs.Skip(3).ToArray())}\" to all players in room {roomId}!";
                                         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BeatSaberMultiplayer.Data;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -150,6 +151,29 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             if (owner != null)
                 num += owner.avatarOffset;
             return transform.right * num + new Vector3(0f, LineYPosForLineLayer(noteLineLayer), 0f);
+        }
+
+        public void Update()
+        {
+            if(owner != null && owner.PlayerInfo != null && owner.PlayerInfo.hitsLastUpdate != null)
+            {
+                foreach(HitData hit in owner.PlayerInfo.hitsLastUpdate)
+                {
+                    NoteController controller = _activeNotes.FirstOrDefault(x => Mathf.Approximately(x.noteData.time, hit.objectTime));
+
+                    if(controller != null)
+                    {
+                        if (hit.noteWasCut)
+                        {
+                            controller.SendNoteWasCutEvent(hit.GetCutInfo());
+                        }
+                        else
+                        {
+                            controller.HandleNoteDidPassMissedMarkerEvent();
+                        }
+                    }
+                }
+            }
         }
 
         public void ResetControllers(NoteController noteController)

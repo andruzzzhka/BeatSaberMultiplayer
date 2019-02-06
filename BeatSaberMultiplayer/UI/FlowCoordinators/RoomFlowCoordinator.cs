@@ -111,6 +111,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public void ReturnToRoom()
         {
             joined = true;
+            Client.Instance.MessageReceived -= PacketReceived;
             Client.Instance.MessageReceived += PacketReceived;
             Client.Instance.RequestRoomInfo();
         }
@@ -141,6 +142,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     Client.Instance.Disconnect();
                     Client.Instance.Connect(ip, port);
+                    Client.Instance.ConnectedToServerHub -= ConnectedToServerHub;
                     Client.Instance.ConnectedToServerHub += ConnectedToServerHub;
                 }
                 else
@@ -164,6 +166,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 if (Client.Instance.Connected)
                 {
                     Client.Instance.Disconnect();
+                    Client.Instance.MessageReceived -= PacketReceived;
                 }
             }
             catch

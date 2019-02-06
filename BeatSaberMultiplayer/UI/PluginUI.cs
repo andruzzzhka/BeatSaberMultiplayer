@@ -155,7 +155,7 @@ namespace BeatSaberMultiplayer.UI
 
         private void CreateMenu()
         {
-            var onlineSubMenu = SettingsUI.CreateSubMenu("Multiplayer");
+            var onlineSubMenu = SettingsUI.CreateSubMenu("Multiplayer | General");
 
             var avatarsInGame = onlineSubMenu.AddBool("Show Avatars In Game", "Show avatars of other players while playing a song");
             avatarsInGame.GetValue += delegate { return Config.Instance.ShowAvatarsInGame; };
@@ -203,6 +203,53 @@ namespace BeatSaberMultiplayer.UI
             var spectatorMode = onlineSubMenu.AddBool("Spectator Mode (Beta)", "Watch other players playing a song (e.g. tournaments)\n<color=red>You can't play songs while \"Spectator Mode\" is on!</color>");
             spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
             spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
+
+
+
+            var voiceSubMenu = SettingsUI.CreateSubMenu("Multiplayer | Voice");
+
+            var voiceEnabled = voiceSubMenu.AddBool("Enable Voice Chat");
+            voiceEnabled.GetValue += delegate { return Config.Instance.EnableVoiceChat; };
+            voiceEnabled.SetValue += delegate (bool value) { Config.Instance.EnableVoiceChat = value; };
+
+            var voiceVolume = voiceSubMenu.AddInt("Voice Chat Volume", 1, 20, 1);
+            voiceVolume.GetValue += delegate { return (int)(Config.Instance.VoiceChatVolume * 20f); };
+            voiceVolume.SetValue += delegate (int value) { Config.Instance.VoiceChatVolume = value / 20f; InGameOnlineController.Instance.VoiceChatVolumeChanged(value / 20f); };
+
+            var pushToTalk = voiceSubMenu.AddBool("Push to Talk");
+            pushToTalk.GetValue += delegate { return Config.Instance.PushToTalk; };
+            pushToTalk.SetValue += delegate (bool value) { Config.Instance.PushToTalk = value; };
+            
+            var pushToTalkButton = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>((RectTransform)voiceSubMenu.transform, "Push to Talk Button");
+            pushToTalkButton.OnEnable();
+            pushToTalkButton.ValueChanged += (e) => { Config.Instance.PushToTalkButton = e; };
+            pushToTalkButton.maxValue = 7;
+            pushToTalkButton.textForValues = new string[] { "L Grip", "R Grip", "L Trigger", "R Trigger", "L+R Grip", "L+R Trigger", "Any Grip", "Any Trigger" };
+            pushToTalkButton.Value = Config.Instance.PushToTalkButton;
+            pushToTalkButton.UpdateText();
+
+            var devices = AudioCapture.GetDevicesList();
+            string[] deviceNames = devices.Select(x => x.FriendlyName).ToArray();
+            List<string> deviceIDs = devices.Select(x => x.DeviceID).ToList();
+
+            var inputDeviceOption = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>((RectTransform)voiceSubMenu.transform, "Input Device");
+            inputDeviceOption.OnEnable();
+            inputDeviceOption.ValueChanged += (e) => { Config.Instance.InputDevice = deviceIDs[e]; InGameOnlineController.Instance.InputAudioDeviceChanged(devices[e]); };
+            inputDeviceOption.maxValue = devices.Count - 1;
+            inputDeviceOption.textForValues = deviceNames;
+
+            if (deviceIDs.Contains(Config.Instance.InputDevice))
+            {
+                inputDeviceOption.Value = deviceIDs.IndexOf(Config.Instance.InputDevice);
+            }
+            else
+            {
+                inputDeviceOption.Value = 0;
+                Config.Instance.InputDevice = deviceIDs[0];
+                InGameOnlineController.Instance.InputAudioDeviceChanged(devices[0]);
+            }
+
+            inputDeviceOption.UpdateText();
         }
 
         void UpdateSelectedAvatar()

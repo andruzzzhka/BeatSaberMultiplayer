@@ -18,7 +18,7 @@ using UnityEngine;
 namespace BeatSaberMultiplayer
 {
 
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData }
 
     public class Client : MonoBehaviour
     {
@@ -45,6 +45,7 @@ namespace BeatSaberMultiplayer
         public int port;
 
         public PlayerInfo playerInfo;
+        public VoIPData voipData;
         
         public bool isHost;
 
@@ -463,16 +464,28 @@ namespace BeatSaberMultiplayer
 
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
 
-/*
-#if DEBUG
-                if (playerInfo.playerState == PlayerState.Game)
-                {
-                    byte[] packet = new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)).ToBytes();
-                    packetWriter.Write(packet, 0, packet.Length);
-                    packetWriter.Flush();
-                }
-#endif
-*/
+                /*
+                #if DEBUG
+                                if (playerInfo.playerState == PlayerState.Game)
+                                {
+                                    byte[] packet = new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)).ToBytes();
+                                    packetWriter.Write(packet, 0, packet.Length);
+                                    packetWriter.Flush();
+                                }
+                #endif
+                */
+            }
+        }
+
+        public void SendVoIPData()
+        {
+            if (Connected && NetworkClient != null && voipData != null && voipData.voipSamples.Length > 0)
+            {
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.UpdateVoIPData);
+                voipData.AddToMessage(outMsg);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 2);
             }
         }
 
