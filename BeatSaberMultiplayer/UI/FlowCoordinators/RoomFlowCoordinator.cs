@@ -310,6 +310,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 }
                             }
                             break;
+                        case CommandType.GetRandomSongInfo:
+                            {
+                                SongInfo random = new SongInfo(SongLoader.CustomLevelCollectionSO.levels.Random());
+
+                                Client.Instance.SetSelectedSong(random);
+                            }
+                            break;
                         case CommandType.TransferHost:
                             {
                                 roomInfo.roomHost = new PlayerInfo(msg);

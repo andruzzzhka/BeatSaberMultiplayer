@@ -320,7 +320,8 @@ namespace ServerHub.Misc {
         }
 
         [JsonObject(MemberSerialization.OptIn)]
-        public class LoggerSettings {
+        public class LoggerSettings
+        {
             private string _logsDir;
 
             internal Action MarkDirty { get; set; }
@@ -329,15 +330,18 @@ namespace ServerHub.Misc {
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
-            public string LogsDir {
+            public string LogsDir
+            {
                 get => _logsDir;
-                set {
+                set
+                {
                     _logsDir = value;
                     MarkDirty?.Invoke();
                 }
             }
 
-            public LoggerSettings(Action markDirty) {
+            public LoggerSettings(Action markDirty)
+            {
                 MarkDirty = markDirty;
                 _logsDir = "Logs/";
             }
@@ -393,6 +397,34 @@ namespace ServerHub.Misc {
                 _whitelist = new List<string>();
             }
 
+        }
+
+        [JsonObject(MemberSerialization.OptIn)]
+        public class MiscSettings
+        {
+            private Dictionary<ulong, Color32> _playerColors;
+
+            internal Action MarkDirty { get; set; }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public Dictionary<ulong, Color32> PlayerColors
+            {
+                get => _playerColors;
+                set
+                {
+                    _playerColors = value;
+                    MarkDirty?.Invoke();
+                }
+            }
+
+            public MiscSettings(Action markDirty)
+            {
+                MarkDirty = markDirty;
+                _playerColors = new Dictionary<ulong, Color32>();
+            }
         }
 
         [JsonObject(MemberSerialization.OptIn)]
@@ -480,6 +512,8 @@ namespace ServerHub.Misc {
         [JsonProperty]
         public AccessSettings Access { get; internal set; }
         [JsonProperty]
+        public MiscSettings Misc { get; internal set; }
+        [JsonProperty]
         public TournamentModeSettings TournamentMode { get; internal set; }
 
         private static Settings _instance;
@@ -498,7 +532,7 @@ namespace ServerHub.Misc {
                 catch (Exception ex) {
                     _instance = CreateNewInstance();
                     _instance.Save();
-                    Misc.Logger.Instance.Exception(ex);
+                    ServerHub.Misc.Logger.Instance.Exception(ex);
                 }
 
                 return _instance;
@@ -518,6 +552,7 @@ namespace ServerHub.Misc {
             Radio.MarkDirty = MarkDirty;
             Logger.MarkDirty = MarkDirty;
             Access.MarkDirty = MarkDirty;
+            Misc.MarkDirty = MarkDirty;
             TournamentMode.MarkDirty = MarkDirty;
         }
 
@@ -529,6 +564,7 @@ namespace ServerHub.Misc {
             instance.Radio = new RadioSettings(instance.MarkDirty);
             instance.Logger = new LoggerSettings(instance.MarkDirty);
             instance.Access = new AccessSettings(instance.MarkDirty);
+            instance.Misc = new MiscSettings(instance.MarkDirty);
             instance.TournamentMode = new TournamentModeSettings(instance.MarkDirty);
 
             instance.MarkDirty();
@@ -561,7 +597,7 @@ namespace ServerHub.Misc {
             }
             catch (Exception e)
             {
-                Misc.Logger.Instance.Exception("Unable to load settings! Exception: "+e);
+                ServerHub.Misc.Logger.Instance.Exception("Unable to load settings! Exception: "+e);
                 return false;
             }
         }

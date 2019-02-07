@@ -1,4 +1,5 @@
 ﻿using Lidgren.Network;
+using ServerHub.Misc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,8 @@ namespace ServerHub.Data
         [NonSerialized]
         public ulong playerId;
         public string playerIdString;
+
+        public Color32 playerNameColor  = new Color32( 255, 255, 255);
 
         public PlayerState playerState;
 
@@ -42,20 +45,23 @@ namespace ServerHub.Data
             playerId = msg.ReadUInt64();
             playerIdString = playerId.ToString();
 
+            playerNameColor = new Color32(msg.ReadByte(), msg.ReadByte(), msg.ReadByte());
+
             playerState = (PlayerState)msg.ReadByte();
 
             playerScore = msg.ReadVariableUInt32();
             playerCutBlocks = msg.ReadVariableUInt32();
             playerComboBlocks = msg.ReadVariableUInt32();
             playerTotalBlocks = msg.ReadVariableUInt32();
+            msg.ReadPadBits();
             playerEnergy = msg.ReadFloat();
             playerProgress = msg.ReadFloat();
+
+            avatarData = msg.ReadBytes(100);
 
             byte hitsCount = msg.ReadByte();
 
             hitsLastUpdate = msg.ReadBytes(hitsCount * 5);
-
-            avatarData = msg.ReadBytes(100);
         }
 
         public void AddToMessage(NetOutgoingMessage msg)
@@ -63,20 +69,25 @@ namespace ServerHub.Data
             msg.Write(playerName);
             msg.Write(playerId);
 
+            msg.Write(playerNameColor.r);
+            msg.Write(playerNameColor.g);
+            msg.Write(playerNameColor.b);
+
             msg.Write((byte)playerState);
 
-            msg.Write(playerScore, 24);
-            msg.Write(playerCutBlocks, 19);
-            msg.Write(playerComboBlocks, 18);
-            msg.Write(playerTotalBlocks, 19);
+            msg.WriteVariableUInt32(playerScore);
+            msg.WriteVariableUInt32(playerCutBlocks);
+            msg.WriteVariableUInt32(playerComboBlocks);
+            msg.WriteVariableUInt32(playerTotalBlocks);
+            msg.WritePadBits();
             msg.Write(playerEnergy);
             msg.Write(playerProgress);
+
+            msg.Write(avatarData);
 
             msg.Write((byte)(hitsLastUpdate.Length / 5));
 
             msg.Write(hitsLastUpdate);
-
-            msg.Write(avatarData);
         }
 
         public override bool Equals(object obj)

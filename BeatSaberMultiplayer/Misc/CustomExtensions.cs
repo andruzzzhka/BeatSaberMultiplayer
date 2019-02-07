@@ -16,6 +16,22 @@ namespace BeatSaberMultiplayer.Misc
 {
     public static class CustomExtensions
     {
+        private static Shader _customTextShader;
+        public static Shader CustomTextShader
+        {
+            get
+            {
+                if(_customTextShader == null)
+                {
+                    Logger.Info("Loading text shader asset bundle...");
+                    AssetBundle assetBundle = AssetBundle.LoadFromStream(Assembly.GetCallingAssembly().GetManifestResourceStream("BeatSaberMultiplayer.Assets.Shader.asset"));
+                    _customTextShader = assetBundle.LoadAsset<Shader>("Assets/TextMesh Pro/Resources/Shaders/TMP_SDF_ZWrite.shader");
+                    Logger.Info("Loaded! TextShader == null : "+(_customTextShader == null));
+                }
+                return _customTextShader;
+            }
+        }
+
         public static void SetButtonStrokeColor(this Button btn, Color color)
         {
             btn.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").color = color;
@@ -33,7 +49,8 @@ namespace BeatSaberMultiplayer.Misc
             textMesh.text = text;
             textMesh.fontSize = 5;
             textMesh.color = Color.white;
-            textMesh.font = Resources.Load<TMP_FontAsset>("Teko-Medium SDF No Glow");
+            textMesh.font = Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault(x => x.name.Contains("Teko-Medium SDF No Glow"));
+            textMesh.renderer.material.shader = CustomTextShader;
 
             return textMesh;
         }
@@ -46,6 +63,16 @@ namespace BeatSaberMultiplayer.Misc
                 BindingFlags.Instance | BindingFlags.NonPublic,
                 null, args, null, null);
             return (T)instance;
+        }
+
+        public static T Random<T>(this List<T> list)
+        {
+            return list[(int)Mathf.Round(UnityEngine.Random.Range(0, list.Count))];
+        }
+
+        public static T Random<T>(this T[] list)
+        {
+            return list[(int)Mathf.Round(UnityEngine.Random.Range(0, list.Length))];
         }
 
         public static void ToShortArray(this float[] input, short[] output, int offset, int len)

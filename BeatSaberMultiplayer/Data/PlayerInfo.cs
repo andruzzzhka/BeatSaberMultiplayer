@@ -96,6 +96,8 @@ namespace BeatSaberMultiplayer.Data
         public string playerName;
         public ulong playerId;
 
+        public Color32 playerNameColor = new Color32(255, 255, 255, 255);
+
         public PlayerState playerState;
 
         public uint playerScore;
@@ -130,24 +132,18 @@ namespace BeatSaberMultiplayer.Data
             playerName = msg.ReadString();
             playerId = msg.ReadUInt64();
 
+            playerNameColor = new Color32(msg.ReadByte(), msg.ReadByte(), msg.ReadByte(), 255);
+
             playerState = (PlayerState)msg.ReadByte();
 
             playerScore = msg.ReadVariableUInt32();
             playerCutBlocks = msg.ReadVariableUInt32();
             playerComboBlocks = msg.ReadVariableUInt32();
             playerTotalBlocks = msg.ReadVariableUInt32();
+            msg.ReadPadBits();
             playerEnergy = msg.ReadFloat();
             playerProgress = msg.ReadFloat();
-
-            hitsLastUpdate.Clear();
-
-            byte hitsCount = msg.ReadByte();
-
-            for(int i = 0; i < hitsCount; i++)
-            {
-                hitsLastUpdate.Add(new HitData(msg));
-            }
-
+            
             byte[] avatar = msg.ReadBytes(100);
 
             rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
@@ -159,6 +155,15 @@ namespace BeatSaberMultiplayer.Data
             headRot = Serialization.ToQuaternion(avatar.Skip(68).Take(16).ToArray());
 
             avatarHash = BitConverter.ToString(avatar.Skip(84).Take(16).ToArray()).Replace("-", "");
+
+            hitsLastUpdate.Clear();
+
+            byte hitsCount = msg.ReadByte();
+
+            for (int i = 0; i < hitsCount; i++)
+            {
+                hitsLastUpdate.Add(new HitData(msg));
+            }
         }
 
         public void AddToMessage(NetOutgoingMessage msg)
@@ -166,21 +171,19 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(playerName);
             msg.Write(playerId);
 
+            msg.Write(playerNameColor.r);
+            msg.Write(playerNameColor.g);
+            msg.Write(playerNameColor.b);
+
             msg.Write((byte)playerState);
 
-            msg.Write(playerScore, 24);
-            msg.Write(playerCutBlocks, 19);
-            msg.Write(playerComboBlocks, 18);
-            msg.Write(playerTotalBlocks, 19);
+            msg.WriteVariableUInt32(playerScore);
+            msg.WriteVariableUInt32(playerCutBlocks);
+            msg.WriteVariableUInt32(playerComboBlocks);
+            msg.WriteVariableUInt32(playerTotalBlocks);
+            msg.WritePadBits();
             msg.Write(playerEnergy);
             msg.Write(playerProgress);
-
-            msg.Write((byte)hitsLastUpdate.Count);
-
-            for (int i = 0; i < (byte)hitsLastUpdate.Count; i++)
-            {
-                hitsLastUpdate[i].AddToMessage(msg);
-            }
 
             msg.Write(Serialization.Combine(
                             Serialization.ToBytes(rightHandPos),
@@ -190,6 +193,15 @@ namespace BeatSaberMultiplayer.Data
                             Serialization.ToBytes(leftHandRot),
                             Serialization.ToBytes(headRot), 
                             HexConverter.ConvertHexToBytesX(avatarHash)));
+
+            msg.Write((byte)hitsLastUpdate.Count);
+            
+            for (int i = 0; i < (byte)hitsLastUpdate.Count; i++)
+            {
+                hitsLastUpdate[i].AddToMessage(msg);
+            }
+
+            hitsLastUpdate.Clear();
         }
 
         public override bool Equals(object obj)

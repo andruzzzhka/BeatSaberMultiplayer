@@ -60,6 +60,7 @@ namespace BeatSaberMultiplayer
             {
                 playerPlaceText.text = (_index + 1).ToString();
                 playerNameText.text = _playerInfo.playerName;
+                playerNameText.color = _info.playerNameColor;
                 previousScore = currentScore;
                 currentScore = _playerInfo.playerScore;
                 progress = 0;

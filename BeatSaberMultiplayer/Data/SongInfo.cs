@@ -33,10 +33,23 @@ namespace BeatSaberMultiplayer.Data
                 originalLevels.Add(BitConverter.ToString(HexConverter.GetStringHashBytes(item.levelID)).Replace("-", ""), item);
             }
         }
+        
+        public SongInfo(LevelSO level)
+        {
+            songName = level.songName + " "+level.songSubName;
+            levelId = level.levelID.Substring(0, Math.Min(32, level.levelID.Length));
+
+            if (originalLevels.ContainsKey(levelId))
+            {
+                levelId = originalLevels[levelId].levelID;
+            }
+
+            songDuration = level.audioClip.length;
+        }
 
         public SongInfo(NetIncomingMessage msg)
         {
-            if(msg.LengthBytes > 16)
+            if (msg.LengthBytes > 16)
             {
                 songName = msg.ReadString();
                 levelId = BitConverter.ToString(msg.ReadBytes(16)).Replace("-", "");

@@ -304,6 +304,7 @@ namespace BeatSaberMultiplayer
                 transform.position = HeadPos;
 
                 playerNameText.text = playerInfo.playerName;
+                playerNameText.color = playerInfo.playerNameColor;
             }
             catch (Exception e)
             {

@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Hub
 {
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo }
 
     public static class HubListener
     {
@@ -183,6 +183,10 @@ namespace ServerHub.Hub
                                             if (client != null)
                                             {
                                                 client.playerInfo = new PlayerInfo(msg);
+                                                if(Settings.Instance.Misc.PlayerColors.ContainsKey(client.playerInfo.playerId))
+                                                {
+                                                    client.playerInfo.playerNameColor = Settings.Instance.Misc.PlayerColors[client.playerInfo.playerId];
+                                                }
                                             }
                                         }
                                         break;
@@ -307,11 +311,11 @@ namespace ServerHub.Hub
                                                 {
                                                     if (msg.LengthBytes < 16)
                                                     {
-                                                        joinedRoom.SetSelectedSongAsync(client.playerInfo, null);
+                                                        joinedRoom.SetSelectedSong(client.playerInfo, null);
                                                     }
                                                     else
                                                     {
-                                                        joinedRoom.SetSelectedSongAsync(client.playerInfo, new SongInfo(msg));
+                                                        joinedRoom.SetSelectedSong(client.playerInfo, new SongInfo(msg));
                                                     }
                                                 }
                                             }
