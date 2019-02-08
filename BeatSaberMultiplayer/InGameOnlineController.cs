@@ -64,11 +64,11 @@ namespace BeatSaberMultiplayer
         private AudioCapture voiceChatCapture;
         private WritableAudioPlayer voiceChatPlayer;
 
-        byte[] outBuffer = new byte[960];
+        byte[] outBuffer = new byte[1280];
 
-        short[] outBufferShort = new short[960];
-        short[] prevOutBufferShort = new short[960];
-        float[] outBufferFloat = new float[960];
+        short[] outBufferShort = new short[1280];
+        short[] prevOutBufferShort = new short[1280];
+        float[] outBufferFloat = new float[1280];
 
         public static void OnLoad(Scene to)
         {
@@ -95,14 +95,16 @@ namespace BeatSaberMultiplayer
                 _messageDisplayText.alignment = TextAlignmentOptions.Center;
                 DontDestroyOnLoad(_messageDisplayText.gameObject);
 
-                voiceChatCapture = new AudioCapture(16000, 640);
+                voiceChatCapture = new AudioCapture(16000, 1280);
                 
                 voiceChatCapture.OnDataRead += (data, offset, len) => {
                     if (!isRecording)
                         return;
 
+                    Misc.Logger.Info("Sample size: "+ len);
+
                     data.ToShortArray(outBufferShort, offset, len);
-                    int resLen = speexEnc.Encode(outBufferShort, 0, len, outBuffer, 0, 640);
+                    int resLen = speexEnc.Encode(outBufferShort, 0, len, outBuffer, 0, 1280);
 
                     if (Client.Instance.voipData == null)
                     {
@@ -136,6 +138,18 @@ namespace BeatSaberMultiplayer
             if (voiceChatPlayer != null)
             {
                 voiceChatPlayer.SetVolume(volume);
+            }
+        }
+
+        public bool VoiceChatIsTalking(ulong playerId)
+        {
+            if(Config.Instance.EnableVoiceChat && voiceChatPlayer != null)
+            {
+                return voiceChatPlayer.IsTalking(playerId);
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -337,7 +351,11 @@ namespace BeatSaberMultiplayer
                             {
                                 VoIPData data = new VoIPData(msg);
 
+#if DEBUG
+                                if (data.voipSamples != null && data.voipSamples.Length > 0)
+#else
                                 if (data.voipSamples != null && data.voipSamples.Length > 0 && data.playerId != Client.Instance.playerInfo.playerId)
+#endif
                                 {
                                     int resLen = speexDec.Decode(data.voipSamples, 0, data.voipSamples.Length, outBufferShort, 0, false);
                                     CustomExtensions.ToFloatArray(outBufferShort, outBufferFloat, resLen);
@@ -418,6 +436,11 @@ namespace BeatSaberMultiplayer
                     _messageDisplayTime = 0f;
                     _messageDisplayText.text = "";
                 }
+            }
+
+            if (voiceChatPlayer != null && voiceChatPlayer.IsTalking(76561198047255564))
+            {
+
             }
 
             if (Config.Instance.EnableVoiceChat)

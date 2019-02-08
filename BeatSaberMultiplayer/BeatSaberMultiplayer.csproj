@@ -195,7 +195,7 @@
     <Compile Include="UI\FlowCoordinators\RoomFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\ServerHubFlowCoordinator.cs" />
     <Compile Include="UI\PluginUI.cs" />
-    <Compile Include="UI\UIElements\DownloadStateTableCell.cs" />
+    <Compile Include="UI\UIElements\PlayerListTableCell.cs" />
     <Compile Include="UI\UIElements\OnOffViewController.cs" />
     <Compile Include="UI\UIElements\CustomSettingsHelper.cs" />
     <Compile Include="UI\UIElements\CustomUIKeyboard.cs" />
@@ -240,6 +240,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\DoubleArrowIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\SpeakerIcon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

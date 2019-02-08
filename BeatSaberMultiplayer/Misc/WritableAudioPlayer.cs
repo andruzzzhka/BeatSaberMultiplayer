@@ -27,6 +27,21 @@ namespace BeatSaberMultiplayer.Misc
             sources = new Dictionary<ulong, WritablePureDataSource>();
         }
 
+        private void Update()
+        {
+            foreach (KeyValuePair<ulong, WritablePureDataSource> keySource in sources)
+            {
+                if(keySource.Value.numUnprocessed == 0)
+                {
+                    keySource.Value.silentTime++;
+                }
+                else
+                {
+                    keySource.Value.silentTime = 0;
+                }
+            }
+        }
+
         void MakeOutput(out WasapiOut output, out WritablePureDataSource outSource)
         {
             var ayy = new MMDeviceEnumerator();
@@ -88,6 +103,18 @@ namespace BeatSaberMultiplayer.Misc
         public void PlayAudio(float[] audio, ulong audioId)
         {
             PlayAudio(audio, 0, audio.Length, audioId);
+        }
+
+        public bool IsTalking(ulong audioId)
+        {
+            if (outputs.ContainsKey(audioId))
+            {
+                return sources[audioId].silentTime < 10;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         void Cleanup()
@@ -204,6 +231,7 @@ namespace BeatSaberMultiplayer.Misc
 
         float[] unprocessedAudio = new float[80000 * 20];
         public int numUnprocessed = 0;
+        public int silentTime = 0;
 
         Queue<float[]> dats;
         Queue<int> offsets;
@@ -236,10 +264,10 @@ namespace BeatSaberMultiplayer.Misc
 
             numUnprocessed += numBytes;
 
-            while (numUnprocessed > 320 * 5)
+            while (numUnprocessed > 640 * 5)
             {
-                Buffer.BlockCopy(data, 320 * sizeof(float), data, 0, numUnprocessed - 320);
-                numUnprocessed -= 320;
+                Buffer.BlockCopy(data, 640 * sizeof(float), data, 0, numUnprocessed - 640);
+                numUnprocessed -= 640;
             }
         }
 

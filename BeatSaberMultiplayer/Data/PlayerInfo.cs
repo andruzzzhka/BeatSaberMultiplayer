@@ -110,6 +110,8 @@ namespace BeatSaberMultiplayer.Data
 
         public List<HitData> hitsLastUpdate = new List<HitData>();
 
+        public bool fullBodyTracking;
+
         public Vector3 headPos;
         public Vector3 rightHandPos;
         public Vector3 leftHandPos;
@@ -136,6 +138,7 @@ namespace BeatSaberMultiplayer.Data
 
             playerState = (PlayerState)msg.ReadByte();
 
+            fullBodyTracking = msg.ReadBoolean();
             playerScore = msg.ReadVariableUInt32();
             playerCutBlocks = msg.ReadVariableUInt32();
             playerComboBlocks = msg.ReadVariableUInt32();
@@ -143,18 +146,27 @@ namespace BeatSaberMultiplayer.Data
             msg.ReadPadBits();
             playerEnergy = msg.ReadFloat();
             playerProgress = msg.ReadFloat();
-            
-            byte[] avatar = msg.ReadBytes(100);
 
-            rightHandPos = Serialization.ToVector3(avatar.Take(12).ToArray());
-            leftHandPos = Serialization.ToVector3(avatar.Skip(12).Take(12).ToArray());
-            headPos = Serialization.ToVector3(avatar.Skip(24).Take(12).ToArray());
+            rightHandPos = msg.ToVector3();
+            leftHandPos = msg.ToVector3();
+            headPos = msg.ToVector3();
 
-            rightHandRot = Serialization.ToQuaternion(avatar.Skip(36).Take(16).ToArray());
-            leftHandRot = Serialization.ToQuaternion(avatar.Skip(52).Take(16).ToArray());
-            headRot = Serialization.ToQuaternion(avatar.Skip(68).Take(16).ToArray());
+            rightHandRot = msg.ToQuaternion();
+            leftHandRot = msg.ToQuaternion();
+            headRot = msg.ToQuaternion();
 
-            avatarHash = BitConverter.ToString(avatar.Skip(84).Take(16).ToArray()).Replace("-", "");
+            if (fullBodyTracking)
+            {
+                msg.ToVector3(); //Pelvis Pos
+                msg.ToVector3(); //Left Leg Pos
+                msg.ToVector3(); //Right Leg Pos
+
+                msg.ToQuaternion(); //Pelvis Rot
+                msg.ToQuaternion(); //Left Leg Rot
+                msg.ToQuaternion(); //Left Leg Pos
+            }
+
+            avatarHash = BitConverter.ToString(msg.ReadBytes(16)).Replace("-", "");
 
             hitsLastUpdate.Clear();
 
@@ -177,6 +189,7 @@ namespace BeatSaberMultiplayer.Data
 
             msg.Write((byte)playerState);
 
+            msg.Write(fullBodyTracking);
             msg.WriteVariableUInt32(playerScore);
             msg.WriteVariableUInt32(playerCutBlocks);
             msg.WriteVariableUInt32(playerComboBlocks);
@@ -185,14 +198,26 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(playerEnergy);
             msg.Write(playerProgress);
 
-            msg.Write(Serialization.Combine(
-                            Serialization.ToBytes(rightHandPos),
-                            Serialization.ToBytes(leftHandPos),
-                            Serialization.ToBytes(headPos),
-                            Serialization.ToBytes(rightHandRot),
-                            Serialization.ToBytes(leftHandRot),
-                            Serialization.ToBytes(headRot), 
-                            HexConverter.ConvertHexToBytesX(avatarHash)));
+            rightHandPos.AddToMessage(msg);
+            leftHandPos.AddToMessage(msg);
+            headPos.AddToMessage(msg);
+
+            rightHandRot.AddToMessage(msg);
+            leftHandRot.AddToMessage(msg);
+            headRot.AddToMessage(msg);
+
+            if (fullBodyTracking)
+            {
+                Vector3.zero.AddToMessage(msg); //Pelvis Pos
+                Vector3.zero.AddToMessage(msg); //Left Leg Pos
+                Vector3.zero.AddToMessage(msg); //Right Leg Pos
+
+                Quaternion.identity.AddToMessage(msg); //Pelvis Rot
+                Quaternion.identity.AddToMessage(msg); //Left Leg Rot
+                Quaternion.identity.AddToMessage(msg); //Left Leg Pos
+            }
+
+            msg.Write(HexConverter.ConvertHexToBytesX(avatarHash));
 
             msg.Write((byte)hitsLastUpdate.Count);
             

@@ -31,6 +31,7 @@ namespace ServerHub.Data
 
         public byte[] hitsLastUpdate;
 
+        public bool fullBodyTracking;
         public byte[] avatarData;
 
         public PlayerInfo(string _name, ulong _id)
@@ -49,6 +50,7 @@ namespace ServerHub.Data
 
             playerState = (PlayerState)msg.ReadByte();
 
+            fullBodyTracking = msg.ReadBoolean();
             playerScore = msg.ReadVariableUInt32();
             playerCutBlocks = msg.ReadVariableUInt32();
             playerComboBlocks = msg.ReadVariableUInt32();
@@ -56,8 +58,8 @@ namespace ServerHub.Data
             msg.ReadPadBits();
             playerEnergy = msg.ReadFloat();
             playerProgress = msg.ReadFloat();
-
-            avatarData = msg.ReadBytes(100);
+            
+            avatarData = msg.ReadBytes(84 * (fullBodyTracking ? 2 : 1) + 16);
 
             byte hitsCount = msg.ReadByte();
 
@@ -75,6 +77,7 @@ namespace ServerHub.Data
 
             msg.Write((byte)playerState);
 
+            msg.Write(fullBodyTracking);
             msg.WriteVariableUInt32(playerScore);
             msg.WriteVariableUInt32(playerCutBlocks);
             msg.WriteVariableUInt32(playerComboBlocks);

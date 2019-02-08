@@ -166,10 +166,7 @@ namespace BeatSaberMultiplayer.Misc
                     }
                 }
 
-                if (OnDataRead != null)
-                {
-                    OnDataRead(remainingSamples, 0, SampleSize);
-                }
+                OnDataRead?.Invoke(remainingSamples, 0, SampleSize);
                 int numLeft = numRemainingSamples - SampleSize;
                 lock (cleanupLock)
                 {

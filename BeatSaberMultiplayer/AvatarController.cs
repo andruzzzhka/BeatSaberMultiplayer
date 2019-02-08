@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.XR;
+using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer
 {
@@ -27,15 +28,15 @@ namespace BeatSaberMultiplayer
         string currentAvatarHash;
 
         TextMeshPro playerNameText;
-        
+        Image playerSpeakerIcon;
+
         Vector3 HeadPos;
         Vector3 LeftHandPos;
         Vector3 RightHandPos;
         Quaternion HeadRot;
         Quaternion LeftHandRot;
         Quaternion RightHandRot;
-
-        bool rendererEnabled = true;
+        
         Camera _camera;
 
         VRCenterAdjust _centerAdjust;
@@ -127,6 +128,14 @@ namespace BeatSaberMultiplayer
             playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 0.25f, 0f);
             playerNameText.alignment = TextAlignmentOptions.Center;
             playerNameText.fontSize = 2.5f;
+
+            playerSpeakerIcon = new GameObject("Player Speaker Icon", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();
+            playerSpeakerIcon.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+            playerSpeakerIcon.rectTransform.SetParent(transform);
+            playerSpeakerIcon.rectTransform.localScale = new Vector3(0.004f, 0.004f, 1f);
+            playerSpeakerIcon.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            playerSpeakerIcon.rectTransform.anchoredPosition3D = new Vector3(0f, 0.65f, 0f);
+            playerSpeakerIcon.sprite = Sprites.speakerIcon;
             
             avatar.GameObject.transform.SetParent(_centerAdjust.transform, false);
             transform.SetParent(_centerAdjust.transform, false);
@@ -150,11 +159,13 @@ namespace BeatSaberMultiplayer
                         if (Config.Instance.SpectatorMode)
                         {
                             playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
+                            playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - _camera.transform.position);
                         }
                     }
                     else
                     {
                         playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
+                        playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
                     }
                 }
             }
@@ -178,6 +189,7 @@ namespace BeatSaberMultiplayer
             if (_playerInfo == null)
             {
                 playerNameText.gameObject.SetActive(false);
+                playerSpeakerIcon.gameObject.SetActive(false);
                 if (avatar != null)
                 {
                     Destroy(avatar.GameObject);
@@ -190,25 +202,27 @@ namespace BeatSaberMultiplayer
 
                 playerInfo = _playerInfo;
 
-                if (playerNameText != null)
+                if (playerNameText != null && playerSpeakerIcon != null)
                 {
                     if (isLocal)
                     {
                         playerNameText.gameObject.SetActive(false);
+                        playerSpeakerIcon.gameObject.SetActive(false);
 #if !DEBUG
-                    if (avatar != null)
-                    {
-                        Destroy(avatar.GameObject);
-                    }
+                        if (avatar != null)
+                        {
+                            Destroy(avatar.GameObject);
+                        }
 #endif
                     }
                     else
                     {
                         playerNameText.gameObject.SetActive(true);
+                        playerSpeakerIcon.gameObject.SetActive(true);
                     }
                 }
                 
-                if (playerNameText == null)
+                if (playerNameText == null || playerSpeakerIcon == null)
                 {
                     return;
                 }
@@ -305,6 +319,8 @@ namespace BeatSaberMultiplayer
 
                 playerNameText.text = playerInfo.playerName;
                 playerNameText.color = playerInfo.playerNameColor;
+
+                playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(playerInfo.playerId));
             }
             catch (Exception e)
             {

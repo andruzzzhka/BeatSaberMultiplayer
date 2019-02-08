@@ -6,16 +6,23 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
+using UnityEngine;
+using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer.UI.UIElements
 {
-    class DownloadStateTableCell : LeaderboardTableCell
+    class PlayerListTableCell : LeaderboardTableCell
     {
         public float progress
         {
             set
             {
-                if (value < 1f)
+                if(value < 0f)
+                {
+                    _scoreText.text = "";
+                }
+                else if (value < 1f)
                 {
                     _scoreText.text = value.ToString("P");
                 }
@@ -41,6 +48,17 @@ namespace BeatSaberMultiplayer.UI.UIElements
             }
         }
 
+        public bool IsTalking
+        {
+            set
+            {
+                if (playerSpeakerIcon != null)
+                    playerSpeakerIcon.gameObject.SetActive(value);
+            }
+        }
+
+        private Image playerSpeakerIcon;
+
         protected override void Awake()
         {
             base.Awake();
@@ -58,7 +76,18 @@ namespace BeatSaberMultiplayer.UI.UIElements
             Destroy(cell);
 
             reuseIdentifier = "DownloadCell";
-            
+
+            _playerNameText.rectTransform.anchoredPosition = new Vector2(12f, 0f);
+
+            playerSpeakerIcon = new GameObject("Player Speaker Icon", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();
+            playerSpeakerIcon.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+            playerSpeakerIcon.rectTransform.SetParent(transform);
+            playerSpeakerIcon.rectTransform.localScale = new Vector3(0.05f, 0.05f, 0.05f);
+            playerSpeakerIcon.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            playerSpeakerIcon.rectTransform.anchoredPosition = new Vector2(-38f, 0f);
+            playerSpeakerIcon.sprite = Sprites.speakerIcon;
+            playerSpeakerIcon.material = Sprites.NoGlowMat;
+
         }
 
     }

@@ -399,45 +399,40 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
                                 if (roomInfo != null)
                                 {
-                                    if (roomInfo.roomState != RoomState.SelectingSong)
+                                    float currentTime = msg.ReadFloat();
+                                    float totalTime = msg.ReadFloat();
+
+                                    int playersCount = msg.ReadInt32();
+                                    
+                                    List<PlayerInfo> playerInfos = new List<PlayerInfo>();
+                                    for (int j = 0; j < playersCount; j++)
                                     {
-                                        float currentTime = msg.ReadFloat();
-                                        float totalTime = msg.ReadFloat();
-
-                                        int playersCount = msg.ReadInt32();
-
-                                        List<PlayerInfo> playerInfos = new List<PlayerInfo>();
-                                        for (int j = 0; j < playersCount; j++)
+                                        try
                                         {
-                                            try
-                                            {
-                                                playerInfos.Add(new PlayerInfo(msg));
-                                            }
-                                            catch (Exception e)
-                                            {
-#if DEBUG
-                                                Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
-#endif
-                                            }
+                                            playerInfos.Add(new PlayerInfo(msg));
                                         }
-
-                                        switch (roomInfo.roomState)
+                                        catch (Exception e)
                                         {
-                                            case RoomState.InGame:
-                                                playerInfos = playerInfos.Where(x => x.playerScore > 0 && x.playerState == PlayerState.Game).ToList();
-                                                UpdateLeaderboard(playerInfos, currentTime, totalTime, false);
-                                                break;
-
-                                            case RoomState.Results:
-                                                playerInfos = playerInfos.Where(x => x.playerScore > 0 && (x.playerState == PlayerState.Game || x.playerState == PlayerState.Room)).ToList();
-                                                UpdateLeaderboard(playerInfos, currentTime, totalTime, true);
-                                                break;
-
-                                            case RoomState.Preparing:
-                                                _roomManagementViewController.UpdatePlayerList(playerInfos);
-                                                break;
+#if DEBUG
+                                            Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
+#endif
                                         }
                                     }
+                                    
+                                    switch (roomInfo.roomState)
+                                    {
+                                        case RoomState.InGame:
+                                            playerInfos = playerInfos.Where(x => x.playerScore > 0 && x.playerState == PlayerState.Game).ToList();
+                                            UpdateLeaderboard(playerInfos, currentTime, totalTime, false);
+                                            break;
+
+                                        case RoomState.Results:
+                                            playerInfos = playerInfos.Where(x => x.playerScore > 0 && (x.playerState == PlayerState.Game || x.playerState == PlayerState.Room)).ToList();
+                                            UpdateLeaderboard(playerInfos, currentTime, totalTime, true);
+                                            break;
+                                    }
+
+                                    _roomManagementViewController.UpdatePlayerList(playerInfos, roomInfo.roomState);
                                 }
                             }
                             break;
@@ -503,7 +498,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         PopAllViewControllers(_roomNavigationController);
                         if(roomInfo.songSelectionType == SongSelectionType.Manual)
                             ShowSongsList(lastSelectedSong);
-                        _roomManagementViewController.UpdatePlayerList(null);
                     }
                     break;
                 case RoomState.Preparing:
@@ -523,7 +517,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             PopAllViewControllers(_roomNavigationController);
 
                         ShowLeaderboard(null, roomInfo.selectedSong);
-                        _roomManagementViewController.UpdatePlayerList(null);
                     }
                     break;
                 case RoomState.Results:
@@ -532,7 +525,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             PopAllViewControllers(_roomNavigationController);
 
                         ShowLeaderboard(null, roomInfo.selectedSong);
-                        _roomManagementViewController.UpdatePlayerList(null);
                     }
                     break;
             }

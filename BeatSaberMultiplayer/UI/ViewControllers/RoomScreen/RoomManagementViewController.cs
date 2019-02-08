@@ -29,7 +29,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         List<PlayerInfo> _playersList = new List<PlayerInfo>();
         LeaderboardTableCell _downloadListTableCellInstance;
-        List<DownloadStateTableCell> _tableCells = new List<DownloadStateTableCell>();
+        List<PlayerListTableCell> _tableCells = new List<PlayerListTableCell>();
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -101,7 +101,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _destroyRoomButton.gameObject.SetActive(isHost);
         }
 
-        public void UpdatePlayerList(List<PlayerInfo> players)
+        public void UpdatePlayerList(List<PlayerInfo> players, RoomState state)
         {
             try
             {
@@ -132,7 +132,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                         if (_tableCells.Count > i)
                         {
                             _tableCells[i].playerName = _playersList[i].playerName;
-                            _tableCells[i].progress = _playersList[i].playerState == PlayerState.DownloadingSongs ? (_playersList[i].playerProgress/100f) : 1f;
+                            _tableCells[i].progress = state == RoomState.Preparing ? (_playersList[i].playerState == PlayerState.DownloadingSongs ? (_playersList[i].playerProgress/100f) : 1f) : -1f;
+                            _tableCells[i].IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(_playersList[i].playerId);
                         }
                     }
                 }
@@ -165,7 +166,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             LeaderboardTableCell _originalCell = Instantiate(_downloadListTableCellInstance);
 
-            DownloadStateTableCell _tableCell = _originalCell.gameObject.AddComponent<DownloadStateTableCell>();
+            PlayerListTableCell _tableCell = _originalCell.gameObject.AddComponent<PlayerListTableCell>();
 
             _tableCell.Init();
 

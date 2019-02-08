@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer
 {
@@ -17,6 +18,8 @@ namespace BeatSaberMultiplayer
         public TextMeshPro playerNameText;
         public TextMeshPro playerScoreText;
         public TextMeshPro playerPlaceText;
+
+        public Image playerSpeakerIcon;
 
         private uint previousScore;
         private uint currentScore;
@@ -50,6 +53,14 @@ namespace BeatSaberMultiplayer
             playerScoreText = CustomExtensions.CreateWorldText(transform, "");
             playerScoreText.rectTransform.anchoredPosition = new Vector2(15f, 0f);
             playerScoreText.fontSize = 8f;
+            
+            playerSpeakerIcon = new GameObject("Player Speaker Icon", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();
+            playerSpeakerIcon.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+            playerSpeakerIcon.rectTransform.SetParent(transform);
+            playerSpeakerIcon.rectTransform.localScale = new Vector3(0.008f, 0.008f, 1f);
+            playerSpeakerIcon.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            playerSpeakerIcon.rectTransform.anchoredPosition3D = new Vector3(-8.5f, 2f, 0f);
+            playerSpeakerIcon.sprite = Sprites.speakerIcon;
         }
 
         public void UpdatePlayerInfo(PlayerInfo _info, int _index)
@@ -63,6 +74,7 @@ namespace BeatSaberMultiplayer
                 playerNameText.color = _info.playerNameColor;
                 previousScore = currentScore;
                 currentScore = _playerInfo.playerScore;
+                playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(_info.playerId));
                 progress = 0;
             }
             else
@@ -70,6 +82,7 @@ namespace BeatSaberMultiplayer
                 playerPlaceText.text = "";
                 playerNameText.text = "";
                 playerScoreText.text = "";
+                playerSpeakerIcon.gameObject.SetActive(false);
             }
         }
 
