@@ -250,14 +250,16 @@ namespace ServerHub.Rooms
             NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
 
             outMsg.Write((byte)CommandType.UpdateVoIPData);
-            outMsg.Write(roomClients.Count(x => x != null && x.playerVoIP != null && x.playerVoIP.voipSamples != null && x.playerVoIP.voipSamples.Length > 0));
+            outMsg.Write(roomClients.Count(x => x != null && x.playerVoIPQueue != null && x.playerVoIPQueue.Count > 0));
             
             for(int i = 0; i < roomClients.Count; i++)
             {
-                if(roomClients.Count > i && roomClients[i] != null && roomClients[i].playerVoIP != null && roomClients[i].playerVoIP.voipSamples != null && roomClients[i].playerVoIP.voipSamples.Length > 0)
+                if (roomClients.Count > i && roomClients[i] != null && roomClients[i].playerVoIPQueue != null && roomClients[i].playerVoIPQueue.Count > 0)
                 {
-                    roomClients[i].playerVoIP.AddToMessage(outMsg);
-                    roomClients[i].playerVoIP = null;
+                    while (roomClients[i].playerVoIPQueue.Count > 0)
+                    {
+                        roomClients[i].playerVoIPQueue.Dequeue().AddToMessage(outMsg);
+                    }
                 }
             }
 

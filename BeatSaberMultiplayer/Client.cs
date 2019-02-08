@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
+using BeatSaberMultiplayer.VOIP;
 using BS_Utils.Gameplay;
 using Lidgren.Network;
 using SongLoaderPlugin.OverrideClasses;
@@ -45,7 +46,6 @@ namespace BeatSaberMultiplayer
         public int port;
 
         public PlayerInfo playerInfo;
-        public VoIPData voipData;
         
         public bool isHost;
 
@@ -477,13 +477,13 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SendVoIPData()
+        public void SendVoIPData(VoipFragment audio)
         {
-            if (Connected && NetworkClient != null && voipData != null && voipData.voipSamples.Length > 0)
+            if (Connected && NetworkClient != null)
             {
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.UpdateVoIPData);
-                voipData.AddToMessage(outMsg);
+                audio.AddToMessage(outMsg);
 
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 2);
             }

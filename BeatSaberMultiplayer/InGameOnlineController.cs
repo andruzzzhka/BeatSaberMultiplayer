@@ -1,6 +1,7 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
+using BeatSaberMultiplayer.VOIP;
 using BS_Utils.Gameplay;
 using CustomAvatar;
 using CustomUI.BeatSaber;
@@ -52,24 +53,14 @@ namespace BeatSaberMultiplayer
         private string _currentScene;
         private bool loaded;
         private int sendRateCounter;
-        private int voipSendRateCounter;
         private int fixedSendRate = 0;
-
-
-        NSpeex.SpeexDecoder speexDec = new NSpeex.SpeexDecoder(NSpeex.BandMode.Wide);
-        NSpeex.SpeexEncoder speexEnc = new NSpeex.SpeexEncoder(NSpeex.BandMode.Wide);
+        
+        SpeexCodex speexDec;
+        private WritableAudioPlayer voiceChatPlayer;
+        private VoipListener voiceChatListener;
 
         public bool isRecording;
-
-        private AudioCapture voiceChatCapture;
-        private WritableAudioPlayer voiceChatPlayer;
-
-        byte[] outBuffer = new byte[1280];
-
-        short[] outBufferShort = new short[1280];
-        short[] prevOutBufferShort = new short[1280];
-        float[] outBufferFloat = new float[1280];
-
+        
         public static void OnLoad(Scene to)
         {
             if (Instance != null)
@@ -95,28 +86,18 @@ namespace BeatSaberMultiplayer
                 _messageDisplayText.alignment = TextAlignmentOptions.Center;
                 DontDestroyOnLoad(_messageDisplayText.gameObject);
 
-                voiceChatCapture = new AudioCapture(16000, 1280);
-                
-                voiceChatCapture.OnDataRead += (data, offset, len) => {
-                    if (!isRecording)
-                        return;
+                voiceChatListener = new GameObject("Voice Chat Listener").AddComponent<VoipListener>();
 
-                    Misc.Logger.Info("Sample size: "+ len);
-
-                    data.ToShortArray(outBufferShort, offset, len);
-                    int resLen = speexEnc.Encode(outBufferShort, 0, len, outBuffer, 0, 1280);
-
-                    if (Client.Instance.voipData == null)
+                voiceChatListener.OnAudioGenerated += (fragment) =>
+                {
+                    if (isRecording)
                     {
-                        Client.Instance.voipData = new VoIPData(Client.Instance.playerInfo.playerId, outBuffer.Take(resLen).ToArray());
-                    }
-                    else
-                    {
-                        if (Client.Instance.voipData.voipSamples == null || Client.Instance.voipData.voipSamples.Length < resLen)
-                            Client.Instance.voipData.voipSamples = new byte[resLen];
-                        Buffer.BlockCopy(outBuffer, 0, Client.Instance.voipData.voipSamples, 0, resLen);
+                        fragment.playerId = Client.Instance.playerInfo.playerId;
+                        Client.Instance.SendVoIPData(fragment);
                     }
                 };
+
+                DontDestroyOnLoad(voiceChatListener.gameObject);
 
                 voiceChatPlayer = new GameObject("Voice Chat Player").AddComponent<WritableAudioPlayer>();
                 DontDestroyOnLoad(voiceChatPlayer.gameObject);
@@ -125,11 +106,11 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void InputAudioDeviceChanged(CSCore.CoreAudioAPI.MMDevice newDevice)
+        public void InputAudioDeviceChanged(string newDevice)
         {
-            if (voiceChatCapture != null)
+            if (voiceChatListener != null)
             {
-                voiceChatCapture.ChangeDevice(newDevice);
+                voiceChatListener.ChangeDevice(newDevice);
             }
         }
 
@@ -143,6 +124,7 @@ namespace BeatSaberMultiplayer
 
         public bool VoiceChatIsTalking(ulong playerId)
         {
+            
             if(Config.Instance.EnableVoiceChat && voiceChatPlayer != null)
             {
                 return voiceChatPlayer.IsTalking(playerId);
@@ -349,23 +331,25 @@ namespace BeatSaberMultiplayer
                         {
                             try
                             {
-                                VoIPData data = new VoIPData(msg);
+                                VoipFragment data = new VoipFragment(msg);
 
 #if DEBUG
-                                if (data.voipSamples != null && data.voipSamples.Length > 0)
+                                if (data.data != null && data.data.Length > 0)
 #else
-                                if (data.voipSamples != null && data.voipSamples.Length > 0 && data.playerId != Client.Instance.playerInfo.playerId)
+                                if (data.data != null && data.data.Length > 0 && data.playerId != Client.Instance.playerInfo.playerId)
 #endif
                                 {
-                                    int resLen = speexDec.Decode(data.voipSamples, 0, data.voipSamples.Length, outBufferShort, 0, false);
-                                    CustomExtensions.ToFloatArray(outBufferShort, outBufferFloat, resLen);
-                                    voiceChatPlayer.PlayAudio(outBufferFloat, 0, resLen, data.playerId);
+                                    if (speexDec == null || speexDec.mode != data.mode)
+                                    {
+                                        speexDec = SpeexCodex.Create(data.mode);
+                                    }
+                                    voiceChatPlayer.PlayAudio(speexDec.Decode(data.data), data.playerId);
                                 }
                             }
                             catch (Exception e)
                             {
 #if DEBUG
-                                Misc.Logger.Exception($"Unable to parse VoIPData! Excpetion: {e}");
+                                Misc.Logger.Exception($"Unable to parse VoIP fragment! Excpetion: {e}");
 #endif
                             }
                         }
@@ -408,24 +392,7 @@ namespace BeatSaberMultiplayer
                     }; break;
             }
         }
-
-        public void FixedUpdate()
-        {
-            voiceChatCapture.Poll();
-
-            if (isRecording)
-            {
-                if (voipSendRateCounter >= 2)
-                {
-                    if (Client.Instance.voipData.voipSamples == null)
-                        Client.Instance.voipData.voipSamples = new byte[0];
-                    Client.Instance.SendVoIPData();
-                    voipSendRateCounter = 0;
-                }
-                voipSendRateCounter++;
-            }
-        }
-
+        
         public void Update()
         {
             if (_messageDisplayTime > 0f)
@@ -436,11 +403,6 @@ namespace BeatSaberMultiplayer
                     _messageDisplayTime = 0f;
                     _messageDisplayText.text = "";
                 }
-            }
-
-            if (voiceChatPlayer != null && voiceChatPlayer.IsTalking(76561198047255564))
-            {
-
             }
 
             if (Config.Instance.EnableVoiceChat)

@@ -228,24 +228,22 @@ namespace BeatSaberMultiplayer.UI
             pushToTalkButton.Value = Config.Instance.PushToTalkButton;
             pushToTalkButton.UpdateText();
 
-            var devices = AudioCapture.GetDevicesList();
-            string[] deviceNames = devices.Select(x => x.FriendlyName).ToArray();
-            List<string> deviceIDs = devices.Select(x => x.DeviceID).ToList();
+            var devices = Microphone.devices.ToList();
 
             var inputDeviceOption = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>((RectTransform)voiceSubMenu.transform, "Input Device");
             inputDeviceOption.OnEnable();
-            inputDeviceOption.ValueChanged += (e) => { Config.Instance.InputDevice = deviceIDs[e]; InGameOnlineController.Instance.InputAudioDeviceChanged(devices[e]); };
+            inputDeviceOption.ValueChanged += (e) => { Config.Instance.InputDevice = devices[e]; InGameOnlineController.Instance.InputAudioDeviceChanged(devices[e]); };
             inputDeviceOption.maxValue = devices.Count - 1;
-            inputDeviceOption.textForValues = deviceNames;
+            inputDeviceOption.textForValues = devices.ToArray();
 
-            if (deviceIDs.Contains(Config.Instance.InputDevice))
+            if (devices.Contains(Config.Instance.InputDevice))
             {
-                inputDeviceOption.Value = deviceIDs.IndexOf(Config.Instance.InputDevice);
+                inputDeviceOption.Value = devices.IndexOf(Config.Instance.InputDevice);
             }
             else
             {
                 inputDeviceOption.Value = 0;
-                Config.Instance.InputDevice = deviceIDs[0];
+                Config.Instance.InputDevice = devices[0];
                 InGameOnlineController.Instance.InputAudioDeviceChanged(devices[0]);
             }
 

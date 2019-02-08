@@ -9,8 +9,9 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace BeatSaberMultiplayer.Misc
-{   //https://github.com/Phylliida/UnityVOIP/blob/master/VoiceChat/Assets/UnityVOIP/WritableAudioPlayer.cs
+namespace BeatSaberMultiplayer.VOIP
+{
+    //https://github.com/Phylliida/UnityVOIP/blob/master/VoiceChat/Assets/UnityVOIP/WritableAudioPlayer.cs
     public class WritableAudioPlayer : MonoBehaviour
     {
         Dictionary<ulong, WasapiOut> outputs;
@@ -31,7 +32,7 @@ namespace BeatSaberMultiplayer.Misc
         {
             foreach (KeyValuePair<ulong, WritablePureDataSource> keySource in sources)
             {
-                if(keySource.Value.numUnprocessed == 0)
+                if (keySource.Value.numUnprocessed == 0)
                 {
                     keySource.Value.silentTime++;
                 }
@@ -49,9 +50,9 @@ namespace BeatSaberMultiplayer.Misc
             output = new WasapiOut(false, AudioClientShareMode.Shared, 100);
             output.Device = ayy.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
             outSource = new WritablePureDataSource(new WaveFormat(inputSampleRate, 16, 1), new WaveFormat(output.Device.DeviceFormat.SampleRate, 16, output.Device.DeviceFormat.Channels));
-            
+
             output.Initialize(outSource.ToWaveSource());
-            
+
             output.Volume = Mathf.Clamp01(Config.Instance.VoiceChatVolume);
 
             output.Play();
@@ -59,7 +60,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public void SetVolume(float volume)
         {
-            foreach(var output in outputs)
+            foreach (var output in outputs)
             {
                 output.Value.Volume = Mathf.Clamp01(volume);
             }
@@ -224,7 +225,7 @@ namespace BeatSaberMultiplayer.Misc
             lens = new Queue<int>();
         }
 
-        
+
         float[] tempBuffer1 = new float[80000 * 20];
         float[] tempBuffer2 = new float[80000 * 20];
         float[] tempBuffer3 = new float[80000 * 20];
@@ -263,12 +264,6 @@ namespace BeatSaberMultiplayer.Misc
             Buffer.BlockCopy(data, offset * sizeof(float), unprocessedAudio, numUnprocessed * sizeof(float), numBytes * sizeof(float));
 
             numUnprocessed += numBytes;
-
-            while (numUnprocessed > 640 * 5)
-            {
-                Buffer.BlockCopy(data, 640 * sizeof(float), data, 0, numUnprocessed - 640);
-                numUnprocessed -= 640;
-            }
         }
 
         public void Write(float[] buffer, int offset, int count)
@@ -310,9 +305,6 @@ namespace BeatSaberMultiplayer.Misc
                 return countUsing;
             }
         }
-
-
-
 
         public ConverterQuality quality;
 

@@ -25,7 +25,7 @@ namespace ServerHub.Data
         public PlayerInfo playerInfo;
         public DateTime joinTime;
 
-        public VoIPData playerVoIP;
+        public Queue<UnityVOIP.VoipFragment> playerVoIPQueue = new Queue<UnityVOIP.VoipFragment>();
 
         public uint joinedRoomID;
 

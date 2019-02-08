@@ -159,10 +159,8 @@
     <Compile Include="Data\RoomPreset.cs" />
     <Compile Include="Data\RoomSettings.cs" />
     <Compile Include="Data\SongInfo.cs" />
-    <Compile Include="Data\VoIPData.cs" />
     <Compile Include="DebugForm.cs" />
     <Compile Include="InGameOnlineController.cs" />
-    <Compile Include="Misc\AudioCapture.cs" />
     <Compile Include="Misc\BeatSaverDownloaderHelper.cs" />
     <Compile Include="Misc\ControllersHelper.cs" />
     <Compile Include="Misc\ScrappedData.cs" />
@@ -178,7 +176,6 @@
     <Compile Include="Misc\SongDownloader.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
-    <Compile Include="Misc\WritableAudioPlayer.cs" />
     <Compile Include="OverriddenClasses\OnlineAudioTimeController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapCallbackController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapSpawnController.cs" />
@@ -216,6 +213,12 @@
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
     <Compile Include="UI\ViewControllers\MultiplayerNavigationController.cs" />
+    <Compile Include="VOIP\AudioUtils.cs" />
+    <Compile Include="VOIP\SpeexCodex.cs" />
+    <Compile Include="VOIP\VoipBehaviour.cs" />
+    <Compile Include="Data\VoipFragment.cs" />
+    <Compile Include="VOIP\VoipListener.cs" />
+    <Compile Include="VOIP\WritableAudioPlayer.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\Shader.asset" />

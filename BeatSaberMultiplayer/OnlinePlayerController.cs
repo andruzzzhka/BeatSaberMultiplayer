@@ -52,7 +52,7 @@ namespace BeatSaberMultiplayer
         public float avatarOffset;
         public bool noInterpolation = false;
         public bool destroyed = false;
-
+        
         private PlayerInfo _info;
 
         private float lastSynchronizationTime = 0f;
@@ -71,7 +71,7 @@ namespace BeatSaberMultiplayer
                 syncStartInfo = _info;
                 syncEndInfo = _info;
                 
-                if (SceneManager.GetActiveScene().name != "Menu" && !Client.Instance.playerInfo.Equals(PlayerInfo) && Config.Instance.ShowOtherPlayersBlocks)
+                if (SceneManager.GetActiveScene().name != "Menu" && Config.Instance.ShowOtherPlayersBlocks && !Client.Instance.playerInfo.Equals(PlayerInfo))
                 {
                     SpawnBeatmapControllers();
                     SpawnSabers();

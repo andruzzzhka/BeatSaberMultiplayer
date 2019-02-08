@@ -50,13 +50,22 @@ namespace ServerHub.Hub
 
             pingTimer = new Timer(PingTimerCallback, null, 7500, 10000);
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
-            HighResolutionTimer.LoopTimer.AfterElapsed += (sender, e) => 
+
+            HighResolutionTimer.LoopTimer.AfterElapsed += (sender, e) =>
             {
                 if (ListenerServer != null)
                 {
                     ListenerServer.FlushSendQueue();
                 }
             };
+            HighResolutionTimer.VoIPTimer.AfterElapsed += (sender, e) =>
+            {
+                if (ListenerServer != null)
+                {
+                    ListenerServer.FlushSendQueue();
+                }
+            };
+
             _lastTick = DateTime.Now;
 
             NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer")
@@ -197,9 +206,9 @@ namespace ServerHub.Hub
 
                                             if (client != null)
                                             {
-                                                VoIPData data = new VoIPData(msg);
+                                                UnityVOIP.VoipFragment data = new UnityVOIP.VoipFragment(msg);
                                                 if (data.playerId == client.playerInfo.playerId)
-                                                    client.playerVoIP = data;
+                                                    client.playerVoIPQueue.Enqueue(data);
                                             }
                                         }
                                         break;
