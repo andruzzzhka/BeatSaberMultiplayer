@@ -208,12 +208,12 @@ namespace BeatSaberMultiplayer
                     {
                         playerNameText.gameObject.SetActive(false);
                         playerSpeakerIcon.gameObject.SetActive(false);
-#if !DEBUG
+//#if !DEBUG
                         if (avatar != null)
                         {
                             Destroy(avatar.GameObject);
                         }
-#endif
+//#endif
                     }
                     else
                     {

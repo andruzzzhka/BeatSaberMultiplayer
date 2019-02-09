@@ -106,12 +106,16 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void InputAudioDeviceChanged(string newDevice)
+        public void VoiceChatStartRecording()
         {
             if (voiceChatListener != null)
-            {
-                voiceChatListener.ChangeDevice(newDevice);
-            }
+                voiceChatListener.StartRecording();
+        }
+
+        public void VoiceChatStopRecording()
+        {
+            if (voiceChatListener != null)
+                voiceChatListener.StopRecording();
         }
 
         public void VoiceChatVolumeChanged(float volume)
@@ -124,10 +128,9 @@ namespace BeatSaberMultiplayer
 
         public bool VoiceChatIsTalking(ulong playerId)
         {
-            
             if(Config.Instance.EnableVoiceChat && voiceChatPlayer != null)
             {
-                return voiceChatPlayer.IsTalking(playerId);
+                return (playerId == Client.Instance.playerInfo.playerId) ? isRecording : voiceChatPlayer.IsTalking(playerId);
             }
             else
             {

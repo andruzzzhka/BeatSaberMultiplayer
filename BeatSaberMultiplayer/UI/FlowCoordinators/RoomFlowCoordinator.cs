@@ -181,6 +181,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
             InGameOnlineController.Instance.DestroyAvatars();
+            InGameOnlineController.Instance.VoiceChatStopRecording();
             PreviewPlayer.CrossfadeToDefault();
             lastSelectedSong = "";
             _lastCharacteristic = _standardCharacteristic;
@@ -234,6 +235,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 Client.Instance.SendPlayerInfo();
                                 joined = true;
                                 InGameOnlineController.Instance.needToSendUpdates = true;
+                                if(Config.Instance.EnableVoiceChat)
+                                    InGameOnlineController.Instance.VoiceChatStartRecording();
                             }
                             break;
                         case 1:

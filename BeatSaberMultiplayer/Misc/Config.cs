@@ -24,7 +24,6 @@ namespace BeatSaberMultiplayer {
 
         [SerializeField] private bool _enableVoiceChat;
         [SerializeField] private float _voiceChatVolume;
-        [SerializeField] private string _inputDevice;
         [SerializeField] private bool _pushToTalk;
         [SerializeField] private int _pushToTalkButton;
 
@@ -237,16 +236,6 @@ namespace BeatSaberMultiplayer {
             }
         }
 
-        public string InputDevice
-        {
-            get { return _inputDevice; }
-            set
-            {
-                _inputDevice = value;
-                MarkDirty();
-            }
-        }
-
         Config()
         {
             _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "hub.auros.red", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.ligma.site", "hub.jogi-server.de", "beatsaberhub.freddi.xyz" };
@@ -265,7 +254,6 @@ namespace BeatSaberMultiplayer {
             _voiceChatVolume = 0.8f;
             _pushToTalk = true;
             _pushToTalkButton = 0;
-            _inputDevice = "";
 
             IsDirty = true;
         }

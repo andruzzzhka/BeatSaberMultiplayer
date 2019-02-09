@@ -227,27 +227,6 @@ namespace BeatSaberMultiplayer.UI
             pushToTalkButton.textForValues = new string[] { "L Grip", "R Grip", "L Trigger", "R Trigger", "L+R Grip", "L+R Trigger", "Any Grip", "Any Trigger" };
             pushToTalkButton.Value = Config.Instance.PushToTalkButton;
             pushToTalkButton.UpdateText();
-
-            var devices = Microphone.devices.ToList();
-
-            var inputDeviceOption = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>((RectTransform)voiceSubMenu.transform, "Input Device");
-            inputDeviceOption.OnEnable();
-            inputDeviceOption.ValueChanged += (e) => { Config.Instance.InputDevice = devices[e]; InGameOnlineController.Instance.InputAudioDeviceChanged(devices[e]); };
-            inputDeviceOption.maxValue = devices.Count - 1;
-            inputDeviceOption.textForValues = devices.ToArray();
-
-            if (devices.Contains(Config.Instance.InputDevice))
-            {
-                inputDeviceOption.Value = devices.IndexOf(Config.Instance.InputDevice);
-            }
-            else
-            {
-                inputDeviceOption.Value = 0;
-                Config.Instance.InputDevice = devices[0];
-                InGameOnlineController.Instance.InputAudioDeviceChanged(devices[0]);
-            }
-
-            inputDeviceOption.UpdateText();
         }
 
         void UpdateSelectedAvatar()

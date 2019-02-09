@@ -47,5 +47,45 @@ namespace BeatSaberMultiplayer.VOIP
                 target[i] = source[i * ratio];
             }
         }
+
+        public static int GetFreqForMic(string deviceName = null)
+        {
+            int minFreq;
+            int maxFreq;
+
+            Microphone.GetDeviceCaps(deviceName, out minFreq, out maxFreq);
+            
+            if((minFreq <= 16000 && maxFreq >= 16000) || (minFreq == 0 && maxFreq == 0))
+            {
+                return 16000;
+            }
+            else if(minFreq > 16000)
+            {
+                if(FindClosestFreq(minFreq, maxFreq) != 0)
+                {
+                    return FindClosestFreq(minFreq, maxFreq);
+                }
+                else
+                {
+                    return minFreq;
+                }
+            }
+            else
+            {
+                return maxFreq;
+            }
+        }
+
+        public static int FindClosestFreq(int minFreq, int maxFreq)
+        {
+            for (int i = (int)Mathf.Round(minFreq / 1000); i < Mathf.Round(maxFreq / 1000); i++)
+            {
+                if (i % 16 == 0)
+                {
+                    return i * 1000;
+                }
+            }
+            return 0;
+        }
     }
 }

@@ -8,9 +8,9 @@ namespace BeatSaberMultiplayer.VOIP
     //https://github.com/DwayneBull/UnityVOIP/blob/master/VoipListener.cs
     public class VoipListener : VoipBehaviour
     {
-        private string lastDevice;
         private AudioClip recording;
         private float[] recordingBuffer;
+        private float[] resampleBuffer;
 
         private SpeexCodex encoder;
 
@@ -23,7 +23,7 @@ namespace BeatSaberMultiplayer.VOIP
         public float minAmplitude = 0.001f;
 
         public BandMode max = BandMode.Wide;
-        public BandMode inputMode;
+        public int inputFreq;
 
         public bool IsListening
         {
@@ -35,43 +35,39 @@ namespace BeatSaberMultiplayer.VOIP
            
         }
 
-        void Setup()
+        public void StartRecording()
         {
             if (Microphone.devices.Length == 0) return;
-
-            inputMode = BandMode.Wide;
-            encoder = SpeexCodex.Create(inputMode);
-
-            recordingBuffer = new float[encoder.dataSize];
             
-            lastDevice = Config.Instance.InputDevice;
-            if (!Microphone.devices.Contains(lastDevice))
-            {
-                lastDevice = Microphone.devices.First();
-                Config.Instance.InputDevice = lastDevice;
-            }
+            inputFreq = AudioUtils.GetFreqForMic();
+            
+            encoder = SpeexCodex.Create(BandMode.Wide);
 
-            recording = Microphone.Start(lastDevice, true, 10, AudioUtils.GetFrequency(inputMode));
+            var ratio = inputFreq / (float)AudioUtils.GetFrequency(encoder.mode);
+            int sizeRequired = (int)(ratio * encoder.dataSize);
+            recordingBuffer = new float[sizeRequired];
+            resampleBuffer = new float[encoder.dataSize];
+            
+            if (AudioUtils.GetFrequency(encoder.mode) == inputFreq)
+            {
+                recordingBuffer = resampleBuffer;
+            }            
+
+            recording = Microphone.Start(null, true, 10, inputFreq);
+            Misc.Logger.Info("Used mic frequency: "+inputFreq+"Hz");
         }
 
-        public void ChangeDevice(string newDevice)
+        public void StopRecording()
         {
-            Microphone.End(lastDevice);
-
-            lastDevice = newDevice;
-            if (!Microphone.devices.Contains(lastDevice))
-            {
-                lastDevice = Microphone.devices.First();
-                Config.Instance.InputDevice = lastDevice;
-            }
-            recording = Microphone.Start(lastDevice, true, 10, AudioUtils.GetFrequency(inputMode));
+            Microphone.End(null);
+            Destroy(recording);
+            recording = null;
         }
 
         void Update()
         {
             if ( recording == null )
             {
-                Setup();
                 return;
             }
 
@@ -96,8 +92,15 @@ namespace BeatSaberMultiplayer.VOIP
                         if (OnAudioGenerated != null )
                         {
                             chunkCount++;
-                            
-                            var data = encoder.Encode(recordingBuffer);
+
+                            //Downsample if needed.
+                            if (recordingBuffer != resampleBuffer)
+                            {
+                                AudioUtils.Downsample(recordingBuffer, resampleBuffer);
+                            }
+
+                            var data = encoder.Encode(resampleBuffer);
+
                             bytes += data.Length + 11;
                             OnAudioGenerated( new VoipFragment(0, index, data, encoder.mode) );
                         }
