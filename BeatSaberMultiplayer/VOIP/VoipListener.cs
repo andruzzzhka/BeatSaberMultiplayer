@@ -11,7 +11,6 @@ namespace BeatSaberMultiplayer.VOIP
         private string lastDevice;
         private AudioClip recording;
         private float[] recordingBuffer;
-        private float[] resampleBuffer;
 
         private SpeexCodex encoder;
 
@@ -41,26 +40,10 @@ namespace BeatSaberMultiplayer.VOIP
             if (Microphone.devices.Length == 0) return;
 
             inputMode = BandMode.Wide;
+            encoder = SpeexCodex.Create(inputMode);
 
-            var mode = inputMode;
-            if ( inputMode > max )
-            {
-                mode = max;
-            }
-            encoder = SpeexCodex.Create(mode);
-
-            var ratio = AudioUtils.GetFrequency(inputMode) / AudioUtils.GetFrequency(encoder.mode);
-            int sizeRequired = ratio * encoder.dataSize;
-            recordingBuffer = new float[sizeRequired];
-            resampleBuffer = new float[encoder.dataSize];
-
-
-            BeatSaberMultiplayer.Misc.Logger.Info("inputMode:" + inputMode + " encodingMode:" + encoder.mode + " ratio:" + ratio + " record:" + recordingBuffer.Length + " resample:" + resampleBuffer.Length);
-            if ( encoder.mode == inputMode )
-            {
-                recordingBuffer = resampleBuffer;
-            }
-
+            recordingBuffer = new float[encoder.dataSize];
+            
             lastDevice = Config.Instance.InputDevice;
             if (!Microphone.devices.Contains(lastDevice))
             {
@@ -113,14 +96,8 @@ namespace BeatSaberMultiplayer.VOIP
                         if (OnAudioGenerated != null )
                         {
                             chunkCount++;
-
-                            //Downsample if needed.
-                            if (recordingBuffer != resampleBuffer)
-                            {
-                                AudioUtils.Downsample(recordingBuffer, resampleBuffer);
-                            }
-
-                            var data = encoder.Encode(resampleBuffer);
+                            
+                            var data = encoder.Encode(recordingBuffer);
                             bytes += data.Length + 11;
                             OnAudioGenerated( new VoipFragment(0, index, data, encoder.mode) );
                         }

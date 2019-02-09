@@ -31,6 +31,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         LeaderboardTableCell _downloadListTableCellInstance;
         List<PlayerListTableCell> _tableCells = new List<PlayerListTableCell>();
 
+        TextMeshProUGUI _pingText;
+
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
@@ -90,11 +92,22 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 ReflectionUtil.SetPrivateField(_downloadProgressTableView, "_pageDownButton", _pageDownButton);
                 
                 _downloadProgressTableView.dataSource = this;
-
+                
+                _pingText = this.CreateText("PING: 0", new Vector2(75f, 22.5f));
+                _pingText.alignment = TextAlignmentOptions.Left;
             }
 
         }
 
+        public void Update()
+        {
+
+            if(_pingText != null && Client.Instance.NetworkClient != null)
+            {
+                _pingText.text = "PING: "+ Client.Instance.NetworkClient.Connections[0].AverageRoundtripTime;
+            }
+
+        }
 
         public void UpdateViewController(bool isHost)
         {
