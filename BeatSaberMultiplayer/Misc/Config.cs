@@ -253,7 +253,7 @@ namespace BeatSaberMultiplayer {
             _enableVoiceChat = true;
             _voiceChatVolume = 0.8f;
             _pushToTalk = true;
-            _pushToTalkButton = 0;
+            _pushToTalkButton = 6;
 
             IsDirty = true;
         }

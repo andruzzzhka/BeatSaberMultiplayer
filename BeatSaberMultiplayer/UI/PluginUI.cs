@@ -200,7 +200,7 @@ namespace BeatSaberMultiplayer.UI
             _publicAvatarOption.UpdateText();
             LoadAllAvatars();
             
-            var spectatorMode = onlineSubMenu.AddBool("Spectator Mode (Beta)", "Watch other players playing a song (e.g. tournaments)\n<color=red>You can't play songs while \"Spectator Mode\" is on!</color>");
+            var spectatorMode = onlineSubMenu.AddBool("Spectator Mode", "<color=red>BETA</color>\nWatch other players playing a song (e.g. tournaments)\n<color=red>You can't play songs while \"Spectator Mode\" is on!</color>");
             spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
             spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
 
