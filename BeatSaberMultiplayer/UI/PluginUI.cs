@@ -161,7 +161,7 @@ namespace BeatSaberMultiplayer.UI
             avatarsInGame.GetValue += delegate { return Config.Instance.ShowAvatarsInGame; };
             avatarsInGame.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInGame = value; };
 
-            var blocksInGame = onlineSubMenu.AddBool("Show Other Players Blocks", "Show other players blocks while playing a song\n<color=red>Requires \"Show Avatars In Game\"</color>");
+            var blocksInGame = onlineSubMenu.AddBool("Show Other Players Blocks", "<color=red>BETA</color>\nShow other players blocks while playing a song\n<color=red>Requires \"Show Avatars In Game\"</color>");
             blocksInGame.GetValue += delegate { return Config.Instance.ShowOtherPlayersBlocks; };
             blocksInGame.SetValue += delegate (bool value) { Config.Instance.ShowOtherPlayersBlocks = value; };
 

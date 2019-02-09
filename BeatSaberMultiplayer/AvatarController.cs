@@ -218,7 +218,7 @@ namespace BeatSaberMultiplayer
                     else
                     {
                         playerNameText.gameObject.SetActive(true);
-                        playerSpeakerIcon.gameObject.SetActive(true);
+                        playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(playerInfo.playerId));
                     }
                 }
                 
@@ -319,8 +319,6 @@ namespace BeatSaberMultiplayer
 
                 playerNameText.text = playerInfo.playerName;
                 playerNameText.color = playerInfo.playerNameColor;
-
-                playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(playerInfo.playerId));
             }
             catch (Exception e)
             {
