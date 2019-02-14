@@ -75,7 +75,18 @@ namespace BeatSaberMultiplayer
             playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
             NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { MaximumHandshakeAttempts = 2, AutoFlushSendQueue = false };
             NetworkClient = new NetClient(Config);
-            ClientCreated?.Invoke();
+
+            foreach (Action nextDel in ClientCreated.GetInvocationList())
+            {
+                try
+                {
+                    nextDel.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Misc.Logger.Error($"Exception in {nextDel.Method.Name} on client created event: {e}");
+                }
+            }
         }
 
         public void Disconnect()
@@ -202,7 +213,17 @@ namespace BeatSaberMultiplayer
 #if DEBUG
                                         Misc.Logger.Info($"Received event message! Header=\"{header}\", Data=\"{data}\"");
 #endif
-                                        EventMessageReceived?.Invoke(header, data);
+                                        foreach (Action<string, string> nextDel in EventMessageReceived.GetInvocationList())
+                                        {
+                                            try
+                                            {
+                                                nextDel.Invoke(header, data);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                Misc.Logger.Error($"Exception in {nextDel.Method.Name} on event message received event: {e}");
+                                            }
+                                        }
                                     }
                                     else
                                     {
@@ -225,12 +246,32 @@ namespace BeatSaberMultiplayer
                                     {
                                         msg.Position = 8;
                                         if (msg.PeekByte() == 0)
-                                            ClientJoinedRoom?.Invoke();
+                                            foreach (Action nextDel in ClientJoinedRoom.GetInvocationList())
+                                            {
+                                                try
+                                                {
+                                                    nextDel.Invoke();
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    Misc.Logger.Error($"Exception in {nextDel.Method.Name} on c lient joined room event: {e}");
+                                                }
+                                            }
                                     }
                                     else if (commandType == CommandType.StartLevel)
                                     {
                                         if (playerInfo.playerState == PlayerState.Room)
-                                            ClientLevelStarted?.Invoke();
+                                            foreach (Action nextDel in ClientLevelStarted.GetInvocationList())
+                                            {
+                                                try
+                                                {
+                                                    nextDel.Invoke();
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    Misc.Logger.Error($"Exception in {nextDel.Method.Name} on client level started event: {e}");
+                                                }
+                                            }
                                     }
                                 };
                                 break;

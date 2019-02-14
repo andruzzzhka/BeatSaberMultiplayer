@@ -75,7 +75,8 @@ namespace BeatSaberMultiplayer
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
 
-                Client.ClientCreated += ClientCreated;
+                Client.Instance.MessageReceived -= PacketReceived;
+                Client.Instance.MessageReceived += PacketReceived;
                 _currentScene = SceneManager.GetActiveScene().name;
                 
                 _messageDisplayText = CustomExtensions.CreateWorldText(transform, "");
@@ -101,7 +102,7 @@ namespace BeatSaberMultiplayer
 
                 voiceChatPlayer = new GameObject("Voice Chat Player").AddComponent<WritableAudioPlayer>();
                 DontDestroyOnLoad(voiceChatPlayer.gameObject);
-
+                
                 CustomAvatar.Plugin.Instance.PlayerAvatarManager.AvatarChanged += PlayerAvatarManager_AvatarChanged;
             }
         }
