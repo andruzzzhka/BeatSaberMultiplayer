@@ -669,6 +669,35 @@ namespace ServerHub.Hub
 
             availableCommands.Add(new Command()
             {
+                name = "colors",
+                help = "colors [playerId] [r: 0-255] [g: 0-255] [b: 0-255] - changes tickrate of ServerHub",
+                function = (comArgs) => {
+                    ulong playerId;
+                    byte r;
+                    byte g;
+                    byte b;
+                    if (comArgs.Length == 4 && ulong.TryParse(comArgs[0], out playerId) && byte.TryParse(comArgs[1], out r) && byte.TryParse(comArgs[2], out g) && byte.TryParse(comArgs[3], out b))
+                    {
+                        if (Settings.Instance.Misc.PlayerColors.ContainsKey(playerId))
+                        {
+                            Settings.Instance.Misc.PlayerColors[playerId] = new Color32(r, g, b); 
+                        }
+                        else
+                        {
+                            Settings.Instance.Misc.PlayerColors.Add(playerId, new Color32(r, g, b));
+                        }
+
+                        return $"Set {playerId} to R: {r}, G: {g}, B: {b}";
+                    }
+                    else
+                    {
+                        return $"Command usage: colors [playerId] [r: 0-255] [g: 0-255] [b: 0-255]";
+                    }
+                }
+            });
+
+            availableCommands.Add(new Command()
+            {
                 name = "createroom",
                 help = "createroom [presetname] - creates new room from provided preset",
                 function = (comArgs) => {
