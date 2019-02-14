@@ -104,7 +104,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             if(_pingText != null && Client.Instance.NetworkClient != null)
             {
-                _pingText.text = "PING: "+ Math.Round(Client.Instance.NetworkClient.Connections[0].AverageRoundtripTime, 2);
+                _pingText.text = "PING: "+ Math.Round(Client.Instance.NetworkClient.Connections[0].AverageRoundtripTime*1000, 2);
             }
 
         }

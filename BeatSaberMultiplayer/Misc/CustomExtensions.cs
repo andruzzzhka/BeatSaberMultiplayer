@@ -26,7 +26,7 @@ namespace BeatSaberMultiplayer.Misc
                     Logger.Info("Loading text shader asset bundle...");
                     AssetBundle assetBundle = AssetBundle.LoadFromStream(Assembly.GetCallingAssembly().GetManifestResourceStream("BeatSaberMultiplayer.Assets.Shader.asset"));
                     _customTextShader = assetBundle.LoadAsset<Shader>("Assets/TextMesh Pro/Resources/Shaders/TMP_SDF_ZWrite.shader");
-                    Logger.Info("Loaded! TextShader == null : "+(_customTextShader == null));
+                    Logger.Info("Loaded!");
                 }
                 return _customTextShader;
             }
@@ -47,7 +47,7 @@ namespace BeatSaberMultiplayer.Misc
             TextMeshPro textMesh = new GameObject("CustomUIText").AddComponent<TextMeshPro>();
             textMesh.transform.SetParent(parent, false);
             textMesh.text = text;
-            textMesh.fontSize = 5;
+            textMesh.fontSize = 5f;
             textMesh.color = Color.white;
             textMesh.font = Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault(x => x.name.Contains("Teko-Medium SDF No Glow"));
             textMesh.renderer.material.shader = CustomTextShader;

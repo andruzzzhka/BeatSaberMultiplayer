@@ -1,4 +1,7 @@
 ﻿using NSpeex;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace BeatSaberMultiplayer.VOIP
@@ -16,12 +19,7 @@ namespace BeatSaberMultiplayer.VOIP
 
         public static float GetMaxAmplitude(float[] samples)
         {
-            float max = 0f;
-            for (int i = 0; i < samples.Length; i++)
-            {
-                max = Mathf.Max(max, Mathf.Abs(samples[i]));
-            }
-            return max;
+            return samples.Max();
         }
 
         public static int GetFrequency( BandMode mode )
@@ -39,12 +37,38 @@ namespace BeatSaberMultiplayer.VOIP
             }
         }
 
-        public static void Downsample(float[] source, float[] target)
+        public static void Resample(float[] source, float[] target, int inputSampleRate, int outputSampleRate)
         {
-            int ratio = source.Length / target.Length;
-            for (int i = 0; i < target.Length; i++)
+            Resample(source, target, source.Length, target.Length, inputSampleRate, outputSampleRate);
+        }
+
+        public static void Resample(float[] source, float[] target, int inputNum, int outputNum, int inputSampleRate, int outputSampleRate)
+        {
+            float ratio = inputSampleRate / (float)outputSampleRate;
+            if (ratio % 1 == 0)
             {
-                target[i] = source[i * ratio];
+                int intRatio = (int)ratio;
+                for (int i = 0; i < outputNum; i++)
+                {
+                    target[i] = source[i * intRatio];
+                }
+            }
+            else
+            {
+                if (ratio > 1f)
+                {
+                    for (int i = 0; i < outputNum; i++)
+                    {
+                        target[i] = Mathf.Lerp(source[Mathf.FloorToInt(i * ratio)], source[Mathf.CeilToInt(i * ratio)], ratio % 1);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < outputNum; i++)
+                    {
+                        target[i] = source[Mathf.FloorToInt(i * ratio)];
+                    }
+                }
             }
         }
 
@@ -55,11 +79,7 @@ namespace BeatSaberMultiplayer.VOIP
 
             Microphone.GetDeviceCaps(deviceName, out minFreq, out maxFreq);
             
-            if((minFreq <= 16000 && maxFreq >= 16000) || (minFreq == 0 && maxFreq == 0))
-            {
-                return 16000;
-            }
-            else if(minFreq > 16000)
+            if(minFreq >= 16000)
             {
                 if(FindClosestFreq(minFreq, maxFreq) != 0)
                 {
@@ -76,13 +96,15 @@ namespace BeatSaberMultiplayer.VOIP
             }
         }
 
+        public static int[] possibleSampleRates = new int[] { 16000, 32000, 48000, 96000, 192000, 22050, 44100, 88200, 176400 };
+
         public static int FindClosestFreq(int minFreq, int maxFreq)
         {
-            for (int i = (int)Mathf.Round(minFreq / 1000); i < Mathf.Round(maxFreq / 1000); i++)
+            foreach(int sampleRate in possibleSampleRates)
             {
-                if (i % 16 == 0)
+                if(sampleRate >= minFreq && sampleRate <= maxFreq)
                 {
-                    return i * 1000;
+                    return sampleRate;
                 }
             }
             return 0;

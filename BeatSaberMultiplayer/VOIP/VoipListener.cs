@@ -38,7 +38,7 @@ namespace BeatSaberMultiplayer.VOIP
         public void StartRecording()
         {
             if (Microphone.devices.Length == 0) return;
-            
+
             inputFreq = AudioUtils.GetFreqForMic();
             
             encoder = SpeexCodex.Create(BandMode.Wide);
@@ -96,7 +96,7 @@ namespace BeatSaberMultiplayer.VOIP
                             //Downsample if needed.
                             if (recordingBuffer != resampleBuffer)
                             {
-                                AudioUtils.Downsample(recordingBuffer, resampleBuffer);
+                                AudioUtils.Resample(recordingBuffer, resampleBuffer, inputFreq, AudioUtils.GetFrequency(encoder.mode));
                             }
 
                             var data = encoder.Encode(resampleBuffer);

@@ -164,10 +164,6 @@ namespace BeatSaberMultiplayer.VOIP
     public class WritablePureDataSource : ISampleSource
     {
 
-        [DllImport("samplerate", EntryPoint = "src_simple_plain")]
-        public static extern int src_simple_plain(float[] data_in, float[] data_out, int input_frames, int output_frames, float src_ratio, ConverterQuality converter_type, int channels);
-
-
         public long Length
         {
             get
@@ -226,11 +222,11 @@ namespace BeatSaberMultiplayer.VOIP
         }
 
 
-        float[] tempBuffer1 = new float[80000 * 20];
-        float[] tempBuffer2 = new float[80000 * 20];
-        float[] tempBuffer3 = new float[80000 * 20];
+        float[] tempBuffer1 = new float[80000];
+        float[] tempBuffer2 = new float[80000];
+        float[] tempBuffer3 = new float[80000];
 
-        float[] unprocessedAudio = new float[80000 * 20];
+        float[] unprocessedAudio = new float[160000];
         public int numUnprocessed = 0;
         public int silentTime = 0;
 
@@ -332,11 +328,11 @@ namespace BeatSaberMultiplayer.VOIP
                     }
                 }
                 int numOurSamples = (int)Mathf.Round((res * (float)mySampleRate / sourceSampleRate));
-                res = src_simple_plain(tempBuffer1, tempBuffer2, res, numOurSamples, (float)mySampleRate / sourceSampleRate, ConverterQuality.SRC_SINC_MEDIUM_QUALITY, waveFormatOut.Channels);
-                if (res > count)
-                {
-                    res = count;
-                }
+
+                AudioUtils.Resample(tempBuffer1, tempBuffer2, res, numOurSamples, sourceSampleRate, mySampleRate);
+
+                res = numOurSamples;
+
                 Buffer.BlockCopy(tempBuffer2, 0, buffer, offset * sizeof(float), res * sizeof(float));
             }
             catch (Exception e)
