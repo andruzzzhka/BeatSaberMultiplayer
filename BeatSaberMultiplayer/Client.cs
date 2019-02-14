@@ -27,7 +27,6 @@ namespace BeatSaberMultiplayer
         public static FileStream packetWriter = File.Open("packetDump.dmp", FileMode.Append);
 #endif
         public static event Action<string, string> EventMessageReceived;
-        public static event Action ClientCreated;
         public static event Action ClientJoinedRoom;
         public static event Action ClientLevelStarted;
         public static event Action ClientLeftRoom;
@@ -75,18 +74,6 @@ namespace BeatSaberMultiplayer
             playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
             NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { MaximumHandshakeAttempts = 2, AutoFlushSendQueue = false };
             NetworkClient = new NetClient(Config);
-
-            foreach (Action nextDel in ClientCreated.GetInvocationList())
-            {
-                try
-                {
-                    nextDel.Invoke();
-                }
-                catch (Exception e)
-                {
-                    Misc.Logger.Error($"Exception in {nextDel.Method.Name} on client created event: {e}");
-                }
-            }
         }
 
         public void Disconnect()

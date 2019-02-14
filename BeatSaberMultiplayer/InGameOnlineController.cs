@@ -182,12 +182,6 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        private void ClientCreated()
-        {
-            Client.Instance.MessageReceived -= PacketReceived;
-            Client.Instance.MessageReceived += PacketReceived;
-        }
-
         private void PacketReceived(NetIncomingMessage msg)
         {
             switch ((CommandType)msg.ReadByte())

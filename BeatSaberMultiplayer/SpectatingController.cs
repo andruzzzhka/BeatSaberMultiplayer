@@ -52,8 +52,9 @@ namespace BeatSaberMultiplayer
             {
                 Instance = this;
                 DontDestroyOnLoad(this);
-                
-                Client.ClientCreated += ClientCreated;
+
+                Client.Instance.MessageReceived -= PacketReceived;
+                Client.Instance.MessageReceived += PacketReceived;
                 _currentScene = SceneManager.GetActiveScene();
             }
         }
@@ -107,12 +108,6 @@ namespace BeatSaberMultiplayer
             _scoreController = FindObjectOfType<ScoreController>();
 
             Misc.Logger.Info("Score controller found!");
-        }
-
-        private void ClientCreated()
-        {
-            Client.Instance.MessageReceived -= PacketReceived;
-            Client.Instance.MessageReceived += PacketReceived;
         }
 
         private void PacketReceived(NetIncomingMessage msg)
