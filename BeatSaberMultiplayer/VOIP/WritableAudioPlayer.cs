@@ -153,14 +153,6 @@ namespace BeatSaberMultiplayer.VOIP
         }
     }
 
-
-    public enum ConverterQuality
-    {
-        SRC_SINC_FASTEST = 2,
-        SRC_SINC_MEDIUM_QUALITY = 1,
-        SRC_SINC_BEST_QUALITY = 0
-    };
-
     public class WritablePureDataSource : ISampleSource
     {
 
@@ -220,8 +212,7 @@ namespace BeatSaberMultiplayer.VOIP
             offsets = new Queue<int>();
             lens = new Queue<int>();
         }
-
-
+        
         float[] tempBuffer1 = new float[80000];
         float[] tempBuffer2 = new float[80000];
         float[] tempBuffer3 = new float[80000];
@@ -301,8 +292,6 @@ namespace BeatSaberMultiplayer.VOIP
                 return countUsing;
             }
         }
-
-        public ConverterQuality quality;
 
         public int Read(float[] buffer, int offset, int count)
         {

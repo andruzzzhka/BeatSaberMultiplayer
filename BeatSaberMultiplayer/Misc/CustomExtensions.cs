@@ -25,8 +25,7 @@ namespace BeatSaberMultiplayer.Misc
                 {
                     Logger.Info("Loading text shader asset bundle...");
                     AssetBundle assetBundle = AssetBundle.LoadFromStream(Assembly.GetCallingAssembly().GetManifestResourceStream("BeatSaberMultiplayer.Assets.Shader.asset"));
-                    _customTextShader = assetBundle.LoadAsset<Shader>("Assets/TextMesh Pro/Resources/Shaders/TMP_SDF_ZWrite.shader");
-                    Logger.Info("Loaded!");
+                    _customTextShader = assetBundle.LoadAsset<Shader>("Assets/TextMesh Pro/Resources/Shaders/TMP_SDF_ZeroAlphaWrite_ZWrite.shader");
                 }
                 return _customTextShader;
             }
