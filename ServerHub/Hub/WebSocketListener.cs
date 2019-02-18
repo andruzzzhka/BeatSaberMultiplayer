@@ -10,6 +10,7 @@ using System.Linq;
 using WebSocketSharp.Server;
 using System.Reflection;
 using ServerHub.Data;
+using System.Security.Cryptography.X509Certificates;
 
 namespace ServerHub.Hub
 {
@@ -162,7 +163,19 @@ namespace ServerHub.Hub
         public static void Start()
         {
             int webSocketPort = Settings.Instance.Server.WebSocketPort;
-            Server = new WebSocketServer(webSocketPort);
+            Server = new WebSocketServer(webSocketPort, Settings.Instance.Server.SecureWebSocket);
+
+            if (Settings.Instance.Server.SecureWebSocket)
+            {
+                if (string.IsNullOrEmpty(Settings.Instance.Server.WebSocketCertPass))
+                {
+                    Server.SslConfiguration.ServerCertificate = new X509Certificate2(Settings.Instance.Server.WebSocketCertPath, Settings.Instance.Server.WebSocketCertPass);
+                }
+                else
+                {
+                    Server.SslConfiguration.ServerCertificate = new X509Certificate2(Settings.Instance.Server.WebSocketCertPath);
+                }
+            }
 
             Logger.Instance.Log($"Hosting WebSocket Server @ {Program.GetPublicIPv4()}:{webSocketPort}");
             

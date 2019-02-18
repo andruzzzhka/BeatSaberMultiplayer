@@ -21,6 +21,9 @@ namespace ServerHub.Misc {
             private bool _enableWebSocketRCON;
             private string _rconPassword;
             private int _webSocketPort;
+            private bool _secureWebSocket;
+            private string _certPath;
+            private string _certPass;
             private bool _showTickrateInTitle;
             private bool _allowEventMessages;
             private bool _allowVoiceChat;
@@ -140,6 +143,48 @@ namespace ServerHub.Misc {
                 set
                 {
                     _webSocketPort = value;
+                    MarkDirty?.Invoke();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public bool SecureWebSocket
+            {
+                get => _secureWebSocket;
+                set
+                {
+                    _secureWebSocket = value;
+                    MarkDirty?.Invoke();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string WebSocketCertPath
+            {
+                get => _certPath;
+                set
+                {
+                    _certPath = value;
+                    MarkDirty?.Invoke();
+                }
+            }
+
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public string WebSocketCertPass
+            {
+                get => _certPass;
+                set
+                {
+                    _certPass = value;
                     MarkDirty?.Invoke();
                 }
             }

@@ -244,9 +244,10 @@ namespace BeatSaberMultiplayer
                                 {
                                     foreach (OnlinePlayerController controller in _players.Where(x => !playerInfos.Any(y => y.Equals(x.PlayerInfo))))
                                     {
-                                        Destroy(controller.gameObject);
+                                        if(controller != null && !controller.destroyed)
+                                            Destroy(controller.gameObject);
                                     }
-                                    _players.RemoveAll(x => x == null || x.destroyed || x.gameObject == null);
+                                    _players.RemoveAll(x => x == null || x.destroyed);
                                 }
                             }
                             catch (Exception e)
