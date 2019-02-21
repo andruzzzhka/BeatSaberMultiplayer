@@ -65,6 +65,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         RoomInfo roomInfo;
         string lastSelectedSong;
 
+        float currentTime;
+        float totalTime;
+
         Song songToDownload;
 
         string ip;
@@ -218,8 +221,43 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
         
+        private void DisconnectCommandReceived(NetIncomingMessage msg)
+        {
+            InGameOnlineController.Instance.needToSendUpdates = false;
+            if (msg == null)
+            {
+                PopAllViewControllers(_roomNavigationController);
+                InGameOnlineController.Instance.DestroyAvatars();
+                PreviewPlayer.CrossfadeToDefault();
+                joined = false;
+
+                _roomNavigationController.DisplayError("Lost connection to the ServerHub!");
+            }
+            else if (msg.LengthBytes > 3)
+            {
+                string reason = msg.ReadString();
+
+                PopAllViewControllers(_roomNavigationController);
+                InGameOnlineController.Instance.DestroyAvatars();
+                PreviewPlayer.CrossfadeToDefault();
+                joined = false;
+                lastSelectedSong = "";
+
+                _roomNavigationController.DisplayError(reason);
+            }
+            else
+            {
+                _roomNavigationController.DisplayError("ServerHub refused connection!");
+            }
+        }
+
         private void PacketReceived(NetIncomingMessage msg)
         {
+            if(msg == null)
+            {
+                DisconnectCommandReceived(null);
+            }
+
             CommandType commandType = (CommandType)msg.ReadByte();
             if (!joined)
             {
@@ -336,61 +374,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                 if (Client.Instance.playerInfo.playerState == PlayerState.DownloadingSongs)
                                     return;
-                                
-                                Client.Instance.playerInfo.playerComboBlocks = 0;
-                                Client.Instance.playerInfo.playerCutBlocks = 0;
-                                Client.Instance.playerInfo.playerEnergy = 0f;
-                                Client.Instance.playerInfo.playerScore = 0;
-
-                                byte difficulty = msg.ReadByte();
+                                BeatmapDifficulty difficulty = (BeatmapDifficulty)msg.ReadByte();
                                 SongInfo songInfo = new SongInfo(msg);
+                                LevelSO level = _levelCollection.levels.First(x => x.levelID.StartsWith(songInfo.levelId));
 
-                                MenuSceneSetupDataSO menuSceneSetupData = Resources.FindObjectsOfTypeAll<MenuSceneSetupDataSO>().FirstOrDefault();
-
-                                if (menuSceneSetupData != null)
-                                {
-                                    GameplayModifiers gameplayModifiers = new GameplayModifiers();
-
-                                    if (Config.Instance.SpectatorMode)
-                                    {
-                                        Client.Instance.playerInfo.playerState = PlayerState.Spectating;
-                                        gameplayModifiers.noFail = true;
-                                    }
-                                    else
-                                    {
-                                        Client.Instance.playerInfo.playerState = PlayerState.Game;
-                                        gameplayModifiers.noFail = roomInfo.noFail;
-                                    }
-
-                                    PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().currentLocalPlayer.playerSpecificSettings;
-
-                                    roomInfo.roomState = RoomState.InGame;
-
-                                    Client.Instance.MessageReceived -= PacketReceived;
-
-                                    LevelSO level = _levelCollection.levels.First(x => x.levelID.StartsWith(songInfo.levelId));
-                                    IDifficultyBeatmap difficultyBeatmap = level.GetDifficultyBeatmap((BeatmapDifficulty)difficulty);
-
-                                    Logger.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={(BeatmapDifficulty)difficulty}");
-
-                                    Client.Instance.MessageReceived -= PacketReceived;
-
-                                    try
-                                    {
-                                        BS_Utils.Gameplay.Gamemode.NextLevelIsIsolated("Beat Saber Multiplayer");
-                                    }
-                                    catch
-                                    {
-
-                                    }
-
-                                    menuSceneSetupData.StartStandardLevel(difficultyBeatmap, gameplayModifiers, playerSettings, null, null, (StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, gameplayModifiers, false); });
-                                    return;
-                                }
-                                else
-                                {
-                                    Logger.Error("SceneSetupData is null!");
-                                }
+                                StartLevel(level, difficulty);
                             }
                             break;
                         case CommandType.LeaveRoom:
@@ -402,8 +390,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
                                 if (roomInfo != null)
                                 {
-                                    float currentTime = msg.ReadFloat();
-                                    float totalTime = msg.ReadFloat();
+                                    currentTime = msg.ReadFloat();
+                                    totalTime = msg.ReadFloat();
 
                                     int playersCount = msg.ReadInt32();
                                     
@@ -452,24 +440,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             break;
                         case CommandType.Disconnect:
                             {
-                                InGameOnlineController.Instance.needToSendUpdates = false;
-                                if (msg.LengthBytes > 3)
-                                {
-                                    string reason = msg.ReadString();
-
-                                    PopAllViewControllers(_roomNavigationController);
-                                    InGameOnlineController.Instance.DestroyAvatars();
-                                    PreviewPlayer.CrossfadeToDefault();
-                                    joined = false;
-                                    lastSelectedSong = "";
-
-                                    _roomNavigationController.DisplayError(reason);
-                                }
-                                else
-                                {
-                                    _roomNavigationController.DisplayError("ServerHub refused connection!");
-                                }
-
+                                DisconnectCommandReceived(msg);
                             }
                             break;
                     }
@@ -532,6 +503,64 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     break;
             }
             _roomManagementViewController.UpdateViewController(Client.Instance.isHost);
+        }
+
+        public void StartLevel(LevelSO level, BeatmapDifficulty difficulty, float startTime = 0f)
+        {
+            Client.Instance.playerInfo.playerComboBlocks = 0;
+            Client.Instance.playerInfo.playerCutBlocks = 0;
+            Client.Instance.playerInfo.playerTotalBlocks = 0;
+            Client.Instance.playerInfo.playerEnergy = 0f;
+            Client.Instance.playerInfo.playerScore = 0;
+
+            MenuSceneSetupDataSO menuSceneSetupData = Resources.FindObjectsOfTypeAll<MenuSceneSetupDataSO>().FirstOrDefault();
+
+            if (menuSceneSetupData != null)
+            {
+                GameplayModifiers gameplayModifiers = new GameplayModifiers();
+
+                if (Config.Instance.SpectatorMode)
+                {
+                    Client.Instance.playerInfo.playerState = PlayerState.Spectating;
+                    gameplayModifiers.noFail = true;
+                }
+                else
+                {
+                    Client.Instance.playerInfo.playerState = PlayerState.Game;
+                    gameplayModifiers.noFail = roomInfo.noFail;
+                }
+
+                PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().currentLocalPlayer.playerSpecificSettings;
+
+                roomInfo.roomState = RoomState.InGame;
+
+                Client.Instance.MessageReceived -= PacketReceived;
+
+                IDifficultyBeatmap difficultyBeatmap = level.GetDifficultyBeatmap(difficulty);
+
+                Logger.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={difficulty}");
+
+                Client.Instance.MessageReceived -= PacketReceived;
+
+                try
+                {
+                    BS_Utils.Gameplay.Gamemode.NextLevelIsIsolated("Beat Saber Multiplayer");
+                }
+                catch
+                {
+
+                }
+
+                PracticeSettings practiceSettings = new PracticeSettings(PracticeSettings.defaultPracticeSettings);
+                practiceSettings.startSongTime = startTime + 1.5f;
+
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, gameplayModifiers, playerSettings, (startTime > 1f ? practiceSettings : null), null, (StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, gameplayModifiers, false); });
+                return;
+            }
+            else
+            {
+                Logger.Error("SceneSetupData is null!");
+            }
         }
 
         public void PopAllViewControllers(VRUINavigationController controller)
@@ -778,6 +807,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (_leaderboardViewController == null)
             {
                 _leaderboardViewController = BeatSaberUI.CreateViewController<LeaderboardViewController>();
+                _leaderboardViewController.playNowButtonPressed += PlayNow_Pressed;
             }
             if (_roomNavigationController.viewControllers.IndexOf(_leaderboardViewController) < 0)
             {
@@ -820,6 +850,43 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _leaderboardViewController.SetLeaderboard(playerInfos);
                 _leaderboardViewController.SetTimer(totalTime - currentTime, results);
             }
+        }
+
+        private void PlayNow_Pressed()
+        {
+            SongInfo info = roomInfo.selectedSong;
+            LevelSO level = SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID.StartsWith(info.levelId));
+            if (level == null)
+            {
+                SongDownloader.Instance.RequestSongByLevelID(info.levelId,
+                (song) =>
+                {
+                    SongDownloader.Instance.DownloadSong(song, "RadioSongs",
+                    () =>
+                    {
+                        SongLoader.Instance.RefreshSongs(false);
+                        SongLoader.SongsLoadedEvent += PlayNow_SongsLoaded;
+                    },
+                    (progress) =>
+                    {
+                        _leaderboardViewController.SetProgressBarState((progress < 100f), progress);
+                    });
+                });
+            }
+            else
+            {
+                SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
+                (levelLoaded) =>
+                {
+                    StartLevel(levelLoaded, (BeatmapDifficulty)roomInfo.selectedDifficulty, currentTime);
+                });
+            }
+        }
+
+        private void PlayNow_SongsLoaded(SongLoader arg1, List<CustomLevel> arg2)
+        {
+            SongLoader.SongsLoadedEvent -= PlayNow_SongsLoaded;
+            PlayNow_Pressed();
         }
     }
 }

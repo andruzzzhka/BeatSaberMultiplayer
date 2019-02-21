@@ -310,7 +310,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case CommandType.Disconnect:
                             {
                                 InGameOnlineController.Instance.needToSendUpdates = false;
-                                if (msg.LengthBytes > 3)
+                                if(msg == null)
+                                {
+                                    PopAllViewControllers();
+                                    InGameOnlineController.Instance.DestroyAvatars();
+                                    PreviewPlayer.CrossfadeToDefault();
+                                    joined = false;
+
+                                    _radioNavController.DisplayError("Lost connection to the ServerHub!");
+                                }
+                                else if (msg.LengthBytes > 3)
                                 {
                                     string reason = msg.ReadString();
 
@@ -448,6 +457,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 practiceSettings.startSongTime = startTime + 1.5f;
 
                 Client.Instance.MessageReceived -= MessageReceived;
+
+                try
+                {
+                    BS_Utils.Gameplay.Gamemode.NextLevelIsIsolated("Beat Saber Multiplayer");
+                }
+                catch
+                {
+
+                }
+
                 menuSceneSetupData.StartStandardLevel(difficultyBeatmap, gameplayModifiers, playerSettings, (startTime > 1f ? practiceSettings : null), null, (StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, gameplayModifiers, (practiceSettings != null)); });
                 return;
             }

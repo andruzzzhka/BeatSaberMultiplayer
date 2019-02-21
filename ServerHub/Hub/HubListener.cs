@@ -131,7 +131,14 @@ namespace ServerHub.Hub
 
                         case NetIncomingMessageType.ConnectionApproval:
                             {
+                                byte[] versionBytes = msg.PeekBytes(4);
                                 uint version = msg.ReadUInt32();
+
+                                if(version >= 620)
+                                {
+                                    version = ((uint)versionBytes[0]).ConcatUInts(versionBytes[1]).ConcatUInts(versionBytes[2]).ConcatUInts(versionBytes[3]);
+                                }
+
                                 uint serverVersion = ((uint)Assembly.GetEntryAssembly().GetName().Version.Major).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Minor).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Build).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Revision);
 
                                 if (CompareVersions(version, serverVersion))
@@ -554,7 +561,7 @@ namespace ServerHub.Hub
                     }
                 }
 
-                List<uint> emptyRooms = RoomsController.GetRoomsList().Where(x => x.roomClients.Count == 0 && !x.noHost).Select(y => y.roomId).ToList();
+                List<uint> emptyRooms = RoomsController.GetRoomsList().Where(x => x.roomClients.Count == 0 && !x.noHost && DateTime.Now.Subtract(x.roomStartedDateTime).TotalSeconds > 5).Select(y => y.roomId).ToList();
                 if (emptyRooms.Count > 0 && !Settings.Instance.TournamentMode.Enabled)
                 {
                     Logger.Instance.Log("Destroying empty rooms...");

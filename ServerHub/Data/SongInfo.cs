@@ -10,7 +10,6 @@ namespace ServerHub.Data
     public class SongInfo
     {
         public string key;
-        public string coverUrl;
 
         public string songName;
         public string levelId;

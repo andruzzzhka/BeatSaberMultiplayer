@@ -75,6 +75,8 @@ namespace ServerHub.Rooms
 
         public bool requestedRandomSong;
 
+        public  DateTime roomStartedDateTime;
+
         private DateTime _songStartTime;
         private DateTime _resultsStartTime;
 
@@ -91,6 +93,7 @@ namespace ServerHub.Rooms
         {
             HighResolutionTimer.LoopTimer.Elapsed += RoomLoop;
             HighResolutionTimer.VoIPTimer.Elapsed += BroadcastVoIPData;
+            roomStartedDateTime = DateTime.Now;
         }
 
         public virtual void StopRoom()

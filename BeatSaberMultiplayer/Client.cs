@@ -115,17 +115,20 @@ namespace BeatSaberMultiplayer
             {
                 try
                 {
-                    float packetTime = (float)DateTime.UtcNow.Subtract(_lastPacketTime).TotalMilliseconds;
-                    if (packetTime > 2f)
+                    if (_receivedMessages.Any(x => x.PeekByte() != (byte)CommandType.UpdateVoIPData))
                     {
-                        _averagePacketTimes.Add(packetTime);
+                        float packetTime = (float)DateTime.UtcNow.Subtract(_lastPacketTime).TotalMilliseconds;
+                        if (packetTime > 2f)
+                        {
+                            _averagePacketTimes.Add(packetTime);
 
-                        if (_averagePacketTimes.Count > 300)
-                            _averagePacketTimes.RemoveAt(0);
+                            if (_averagePacketTimes.Count > 300)
+                                _averagePacketTimes.RemoveAt(0);
 
-                        Tickrate = (float)Math.Round(1000f / _averagePacketTimes.Average(), 2);
+                            Tickrate = (float)Math.Round(1000f / _averagePacketTimes.Average(), 2);
+                        }
+                        _lastPacketTime = DateTime.UtcNow;
                     }
-                    _lastPacketTime = DateTime.UtcNow;
 
                     NetIncomingMessage lastUpdate = _receivedMessages.LastOrDefault(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
 
@@ -142,7 +145,7 @@ namespace BeatSaberMultiplayer
                             }
                             catch (Exception e)
                             {
-                                Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
+                                Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
                             }
                         }
                     }
@@ -159,6 +162,26 @@ namespace BeatSaberMultiplayer
                                     {
                                         Connected = true;
                                         ConnectedToServerHub?.Invoke();
+                                    }
+                                    else if(status == NetConnectionStatus.Disconnected && Connected)
+                                    {
+
+#if DEBUG
+                                        Misc.Logger.Info("Disconnecting...");
+#endif
+                                        Disconnect();
+
+                                        foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                                        {
+                                            try
+                                            {
+                                                nextDel.Invoke(null);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                                            }
+                                        }
                                     }
                                     else
                                     {
@@ -186,7 +209,7 @@ namespace BeatSaberMultiplayer
                                             }
                                             catch (Exception e)
                                             {
-                                                Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
+                                                Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
                                             }
                                         }
 
@@ -208,7 +231,7 @@ namespace BeatSaberMultiplayer
                                             }
                                             catch (Exception e)
                                             {
-                                                Misc.Logger.Error($"Exception in {nextDel.Method.Name} on event message received event: {e}");
+                                                Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on event message received event: {e}");
                                             }
                                         }
                                     }
@@ -223,7 +246,7 @@ namespace BeatSaberMultiplayer
                                             }
                                             catch (Exception e)
                                             {
-                                                Misc.Logger.Error($"Exception in {nextDel.Method.Name} on message received event: {e}");
+                                                Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
                                             }
                                         }
                                     }
@@ -241,7 +264,7 @@ namespace BeatSaberMultiplayer
                                                 }
                                                 catch (Exception e)
                                                 {
-                                                    Misc.Logger.Error($"Exception in {nextDel.Method.Name} on c lient joined room event: {e}");
+                                                    Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on c lient joined room event: {e}");
                                                 }
                                             }
                                     }
@@ -256,7 +279,7 @@ namespace BeatSaberMultiplayer
                                                 }
                                                 catch (Exception e)
                                                 {
-                                                    Misc.Logger.Error($"Exception in {nextDel.Method.Name} on client level started event: {e}");
+                                                    Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on client level started event: {e}");
                                                 }
                                             }
                                     }
@@ -288,6 +311,27 @@ namespace BeatSaberMultiplayer
 #endif
                 }
                 _receivedMessages.Clear();
+            }
+
+            if(Connected && NetworkClient.ConnectionsCount == 0)
+            {
+
+#if DEBUG
+                Misc.Logger.Info("Connection lost! Disconnecting...");
+#endif
+                Disconnect();
+
+                foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                {
+                    try
+                    {
+                        nextDel.Invoke(null);
+                    }
+                    catch (Exception e)
+                    {
+                        Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                    }
+                }
             }
         }
 

@@ -19,11 +19,15 @@ namespace BeatSaberMultiplayer
 {
     class LeaderboardViewController : VRUIViewController, TableView.IDataSource
     {
+        public event Action playNowButtonPressed;
+
         private TableView _leaderboardTableView;
         private LeaderboardTableCell _leaderboardTableCellInstance;
         private TextMeshProUGUI _timerText;
+        private TextMeshProUGUI _progressText;
         private Button _pageUpButton;
         private Button _pageDownButton;
+        private Button _playNowButton;
 
         LevelListTableCell _songTableCell;
 
@@ -64,6 +68,10 @@ namespace BeatSaberMultiplayer
 
                 });
                 _pageDownButton.interactable = false;
+
+                _playNowButton = this.CreateUIButton("QuitButton", new Vector2(-39f, 34.5f), new Vector2(28f, 8.8f), () => { playNowButtonPressed?.Invoke(); }, "Play now");
+                _playNowButton.ToggleWordWrapping(false);
+                _progressText = BeatSaberUI.CreateText(rectTransform, "0.0%", new Vector2(8f, 32f));
 
                 _leaderboardTableCellInstance = Resources.FindObjectsOfTypeAll<LeaderboardTableCell>().First(x => (x.name == "LeaderboardTableCell"));
 
@@ -175,13 +183,20 @@ namespace BeatSaberMultiplayer
                 });
             }
         }
+        
+        public void SetProgressBarState(bool enabled, float progress)
+        {
+            _progressText.gameObject.SetActive(enabled);
+            _progressText.text = progress.ToString("P");
+        }
 
         public void SetTimer(float time, bool results)
         {
-            if (_timerText == null)
+            if (_timerText == null || _playNowButton == null)
                 return;
 
             _timerText.text = results ? $"RESULTS {(int)time}" : SecondsToString(time);
+            _playNowButton.interactable = (time > 15f);
         }
 
         public string SecondsToString(float time)
