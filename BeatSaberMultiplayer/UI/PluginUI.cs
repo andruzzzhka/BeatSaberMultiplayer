@@ -210,7 +210,7 @@ namespace BeatSaberMultiplayer.UI
 
             var voiceEnabled = voiceSubMenu.AddBool("Enable Voice Chat");
             voiceEnabled.GetValue += delegate { return Config.Instance.EnableVoiceChat; };
-            voiceEnabled.SetValue += delegate (bool value) { Config.Instance.EnableVoiceChat = value; };
+            voiceEnabled.SetValue += delegate (bool value) { InGameOnlineController.Instance.ToggleVoiceChat(value); };
 
             var voiceVolume = voiceSubMenu.AddInt("Voice Chat Volume", 1, 20, 1);
             voiceVolume.GetValue += delegate { return (int)(Config.Instance.VoiceChatVolume * 20f); };

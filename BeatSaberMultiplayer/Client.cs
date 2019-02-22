@@ -122,10 +122,10 @@ namespace BeatSaberMultiplayer
                         {
                             _averagePacketTimes.Add(packetTime);
 
-                            if (_averagePacketTimes.Count > 300)
+                            if (_averagePacketTimes.Count > 150)
                                 _averagePacketTimes.RemoveAt(0);
 
-                            Tickrate = (float)Math.Round(1000f / _averagePacketTimes.Average(), 2);
+                            Tickrate = (float)Math.Round(1000f / _averagePacketTimes.Where(x => x > 2f).Average(), 2);
                         }
                         _lastPacketTime = DateTime.UtcNow;
                     }

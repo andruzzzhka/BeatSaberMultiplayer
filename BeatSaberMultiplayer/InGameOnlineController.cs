@@ -59,6 +59,7 @@ namespace BeatSaberMultiplayer
         private WritableAudioPlayer voiceChatPlayer;
         private VoipListener voiceChatListener;
 
+        public bool isVoiceChatActive;
         public bool isRecording;
         
         public static void OnLoad(Scene to)
@@ -86,24 +87,66 @@ namespace BeatSaberMultiplayer
                 _messageDisplayText.enableWordWrapping = false;
                 _messageDisplayText.alignment = TextAlignmentOptions.Center;
                 DontDestroyOnLoad(_messageDisplayText.gameObject);
+                CustomAvatar.Plugin.Instance.PlayerAvatarManager.AvatarChanged += PlayerAvatarManager_AvatarChanged;
 
+                if (Config.Instance.EnableVoiceChat)
+                {
+                    voiceChatListener = new GameObject("Voice Chat Listener").AddComponent<VoipListener>();
+
+                    voiceChatListener.OnAudioGenerated += (fragment) =>
+                    {
+                        if (isRecording)
+                        {
+                            fragment.playerId = Client.Instance.playerInfo.playerId;
+                            Client.Instance.SendVoIPData(fragment);
+                        }
+                    };
+
+                    DontDestroyOnLoad(voiceChatListener.gameObject);
+
+                    voiceChatPlayer = new GameObject("Voice Chat Player").AddComponent<WritableAudioPlayer>();
+                    DontDestroyOnLoad(voiceChatPlayer.gameObject);
+
+                    isVoiceChatActive = true;
+                }
+                
+            }
+        }
+
+        public void ToggleVoiceChat(bool enabled)
+        {
+            Config.Instance.EnableVoiceChat = enabled;
+            Config.Instance.Save();
+            if (enabled && !isVoiceChatActive)
+            {
                 voiceChatListener = new GameObject("Voice Chat Listener").AddComponent<VoipListener>();
 
-                voiceChatListener.OnAudioGenerated += (fragment) =>
-                {
-                    if (isRecording)
-                    {
-                        fragment.playerId = Client.Instance.playerInfo.playerId;
-                        Client.Instance.SendVoIPData(fragment);
-                    }
-                };
+                voiceChatListener.OnAudioGenerated += ProcesVoiceFragment;
 
                 DontDestroyOnLoad(voiceChatListener.gameObject);
 
                 voiceChatPlayer = new GameObject("Voice Chat Player").AddComponent<WritableAudioPlayer>();
                 DontDestroyOnLoad(voiceChatPlayer.gameObject);
-                
-                CustomAvatar.Plugin.Instance.PlayerAvatarManager.AvatarChanged += PlayerAvatarManager_AvatarChanged;
+            }else if (!enabled && isVoiceChatActive)
+            {
+                Destroy(voiceChatListener.gameObject);
+
+                voiceChatListener.OnAudioGenerated -= ProcesVoiceFragment;
+
+                Destroy(voiceChatPlayer.gameObject);
+                isRecording = false;
+            }
+
+
+            isVoiceChatActive = enabled;
+        }
+
+        private void ProcesVoiceFragment(VoipFragment fragment)
+        {
+            if (isRecording)
+            {
+                fragment.playerId = Client.Instance.playerInfo.playerId;
+                Client.Instance.SendVoIPData(fragment);
             }
         }
 

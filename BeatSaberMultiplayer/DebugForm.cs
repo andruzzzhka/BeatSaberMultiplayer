@@ -32,7 +32,7 @@ namespace BeatSaberMultiplayer
 
         public static void OnLoad()
         {
-            Client.ClientCreated += Client_ClientCreated;
+            Client.Instance.MessageReceived += PacketReceived;
 
             _currentScene = SceneManager.GetActiveScene();
             SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
@@ -138,11 +138,6 @@ namespace BeatSaberMultiplayer
             {
 
             }
-        }
-
-        private static void Client_ClientCreated()
-        {
-            Client.Instance.MessageReceived += PacketReceived;
         }
 
         private static void PacketReceived(NetIncomingMessage msg)
