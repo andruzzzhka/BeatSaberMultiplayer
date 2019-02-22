@@ -163,11 +163,11 @@ namespace ServerHub.Hub
         public static void Start()
         {
             int webSocketPort = Settings.Instance.Server.WebSocketPort;
-            Server = new WebSocketServer(webSocketPort, Settings.Instance.Server.SecureWebSocket);
+            Server = new WebSocketServer(webSocketPort, Settings.Instance.Server.SecureWebSocket && !string.IsNullOrEmpty(Settings.Instance.Server.WebSocketCertPath));
 
-            if (Settings.Instance.Server.SecureWebSocket)
+            if (Settings.Instance.Server.SecureWebSocket && !string.IsNullOrEmpty(Settings.Instance.Server.WebSocketCertPath))
             {
-                if (string.IsNullOrEmpty(Settings.Instance.Server.WebSocketCertPass))
+                if (!string.IsNullOrEmpty(Settings.Instance.Server.WebSocketCertPass))
                 {
                     Server.SslConfiguration.ServerCertificate = new X509Certificate2(Settings.Instance.Server.WebSocketCertPath, Settings.Instance.Server.WebSocketCertPass);
                 }
@@ -177,7 +177,7 @@ namespace ServerHub.Hub
                 }
             }
 
-            Logger.Instance.Log($"Hosting WebSocket Server @ {Program.GetPublicIPv4()}:{webSocketPort}");
+            Logger.Instance.Log($"Hosting {(Settings.Instance.Server.SecureWebSocket && !string.IsNullOrEmpty(Settings.Instance.Server.WebSocketCertPath) ? "Secure" : "")} WebSocket Server @ {Program.GetPublicIPv4()}:{webSocketPort}");
             
             Server.AddWebSocketService<ListServices>("/");
             if (Settings.Instance.Server.EnableWebSocketRCON)
