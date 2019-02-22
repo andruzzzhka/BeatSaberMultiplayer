@@ -175,6 +175,7 @@ namespace ServerHub.Hub
                 {
                     Server.SslConfiguration.ServerCertificate = new X509Certificate2(Settings.Instance.Server.WebSocketCertPath);
                 }
+                Server.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
             }
 
             Logger.Instance.Log($"Hosting {(Settings.Instance.Server.SecureWebSocket && !string.IsNullOrEmpty(Settings.Instance.Server.WebSocketCertPath) ? "Secure" : "")} WebSocket Server @ {Program.GetPublicIPv4()}:{webSocketPort}");
