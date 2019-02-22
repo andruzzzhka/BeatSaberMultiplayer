@@ -40,8 +40,8 @@ namespace BeatSaberMultiplayer
         {
             if (firstActivation && type == ActivationType.AddedToHierarchy)
             {
-                _songTableCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")));
-                (_songTableCell.transform as RectTransform).anchoredPosition = new Vector2(18f, 39f);
+                _songTableCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")), rectTransform);
+                (_songTableCell.transform as RectTransform).anchoredPosition = new Vector2(100f, -1.5f);
 
                 _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
@@ -72,6 +72,7 @@ namespace BeatSaberMultiplayer
                 _playNowButton = this.CreateUIButton("QuitButton", new Vector2(-39f, 34.5f), new Vector2(28f, 8.8f), () => { playNowButtonPressed?.Invoke(); }, "Play now");
                 _playNowButton.ToggleWordWrapping(false);
                 _progressText = BeatSaberUI.CreateText(rectTransform, "0.0%", new Vector2(8f, 32f));
+                _progressText.gameObject.SetActive(false);
 
                 _leaderboardTableCellInstance = Resources.FindObjectsOfTypeAll<LeaderboardTableCell>().First(x => (x.name == "LeaderboardTableCell"));
 
@@ -188,6 +189,7 @@ namespace BeatSaberMultiplayer
         {
             _progressText.gameObject.SetActive(enabled);
             _progressText.text = progress.ToString("P");
+            _playNowButton.interactable = !enabled;
         }
 
         public void SetTimer(float time, bool results)
@@ -229,6 +231,66 @@ namespace BeatSaberMultiplayer
         public float RowHeight()
         {
             return 7f;
+        }
+
+
+
+
+
+
+        RectTransform selectedItem;
+        int selectedIndex = 0;
+
+        void Update()
+        {
+            if (selectedItem == null)
+            {
+                selectedItem = (RectTransform)transform.GetChild(selectedIndex);
+                Misc.Logger.Info($"Selected {selectedItem.name}: {selectedItem.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault()?.text}");
+            }
+
+            if (Input.GetKeyDown(KeyCode.KeypadPlus))
+            {
+                selectedIndex++;
+                if (selectedIndex >= transform.childCount)
+                    selectedIndex = 0;
+                selectedItem = (RectTransform)transform.GetChild(selectedIndex);
+                Misc.Logger.Info($"Selected {selectedItem.name}: {selectedItem.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault()?.text}");
+            }
+            else if (Input.GetKeyDown(KeyCode.KeypadMinus))
+            {
+                selectedIndex--;
+                if (selectedIndex < 0)
+                    selectedIndex = transform.childCount - 1;
+                selectedItem = (RectTransform)transform.GetChild(selectedIndex);
+                Misc.Logger.Info($"Selected {selectedItem.name}: {selectedItem.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault()?.text}");
+            }
+
+            if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                if (selectedItem != null)
+                    selectedItem.anchoredPosition += new Vector2(0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f), 0f);
+                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
+            }
+            else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                if (selectedItem != null)
+                    selectedItem.anchoredPosition -= new Vector2(0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f), 0f);
+                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
+            }
+
+            if (Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                if (selectedItem != null)
+                    selectedItem.anchoredPosition += new Vector2(0f, 0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f));
+                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
+            }
+            else if (Input.GetKeyDown(KeyCode.DownArrow))
+            {
+                if (selectedItem != null)
+                    selectedItem.anchoredPosition -= new Vector2(-0f, 0.25f * (Input.GetKey(KeyCode.LeftShift) ? 4f : 1f));
+                Misc.Logger.Info($"{selectedItem.name}: {selectedItem.anchoredPosition.ToString("F2")}");
+            }
         }
     }
 }

@@ -121,7 +121,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         private void ServerHubs_didSelectRowEvent(TableView sender, int row)
         {
-            if(_serverHubClients[row] != null && _serverHubClients[row].serverHubCompatible)
+            if(_serverHubClients[row].serverHubCompatible)
                 selectedServerHub?.Invoke(_serverHubClients[row]);
         }
 

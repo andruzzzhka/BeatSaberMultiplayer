@@ -861,7 +861,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 SongDownloader.Instance.RequestSongByLevelID(info.levelId,
                 (song) =>
                 {
-                    SongDownloader.Instance.DownloadSong(song, "RadioSongs",
+                    SongDownloader.Instance.DownloadSong(song, "MultiplayerSongs",
                     () =>
                     {
                         SongLoader.Instance.RefreshSongs(false);
@@ -869,7 +869,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     },
                     (progress) =>
                     {
-                        _leaderboardViewController.SetProgressBarState((progress < 100f), progress);
+                        _leaderboardViewController.SetProgressBarState((progress > 0f), progress);
                     });
                 });
             }
@@ -878,6 +878,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
                 (levelLoaded) =>
                 {
+                    _leaderboardViewController.SetProgressBarState(false, 0f);
                     StartLevel(levelLoaded, (BeatmapDifficulty)roomInfo.selectedDifficulty, currentTime);
                 });
             }
