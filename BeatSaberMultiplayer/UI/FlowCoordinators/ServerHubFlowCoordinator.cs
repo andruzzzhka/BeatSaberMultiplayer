@@ -71,7 +71,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         private void CreateRoomPressed()
         {
             PresentFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, false, false);
-            PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients.Where(x => x.serverHubAvailable).ToList());
+            PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients);
 
             PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent -= RoomCreationFlowCoordinator_didFinishEvent;
             PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent += RoomCreationFlowCoordinator_didFinishEvent;
@@ -192,6 +192,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public int port;
 
         public bool serverHubAvailable;
+        public bool serverHubCompatible;
         public int availableRoomsCount;
         public int playersCount;
 
@@ -202,7 +203,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void Awake()
         {
-            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { ConnectionTimeout = 5 };
+            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer");
             NetworkClient = new NetClient(Config);
         }
 
@@ -243,13 +244,26 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                 if (status == NetConnectionStatus.Connected)
                                 {
+                                    serverHubCompatible = true;
+                                    serverHubAvailable = true;
                                     NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                                     outMsg.Write((byte)CommandType.GetRooms);
 
                                     NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                 }else if(status == NetConnectionStatus.Disconnected)
                                 {
-                                    ServerHubException?.Invoke(this, new Exception("ServerHub refused connection!"));
+                                    string reason = msg.ReadString();
+                                    if (reason.Contains("Version mismatch"))
+                                    {
+                                        serverHubCompatible = false;
+                                        serverHubAvailable = true;
+                                    }
+                                    else
+                                    {
+                                        serverHubCompatible = false;
+                                        serverHubAvailable = false;
+                                    }
+                                    ServerHubException?.Invoke(this, new Exception("ServerHub refused connection! Reason: "+ reason));
                                     Abort();
                                 }
 
@@ -260,7 +274,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
                                 if ((CommandType)msg.ReadByte() == CommandType.GetRooms)
                                 {
-                                    serverHubAvailable = true;
 
                                     int roomsCount = msg.ReadInt32();
 
@@ -278,19 +291,21 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 }
                             };
                             break;
-                        case NetIncomingMessageType.VerboseDebugMessage:
-                        case NetIncomingMessageType.DebugMessage:
-                            Misc.Logger.Info(msg.ReadString());
-                            break;
                         case NetIncomingMessageType.WarningMessage:
                             Misc.Logger.Warning(msg.ReadString());
                             break;
                         case NetIncomingMessageType.ErrorMessage:
                             Misc.Logger.Error(msg.ReadString());
                             break;
+#if DEBUG
+                        case NetIncomingMessageType.VerboseDebugMessage:
+                        case NetIncomingMessageType.DebugMessage:
+                            Misc.Logger.Info(msg.ReadString());
+                            break;
                         default:
                             Console.WriteLine("Unhandled type: " + msg.MessageType);
                             break;
+#endif
                     }
 
                 }

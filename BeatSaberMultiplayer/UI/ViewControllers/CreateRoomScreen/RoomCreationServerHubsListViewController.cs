@@ -102,7 +102,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         public void SetServerHubs(List<ServerHubClient> serverHubClients)
         {
-            _serverHubClients = serverHubClients.OrderBy(x => x.availableRooms.Count).ToList();
+            _serverHubClients = serverHubClients.OrderBy(x => x.availableRooms.Count).ThenByDescending(x => x.serverHubCompatible ? 2 : (x.serverHubAvailable ? 1 : 0)).ToList();
 
             if (_serverHubsTableView != null)
             {
@@ -121,7 +121,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         private void ServerHubs_didSelectRowEvent(TableView sender, int row)
         {
-            selectedServerHub?.Invoke(_serverHubClients[row]);
+            if(_serverHubClients[row] != null && _serverHubClients[row].serverHubCompatible)
+                selectedServerHub?.Invoke(_serverHubClients[row]);
         }
 
         public TableCell CellForRow(int row)
@@ -132,8 +133,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             ServerHubClient client = _serverHubClients[row];
 
             cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
-            cell.songName = $"{client.ip}:{client.port}";
-            cell.author = $"{client.playersCount} players, {client.availableRoomsCount} rooms";
+            cell.songName = $"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.ip}:{client.port}";
+
+            if (client.serverHubCompatible)
+            {
+                cell.author = $"{client.playersCount} players, {client.availableRoomsCount} rooms";
+            }
+            else
+            {
+                cell.author = $"{(client.serverHubAvailable ? "VERSION MISMATCH" : "SERVER DOWN")}";
+            }
 
             return cell;
         }

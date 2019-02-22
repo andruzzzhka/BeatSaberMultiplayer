@@ -183,6 +183,10 @@ namespace BeatSaberMultiplayer
                                             }
                                         }
                                     }
+                                    else if(status == NetConnectionStatus.Disconnected && !Connected)
+                                    {
+                                        Misc.Logger.Info("ServerHub refused connection! Reason: " + msg.ReadString());
+                                    }
                                     else
                                     {
                                         Misc.Logger.Info("New connection state: " + status);
