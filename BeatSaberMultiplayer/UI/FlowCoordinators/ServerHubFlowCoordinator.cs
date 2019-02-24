@@ -252,18 +252,25 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                 }else if(status == NetConnectionStatus.Disconnected)
                                 {
-                                    string reason = msg.ReadString();
-                                    if (reason.Contains("Version mismatch"))
+                                    try
                                     {
-                                        serverHubCompatible = false;
-                                        serverHubAvailable = true;
+                                        string reason = msg.ReadString();
+                                        if (reason.Contains("Version mismatch"))
+                                        {
+                                            serverHubCompatible = false;
+                                            serverHubAvailable = true;
+                                        }
+                                        else
+                                        {
+                                            serverHubCompatible = false;
+                                            serverHubAvailable = false;
+                                        }
+                                        ServerHubException?.Invoke(this, new Exception("ServerHub refused connection! Reason: " + reason));
                                     }
-                                    else
+                                    catch (Exception e)
                                     {
-                                        serverHubCompatible = false;
-                                        serverHubAvailable = false;
+                                        ServerHubException?.Invoke(this, new Exception("ServerHub refused connection! Exception: " + e));
                                     }
-                                    ServerHubException?.Invoke(this, new Exception("ServerHub refused connection! Reason: "+ reason));
                                     Abort();
                                 }
 
@@ -274,19 +281,24 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
                                 if ((CommandType)msg.ReadByte() == CommandType.GetRooms)
                                 {
-
-                                    int roomsCount = msg.ReadInt32();
-
-                                    availableRooms.Clear();
-
-                                    for (int i = 0; i < roomsCount; i++)
+                                    try
                                     {
-                                        availableRooms.Add(new RoomInfo(msg));
-                                    }
+                                        int roomsCount = msg.ReadInt32();
 
-                                    availableRoomsCount = availableRooms.Count;
-                                    playersCount = availableRooms.Sum(x => x.players);
-                                    ReceivedRoomsList?.Invoke(this, availableRooms);
+                                        availableRooms.Clear();
+
+                                        for (int i = 0; i < roomsCount; i++)
+                                        {
+                                            availableRooms.Add(new RoomInfo(msg));
+                                        }
+
+                                        availableRoomsCount = availableRooms.Count;
+                                        playersCount = availableRooms.Sum(x => x.players);
+                                        ReceivedRoomsList?.Invoke(this, availableRooms);
+                                    }catch(Exception e)
+                                    {
+                                        ServerHubException?.Invoke(this, new Exception("Unable to parse rooms list! Exception: "+e));
+                                    }
                                     Abort();
                                 }
                             };

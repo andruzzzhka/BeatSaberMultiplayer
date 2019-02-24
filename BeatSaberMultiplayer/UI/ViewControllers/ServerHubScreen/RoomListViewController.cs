@@ -46,7 +46,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                     _serverTableView.PageScrollUp();
 
                 });
-                _pageUpButton.interactable = false;
 
                 _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
                 (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
@@ -59,7 +58,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                     _serverTableView.PageScrollDown();
 
                 });
-                _pageDownButton.interactable = false;
 
                 _createRoom = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
                 _createRoom.SetButtonText("Create room");
@@ -92,8 +90,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 (_serverTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
                 (_serverTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
 
-                ReflectionUtil.SetPrivateField(_serverTableView, "_pageUpButton", _pageUpButton);
-                ReflectionUtil.SetPrivateField(_serverTableView, "_pageDownButton", _pageDownButton);
+                //ReflectionUtil.SetPrivateField(_serverTableView, "_pageUpButton", _pageUpButton);
+                //ReflectionUtil.SetPrivateField(_serverTableView, "_pageDownButton", _pageDownButton);
 
                 _serverTableView.didSelectRowEvent += ServerTableView_DidSelectRow;
                 _serverTableView.dataSource = this;
