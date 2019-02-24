@@ -72,7 +72,8 @@ namespace ServerHub.Hub
             {
                 Port = Settings.Instance.Server.Port,
                 EnableUPnP = Settings.Instance.Server.TryUPnP,
-                AutoFlushSendQueue = false
+                AutoFlushSendQueue = false,
+                MaximumConnections = 256
             };
             Config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
             
