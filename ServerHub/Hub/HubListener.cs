@@ -558,6 +558,10 @@ namespace ServerHub.Hub
                         if (allClients[i].playerConnection.Status == NetConnectionStatus.Disconnected)
                         {
                             ClientDisconnected(allClients[i]);
+                        }else if(allClients[i].playerInfo.playerState == PlayerState.Lobby && DateTime.Now.Subtract(allClients[i].joinTime).TotalSeconds >= 30)
+                        {
+                            allClients[i].playerConnection.Disconnect("");
+                            ClientDisconnected(allClients[i]);
                         }
                     }
                 }
