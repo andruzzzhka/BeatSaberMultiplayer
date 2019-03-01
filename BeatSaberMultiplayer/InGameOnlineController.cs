@@ -36,6 +36,9 @@ namespace BeatSaberMultiplayer
 
         public bool needToSendUpdates;
 
+        public bool isVoiceChatActive;
+        public bool isRecording;
+
         public AudioTimeSyncController audioTimeSync;
         private StandardLevelGameplayManager _gameManager;
         private ScoreController _scoreController;
@@ -56,11 +59,7 @@ namespace BeatSaberMultiplayer
         private int fixedSendRate = 0;
         
         SpeexCodex speexDec;
-        private WritableAudioPlayer voiceChatPlayer;
         private VoipListener voiceChatListener;
-
-        public bool isVoiceChatActive;
-        public bool isRecording;
         
         public static void OnLoad(Scene to)
         {
@@ -103,10 +102,7 @@ namespace BeatSaberMultiplayer
                     };
 
                     DontDestroyOnLoad(voiceChatListener.gameObject);
-
-                    voiceChatPlayer = new GameObject("Voice Chat Player").AddComponent<WritableAudioPlayer>();
-                    DontDestroyOnLoad(voiceChatPlayer.gameObject);
-
+                    
                     isVoiceChatActive = true;
                 }
                 
@@ -124,16 +120,12 @@ namespace BeatSaberMultiplayer
                 voiceChatListener.OnAudioGenerated += ProcesVoiceFragment;
 
                 DontDestroyOnLoad(voiceChatListener.gameObject);
-
-                voiceChatPlayer = new GameObject("Voice Chat Player").AddComponent<WritableAudioPlayer>();
-                DontDestroyOnLoad(voiceChatPlayer.gameObject);
             }else if (!enabled && isVoiceChatActive)
             {
                 Destroy(voiceChatListener.gameObject);
 
                 voiceChatListener.OnAudioGenerated -= ProcesVoiceFragment;
-
-                Destroy(voiceChatPlayer.gameObject);
+                
                 isRecording = false;
             }
 
@@ -164,17 +156,30 @@ namespace BeatSaberMultiplayer
 
         public void VoiceChatVolumeChanged(float volume)
         {
-            if (voiceChatPlayer != null)
+            if (_players != null)
             {
-                voiceChatPlayer.SetVolume(volume);
+                foreach (var player in _players.Where(x => x != null && !x.destroyed)) {
+                    player.SetVoIPVolume(volume);
+                }
+            }
+        }
+
+        public void VoiceChatSpatialAudioChanged(bool enabled)
+        {
+            if (_players != null)
+            {
+                foreach (var player in _players.Where(x => x != null && !x.destroyed))
+                {
+                    player.SetSpatialAudioState(enabled);
+                }
             }
         }
 
         public bool VoiceChatIsTalking(ulong playerId)
         {
-            if(Config.Instance.EnableVoiceChat && voiceChatPlayer != null)
+            if(Config.Instance.EnableVoiceChat && _players != null)
             {
-                return (playerId == Client.Instance.playerInfo.playerId) ? isRecording : voiceChatPlayer.IsTalking(playerId);
+                return (playerId == Client.Instance.playerInfo.playerId) ? isRecording : _players.First(x => x != null && !x.destroyed && x.PlayerInfo.playerId == playerId).IsTalking();
             }
             else
             {
@@ -385,7 +390,7 @@ namespace BeatSaberMultiplayer
                                     {
                                         speexDec = SpeexCodex.Create(data.mode);
                                     }
-                                    voiceChatPlayer.PlayAudio(speexDec.Decode(data.data), data.playerId);
+                                    _players.FirstOrDefault(x => x.PlayerInfo.playerId == data.playerId)?.PlayVoIPFragment(speexDec.Decode(data.data), data.index);
                                 }
                             }
                             catch (Exception e)

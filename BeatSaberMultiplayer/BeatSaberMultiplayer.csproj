@@ -45,9 +45,6 @@
     <Reference Include="BS_Utils">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BS_Utils.dll</HintPath>
     </Reference>
-    <Reference Include="CSCore">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\CSCore.dll</HintPath>
-    </Reference>
     <Reference Include="CustomAvatar">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\CustomAvatar.dll</HintPath>
     </Reference>
@@ -219,7 +216,6 @@
     <Compile Include="VOIP\VoipBehaviour.cs" />
     <Compile Include="Data\VoipFragment.cs" />
     <Compile Include="VOIP\VoipListener.cs" />
-    <Compile Include="VOIP\WritableAudioPlayer.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\Shader.asset" />

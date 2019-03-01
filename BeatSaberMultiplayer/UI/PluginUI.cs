@@ -215,6 +215,10 @@ namespace BeatSaberMultiplayer.UI
             var voiceVolume = voiceSubMenu.AddInt("Voice Chat Volume", 1, 20, 1);
             voiceVolume.GetValue += delegate { return (int)(Config.Instance.VoiceChatVolume * 20f); };
             voiceVolume.SetValue += delegate (int value) { Config.Instance.VoiceChatVolume = value / 20f; InGameOnlineController.Instance.VoiceChatVolumeChanged(value / 20f); };
+            
+            var spatialAudio = voiceSubMenu.AddBool("Spatial Audio");
+            spatialAudio.GetValue += delegate { return Config.Instance.SpatialAudio; };
+            spatialAudio.SetValue += delegate (bool value) { Config.Instance.SpatialAudio = value; InGameOnlineController.Instance.VoiceChatSpatialAudioChanged(value); };
 
             var pushToTalk = voiceSubMenu.AddBool("Push to Talk");
             pushToTalk.GetValue += delegate { return Config.Instance.PushToTalk; };

@@ -53,8 +53,8 @@ namespace BeatSaberMultiplayer.VOIP
                 recordingBuffer = resampleBuffer;
             }            
 
-            recording = Microphone.Start(null, true, 10, inputFreq);
-            Misc.Logger.Info("Used mic frequency: "+inputFreq+"Hz");
+            recording = Microphone.Start(null, true, 20, inputFreq);
+            Misc.Logger.Info("Used mic sample rate: "+inputFreq+"Hz");
         }
 
         public void StopRecording()

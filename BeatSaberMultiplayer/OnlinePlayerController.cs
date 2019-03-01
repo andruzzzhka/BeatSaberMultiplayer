@@ -44,6 +44,7 @@ namespace BeatSaberMultiplayer
         }
 
         public AvatarController avatar;
+        public AudioSource voipSource;
 
         public OnlineBeatmapCallbackController beatmapCallbackController;
         public OnlineBeatmapSpawnController beatmapSpawnController;
@@ -54,6 +55,10 @@ namespace BeatSaberMultiplayer
         public bool destroyed = false;
         
         private PlayerInfo _info;
+        private AudioClip _voipClip;
+        private float[] _voipBuffer;
+        private int _lastVoipFragIndex;
+        private int _silentFrames;
 
         private float lastSynchronizationTime = 0f;
         private float syncDelay = 0f;
@@ -68,6 +73,12 @@ namespace BeatSaberMultiplayer
             if (_info != null)
             {
                 avatar = new GameObject("AvatarController").AddComponent<AvatarController>();
+                voipSource = avatar.gameObject.AddComponent<AudioSource>();
+
+                _voipClip = AudioClip.Create("VoIP Clip", 65535, 1, 16000, false);
+                voipSource.clip = _voipClip;
+                voipSource.spatialize = true;
+
                 syncStartInfo = _info;
                 syncEndInfo = _info;
                 
@@ -120,8 +131,15 @@ namespace BeatSaberMultiplayer
             {
                 avatar.SetPlayerInfo(_info, avatarOffset, Client.Instance.playerInfo.Equals(_info));
             }
-            if(_info != null)
-                _info.playerProgress += Time.deltaTime;
+
+            if(voipSource != null && !voipSource.isPlaying)
+            {
+                _silentFrames++;
+            }
+            else
+            {
+                _silentFrames = 0;
+            }
 
         }
 
@@ -139,12 +157,14 @@ namespace BeatSaberMultiplayer
 
                 _overrideHeadPos = true;
                 _overriddenHeadPos = _info.headPos;
-                _headPos = _info.headPos + Vector3.right * avatarOffset;
+                _headPos = _info.headPos + Vector3.right * 2f;//avatarOffset;
                 transform.position = _headPos;
 
                 _info.headRot = Quaternion.Lerp(syncStartInfo.headRot, syncEndInfo.headRot, lerpProgress);
                 _info.leftHandRot = Quaternion.Lerp(syncStartInfo.leftHandRot, syncEndInfo.leftHandRot, lerpProgress);
                 _info.rightHandRot = Quaternion.Lerp(syncStartInfo.rightHandRot, syncEndInfo.rightHandRot, lerpProgress);
+                
+                _info.playerProgress = Mathf.Lerp(syncStartInfo.playerProgress, syncEndInfo.playerProgress, lerpProgress);
 
             }
         }
@@ -181,6 +201,67 @@ namespace BeatSaberMultiplayer
             syncEndInfo = newPlayerInfo;
 
             _info.playerProgress = syncEndInfo.playerProgress;
+        }
+
+        public void PlayVoIPFragment(float[] data, int fragIndex)
+        {
+            if(voipSource != null)
+            {
+                if (_voipBuffer == null || (_lastVoipFragIndex + 1) != fragIndex || _silentFrames > 20)
+                {
+                    float[] tempBuffer = new float[data.Length + 1024];
+
+                    Buffer.BlockCopy(data, 0, tempBuffer, 1023 * sizeof(float), data.Length * sizeof(float));
+
+                    _voipBuffer = tempBuffer;
+                    _lastVoipFragIndex = fragIndex;
+                    _voipClip.SetData(_voipBuffer, 0);
+                    voipSource.Play();
+                    _silentFrames = 0;
+
+                }
+                else
+                {
+                    int currentPos = voipSource.timeSamples;
+
+                    if (currentPos >= _voipBuffer.Length)
+                        currentPos = _voipBuffer.Length - 1;
+                    if (currentPos < 1)
+                        currentPos = 1;
+
+                    float[] tempBuffer = new float[_voipBuffer.Length - currentPos - 1 + data.Length];
+
+                    Buffer.BlockCopy(_voipBuffer, (currentPos - 1) * sizeof(float), tempBuffer, 0,  (_voipBuffer.Length - currentPos - 1) * sizeof(float));
+                    Buffer.BlockCopy(data, 0, tempBuffer, (_voipBuffer.Length - currentPos - 1) * sizeof(float), data.Length * sizeof(float));
+
+                    _voipBuffer = tempBuffer;
+                    _lastVoipFragIndex = fragIndex;
+                    _voipClip.SetData(_voipBuffer, 0);
+                    voipSource.Play();
+                    _silentFrames = 0;
+                }
+            }
+        }
+
+        public void SetVoIPVolume(float newVolume)
+        {
+            if(voipSource != null)
+            {
+                voipSource.volume = newVolume;
+            }
+        }
+
+        public void SetSpatialAudioState(bool spatialAudio)
+        {
+            if (voipSource != null)
+            {
+                voipSource.spatialize = spatialAudio;
+            }
+        }
+
+        public bool IsTalking()
+        {
+            return _silentFrames < 20;
         }
     }
 }
