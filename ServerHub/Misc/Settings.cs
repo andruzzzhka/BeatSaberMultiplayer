@@ -29,7 +29,7 @@ namespace ServerHub.Misc {
             private bool _allowVoiceChat;
             private bool _showTickEventExceptions;
             private bool _sendCrashReports;
-            private float _resultsShowTime;
+            private float _defaultResultsShowTime;
 
             internal Action MarkDirty { get; set; }
 
@@ -261,12 +261,12 @@ namespace ServerHub.Misc {
             }
 
             [JsonProperty]
-            public float ResultsShowTime
+            public float DefaultResultsShowTime
             {
-                get => _resultsShowTime;
+                get => _defaultResultsShowTime;
                 set
                 {
-                    _resultsShowTime = value;
+                    _defaultResultsShowTime = value;
                     MarkDirty?.Invoke();
                 }
             }
@@ -286,7 +286,7 @@ namespace ServerHub.Misc {
                 _allowVoiceChat = true;
                 _showTickEventExceptions = false;
                 _sendCrashReports = true;
-                _resultsShowTime = 15f;
+                _defaultResultsShowTime = 15f;
             }
         }
 

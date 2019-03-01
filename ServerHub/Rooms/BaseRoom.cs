@@ -87,7 +87,7 @@ namespace ServerHub.Rooms
             roomId = id;
             roomSettings = settings;
             roomHost = host;
-            resultsShowTime = Settings.Instance.Server.ResultsShowTime;
+            resultsShowTime = Settings.Instance.Server.DefaultResultsShowTime;
         }
 
         public virtual void StartRoom()
