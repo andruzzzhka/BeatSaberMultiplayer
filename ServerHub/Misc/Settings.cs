@@ -29,6 +29,7 @@ namespace ServerHub.Misc {
             private bool _allowVoiceChat;
             private bool _showTickEventExceptions;
             private bool _sendCrashReports;
+            private float _resultsShowTime;
 
             internal Action MarkDirty { get; set; }
 
@@ -259,6 +260,17 @@ namespace ServerHub.Misc {
                 }
             }
 
+            [JsonProperty]
+            public float ResultsShowTime
+            {
+                get => _resultsShowTime;
+                set
+                {
+                    _resultsShowTime = value;
+                    MarkDirty?.Invoke();
+                }
+            }
+
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
@@ -274,6 +286,7 @@ namespace ServerHub.Misc {
                 _allowVoiceChat = true;
                 _showTickEventExceptions = false;
                 _sendCrashReports = true;
+                _resultsShowTime = 15f;
             }
         }
 
