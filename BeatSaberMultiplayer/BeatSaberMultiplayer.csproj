@@ -206,6 +206,7 @@
     <Compile Include="UI\ViewControllers\RadioScreen\NextSongScreenViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\LeaderboardViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\QuickSettingsViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomManagementViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />

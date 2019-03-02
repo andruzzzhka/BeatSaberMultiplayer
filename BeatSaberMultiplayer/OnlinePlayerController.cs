@@ -73,11 +73,11 @@ namespace BeatSaberMultiplayer
             if (_info != null)
             {
                 avatar = new GameObject("AvatarController").AddComponent<AvatarController>();
-                voipSource = avatar.gameObject.AddComponent<AudioSource>();
+                voipSource = gameObject.AddComponent<AudioSource>();
 
                 _voipClip = AudioClip.Create("VoIP Clip", 65535, 1, 16000, false);
                 voipSource.clip = _voipClip;
-                voipSource.spatialize = true;
+                voipSource.spatialize = Config.Instance.SpatialAudio;
 
                 syncStartInfo = _info;
                 syncEndInfo = _info;
@@ -201,6 +201,19 @@ namespace BeatSaberMultiplayer
             syncEndInfo = newPlayerInfo;
 
             _info.playerProgress = syncEndInfo.playerProgress;
+        }
+
+        public void SetAvatarState(bool enabled)
+        {
+            if(enabled && avatar == null)
+            {
+                avatar = new GameObject("AvatarController").AddComponent<AvatarController>();
+                avatar.SetPlayerInfo(_info, avatarOffset, Client.Instance.playerInfo.Equals(_info));
+            }
+            else if(!enabled && avatar != null)
+            {
+                Destroy(avatar.gameObject);
+            }
         }
 
         public void PlayVoIPFragment(float[] data, int fragIndex)
