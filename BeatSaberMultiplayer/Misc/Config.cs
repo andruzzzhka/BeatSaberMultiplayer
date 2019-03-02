@@ -24,6 +24,7 @@ namespace BeatSaberMultiplayer {
 
         [SerializeField] private bool _enableVoiceChat;
         [SerializeField] private float _voiceChatVolume;
+        [SerializeField] private bool _micEnabled;
         [SerializeField] private bool _spatialAudio;
         [SerializeField] private bool _pushToTalk;
         [SerializeField] private int _pushToTalkButton;
@@ -217,6 +218,16 @@ namespace BeatSaberMultiplayer {
             }
         }
 
+        public bool MicEnabled
+        {
+            get { return _micEnabled; }
+            set
+            {
+                _micEnabled = value;
+                MarkDirty();
+            }
+        }
+
         public bool SpatialAudio
         {
             get { return _spatialAudio; }
@@ -263,6 +274,8 @@ namespace BeatSaberMultiplayer {
 
             _enableVoiceChat = true;
             _voiceChatVolume = 0.8f;
+            _micEnabled = true;
+            _spatialAudio = false;
             _pushToTalk = true;
             _pushToTalkButton = 6;
 

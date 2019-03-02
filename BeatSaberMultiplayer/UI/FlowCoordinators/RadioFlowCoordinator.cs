@@ -313,7 +313,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 if(msg == null)
                                 {
                                     PopAllViewControllers();
-                                    InGameOnlineController.Instance.DestroyAvatars();
+                                    InGameOnlineController.Instance.DestroyPlayerControllers();
                                     PreviewPlayer.CrossfadeToDefault();
                                     joined = false;
 
@@ -324,7 +324,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     string reason = msg.ReadString();
 
                                     PopAllViewControllers();
-                                    InGameOnlineController.Instance.DestroyAvatars();
+                                    InGameOnlineController.Instance.DestroyPlayerControllers();
                                     PreviewPlayer.CrossfadeToDefault();
                                     joined = false;
 

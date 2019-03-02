@@ -175,11 +175,11 @@ namespace BeatSaberMultiplayer.UI
 
             var separateAvatar = onlineSubMenu.AddBool("Separate Avatar For Multiplayer", "Use avatar specified in \"Public Avatar\" instead of your current avatar");
             separateAvatar.GetValue += delegate { return Config.Instance.SeparateAvatarForMultiplayer; };
-            separateAvatar.SetValue += delegate (bool value) { Config.Instance.SeparateAvatarForMultiplayer = value; };
+            separateAvatar.SetValue += delegate (bool value) { InGameOnlineController.Instance.SetSeparatePublicAvatarState(value); };
 
             _publicAvatarOption = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>((RectTransform)onlineSubMenu.transform, "Public Avatar");
             _publicAvatarOption.OnEnable();
-            _publicAvatarOption.ValueChanged += (e) => { Config.Instance.PublicAvatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.AvatarLoader.Avatars[e]).Key; };
+            _publicAvatarOption.ValueChanged += (e) => { InGameOnlineController.Instance.SetSeparatePublicAvatarHash(ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.AvatarLoader.Avatars[e]).Key); };
             _publicAvatarOption.maxValue = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count - 1;
             _publicAvatarOption.textForValues = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Select(x => (string.IsNullOrEmpty(x.Name) ? "" : x.Name)).ToArray();
 
@@ -215,7 +215,11 @@ namespace BeatSaberMultiplayer.UI
             var voiceVolume = voiceSubMenu.AddInt("Voice Chat Volume", 1, 20, 1);
             voiceVolume.GetValue += delegate { return (int)(Config.Instance.VoiceChatVolume * 20f); };
             voiceVolume.SetValue += delegate (int value) { Config.Instance.VoiceChatVolume = value / 20f; InGameOnlineController.Instance.VoiceChatVolumeChanged(value / 20f); };
-            
+
+            var micEnabled = voiceSubMenu.AddBool("Enable Microphone");
+            micEnabled.GetValue += delegate { return Config.Instance.MicEnabled; };
+            micEnabled.SetValue += delegate (bool value) { Config.Instance.MicEnabled = value; };
+
             var spatialAudio = voiceSubMenu.AddBool("Spatial Audio");
             spatialAudio.GetValue += delegate { return Config.Instance.SpatialAudio; };
             spatialAudio.SetValue += delegate (bool value) { Config.Instance.SpatialAudio = value; InGameOnlineController.Instance.VoiceChatSpatialAudioChanged(value); };

@@ -92,14 +92,7 @@ namespace BeatSaberMultiplayer
                 {
                     voiceChatListener = new GameObject("Voice Chat Listener").AddComponent<VoipListener>();
 
-                    voiceChatListener.OnAudioGenerated += (fragment) =>
-                    {
-                        if (isRecording)
-                        {
-                            fragment.playerId = Client.Instance.playerInfo.playerId;
-                            Client.Instance.SendVoIPData(fragment);
-                        }
-                    };
+                    voiceChatListener.OnAudioGenerated += ProcesVoiceFragment;
 
                     DontDestroyOnLoad(voiceChatListener.gameObject);
                     
@@ -116,20 +109,19 @@ namespace BeatSaberMultiplayer
             if (enabled && !isVoiceChatActive)
             {
                 voiceChatListener = new GameObject("Voice Chat Listener").AddComponent<VoipListener>();
-
                 voiceChatListener.OnAudioGenerated += ProcesVoiceFragment;
-
                 DontDestroyOnLoad(voiceChatListener.gameObject);
-            }else if (!enabled && isVoiceChatActive)
+
+                if (Client.Instance.InRoom)
+                    VoiceChatStartRecording();
+            }
+            else if (!enabled && isVoiceChatActive)
             {
                 Destroy(voiceChatListener.gameObject);
-
                 voiceChatListener.OnAudioGenerated -= ProcesVoiceFragment;
-                
                 isRecording = false;
             }
-
-
+            
             isVoiceChatActive = enabled;
         }
 
@@ -179,11 +171,47 @@ namespace BeatSaberMultiplayer
         {
             if(Config.Instance.EnableVoiceChat && _players != null)
             {
-                return (playerId == Client.Instance.playerInfo.playerId) ? isRecording : _players.First(x => x != null && !x.destroyed && x.PlayerInfo.playerId == playerId).IsTalking();
+                return (playerId == Client.Instance.playerInfo.playerId) ? isRecording : (_players.FirstOrDefault(x => x != null && !x.destroyed && x.PlayerInfo.playerId == playerId)?.IsTalking() ?? false);
             }
             else
             {
                 return false;
+            }
+        }
+
+        public void SetSeparatePublicAvatarState(bool enabled)
+        {
+            Config.Instance.SeparateAvatarForMultiplayer = enabled;
+
+            if (Client.Instance.Connected)
+            {
+                if (enabled)
+                {
+                    Client.Instance.playerInfo.avatarHash = Config.Instance.PublicAvatarHash;
+
+                    if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash))
+                    {
+                        Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+                    }
+                }
+                else
+                {
+                    Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+
+                    if (Client.Instance.playerInfo.avatarHash == null)
+                    {
+                        Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+                    }
+                }
+            }
+        }
+
+        public void SetSeparatePublicAvatarHash(string hash)
+        {
+            Config.Instance.PublicAvatarHash = hash;
+            if (Client.Instance.Connected && Config.Instance.SeparateAvatarForMultiplayer)
+            {
+                Client.Instance.playerInfo.avatarHash = Config.Instance.PublicAvatarHash;
             }
         }
 
@@ -197,7 +225,7 @@ namespace BeatSaberMultiplayer
                     _currentScene = to.name;
                     if (_currentScene == "GameCore")
                     {
-                        DestroyAvatars();
+                        DestroyPlayerControllers();
                         DestroyScoreScreens();
                         if (Client.Instance != null && Client.Instance.Connected)
                         {
@@ -208,7 +236,7 @@ namespace BeatSaberMultiplayer
                     else if (_currentScene == "Menu")
                     {
                         loaded = false;
-                        DestroyAvatars();
+                        DestroyPlayerControllers();
                         if (Client.Instance != null && Client.Instance.Connected)
                         {
                             if (Client.Instance.InRadioMode)
@@ -259,14 +287,14 @@ namespace BeatSaberMultiplayer
                         playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "Menu")).OrderByDescending(x => x.playerId).ToList();
 
                         int localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
-
-                        if (((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom()) && !Client.Instance.InRadioMode)
+                        
+                        try
                         {
-                            try
+                            int index = 0;
+                            OnlinePlayerController player = null;
+                            foreach (PlayerInfo info in playerInfos)
                             {
-                                int index = 0;
-                                OnlinePlayerController player = null;
-                                foreach (PlayerInfo info in playerInfos)
+                                try
                                 {
                                     player = _players.FirstOrDefault(x => x != null && x.PlayerInfo.Equals(info));
 
@@ -274,6 +302,7 @@ namespace BeatSaberMultiplayer
                                     {
                                         player.PlayerInfo = info;
                                         player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 5f : 0f);
+                                        player.SetAvatarState(((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom()) && !Client.Instance.InRadioMode);
                                     }
                                     else
                                     {
@@ -281,27 +310,32 @@ namespace BeatSaberMultiplayer
 
                                         player.PlayerInfo = info;
                                         player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 5f : 0f);
+                                        player.SetAvatarState(((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom()) && !Client.Instance.InRadioMode);
 
                                         _players.Add(player);
                                     }
 
                                     index++;
                                 }
-
-                                if (_players.Count > playerInfos.Count)
+                                catch(Exception e)
                                 {
-                                    foreach (OnlinePlayerController controller in _players.Where(x => !playerInfos.Any(y => y.Equals(x.PlayerInfo))))
-                                    {
-                                        if(controller != null && !controller.destroyed)
-                                            Destroy(controller.gameObject);
-                                    }
-                                    _players.RemoveAll(x => x == null || x.destroyed);
+                                    Console.WriteLine($"PlayerController exception: {e}");
                                 }
                             }
-                            catch (Exception e)
+
+                            if (_players.Count > playerInfos.Count)
                             {
-                                Console.WriteLine($"PlayerControllers exception: {e}");
+                                foreach (OnlinePlayerController controller in _players.Where(x => !playerInfos.Any(y => y.Equals(x.PlayerInfo))))
+                                {
+                                    if(controller != null && !controller.destroyed)
+                                        Destroy(controller.gameObject);
+                                }
+                                _players.RemoveAll(x => x == null || x.destroyed);
                             }
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"PlayerControllers exception: {e}");
                         }
 
                         localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
@@ -452,7 +486,7 @@ namespace BeatSaberMultiplayer
                 }
             }
 
-            if (Config.Instance.EnableVoiceChat)
+            if (Config.Instance.EnableVoiceChat && Config.Instance.MicEnabled)
             {
                 if (!Config.Instance.PushToTalk)
                 {
@@ -667,13 +701,10 @@ namespace BeatSaberMultiplayer
             return new PosRot(pos, rot);
         }
 
-        public void DestroyAvatars()
+        public void DestroyPlayerControllers()
         {
             try
             {
-#if DEBUG
-                Misc.Logger.Info("Destroying player controllers...");
-#endif
                 for (int i = 0; i < _players.Count; i++)
                 {
                     if (_players[i] != null)

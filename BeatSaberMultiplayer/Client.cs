@@ -37,6 +37,7 @@ namespace BeatSaberMultiplayer
         public event Action<NetIncomingMessage> MessageReceived;
 
         public bool Connected;
+        public bool InRoom;
         public bool InRadioMode;
 
         public NetClient NetworkClient;
@@ -45,7 +46,7 @@ namespace BeatSaberMultiplayer
         public int port;
 
         public PlayerInfo playerInfo;
-        
+
         public bool isHost;
 
         DateTime _lastPacketTime;
@@ -105,6 +106,9 @@ namespace BeatSaberMultiplayer
             playerInfo.AddToMessage(outMsg);
 
             Misc.Logger.Info($"Connecting to {ip}:{port} with player name \"{playerInfo.playerName}\" and ID {playerInfo.playerId}");
+
+            InRadioMode = false;
+            InRoom = false;
 
             NetworkClient.Connect(ip, port, outMsg);
         }
@@ -260,6 +264,7 @@ namespace BeatSaberMultiplayer
                                     {
                                         msg.Position = 8;
                                         if (msg.PeekByte() == 0)
+                                        {
                                             foreach (Action nextDel in ClientJoinedRoom.GetInvocationList())
                                             {
                                                 try
@@ -268,9 +273,10 @@ namespace BeatSaberMultiplayer
                                                 }
                                                 catch (Exception e)
                                                 {
-                                                    Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on c lient joined room event: {e}");
+                                                    Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on client joined room event: {e}");
                                                 }
                                             }
+                                        }
                                     }
                                     else if (commandType == CommandType.StartLevel)
                                     {
@@ -439,6 +445,7 @@ namespace BeatSaberMultiplayer
                 
             }
             isHost = false;
+            InRoom = false;
             playerInfo.playerState = PlayerState.Lobby;
         }
 

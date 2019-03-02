@@ -113,5 +113,10 @@ namespace BeatSaberMultiplayer.VOIP
             UpdateStats();
             
         }
+
+        void OnDestroy()
+        {
+            StopRecording();
+        }
     }
 }

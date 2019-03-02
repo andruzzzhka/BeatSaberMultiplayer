@@ -52,7 +52,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
-            if(firstActivation && activationType == ActivationType.AddedToHierarchy)
+            if(firstActivation)
             {
                 _backButton = BeatSaberUI.CreateBackButton(rectTransform);
                 _backButton.onClick.AddListener(delegate () { didFinishEvent?.Invoke(); });
@@ -67,35 +67,23 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _presetNameKeyboard.enterButtonPressed += PresetNameEntered;
                 _presetNameKeyboard.backButtonPressed += () => { keyboardDidFinishEvent?.Invoke(_presetNameKeyboard); };
 
-                _usePasswordToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "Use Password");
-                (_usePasswordToggle.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
-                (_usePasswordToggle.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
-                (_usePasswordToggle.transform as RectTransform).anchoredPosition = new Vector2(0f, 10f);
+                _usePasswordToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "Use Password", new Vector2(0f, 10f));
                 _usePasswordToggle.ValueChanged += UsePasswordToggle_ValueChanged;
                 _usePasswordToggle.Value = _usePassword;
 
-                _songSelectionList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Song Selection");
-                (_songSelectionList.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
-                (_songSelectionList.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
-                (_songSelectionList.transform as RectTransform).anchoredPosition = new Vector2(0f, 0f);
+                _songSelectionList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Song Selection", new Vector2(0f, 0f));
                 _songSelectionList.ValueChanged += SongSelection_ValueChanged;
                 _songSelectionList.maxValue = 1;
                 _songSelectionList.Value = (int)_songSelectionType;
                 _songSelectionList.textForValues = new string[] { "Manual", "Random" };
                 _songSelectionList.UpdateText();
 
-                _maxPlayersList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Max Players");
-                (_maxPlayersList.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
-                (_maxPlayersList.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
-                (_maxPlayersList.transform as RectTransform).anchoredPosition = new Vector2(0f, -10f);
+                _maxPlayersList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Max Players", new Vector2(0f, -10f));
                 _maxPlayersList.ValueChanged += MaxPlayers_ValueChanged;
                 _maxPlayersList.Value = _maxPlayers;
                 _maxPlayersList.maxValue = 16;
 
-                _noFailToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "No Fail Mode");
-                (_noFailToggle.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
-                (_noFailToggle.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
-                (_noFailToggle.transform as RectTransform).anchoredPosition = new Vector2(0f, -20f);
+                _noFailToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "No Fail Mode", new Vector2(0f, -20f));
                 _noFailToggle.ValueChanged += NoFailToggle_ValueChanged;
                 _noFailToggle.Value = _noFailMode;
 

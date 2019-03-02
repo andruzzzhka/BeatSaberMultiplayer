@@ -53,6 +53,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         LeaderboardViewController _leaderboardViewController;
 
         RoomManagementViewController _roomManagementViewController;
+        QuickSettingsViewController _quickSettingsViewController;
 
         LevelCollectionSO _levelCollection;
         BeatmapCharacteristicSO[] _beatmapCharacteristics;
@@ -91,6 +92,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _roomManagementViewController = BeatSaberUI.CreateViewController<RoomManagementViewController>();
                 _roomManagementViewController.DestroyRoomPressed += DestroyRoomPressed;
 
+                _quickSettingsViewController = BeatSaberUI.CreateViewController<QuickSettingsViewController>();
+
                 _roomNavigationController = BeatSaberUI.CreateViewController<RoomNavigationController>();
                 _roomNavigationController.didFinishEvent += () => { LeaveRoom(); };
                 
@@ -100,7 +103,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _searchKeyboard.allowEmptyInput = true;
             }
             
-            ProvideInitialViewControllers(_roomNavigationController, _roomManagementViewController, null);
+            ProvideInitialViewControllers(_roomNavigationController, _roomManagementViewController, _quickSettingsViewController);
         }
 
         private void DestroyRoomPressed()
@@ -183,13 +186,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 Client.Instance.playerInfo.playerState = PlayerState.Lobby;
             }
 
-            InGameOnlineController.Instance.DestroyAvatars();
+            InGameOnlineController.Instance.DestroyPlayerControllers();
             InGameOnlineController.Instance.VoiceChatStopRecording();
             PreviewPlayer.CrossfadeToDefault();
             lastSelectedSong = "";
             _lastCharacteristic = _standardCharacteristic;
             _lastSortMode = SortMode.Default;
             _lastSearchRequest = "";
+            Client.Instance.InRoom = false;
             PopAllViewControllers(_roomNavigationController);
             didFinishEvent?.Invoke();
         }
@@ -227,7 +231,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (msg == null)
             {
                 PopAllViewControllers(_roomNavigationController);
-                InGameOnlineController.Instance.DestroyAvatars();
+                InGameOnlineController.Instance.DestroyPlayerControllers();
                 PreviewPlayer.CrossfadeToDefault();
                 joined = false;
 
@@ -238,7 +242,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 string reason = msg.ReadString();
 
                 PopAllViewControllers(_roomNavigationController);
-                InGameOnlineController.Instance.DestroyAvatars();
+                InGameOnlineController.Instance.DestroyPlayerControllers();
                 PreviewPlayer.CrossfadeToDefault();
                 joined = false;
                 lastSelectedSong = "";
@@ -271,6 +275,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 Client.Instance.playerInfo.playerState = PlayerState.DownloadingSongs;
                                 Client.Instance.RequestRoomInfo();
                                 Client.Instance.SendPlayerInfo();
+                                Client.Instance.InRoom = true;
                                 joined = true;
                                 InGameOnlineController.Instance.needToSendUpdates = true;
                                 if(Config.Instance.EnableVoiceChat)
