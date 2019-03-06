@@ -24,13 +24,13 @@ namespace BeatSaberMultiplayer.Misc
             msg.Write(vect.w);
         }
 
-        public static Vector3 ToVector3(this NetIncomingMessage msg)
+        public static Vector3 ReadVector3(this NetIncomingMessage msg)
         {
             Vector3 vect = new Vector3(msg.ReadFloat(), msg.ReadFloat(), msg.ReadFloat());
             return vect;
         }
 
-        public static Quaternion ToQuaternion(this NetIncomingMessage msg)
+        public static Quaternion ReadQuaternion(this NetIncomingMessage msg)
         {
             Quaternion vect = new Quaternion(msg.ReadFloat(), msg.ReadFloat(), msg.ReadFloat(), msg.ReadFloat());
             return vect;

@@ -246,9 +246,6 @@ namespace ServerHub.Hub
                 }
             }
 
-            if (Settings.Instance.TournamentMode.Enabled)
-                CreateTournamentRooms();
-
             foreach (string blacklistItem in new string[] { "76561201521433077", "IGGGAMES", "76561199437989403", "VALVE" })
             {
                 if (!Settings.Instance.Access.Blacklist.Contains(blacklistItem))
@@ -263,6 +260,9 @@ namespace ServerHub.Hub
                 Settings.Instance.Radio.EnableRadio = false;
                 Settings.Instance.Radio.RadioChannels.Add(new Settings.ChannelSettings() { JoinMessages = new List<string>() { "{0} joined us!" } });
             }
+            
+            if (Settings.Instance.TournamentMode.Enabled)
+                CreateTournamentRooms();
 
             Logger.Instance.Warning($"Use [Help] to display commands");
             Logger.Instance.Warning($"Use [Quit] to exit");

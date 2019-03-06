@@ -24,8 +24,37 @@ namespace BeatSaberMultiplayer
     public class Client : MonoBehaviour
     {
 #if DEBUG
-        public static FileStream packetWriter = File.Open("packetDump.dmp", FileMode.Append);
+        public static FileStream packetWriter = File.Open("packetDump.mpdmp", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+        public static Queue<byte[]> packetsBuffer = new Queue<byte[]>();
+
+        public static async void WritePackets()
+        {
+            byte[] data;
+            while (true)
+            {
+                if (packetsBuffer.Count > 0)
+                {
+                    int packets = packetsBuffer.Count;
+                    while (packetsBuffer.Count > 0)
+                    {
+                        data = packetsBuffer.Dequeue();
+                        byte[] buffer = new byte[data.Length + 4];
+
+                        Buffer.BlockCopy(BitConverter.GetBytes(data.Length), 0, buffer, 0, 4);
+                        Buffer.BlockCopy(data, 0, buffer, 4, data.Length);
+                        
+                        await packetWriter.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                    }
+
+                    await packetWriter.FlushAsync().ConfigureAwait(false);
+                    Misc.Logger.Info(packets+" update packets are written to disk!");
+                }
+                await Task.Delay(TimeSpan.FromSeconds(2.5)).ConfigureAwait(false);
+            }
+        }
+
 #endif
+
         public static event Action<string, string> EventMessageReceived;
         public static event Action ClientJoinedRoom;
         public static event Action ClientLevelStarted;
@@ -75,6 +104,12 @@ namespace BeatSaberMultiplayer
             playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
             NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { MaximumHandshakeAttempts = 2, AutoFlushSendQueue = false };
             NetworkClient = new NetClient(Config);
+
+#if DEBUG
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            WritePackets();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+#endif
         }
 
         public void Disconnect()
@@ -547,16 +582,14 @@ namespace BeatSaberMultiplayer
 
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
 
-                /*
+                
                 #if DEBUG
-                                if (playerInfo.playerState == PlayerState.Game)
-                                {
-                                    byte[] packet = new BasePacket(CommandType.UpdatePlayerInfo, playerInfo.ToBytes(false)).ToBytes();
-                                    packetWriter.Write(packet, 0, packet.Length);
-                                    packetWriter.Flush();
-                                }
+                if (playerInfo.playerState == PlayerState.Game)
+                {
+                    packetsBuffer.Enqueue(outMsg.Data);
+                }
                 #endif
-                */
+                
             }
         }
 

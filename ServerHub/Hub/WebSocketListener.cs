@@ -210,7 +210,7 @@ namespace ServerHub.Hub
                 List<RCONChannelInfo> channels = paths.Where(x => x.Contains("channel")).Select(x => new RCONChannelInfo(x)).ToList();
 
                 string data = JsonConvert.SerializeObject(new { rooms, channels });
-
+                
                 Server.WebSocketServices["/"].Sessions.BroadcastAsync(data, null);
             }
         }

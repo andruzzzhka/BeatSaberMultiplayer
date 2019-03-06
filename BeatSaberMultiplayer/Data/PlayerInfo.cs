@@ -147,23 +147,23 @@ namespace BeatSaberMultiplayer.Data
             playerEnergy = msg.ReadFloat();
             playerProgress = msg.ReadFloat();
 
-            rightHandPos = msg.ToVector3();
-            leftHandPos = msg.ToVector3();
-            headPos = msg.ToVector3();
+            rightHandPos = msg.ReadVector3();
+            leftHandPos = msg.ReadVector3();
+            headPos = msg.ReadVector3();
 
-            rightHandRot = msg.ToQuaternion();
-            leftHandRot = msg.ToQuaternion();
-            headRot = msg.ToQuaternion();
+            rightHandRot = msg.ReadQuaternion();
+            leftHandRot = msg.ReadQuaternion();
+            headRot = msg.ReadQuaternion();
 
             if (fullBodyTracking)
             {
-                msg.ToVector3(); //Pelvis Pos
-                msg.ToVector3(); //Left Leg Pos
-                msg.ToVector3(); //Right Leg Pos
+                msg.ReadVector3(); //Pelvis Pos
+                msg.ReadVector3(); //Left Leg Pos
+                msg.ReadVector3(); //Right Leg Pos
 
-                msg.ToQuaternion(); //Pelvis Rot
-                msg.ToQuaternion(); //Left Leg Rot
-                msg.ToQuaternion(); //Left Leg Pos
+                msg.ReadQuaternion(); //Pelvis Rot
+                msg.ReadQuaternion(); //Left Leg Rot
+                msg.ReadQuaternion(); //Left Leg Pos
             }
 
             avatarHash = BitConverter.ToString(msg.ReadBytes(16)).Replace("-", "");

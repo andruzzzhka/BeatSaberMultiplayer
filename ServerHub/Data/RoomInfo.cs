@@ -50,9 +50,22 @@ namespace ServerHub.Data
             roomHost = new PlayerInfo(msg);
             players = msg.ReadInt32();
             maxPlayers = msg.ReadInt32();
-            if (roomState != RoomState.SelectingSong) {
+
+            try
+            {
                 selectedDifficulty = msg.ReadByte();
-                selectedSong = new SongInfo(msg);
+                if (selectedDifficulty != 255)
+                {
+                    selectedSong = new SongInfo(msg);
+                }
+                else
+                {
+                    selectedSong = null;
+                }
+            }
+            catch
+            {
+
             }
         }
 

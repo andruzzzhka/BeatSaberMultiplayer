@@ -63,7 +63,8 @@ namespace ServerHub.Data
 
             byte hitsCount = msg.ReadByte();
 
-            hitsLastUpdate = msg.ReadBytes(hitsCount * 5);
+            if(hitsCount > 0)
+                hitsLastUpdate = msg.ReadBytes(hitsCount * 5);
         }
 
         public void AddToMessage(NetOutgoingMessage msg)
@@ -86,11 +87,18 @@ namespace ServerHub.Data
             msg.Write(playerEnergy);
             msg.Write(playerProgress);
 
-            msg.Write(avatarData);
+            msg.Write(avatarData ?? new byte[84 * (fullBodyTracking ? 2 : 1) + 16]);
 
-            msg.Write((byte)(hitsLastUpdate.Length / 5));
+            if (hitsLastUpdate != null)
+            {
+                msg.Write((byte)(hitsLastUpdate.Length / 5));
 
-            msg.Write(hitsLastUpdate);
+                msg.Write(hitsLastUpdate);
+            }
+            else
+            {
+                msg.Write((byte)0);
+            }
         }
 
         public override bool Equals(object obj)
