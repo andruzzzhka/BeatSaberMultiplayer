@@ -208,12 +208,12 @@ namespace BeatSaberMultiplayer
                     {
                         playerNameText.gameObject.SetActive(false);
                         playerSpeakerIcon.gameObject.SetActive(false);
-//#if !DEBUG
+#if !DEBUG
                         if (avatar != null)
                         {
                             Destroy(avatar.GameObject);
                         }
-//#endif
+#endif
                     }
                     else
                     {
@@ -319,6 +319,10 @@ namespace BeatSaberMultiplayer
 
                 playerNameText.text = playerInfo.playerName;
                 playerNameText.color = playerInfo.playerNameColor;
+
+#if DEBUG
+                Misc.Logger.Info($"Player info set! Name: {playerNameText.text}, HeadRot: {HeadRot} , RightHandRot: {RightHandRot} , LeftHandRot: {LeftHandRot} ");
+#endif
             }
             catch (Exception e)
             {
@@ -329,7 +333,7 @@ namespace BeatSaberMultiplayer
 
         private void AvatarController_AvatarLoaded(string hash)
         {
-            if (ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash && playerInfo.avatarHash == hash)
+            if (this != null && ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash && playerInfo.avatarHash == hash)
             {
                 AvatarLoaded -= AvatarController_AvatarLoaded;
 
@@ -348,7 +352,7 @@ namespace BeatSaberMultiplayer
 
         private void AvatarDownloaded(string hash)
         {
-            if (ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash && playerInfo.avatarHash == hash)
+            if (this != null && ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash && playerInfo.avatarHash == hash)
             {
                 ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
 

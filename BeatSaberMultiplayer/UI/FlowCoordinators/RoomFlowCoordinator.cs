@@ -172,13 +172,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 if (Client.Instance.Connected)
                 {
                     Client.Instance.Disconnect();
-                    Client.Instance.MessageReceived -= PacketReceived;
                 }
             }
             catch
             {
                 Logger.Info("Unable to disconnect from ServerHub properly!");
             }
+
+            Client.Instance.MessageReceived -= PacketReceived;
+            Client.Instance.ClearMessageQueue();
 
             if(songToDownload != null)
             {

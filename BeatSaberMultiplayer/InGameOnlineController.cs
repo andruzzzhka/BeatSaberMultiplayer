@@ -707,10 +707,11 @@ namespace BeatSaberMultiplayer
             {
                 for (int i = 0; i < _players.Count; i++)
                 {
-                    if (_players[i] != null)
+                    if (_players.Count > i && _players[i] != null)
                         Destroy(_players[i].gameObject);
                 }
                 _players.Clear();
+                Misc.Logger.Info("Destroyed player controllers!");
             }catch(Exception e)
             {
                 Misc.Logger.Exception($"Unable to destroy player controllers! Exception: {e}");

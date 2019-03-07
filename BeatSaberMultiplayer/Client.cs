@@ -38,12 +38,8 @@ namespace BeatSaberMultiplayer
                     while (packetsBuffer.Count > 0)
                     {
                         data = packetsBuffer.Dequeue();
-                        byte[] buffer = new byte[data.Length + 4];
-
-                        Buffer.BlockCopy(BitConverter.GetBytes(data.Length), 0, buffer, 0, 4);
-                        Buffer.BlockCopy(data, 0, buffer, 4, data.Length);
                         
-                        await packetWriter.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                        await packetWriter.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
                     }
 
                     await packetWriter.FlushAsync().ConfigureAwait(false);
@@ -168,9 +164,9 @@ namespace BeatSaberMultiplayer
                         }
                         _lastPacketTime = DateTime.UtcNow;
                     }
-
+                    
                     NetIncomingMessage lastUpdate = _receivedMessages.LastOrDefault(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
-
+                    
                     if (lastUpdate != null)
                     {
                         _receivedMessages.RemoveAll(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
@@ -188,7 +184,7 @@ namespace BeatSaberMultiplayer
                             }
                         }
                     }
-
+                    
                     foreach (NetIncomingMessage msg in _receivedMessages)
                     {
                         switch (msg.MessageType)
@@ -280,25 +276,26 @@ namespace BeatSaberMultiplayer
                                     }
                                     else
                                     {
-                                        foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
-                                        {
-                                            try
+                                        if (MessageReceived != null)
+                                            foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
                                             {
-                                                msg.Position = 0;
-                                                nextDel.Invoke(msg);
+                                                try
+                                                {
+                                                    msg.Position = 0;
+                                                    nextDel.Invoke(msg);
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                                                }
                                             }
-                                            catch (Exception e)
-                                            {
-                                                Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
-                                            }
-                                        }
                                     }
 
 
                                     if (commandType == CommandType.JoinRoom)
                                     {
                                         msg.Position = 8;
-                                        if (msg.PeekByte() == 0)
+                                        if (msg.PeekByte() == 0 && ClientJoinedRoom != null)
                                         {
                                             foreach (Action nextDel in ClientJoinedRoom.GetInvocationList())
                                             {
@@ -385,6 +382,18 @@ namespace BeatSaberMultiplayer
             if(NetworkClient != null)
             {
                 NetworkClient.FlushSendQueue();
+            }
+        }
+
+        public void ClearMessageQueue()
+        {
+            while (NetworkClient.ReadMessages(_receivedMessages) > 0)
+            {
+                foreach (var message in _receivedMessages)
+                {
+                    NetworkClient.Recycle(message);
+                }
+                _receivedMessages.Clear();
             }
         }
 
@@ -580,16 +589,78 @@ namespace BeatSaberMultiplayer
                 outMsg.Write((byte)CommandType.UpdatePlayerInfo);
                 playerInfo.AddToMessage(outMsg);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
 
-                
-                #if DEBUG
+#if DEBUG
                 if (playerInfo.playerState == PlayerState.Game)
                 {
-                    packetsBuffer.Enqueue(outMsg.Data);
+                    List<byte> buffer = new List<byte>();
+
+                    buffer.Add((byte)playerInfo.playerState);
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerScore));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerCutBlocks));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerComboBlocks));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerTotalBlocks));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerEnergy));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerProgress));
+
+
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandPos.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandPos.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandPos.z));
+
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandPos.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandPos.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandPos.z));
+
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headPos.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headPos.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headPos.z));
+
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandRot.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandRot.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandRot.z));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandRot.w));
+
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandRot.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandRot.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandRot.z));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandRot.w));
+
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headRot.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headRot.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headRot.z));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headRot.w));
+
+                    buffer.Add((byte)playerInfo.hitsLastUpdate.Count);
+
+                    for (int i = 0; i < (byte)playerInfo.hitsLastUpdate.Count; i++)
+                    {
+                        byte[] hitData = new byte[5];
+
+                        Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.hitsLastUpdate[i].objectTime), 0, hitData, 0, 4);
+
+                        BitArray bits = new BitArray(8);
+                        bits[0] = playerInfo.hitsLastUpdate[i].noteWasCut;
+                        bits[0] = playerInfo.hitsLastUpdate[i].isSaberA;
+                        bits[0] = playerInfo.hitsLastUpdate[i].speedOK;
+                        bits[0] = playerInfo.hitsLastUpdate[i].directionOK;
+                        bits[0] = playerInfo.hitsLastUpdate[i].saberTypeOK;
+                        bits[0] = playerInfo.hitsLastUpdate[i].wasCutTooSoon;
+                        bits[0] = playerInfo.hitsLastUpdate[i].reserved1;
+                        bits[0] = playerInfo.hitsLastUpdate[i].reserved2;
+
+                        bits.CopyTo(hitData, 4);
+
+                        buffer.AddRange(hitData);
+                    }
+
+                    buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));
+
+                    packetsBuffer.Enqueue(buffer.ToArray());
                 }
-                #endif
-                
+#endif
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
             }
         }
 

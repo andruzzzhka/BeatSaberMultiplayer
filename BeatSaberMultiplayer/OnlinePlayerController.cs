@@ -70,15 +70,20 @@ namespace BeatSaberMultiplayer
 
         public void Start()
         {
+#if DEBUG
+            Misc.Logger.Info($"Player controller created!");
+#endif
+            voipSource = gameObject.AddComponent<AudioSource>();
+
+            _voipClip = AudioClip.Create("VoIP Clip", 65535, 1, 16000, false);
+            voipSource.clip = _voipClip;
+            voipSource.spatialize = Config.Instance.SpatialAudio;
+
             if (_info != null)
             {
-                avatar = new GameObject("AvatarController").AddComponent<AvatarController>();
-                voipSource = gameObject.AddComponent<AudioSource>();
-
-                _voipClip = AudioClip.Create("VoIP Clip", 65535, 1, 16000, false);
-                voipSource.clip = _voipClip;
-                voipSource.spatialize = Config.Instance.SpatialAudio;
-
+#if DEBUG
+                Misc.Logger.Info($"Starting player controller for {_info.playerName}:{_info.playerId}...");
+#endif
                 syncStartInfo = _info;
                 syncEndInfo = _info;
                 
@@ -157,7 +162,7 @@ namespace BeatSaberMultiplayer
 
                 _overrideHeadPos = true;
                 _overriddenHeadPos = _info.headPos;
-                _headPos = _info.headPos + Vector3.right * 2f;//avatarOffset;
+                _headPos = _info.headPos + Vector3.right * avatarOffset;
                 transform.position = _headPos;
 
                 _info.headRot = Quaternion.Lerp(syncStartInfo.headRot, syncEndInfo.headRot, lerpProgress);
@@ -172,7 +177,10 @@ namespace BeatSaberMultiplayer
         public void OnDestroy()
         {
 #if DEBUG
-            Misc.Logger.Info("Destroying player controller");
+            if(_info == null)
+                Misc.Logger.Info("Destroying player controller!");
+            else
+                Misc.Logger.Info($"Destroying player controller! Name: {_info.playerName}, ID: {_info.playerId}");
 #endif
             destroyed = true;
             
@@ -205,7 +213,7 @@ namespace BeatSaberMultiplayer
 
         public void SetAvatarState(bool enabled)
         {
-            if(enabled && avatar == null)
+            if(enabled && (object)avatar == null)
             {
                 avatar = new GameObject("AvatarController").AddComponent<AvatarController>();
                 avatar.SetPlayerInfo(_info, avatarOffset, Client.Instance.playerInfo.Equals(_info));
@@ -213,6 +221,7 @@ namespace BeatSaberMultiplayer
             else if(!enabled && avatar != null)
             {
                 Destroy(avatar.gameObject);
+                avatar = null;
             }
         }
 

@@ -199,19 +199,25 @@ namespace ServerHub.Hub
         {
             if (Server != null && Settings.Instance.Server.EnableWebSocketRoomInfo)
             {
-                List<string> paths = Server.WebSocketServices.Paths.ToList();
-                paths.Remove("/");
-                if (Settings.Instance.Server.EnableWebSocketRCON)
+                try
                 {
-                    paths.Remove("/" + Settings.Instance.Server.RCONPassword);
-                }
-                
-                List<WSRoomInfo> rooms = paths.Where(x => x.Contains("room")).Select(x => new WSRoomInfo(x)).ToList();
-                List<RCONChannelInfo> channels = paths.Where(x => x.Contains("channel")).Select(x => new RCONChannelInfo(x)).ToList();
+                    List<string> paths = Server.WebSocketServices.Paths.ToList();
+                    paths.Remove("/");
+                    if (Settings.Instance.Server.EnableWebSocketRCON)
+                    {
+                        paths.Remove("/" + Settings.Instance.Server.RCONPassword);
+                    }
 
-                string data = JsonConvert.SerializeObject(new { rooms, channels });
-                
-                Server.WebSocketServices["/"].Sessions.BroadcastAsync(data, null);
+                    List<WSRoomInfo> rooms = paths.Where(x => x.Contains("room")).Select(x => new WSRoomInfo(x)).ToList();
+                    List<RCONChannelInfo> channels = paths.Where(x => x.Contains("channel")).Select(x => new RCONChannelInfo(x)).ToList();
+
+                    string data = JsonConvert.SerializeObject(new { rooms, channels });
+
+                    Server.WebSocketServices["/"].Sessions.BroadcastAsync(data, null);
+                }catch(Exception e)
+                {
+                    Misc.Logger.Instance.Error("WebSocket broadcast failed! Exception: "+e);
+                }
             }
         }
 

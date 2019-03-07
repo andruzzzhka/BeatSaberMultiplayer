@@ -233,7 +233,7 @@ namespace BeatSaberMultiplayer.Data
         {
             if (obj is PlayerInfo)
             {
-                return (playerId == (obj as PlayerInfo).playerId) && (playerName == (obj as PlayerInfo).playerName);
+                return (playerId == (obj as PlayerInfo).playerId);
             }
             else
             {
