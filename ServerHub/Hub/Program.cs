@@ -48,8 +48,6 @@ namespace ServerHub.Hub
         
         static void Main(string[] args) => Start(args);
 
-        static private Thread ListenerThread { get; set; }
-
 #if !DEBUG
         static private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
@@ -211,6 +209,15 @@ namespace ServerHub.Hub
                     Logger.Instance.Exception($"Unable to create RoomPresets folder! Exception: {e}");
                 }
             }
+            
+            foreach (string blacklistItem in new string[] { "76561201521433077", "IGGGAMES", "76561199437989403", "VALVE" })
+            {
+                if (!Settings.Instance.Access.Blacklist.Contains(blacklistItem))
+                {
+                    Settings.Instance.Access.Blacklist.Add(blacklistItem);
+                    Settings.Instance.Save();
+                }
+            }
 
             Settings.Instance.Server.Tickrate = Misc.Math.Clamp(Settings.Instance.Server.Tickrate, 5, 150);
             HighResolutionTimer.LoopTimer.Interval = 1000 / Settings.Instance.Server.Tickrate;
@@ -220,19 +227,20 @@ namespace ServerHub.Hub
 
             VersionChecker.CheckForUpdates();
 
-            ReadLine.AutoCompletionHandler = new AutoCompletionHandler();
-            ReadLine.HistoryEnabled = true;
-            SetupCommands();
-            
-            ListenerThread = new Thread(HubListener.Start);
-
-            ListenerThread.Start();
-            HubListener.Listen = true;
+            if (Settings.Instance.Server.EnableInteractiveShell)
+            {
+                ReadLine.AutoCompletionHandler = new AutoCompletionHandler();
+                ReadLine.HistoryEnabled = true;
+                SetupCommands();
+            }
 
             IP = GetPublicIPv4();
 
             Logger.Instance.Log($"Hosting ServerHub @ {IP}:{Settings.Instance.Server.Port}");
             serverStartTime = DateTime.Now;
+
+            HubListener.Start();
+            HubListener.Listen = true;
 
             foreach (IPlugin plugin in plugins)
             {
@@ -246,15 +254,6 @@ namespace ServerHub.Hub
                 }
             }
 
-            foreach (string blacklistItem in new string[] { "76561201521433077", "IGGGAMES", "76561199437989403", "VALVE" })
-            {
-                if (!Settings.Instance.Access.Blacklist.Contains(blacklistItem))
-                {
-                    Settings.Instance.Access.Blacklist.Add(blacklistItem);
-                    Settings.Instance.Save();
-                }
-            }
-
             if(Settings.Instance.Radio.RadioChannels.Count == 0)
             {
                 Settings.Instance.Radio.EnableRadio = false;
@@ -264,18 +263,27 @@ namespace ServerHub.Hub
             if (Settings.Instance.TournamentMode.Enabled)
                 CreateTournamentRooms();
 
-            Logger.Instance.Warning($"Use [Help] to display commands");
-            Logger.Instance.Warning($"Use [Quit] to exit");
-
-
-            while (HubListener.Listen)
+            if (Settings.Instance.Server.EnableInteractiveShell)
             {
-                var x = ReadLine.Read(">>> ");
-                if (x == string.Empty) continue;
+                Logger.Instance.Warning($"Use [Help] to display commands");
+                Logger.Instance.Warning($"Use [Quit] to exit");
 
-                var parsedArgs = ParseLine(x);
 
-                Logger.Instance.Log(ProcessCommand(parsedArgs[0].ToLower(), parsedArgs.Skip(1).ToArray()));
+                while (HubListener.Listen)
+                {
+                    var x = ReadLine.Read(">>> ");
+                    if (x == string.Empty) continue;
+
+                    var parsedArgs = ParseLine(x);
+
+                    Logger.Instance.Log(ProcessCommand(parsedArgs[0].ToLower(), parsedArgs.Skip(1).ToArray()));
+                }
+            }
+            else
+            {
+                Logger.Instance.Warning($"Interactive shell is disabled");
+                
+                HighResolutionTimer.LoopTimer.thread.Join();
             }
 
         }

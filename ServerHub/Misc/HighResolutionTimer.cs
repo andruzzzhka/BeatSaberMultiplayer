@@ -50,6 +50,11 @@ namespace ServerHub.Misc
         public event EventHandler<HighResolutionTimerElapsedEventArgs> AfterElapsed;
 
         /// <summary>
+        ///  Execution thread
+        /// </summary>
+        public Thread thread;
+
+        /// <summary>
         /// The interval of timer ticks [ms]
         /// </summary>
         private volatile float _interval;
@@ -58,12 +63,7 @@ namespace ServerHub.Misc
         /// The timer is running
         /// </summary>
         private volatile bool _isRunning;
-
-        /// <summary>
-        ///  Execution thread
-        /// </summary>
-        private Thread _thread;
-
+        
         /// <summary>
         /// Creates a timer with 1 [ms] interval
         /// </summary>
@@ -119,16 +119,16 @@ namespace ServerHub.Misc
             if (_isRunning) return;
 
             _isRunning = true;
-            _thread = new Thread(ExecuteTimer)
+            thread = new Thread(ExecuteTimer)
             {
                 IsBackground = true,
             };
 
             if (UseHighPriorityThread)
             {
-                _thread.Priority = ThreadPriority.Highest;
+                thread.Priority = ThreadPriority.Highest;
             }
-            _thread.Start();
+            thread.Start();
         }
 
         /// <summary>
@@ -143,9 +143,9 @@ namespace ServerHub.Misc
 
             // Even if _thread.Join may take time it is guaranteed that 
             // Elapsed event is never called overlapped with different threads
-            if (joinThread && Thread.CurrentThread != _thread)
+            if (joinThread && Thread.CurrentThread != thread)
             {
-                _thread.Join();
+                thread.Join();
             }
         }
 

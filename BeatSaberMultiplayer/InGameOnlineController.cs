@@ -260,6 +260,16 @@ namespace BeatSaberMultiplayer
 
         private void PacketReceived(NetIncomingMessage msg)
         {
+            if(msg == null)
+            {
+                if (_currentScene == "GameCore" && loaded)
+                {
+                    PropertyInfo property = typeof(StandardLevelGameplayManager).GetProperty("gameState");
+                    property.DeclaringType.GetProperty("gameState");
+                    property.GetSetMethod(true).Invoke(_gameManager, new object[] { StandardLevelGameplayManager.GameState.Failed });
+                }
+            }
+
             switch ((CommandType)msg.ReadByte())
             {
                 case CommandType.UpdatePlayerInfo:
