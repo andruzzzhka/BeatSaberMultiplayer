@@ -102,7 +102,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         public void SetServerHubs(List<ServerHubClient> serverHubClients)
         {
-            _serverHubClients = serverHubClients.OrderBy(x => x.availableRooms.Count).ThenByDescending(x => x.serverHubCompatible ? 2 : (x.serverHubAvailable ? 1 : 0)).ToList();
+            _serverHubClients = serverHubClients.OrderByDescending(x => x.serverHubCompatible ? 2 : (x.serverHubAvailable ? 1 : 0)).ThenBy(x => x.ping).ThenBy(x => x.availableRoomsCount).ToList();
 
             if (_serverHubsTableView != null)
             {
@@ -133,7 +133,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             ServerHubClient client = _serverHubClients[row];
 
             cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
-            cell.songName = $"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.ip}:{client.port}";
+            cell.songName = $"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.ip}:{client.port} (PING: {Mathf.RoundToInt(client.ping*1000)})";
 
             if (client.serverHubCompatible)
             {

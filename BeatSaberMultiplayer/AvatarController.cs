@@ -319,10 +319,6 @@ namespace BeatSaberMultiplayer
 
                 playerNameText.text = playerInfo.playerName;
                 playerNameText.color = playerInfo.playerNameColor;
-
-#if DEBUG
-                Misc.Logger.Info($"Player info set! Name: {playerNameText.text}, HeadRot: {HeadRot} , RightHandRot: {RightHandRot} , LeftHandRot: {LeftHandRot} ");
-#endif
             }
             catch (Exception e)
             {

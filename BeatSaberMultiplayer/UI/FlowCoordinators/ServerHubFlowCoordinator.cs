@@ -60,11 +60,17 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 _roomListViewController.createRoomButtonPressed += CreateRoomPressed;
                 _roomListViewController.selectedRoom += RoomSelected;
+                _roomListViewController.refreshPressed += RefreshPresed;
             }
 
             SetViewControllerToNavigationConctroller(_serverHubNavigationController, _roomListViewController);
             ProvideInitialViewControllers(_serverHubNavigationController, null, null);
 
+            StartCoroutine(UpdateRoomsListCoroutine());
+        }
+
+        private void RefreshPresed()
+        {
             StartCoroutine(UpdateRoomsListCoroutine());
         }
 
@@ -104,7 +110,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         
         public void ReturnToRoom()
         {
-
             PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
             PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
             PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
@@ -160,6 +165,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             _roomListViewController.SetRooms(null);
             _serverHubNavigationController.SetLoadingState(true);
+            _roomListViewController.SetRefreshButtonState(false);
             _serverHubClients.ForEach(x => x.GetRooms());
 
             Misc.Logger.Info("Requested rooms lists from ServerHubs...");
@@ -173,6 +179,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 Misc.Logger.Info($"Received rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
                 _roomListViewController.SetRooms(_roomsList);
                 _serverHubNavigationController.SetLoadingState(false);
+                _roomListViewController.SetRefreshButtonState(true);
             });
         }
 
@@ -195,6 +202,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public bool serverHubCompatible;
         public int availableRoomsCount;
         public int playersCount;
+
+        public float ping;
 
         public List<RoomInfo> availableRooms = new List<RoomInfo>();
 
@@ -236,6 +245,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 NetIncomingMessage msg;
                 while ((msg = NetworkClient.ReadMessage()) != null)
                 {
+                    if (NetworkClient.Connections.FirstOrDefault() != null) {
+                        ping = NetworkClient.Connections.First().AverageRoundtripTime;
+                    }
                     switch (msg.MessageType)
                     {
                         case NetIncomingMessageType.StatusChanged:

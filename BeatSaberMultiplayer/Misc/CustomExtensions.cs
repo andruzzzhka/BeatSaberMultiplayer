@@ -54,6 +54,13 @@ namespace BeatSaberMultiplayer.Misc
             return textMesh;
         }
 
+        public static bool IsRotNaN(this PlayerInfo _info)
+        {
+            return  float.IsNaN(_info.headRot.x)        || float.IsNaN(_info.headRot.y)         || float.IsNaN(_info.headRot.z)         || float.IsNaN(_info.headRot.w) ||
+                    float.IsNaN(_info.leftHandRot.x)    || float.IsNaN(_info.leftHandRot.y)     || float.IsNaN(_info.leftHandRot.z)     || float.IsNaN(_info.leftHandRot.w) ||
+                    float.IsNaN(_info.rightHandRot.x)   || float.IsNaN(_info.rightHandRot.y)    || float.IsNaN(_info.rightHandRot.z)    || float.IsNaN(_info.rightHandRot.w);
+        }
+
         public static T CreateInstance<T>(params object[] args)
         {
             var type = typeof(T);

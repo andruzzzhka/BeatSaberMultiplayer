@@ -1,4 +1,5 @@
 using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.OverriddenClasses;
 using BS_Utils.Gameplay;
 using System;
@@ -170,7 +171,6 @@ namespace BeatSaberMultiplayer
                 _info.rightHandRot = Quaternion.Lerp(syncStartInfo.rightHandRot, syncEndInfo.rightHandRot, lerpProgress);
                 
                 _info.playerProgress = Mathf.Lerp(syncStartInfo.playerProgress, syncEndInfo.playerProgress, lerpProgress);
-
             }
         }
 
@@ -203,10 +203,31 @@ namespace BeatSaberMultiplayer
 
             syncTime = 0;
             syncDelay = Time.time - lastSynchronizationTime;
-            lastSynchronizationTime = Time.time;
 
+            if(syncDelay > 0.5f)
+            {
+                syncDelay = 0.5f;
+            }
+
+            lastSynchronizationTime = Time.time;
+            
             syncStartInfo = _info;
+            if (syncStartInfo.IsRotNaN())
+            {
+                syncStartInfo.headRot = Quaternion.identity;
+                syncStartInfo.leftHandRot = Quaternion.identity;
+                syncStartInfo.rightHandRot = Quaternion.identity;
+                Misc.Logger.Warning("Start rotation is NaN!");
+            }
+
             syncEndInfo = newPlayerInfo;
+            if (syncEndInfo.IsRotNaN())
+            {
+                syncEndInfo.headRot = Quaternion.identity;
+                syncEndInfo.leftHandRot = Quaternion.identity;
+                syncEndInfo.rightHandRot = Quaternion.identity;
+                Misc.Logger.Warning("Target rotation is NaN!");
+            }
 
             _info.playerProgress = syncEndInfo.playerProgress;
         }

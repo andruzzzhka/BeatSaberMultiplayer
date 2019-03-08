@@ -59,6 +59,9 @@ namespace BeatSaberMultiplayer
         //https://www.flaticon.com/free-icon/speaker-filled-audio-tool_59284
         public static Sprite speakerIcon;
 
+        //https://www.materialui.co/icon/loop
+        public static Sprite refreshIcon;
+
         public static void ConvertSprites()
         {
             onlineIcon =            CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.OnlineIcon.png");
@@ -72,6 +75,7 @@ namespace BeatSaberMultiplayer
             thumbUp =               CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.ThumbUp.png");
             thumbDown =             CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.ThumbDown.png");
             speakerIcon =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.SpeakerIcon.png");
+            refreshIcon =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RefreshIcon.png");
         }
     }
 }

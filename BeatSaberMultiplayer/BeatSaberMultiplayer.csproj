@@ -173,6 +173,7 @@
     <Compile Include="Misc\Serialization.cs" />
     <Compile Include="Misc\SongDownloader.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
+    <Compile Include="Misc\SteamHelper.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
     <Compile Include="OverriddenClasses\OnlineAudioTimeController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapCallbackController.cs" />
@@ -244,6 +245,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\SpeakerIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\RefreshIcon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

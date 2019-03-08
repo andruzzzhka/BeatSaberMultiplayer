@@ -19,10 +19,12 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
     {
         public event Action createRoomButtonPressed;
         public event Action<ServerHubRoom> selectedRoom;
+        public event Action refreshPressed;
 
         private Button _pageUpButton;
         private Button _pageDownButton;
         private Button _createRoom;
+        private Button _refreshButton;
 
         TableView _serverTableView;
         LevelListTableCell _serverTableCellInstance;
@@ -58,6 +60,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                     _serverTableView.PageScrollDown();
 
                 });
+
+                _refreshButton = this.CreateUIButton("PracticeButton", new Vector2(-25f, 36.25f), new Vector2(6.5f, 6.5f), () => { refreshPressed?.Invoke(); }, "", Sprites.refreshIcon);
+                var _refreshIconLayout = _refreshButton.GetComponentsInChildren<HorizontalLayoutGroup>().First(x => x.name == "Content");
+                _refreshIconLayout.padding = new RectOffset(0, 0, 1, 1);
 
                 _createRoom = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
                 _createRoom.SetButtonText("Create room");
@@ -137,6 +143,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             yield return null;
 
             _serverTableView.ScrollToRow(0, false);
+        }
+
+        public void SetRefreshButtonState(bool enabled)
+        {
+            _refreshButton.interactable = enabled;
         }
 
         private void ServerTableView_DidSelectRow(TableView sender, int row)

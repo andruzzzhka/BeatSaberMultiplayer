@@ -15,6 +15,7 @@ using System.Globalization;
 using UnityEngine.Networking;
 using SimpleJSON;
 using System.Collections;
+using Steamworks;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 {
@@ -156,6 +157,18 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
         public IEnumerator VoteForSong(string key, string levelId, bool upvote)
         {
+            if (BeatSaverDownloaderHelper.apiAccessToken != BeatSaverDownloaderHelper.apiTokenPlaceholder)
+            {
+                yield return VoteWithAccessToken(key, levelId, upvote);
+            }
+            else if ((VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR || Environment.CommandLine.ToLower().Contains("-vrmode oculus") || Environment.CommandLine.ToLower().Contains("fpfc")))
+            {
+                yield return VoteWithSteamID(key, levelId, upvote);
+            }
+        }
+
+        private IEnumerator VoteWithAccessToken(string key, string levelId, bool upvote)
+        {
             Misc.Logger.Info($"Voting for song... key: {key}, levelId: {levelId}, voteType: {(upvote ? "Upvote" : "Downvote")}");
 
             _upvoteButton.interactable = false;
@@ -236,7 +249,176 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
             }
         }
 
+        private IEnumerator VoteWithSteamID(string key, string levelId, bool upvote)
+        {
+            if (!SteamManager.Initialized)
+            {
+                Misc.Logger.Error($"SteamManager is not initialized!");
+            }
 
+            _upvoteButton.interactable = false;
+            _downvoteButton.interactable = false;
+
+            Misc.Logger.Info($"Getting a ticket...");
+
+            var steamId = SteamUser.GetSteamID();
+            string authTicketHexString = "";
+
+            byte[] authTicket = new byte[1024];
+            var authTicketResult = SteamUser.GetAuthSessionTicket(authTicket, 1024, out var length);
+            if (authTicketResult != HAuthTicket.Invalid)
+            {
+                var beginAuthSessionResult = SteamUser.BeginAuthSession(authTicket, (int)length, steamId);
+                switch (beginAuthSessionResult)
+                {
+                    case EBeginAuthSessionResult.k_EBeginAuthSessionResultOK:
+                        var result = SteamUser.UserHasLicenseForApp(steamId, new AppId_t(620980));
+
+                        SteamUser.EndAuthSession(steamId);
+
+                        switch (result)
+                        {
+                            case EUserHasLicenseForAppResult.k_EUserHasLicenseResultDoesNotHaveLicense:
+                                _upvoteButton.interactable = false;
+                                _downvoteButton.interactable = false;
+                                _ratingText.text = "User does not\nhave license";
+                                yield break;
+                            case EUserHasLicenseForAppResult.k_EUserHasLicenseResultHasLicense:
+                                if (SteamHelper.m_GetAuthSessionTicketResponse == null)
+                                    SteamHelper.m_GetAuthSessionTicketResponse = Callback<GetAuthSessionTicketResponse_t>.Create(OnAuthTicketResponse);
+
+                                SteamHelper.lastTicket = SteamUser.GetAuthSessionTicket(authTicket, 1024, out length);
+                                if (SteamHelper.lastTicket != HAuthTicket.Invalid)
+                                {
+                                    Array.Resize(ref authTicket, (int)length);
+                                    authTicketHexString = BitConverter.ToString(authTicket).Replace("-", "");
+                                }
+
+                                break;
+                            case EUserHasLicenseForAppResult.k_EUserHasLicenseResultNoAuth:
+                                _upvoteButton.interactable = false;
+                                _downvoteButton.interactable = false;
+                                _ratingText.text = "User is not\nauthenticated";
+                                yield break;
+                        }
+                        break;
+                    default:
+                        _upvoteButton.interactable = false;
+                        _downvoteButton.interactable = false;
+                        _ratingText.text = "Auth\nfailed";
+                        yield break;
+                }
+            }
+
+            Misc.Logger.Info("Waiting for Steam callback...");
+
+            float startTime = Time.time;
+            yield return new WaitWhile(() => { return SteamHelper.lastTicketResult != EResult.k_EResultOK && (Time.time - startTime) < 20f; });
+
+            if (SteamHelper.lastTicketResult != EResult.k_EResultOK)
+            {
+                Misc.Logger.Error($"Auth ticket callback timeout");
+                _upvoteButton.interactable = true;
+                _downvoteButton.interactable = true;
+                _ratingText.text = "Callback\ntimeout";
+                yield break;
+            }
+
+            SteamHelper.lastTicketResult = EResult.k_EResultRevoked;
+
+            Misc.Logger.Info($"Voting...");
+
+            Dictionary<string, string> formData = new Dictionary<string, string>();
+            formData.Add("id", steamId.m_SteamID.ToString());
+            formData.Add("ticket", authTicketHexString);
+
+            UnityWebRequest voteWWW = UnityWebRequest.Post($"{Config.Instance.BeatSaverURL}/api/songs/voteById/{key}/{(upvote ? 1 : 0)}", formData);
+            voteWWW.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            voteWWW.timeout = 30;
+            yield return voteWWW.SendWebRequest();
+
+            if (voteWWW.isNetworkError)
+            {
+                Misc.Logger.Error(voteWWW.error);
+                _ratingText.text = voteWWW.error;
+            }
+            else
+            {
+                if (!_firstVote)
+                {
+                    yield return new WaitForSecondsRealtime(2f);
+                }
+
+                _firstVote = false;
+
+                switch (voteWWW.responseCode)
+                {
+                    case 200:
+                        {
+                            JSONNode node = JSON.Parse(voteWWW.downloadHandler.text);
+                            _ratingText.text = (int.Parse(node["upVotes"]) - int.Parse(node["downVotes"])).ToString();
+
+                            if (upvote)
+                            {
+                                _upvoteButton.interactable = false;
+                                _downvoteButton.interactable = true;
+                            }
+                            else
+                            {
+                                _downvoteButton.interactable = false;
+                                _upvoteButton.interactable = true;
+                            }
+
+                            if (!BeatSaverDownloaderHelper.votedSongs.ContainsKey(levelId.Substring(0, 32)))
+                            {
+                                BeatSaverDownloaderHelper.votedSongs.Add(levelId.Substring(0, 32), new SongVote(key, upvote ? VoteType.Upvote : VoteType.Downvote));
+                                BeatSaverDownloaderHelper.SaveDownloaderConfig();
+                            }
+                            else if (BeatSaverDownloaderHelper.votedSongs[levelId.Substring(0, 32)].voteType != (upvote ? VoteType.Upvote : VoteType.Downvote))
+                            {
+                                BeatSaverDownloaderHelper.votedSongs[levelId.Substring(0, 32)] = new SongVote(key, upvote ? VoteType.Upvote : VoteType.Downvote);
+                                BeatSaverDownloaderHelper.SaveDownloaderConfig();
+                            }
+                        }; break;
+                    case 500:
+                        {
+                            _upvoteButton.interactable = false;
+                            _downvoteButton.interactable = false;
+                            _ratingText.text = "Steam API\nerror";
+                            Misc.Logger.Error("Error: " + voteWWW.downloadHandler.text);
+                        }; break;
+                    case 401:
+                        {
+                            _upvoteButton.interactable = false;
+                            _downvoteButton.interactable = false;
+                            _ratingText.text = "Invalid\nauth ticket";
+                            Misc.Logger.Error("Error: " + voteWWW.downloadHandler.text);
+                        }; break;
+                    case 403:
+                        {
+                            _upvoteButton.interactable = false;
+                            _downvoteButton.interactable = false;
+                            _ratingText.text = "Steam ID\nmismatch";
+                            Misc.Logger.Error("Error: " + voteWWW.downloadHandler.text);
+                        }; break;
+                    case 400:
+                        {
+                            _upvoteButton.interactable = false;
+                            _downvoteButton.interactable = false;
+                            _ratingText.text = "Bad\nrequest";
+                            Misc.Logger.Error("Error: " + voteWWW.downloadHandler.text);
+                        }; break;
+                    default:
+                        {
+                            _upvoteButton.interactable = true;
+                            _downvoteButton.interactable = true;
+                            _ratingText.text = "Error\n" + voteWWW.responseCode;
+                            Misc.Logger.Error("Error: " + voteWWW.downloadHandler.text);
+                        }; break;
+                }
+            }
+        }
+        
         public void SetTimer(float currentTime, float totalTime)
         {
             if (_timerText != null)
@@ -251,6 +433,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
             int minutes = (int)(time / 60f);
             int seconds = (int)(time - minutes * 60);
             return minutes.ToString() + ":" + string.Format("{0:00}", seconds);
+        }
+
+
+
+        private void OnAuthTicketResponse(GetAuthSessionTicketResponse_t response)
+        {
+            if (SteamHelper.lastTicket == response.m_hAuthTicket)
+            {
+                SteamHelper.lastTicketResult = response.m_eResult;
+            }
         }
     }
 }
