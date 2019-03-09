@@ -80,13 +80,14 @@ namespace ServerHub.Rooms
         private DateTime _songStartTime;
         private DateTime _resultsStartTime;
 
-        public const float resultsShowTime = 15f;
+        public float resultsShowTime = 15f;
 
         public BaseRoom(uint id, RoomSettings settings, PlayerInfo host)
         {
             roomId = id;
             roomSettings = settings;
             roomHost = host;
+            resultsShowTime = Settings.Instance.Server.ResultsShowTime;
         }
 
         public virtual void StartRoom()

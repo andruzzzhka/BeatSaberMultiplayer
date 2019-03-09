@@ -30,6 +30,7 @@ namespace ServerHub.Misc {
             private bool _showTickEventExceptions;
             private bool _sendCrashReports;
             private bool _enableInteractiveShell;
+            private float _resultsShowTime;
 
             internal Action MarkDirty { get; set; }
 
@@ -274,6 +275,20 @@ namespace ServerHub.Misc {
                 }
             }
 
+            /// <summary>
+            /// Remember to Save after changing the value
+            /// </summary>
+            [JsonProperty]
+            public float ResultsShowTime
+            {
+                get => _resultsShowTime;
+                set
+                {
+                    _resultsShowTime = value;
+                    MarkDirty?.Invoke();
+                }
+            }
+
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
                 _port = 3700;
@@ -290,6 +305,7 @@ namespace ServerHub.Misc {
                 _showTickEventExceptions = false;
                 _sendCrashReports = true;
                 _enableInteractiveShell = true;
+                _resultsShowTime = 15f;
             }
         }
 
