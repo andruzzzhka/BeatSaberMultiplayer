@@ -347,13 +347,11 @@ namespace BeatSaberMultiplayer
                         {
                             Console.WriteLine($"PlayerControllers exception: {e}");
                         }
-
-                        localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
-
+                        
                         if (_currentScene == "GameCore" && loaded)
                         {
                             playerInfos = playerInfos.OrderByDescending(x => x.playerScore).ToList();
-
+                            localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
                             if (_scoreDisplays.Count < 5)
                             {
                                 _scoreScreen = new GameObject("ScoreScreen");
