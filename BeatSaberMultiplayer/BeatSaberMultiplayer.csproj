@@ -67,6 +67,9 @@
     <Reference Include="SongLoaderPlugin">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\SongLoaderPlugin.dll</HintPath>
     </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -148,6 +151,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AvatarController.cs" />
+    <Compile Include="BailOutController.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Data\BeatSaverAPIResult.cs" />
     <Compile Include="Data\ChannelInfo.cs" />
@@ -178,6 +182,7 @@
     <Compile Include="OverriddenClasses\OnlineAudioTimeController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapCallbackController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapSpawnController.cs" />
+    <Compile Include="OverriddenClasses\OnlineEnergyCounter.cs" />
     <Compile Include="OverriddenClasses\OnlineVRController.cs" />
     <Compile Include="OnlinePlayerController.cs" />
     <Compile Include="PlayerInfoDisplay.cs" />

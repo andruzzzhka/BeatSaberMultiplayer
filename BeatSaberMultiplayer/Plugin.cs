@@ -5,6 +5,9 @@ using System;
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Linq;
+using Harmony;
+using System.Reflection;
 
 namespace BeatSaberMultiplayer
 {
@@ -17,6 +20,18 @@ namespace BeatSaberMultiplayer
 
         public static Plugin instance;
 
+        private GameScenesManager _scenesManager;
+        private GameScenesManager _gameScenesManager
+        {
+            get
+            {
+                if (_scenesManager == null)
+                {
+                    _scenesManager = Resources.FindObjectsOfTypeAll<GameScenesManager>().FirstOrDefault();
+                }
+                return _scenesManager;
+            }
+        }
         public void OnApplicationQuit()
         {
         }
@@ -33,6 +48,17 @@ namespace BeatSaberMultiplayer
             
             instance = this;
 
+            try
+            {
+                var harmony = HarmonyInstance.Create("com.github.andruzzzhka.BeatSaberMultiplayer");
+                harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+            }
+            catch (Exception ex)
+            {
+                Misc.Logger.Exception("This plugin requires Harmony. Make sure you " +
+                    "installed the plugin properly, as the Harmony DLL should have been installed with it.\n" + ex);
+            }
 #if DEBUG
             DebugForm.OnLoad();
 #endif
@@ -61,6 +87,11 @@ namespace BeatSaberMultiplayer
 #if DEBUG
            Misc.Logger.Info($"Active scene changed from \"{from.name}\" to \"{to.name}\"");
 #endif
+            if (to.name == "GameCore")
+            {
+                _gameScenesManager.transitionDidFinishEvent += OnSceneTransitionDidFinish;
+                BailOutController.numFails = 0;
+            }
             try
             {
                 if (from.name == "EmptyTransition" && to.name == "Menu")
@@ -80,6 +111,13 @@ namespace BeatSaberMultiplayer
             {
                 Misc.Logger.Exception("Exception on active scene change: "+e);
             }
+        }
+
+        private void OnSceneTransitionDidFinish()
+        {
+            if (BailOutController.BailOutEnabled)
+                new GameObject("BailOutController").AddComponent<BailOutController>();
+
         }
 
         public void OnFixedUpdate()

@@ -29,7 +29,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private OnOffViewController _usePasswordToggle;
         private MultiplayerListViewController _songSelectionList;
         private MultiplayerListViewController _maxPlayersList;
-        private OnOffViewController _noFailToggle;
+        private MultiplayerListViewController _noFailList;
         private TextMeshProUGUI _nameText;
         private TextMeshProUGUI _passwordText;
 
@@ -48,7 +48,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private SongSelectionType _songSelectionType;
         private int _maxPlayers = 0;
         private bool _usePassword = false;
-        private bool _noFailMode = true;
+        private NoFailType _noFailMode = 0;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -83,9 +83,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _maxPlayersList.Value = _maxPlayers;
                 _maxPlayersList.maxValue = 16;
 
-                _noFailToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "No Fail Mode", new Vector2(0f, -20f));
-                _noFailToggle.ValueChanged += NoFailToggle_ValueChanged;
-                _noFailToggle.Value = _noFailMode;
+                _noFailList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "No Fail Mode", new Vector2(0f, -20f));
+                _noFailList.textForValues = new string[] { "Off", "No-Fail", "Bailout" };
+                _noFailList.ValueChanged += NoFail_ValueChanged;
+                _noFailList.Value = (int)_noFailMode;
+                _noFailList.maxValue = 2;
 
                 _roomName = $"{GetUserInfo.GetUserName()}'s room".ToUpper();
                 _nameText = BeatSaberUI.CreateText(rectTransform, _roomName, new Vector2(-22.5f, 25f));
@@ -165,7 +167,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             _roomPassword = settings.Password;
 
             _noFailMode = settings.NoFail;
-            _noFailToggle.Value = _noFailMode;
+            _noFailList.Value = (int)_noFailMode;
 
             _maxPlayers = settings.MaxPlayers;
             _maxPlayersList.Value = _maxPlayers;
@@ -215,9 +217,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         }
 
-        private void NoFailToggle_ValueChanged(bool value)
+        private void NoFail_ValueChanged(int obj)
         {
-            _noFailMode = value;
+            _noFailMode = (NoFailType) obj;
         }
 
         private void UsePasswordToggle_ValueChanged(bool value)

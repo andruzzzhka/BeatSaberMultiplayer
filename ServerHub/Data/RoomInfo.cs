@@ -10,6 +10,7 @@ namespace ServerHub.Data
 {
     public enum RoomState: byte {SelectingSong, Preparing, InGame, Results }
     public enum SongSelectionType : byte { Manual,  Random }
+    public enum NoFailType : byte { Off, NoFail, Bailout }
 
     public class RoomInfo
     {
@@ -27,7 +28,8 @@ namespace ServerHub.Data
         public int players;
         public int maxPlayers;
 
-        public bool noFail;
+        [JsonConverter(typeof(StringEnumConverter))]
+        public NoFailType noFail;
 
         public byte selectedDifficulty;
         public SongInfo selectedSong;
@@ -43,7 +45,7 @@ namespace ServerHub.Data
             roomId = msg.ReadUInt32();
             name = msg.ReadString();
             usePassword = msg.ReadBoolean();
-            noFail = msg.ReadBoolean();
+            noFail = (NoFailType)msg.ReadByte();
             msg.SkipPadBits();
             roomState = (RoomState)msg.ReadByte();
             songSelectionType = (SongSelectionType)msg.ReadByte();
@@ -76,7 +78,7 @@ namespace ServerHub.Data
             msg.Write(roomId);
             msg.Write(name);
             msg.Write(usePassword);
-            msg.Write(noFail);
+            msg.Write((byte)noFail);
             msg.WritePadBits();
             msg.Write((byte)roomState);
             msg.Write((byte)songSelectionType);

@@ -16,7 +16,7 @@ namespace BeatSaberMultiplayer.Data
 
         public SongSelectionType SelectionType;
         public int MaxPlayers;
-        public bool NoFail;
+        public NoFailType NoFail;
         
         public RoomSettings()
         {
@@ -30,7 +30,7 @@ namespace BeatSaberMultiplayer.Data
             Password = node["Password"];
             SelectionType = (SongSelectionType)node["SelectionType"].AsInt;
             MaxPlayers = node["MaxPlayers"];
-            NoFail = node["NoFail"];
+            NoFail = (NoFailType)node["NoFail"].AsInt;
         }
         
         public RoomSettings(NetIncomingMessage msg)
@@ -39,7 +39,7 @@ namespace BeatSaberMultiplayer.Data
             Name = msg.ReadString();
 
             UsePassword = msg.ReadBoolean();
-            NoFail = msg.ReadBoolean();
+            NoFail = (NoFailType)msg.ReadByte();
 
             msg.SkipPadBits();
 
@@ -56,7 +56,7 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(Name);
 
             msg.Write(UsePassword);
-            msg.Write(NoFail);
+            msg.Write((byte)NoFail);
 
             msg.WritePadBits();
 

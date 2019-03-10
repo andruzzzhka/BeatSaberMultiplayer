@@ -310,7 +310,7 @@ namespace ServerHub.Hub
                     Name = string.Format(Settings.Instance.TournamentMode.RoomNameTemplate, i + 1),
                     UsePassword = Settings.Instance.TournamentMode.Password != "",
                     Password = Settings.Instance.TournamentMode.Password,
-                    NoFail = true,
+                    NoFail = NoFailType.Off,
                     MaxPlayers = 0,
                     SelectionType = SongSelectionType.Manual
                 };

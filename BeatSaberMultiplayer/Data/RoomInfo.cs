@@ -8,6 +8,7 @@ namespace BeatSaberMultiplayer.Data
 {
     public enum RoomState: byte {SelectingSong, Preparing, InGame, Results }
     public enum SongSelectionType : byte { Manual,  Random }
+    public enum NoFailType : byte { Off, NoFail, Bailout }
 
     public class RoomInfo
     {
@@ -23,7 +24,16 @@ namespace BeatSaberMultiplayer.Data
         public int players;
         public int maxPlayers;
 
-        public bool noFail;
+        private NoFailType _noFail;
+        public NoFailType noFail
+        {
+            get { return _noFail; }
+            set
+            {
+                _noFail = value;
+                BailOutController.BailOutEnabled = (noFail == NoFailType.Bailout) ? true : false; // If noFail is set to Bailout, enable in BailOutController
+            }
+        }
 
         public byte selectedDifficulty;
         public SongInfo selectedSong;
@@ -39,7 +49,7 @@ namespace BeatSaberMultiplayer.Data
             roomId = msg.ReadUInt32();
             name = msg.ReadString();
             usePassword = msg.ReadBoolean();
-            noFail = msg.ReadBoolean();
+            noFail = (NoFailType) msg.ReadByte();
             msg.SkipPadBits();
             roomState = (RoomState)msg.ReadByte();
             songSelectionType = (SongSelectionType)msg.ReadByte();
@@ -71,7 +81,7 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(roomId);
             msg.Write(name);
             msg.Write(usePassword);
-            msg.Write(noFail);
+            msg.Write((byte)noFail);
             msg.WritePadBits();
             msg.Write((byte)roomState);
             msg.Write((byte)songSelectionType);

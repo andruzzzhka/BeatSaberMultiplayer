@@ -15,7 +15,7 @@ namespace ServerHub.Data
 
         public SongSelectionType SelectionType;
         public int MaxPlayers;
-        public bool NoFail;
+        public NoFailType NoFail;
 
         public RoomSettings()
         {
@@ -28,7 +28,7 @@ namespace ServerHub.Data
             Name = msg.ReadString();
 
             UsePassword = msg.ReadBoolean();
-            NoFail = msg.ReadBoolean();
+            NoFail = (NoFailType) msg.ReadByte();
 
             msg.SkipPadBits();
 
@@ -44,7 +44,7 @@ namespace ServerHub.Data
             msg.Write(Name);
 
             msg.Write(UsePassword);
-            msg.Write(NoFail);
+            msg.Write((byte)NoFail);
 
             msg.WritePadBits();
 
