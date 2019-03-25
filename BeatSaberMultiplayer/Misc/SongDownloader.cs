@@ -85,13 +85,13 @@ namespace BeatSaberMultiplayer.Misc
                 yield break;
             }
 
-            while ((!asyncRequest.isDone || songInfo.downloadingProgress != 1f) && songInfo.songQueueState != SongQueueState.Error)
+            while ((!asyncRequest.isDone || songInfo.downloadingProgress < 1f) && songInfo.songQueueState != SongQueueState.Error)
             {
                 yield return null;
 
                 time += Time.deltaTime;
 
-                if ((time >= 5f && asyncRequest.progress == 0f) || songInfo.songQueueState == SongQueueState.Error)
+                if (time >= 5f && asyncRequest.progress <= float.Epsilon)
                 {
                     www.Abort();
                     timeout = true;
@@ -102,6 +102,8 @@ namespace BeatSaberMultiplayer.Misc
                 progressChanged?.Invoke(asyncRequest.progress);
             }
 
+            if(songInfo.songQueueState == SongQueueState.Error && (!asyncRequest.isDone || songInfo.downloadingProgress < 1f))
+                www.Abort();
 
             if (www.isNetworkError || www.isHttpError || timeout || songInfo.songQueueState == SongQueueState.Error)
             {
@@ -134,17 +136,34 @@ namespace BeatSaberMultiplayer.Misc
                 }
                 catch (Exception e)
                 {
-                    Logger.Exception(e);
+                    Logger.Exception("Unable to download zip! Exception: " +e);
                     songInfo.songQueueState = SongQueueState.Error;
                     yield break;
                 }
-
+                
                 yield return new WaitWhile(() => _extractingZip); //because extracting several songs at once sometimes hangs the game
 
                 Task extract = ExtractZipAsync(songInfo, zipStream, customSongsPath);
                 yield return new WaitWhile(() => !extract.IsCompleted);
+                zipStream.Close();
+
                 songDownloaded?.Invoke(songInfo);
                 callback?.Invoke();
+
+                try
+                {
+                    string dirName = customSongsPath.Substring(customSongsPath.LastIndexOf("CustomSongs") + 12);
+#if DEBUG
+                    Logger.Info("Original path: " + customSongsPath);
+                    Logger.Info("Folder name: " + dirName);
+#endif
+
+                    SongLoader.Instance.RetrieveNewSong(dirName);
+                }
+                catch (Exception e)
+                {
+                    Logger.Exception("Unable to load song! Exception: " + e);
+                }
             }
         }
 
@@ -286,9 +305,9 @@ namespace BeatSaberMultiplayer.Misc
             return string.Join("∎", values) + "∎";
         }
 
-        public static LevelSO GetLevel(string levelId)
+        public static BeatmapLevelSO GetLevel(string levelId)
         {
-            return SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID == levelId);
+            return SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID == levelId) as BeatmapLevelSO;
         }
 
         public static bool CreateMD5FromFile(string path, out string hash)

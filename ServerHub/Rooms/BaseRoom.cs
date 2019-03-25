@@ -71,7 +71,7 @@ namespace ServerHub.Rooms
         public PlayerInfo roomHost;
 
         public SongInfo selectedSong;
-        public byte selectedDifficulty;
+        public StartLevelInfo startLevelInfo;
 
         public bool requestedRandomSong;
 
@@ -79,8 +79,6 @@ namespace ServerHub.Rooms
 
         private DateTime _songStartTime;
         private DateTime _resultsStartTime;
-
-        public const float resultsShowTime = 15f;
 
         public BaseRoom(uint id, RoomSettings settings, PlayerInfo host)
         {
@@ -104,7 +102,7 @@ namespace ServerHub.Rooms
 
         public virtual RoomInfo GetRoomInfo()
         {
-            return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, noFail = roomSettings.NoFail, roomHost = roomHost, roomState = roomState, songSelectionType = roomSettings.SelectionType, selectedSong = selectedSong, selectedDifficulty = selectedDifficulty };
+            return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, roomHost = roomHost, roomState = roomState, songSelectionType = roomSettings.SelectionType, selectedSong = selectedSong, startLevelInfo = startLevelInfo, perPlayerDifficulty = roomSettings.PerPlayerDifficulty };
         }
 
         public virtual void PlayerLeft(Client player)
@@ -151,7 +149,7 @@ namespace ServerHub.Rooms
                     break;
                 case RoomState.Results:
                     {
-                        if (DateTime.Now.Subtract(_resultsStartTime).TotalSeconds >= resultsShowTime)
+                        if (DateTime.Now.Subtract(_resultsStartTime).TotalSeconds >= roomSettings.ResultsShowTime)
                         {
                             roomState = RoomState.SelectingSong;
                             selectedSong = null;
@@ -217,7 +215,7 @@ namespace ServerHub.Rooms
                 case RoomState.Results:
                     {
                         outMsg.Write((float)DateTime.Now.Subtract(_resultsStartTime).TotalSeconds);
-                        outMsg.Write(resultsShowTime);
+                        outMsg.Write(roomSettings.ResultsShowTime);
                     }
                     break;
             }
@@ -269,15 +267,15 @@ namespace ServerHub.Rooms
             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableSequenced, 2);
         }
 
-        public virtual void BroadcastPacket(NetOutgoingMessage msg, NetDeliveryMethod deliveryMethod, int seqChannel)
+        public virtual void BroadcastPacket(NetOutgoingMessage msg, NetDeliveryMethod deliveryMethod, int seqChannel, List<Client> excludeClients = null)
         {
-            if (roomClients.Count == 0)
+            if (roomClients.Count == 0 || roomClients.Where(x => excludeClients == null || !excludeClients.Contains(x)).Count() == 0)
                 return;
 
             try
             {
-                HubListener.ListenerServer.SendMessage(msg, roomClients.Select(x => x.playerConnection).ToList(), deliveryMethod, seqChannel);
-                Program.networkBytesOutNow += msg.LengthBytes * roomClients.Count;
+                HubListener.ListenerServer.SendMessage(msg, roomClients.Where(x => excludeClients == null || !excludeClients.Contains(x)).Select(x => x.playerConnection).ToList(), deliveryMethod, seqChannel);
+                Program.networkBytesOutNow += msg.LengthBytes * roomClients.Where(x => excludeClients == null || !excludeClients.Contains(x)).Count();
             }
             catch (Exception e)
             {
@@ -293,21 +291,7 @@ namespace ServerHub.Rooms
             outMsg.Write(header);
             outMsg.Write(data);
 
-            for (int i = 0; i < roomClients.Count; i++)
-            {
-                try
-                {
-                    if ((excludeClients != null && !excludeClients.Contains(roomClients[i])) || excludeClients == null)
-                    {
-                        roomClients[i].playerConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
-                        Program.networkBytesOutNow += outMsg.LengthBytes;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logger.Instance.Warning($"Unable to send packet to {roomClients[i].playerInfo.playerName}! Exception: {e}");
-                }
-            }
+            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0, excludeClients);
         }
 
         public virtual void OnOpenWebSocket()
@@ -407,23 +391,43 @@ namespace ServerHub.Rooms
             }
             else
             {
-                Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to select song, but he is not the host");
+                Logger.Instance.Warning($"{sender.playerName}({sender.playerId}) tried to select song, but he is not the host");
             }
         }
 
-        public virtual void StartLevel(PlayerInfo sender, byte difficulty, SongInfo song)
+        public virtual void SetLevelOptions(PlayerInfo sender, StartLevelInfo info)
+        {
+            if (sender.Equals(roomHost))
+            {
+                startLevelInfo = info;
+
+                NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
+                
+                outMsg.Write((byte)CommandType.SetLevelOptions);
+                startLevelInfo.AddToMessage(outMsg);
+
+                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0, new List<Client>() { roomClients.First(x => x.playerInfo.Equals(sender)) });
+                BroadcastWebSocket(CommandType.SetLevelOptions, startLevelInfo);
+            }
+            else
+            {
+                Logger.Instance.Warning($"{sender.playerName}({sender.playerId}) tried to change level options, but he is not the host");
+            }
+        }
+
+        public virtual void StartLevel(PlayerInfo sender, StartLevelInfo options, SongInfo song)
         {
             if (sender.Equals(roomHost))
             {
                 selectedSong = song;
-                selectedDifficulty = difficulty;
+                startLevelInfo = options;
 
-                SongWithDifficulty songWithDifficulty = new SongWithDifficulty(song, difficulty);
+                SongWithOptions songWithDifficulty = new SongWithOptions(selectedSong, startLevelInfo);
                 
                 NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
 
                 outMsg.Write((byte)CommandType.StartLevel);
-                outMsg.Write(selectedDifficulty);
+                startLevelInfo.AddToMessage(outMsg);
                 selectedSong.AddToMessage(outMsg);
                 
                 BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
@@ -435,7 +439,7 @@ namespace ServerHub.Rooms
             }
             else
             {
-                Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to start the level, but he is not the host");
+                Logger.Instance.Warning($"{sender.playerName}({sender.playerId}) tried to start the level, but he is not the host");
             }
         }
 
@@ -454,7 +458,7 @@ namespace ServerHub.Rooms
             }
             else
             {
-                Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to transfer host, but he is not the host");
+                Logger.Instance.Warning($"{sender.playerName}({sender.playerId}) tried to transfer host, but he is not the host");
             }
         }
 
@@ -507,7 +511,7 @@ namespace ServerHub.Rooms
             }
             else
             {
-                Logger.Instance.Warning($"{sender.playerName}:{sender.playerId} tried to destroy the room, but he is not the host");
+                Logger.Instance.Warning($"{sender.playerName}({sender.playerId}) tried to destroy the room, but he is not the host");
             }
         }
     }

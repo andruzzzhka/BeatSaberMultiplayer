@@ -24,17 +24,6 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         {
             if(owner != null)
                 _songTime = Mathf.Max(0f, owner.PlayerInfo.playerProgress - offset);
-            
-            if (Input.GetKeyDown(KeyCode.UpArrow))
-            {
-                Misc.Logger.Info("New offset: " + offset);
-                offset += 0.025f;
-            }
-            if (Input.GetKeyDown(KeyCode.DownArrow))
-            {
-                offset -= 0.025f;
-                Misc.Logger.Info("New offset: "+offset);
-            }
         }
 
         public override void Awake()

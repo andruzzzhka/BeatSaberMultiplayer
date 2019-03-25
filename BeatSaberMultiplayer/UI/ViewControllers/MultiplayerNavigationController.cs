@@ -27,13 +27,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                     _backButton.onClick.AddListener(delegate () { didFinishEvent?.Invoke(); });
 
                     _loadingIndicator = BeatSaberUI.CreateLoadingSpinner(rectTransform);
+                    _loadingIndicator.SetActive(false);
                 }
             }
-        }
-
-        protected override void DidDeactivate(DeactivationType deactivationType)
-        {
-
         }
 
         public void SetLoadingState(bool loading)

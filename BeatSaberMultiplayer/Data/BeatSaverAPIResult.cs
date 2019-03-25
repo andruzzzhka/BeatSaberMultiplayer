@@ -183,7 +183,7 @@ namespace BeatSaberMultiplayer.Misc
             songName = _data.songName;
             songSubName = _data.songSubName;
             authorName = _data.songAuthorName;
-            difficultyLevels = ConvertDifficultyLevels(_data.difficultyBeatmaps);
+            difficultyLevels = ConvertDifficultyLevels(_data.difficultyBeatmapSets[0].difficultyBeatmaps);
             path = _data.customSongInfo.path;
             hash = _data.levelID.Substring(0, 32);
         }

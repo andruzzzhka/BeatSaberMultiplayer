@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ServerHub.Data
 {
@@ -12,6 +13,8 @@ namespace ServerHub.Data
         public string key;
 
         public string songName;
+        public string songSubName;
+        public string authorName;
         public string levelId;
         public float songDuration;
 
@@ -23,13 +26,28 @@ namespace ServerHub.Data
         public SongInfo(NetIncomingMessage msg)
         {
             songName = msg.ReadString();
+            songSubName = msg.ReadString();
+            authorName = msg.ReadString();
+            key = msg.ReadString();
             levelId = BitConverter.ToString(msg.ReadBytes(16)).Replace("-", "");
             songDuration = msg.ReadFloat();
+
+            if (string.IsNullOrEmpty(key))
+            {
+                Task.Run(async () =>
+                {
+                    var song = await BeatSaver.FetchByHash(levelId);
+                    key = song.Key;
+                });
+            }
         }
 
         public void AddToMessage(NetOutgoingMessage msg)
         {
             msg.Write(songName);
+            msg.Write(songSubName);
+            msg.Write(authorName);
+            msg.Write(key);
             msg.Write(HexConverter.ConvertHexToBytesX(levelId));
             msg.Write(songDuration);
         }

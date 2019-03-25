@@ -220,7 +220,7 @@ namespace ServerHub.Hub
             }
 
             Settings.Instance.Server.Tickrate = Misc.Math.Clamp(Settings.Instance.Server.Tickrate, 5, 150);
-            HighResolutionTimer.LoopTimer.Interval = 1000 / Settings.Instance.Server.Tickrate;
+            HighResolutionTimer.LoopTimer.Interval = 1000f / Settings.Instance.Server.Tickrate;
             HighResolutionTimer.LoopTimer.Elapsed += ProgramLoop;
             HighResolutionTimer.LoopTimer.Start();
             HighResolutionTimer.VoIPTimer.Start();
@@ -310,7 +310,7 @@ namespace ServerHub.Hub
                     Name = string.Format(Settings.Instance.TournamentMode.RoomNameTemplate, i + 1),
                     UsePassword = Settings.Instance.TournamentMode.Password != "",
                     Password = Settings.Instance.TournamentMode.Password,
-                    NoFail = true,
+                    PerPlayerDifficulty = false,
                     MaxPlayers = 0,
                     SelectionType = SongSelectionType.Manual
                 };
@@ -1114,7 +1114,7 @@ namespace ServerHub.Hub
                                                                             Settings.Instance.Save();
 
                                                                             if (RadioController.radioStarted)
-                                                                                RadioController.radioChannels[channelId].channelInfo.preferredDifficulty = Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty;
+                                                                                RadioController.radioChannels[channelId].channelInfo.currentLevelOptions.difficulty = Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty;
 
                                                                             return $"Channel preferred difficulty set to \"{Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty}\"!";
                                                                         }
@@ -1359,7 +1359,7 @@ namespace ServerHub.Hub
                     List<RCONChannelInfo> channelInfos = new List<RCONChannelInfo>();
                     foreach(RadioChannel channel in RadioController.radioChannels)
                     {
-                        channelInfos.Add(new RCONChannelInfo() { channelId = channel.channelId, name = channel.channelInfo.name, icon = channel.channelInfo.iconUrl, difficulty = channel.channelInfo.preferredDifficulty.ToString(), currentSong = channel.channelInfo.currentSong.songName, queueLength = channel.radioQueue.Count });
+                        channelInfos.Add(new RCONChannelInfo() { channelId = channel.channelId, name = channel.channelInfo.name, icon = channel.channelInfo.iconUrl, difficulty = channel.channelInfo.currentLevelOptions.difficulty.ToString(), currentSong = channel.channelInfo.currentSong.songName, queueLength = channel.radioQueue.Count });
                     }
 
                     return JsonConvert.SerializeObject(channelInfos);
@@ -1382,7 +1382,7 @@ namespace ServerHub.Hub
                         queuedSongs.AddRange(RadioController.radioChannels[channelId].radioQueue);
                         radioClients.AddRange(RadioController.radioChannels[channelId].radioClients.Select(x => new RCONPlayerInfo(x)));
 
-                        RCONChannelInfo channelInfo = new RCONChannelInfo() { channelId = RadioController.radioChannels[channelId].channelId, name = RadioController.radioChannels[channelId].channelInfo.name, icon = RadioController.radioChannels[channelId].channelInfo.iconUrl, difficulty = RadioController.radioChannels[channelId].channelInfo.preferredDifficulty.ToString(), currentSong = RadioController.radioChannels[channelId].channelInfo.currentSong.songName, queueLength = RadioController.radioChannels[channelId].radioQueue.Count };
+                        RCONChannelInfo channelInfo = new RCONChannelInfo() { channelId = RadioController.radioChannels[channelId].channelId, name = RadioController.radioChannels[channelId].channelInfo.name, icon = RadioController.radioChannels[channelId].channelInfo.iconUrl, difficulty = RadioController.radioChannels[channelId].channelInfo.currentLevelOptions.difficulty.ToString(), currentSong = RadioController.radioChannels[channelId].channelInfo.currentSong.songName, queueLength = RadioController.radioChannels[channelId].radioQueue.Count };
 
                         return JsonConvert.SerializeObject(new
                         {
@@ -1455,7 +1455,7 @@ namespace ServerHub.Hub
                 name = "testroom",
                 help = "",
                 function = (comArgs) => {
-                    uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "test", NoFail = true, MaxPlayers = 4, SelectionType = SongSelectionType.Manual}, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
+                    uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = true, Password = "test", PerPlayerDifficulty = false, MaxPlayers = 4, SelectionType = SongSelectionType.Manual}, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
                     return "Created room with ID " + id;
                 }
             });
@@ -1465,7 +1465,7 @@ namespace ServerHub.Hub
                 name = "testroomwopass",
                 help = "",
                 function = (comArgs) => {
-                    uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = false, Password = "test", NoFail = false, MaxPlayers = 4, SelectionType = SongSelectionType.Manual}, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
+                    uint id = RoomsController.CreateRoom(new RoomSettings() { Name = "Debug Server", UsePassword = false, Password = "test", PerPlayerDifficulty = false, MaxPlayers = 4, SelectionType = SongSelectionType.Manual}, new Data.PlayerInfo("andruzzzhka", 76561198047255564));
                     return "Created room with ID " + id;
                 }
             });

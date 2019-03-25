@@ -22,7 +22,7 @@ namespace BeatSaberMultiplayer
     {
         public static SpectatingController Instance;
 
-        private Scene _currentScene;
+        private string _currentScene;
 
         private Dictionary<ulong, List<PlayerInfo>> _playerInfos = new Dictionary<ulong, List<PlayerInfo>>();
 
@@ -53,33 +53,23 @@ namespace BeatSaberMultiplayer
                 Instance = this;
                 DontDestroyOnLoad(this);
 
-                Client.Instance.MessageReceived -= PacketReceived;
-                Client.Instance.MessageReceived += PacketReceived;
-                _currentScene = SceneManager.GetActiveScene();
+                Client.Instance.PlayerInfoUpdateReceived -= PacketReceived;
+                Client.Instance.PlayerInfoUpdateReceived += PacketReceived;
+                _currentScene = SceneManager.GetActiveScene().name;
             }
         }
 
-        public void ActiveSceneChanged(Scene from, Scene to)
+        public void MenuSceneLoaded()
         {
-            try
-            {
-                if (to.name == "GameCore" || (from.name == "EmptyTransition" && to.name == "Menu"))
-                {
-                    _currentScene = to;
-                    if (to.name == "GameCore")
-                    {
-                        DestroyAvatar();
-                        StartCoroutine(WaitForControllers());
-                    }
-                    else if (to.name == "Menu")
-                    {
-                        DestroyAvatar();
-                    }
-                }
-            }catch(Exception e)
-            {
-                Misc.Logger.Warning($"(Spectator) Exception on {to.name} scene activation! Exception: {e}");
-            }
+            _currentScene = "Menu";
+            DestroyAvatar();
+        }
+
+        public void GameSceneLoaded()
+        {
+            _currentScene = "GameCore";
+            DestroyAvatar();
+            StartCoroutine(WaitForControllers());
         }
 
         IEnumerator WaitForControllers()
@@ -112,7 +102,7 @@ namespace BeatSaberMultiplayer
 
         private void PacketReceived(NetIncomingMessage msg)
         {
-            if (Config.Instance.SpectatorMode && !Client.Instance.InRadioMode && _currentScene.name == "GameCore")
+            if (Config.Instance.SpectatorMode && !Client.Instance.InRadioMode && _currentScene == "GameCore")
             {
                 msg.Position = 0;
                 CommandType commandType = (CommandType)msg.ReadByte();
@@ -151,21 +141,22 @@ namespace BeatSaberMultiplayer
 
                     if(_spectatedPlayer == null)
                     {
-                        _spectatedPlayer = new GameObject("PlayerController").AddComponent<OnlinePlayerController>();
+                        _spectatedPlayer = new GameObject("SpectatedPlayerController").AddComponent<OnlinePlayerController>();
                         _spectatedPlayer.noInterpolation = true;
                     }
 
-                    if (_playerInfos.Count > 1 && _spectatedPlayer == null)
+                    if (_playerInfos.Count > 1 && _spectatedPlayer.PlayerInfo == null)
                     {
-                        _spectatedPlayer.PlayerInfo = _playerInfos.First(x => !x.Key.Equals(Client.Instance.playerInfo)).Value.Last();
-                        Misc.Logger.Info("Spectating " + _spectatedPlayer.PlayerInfo.playerName);
+                        _spectatedPlayer.PlayerInfo = _playerInfos.FirstOrDefault(x => !x.Key.Equals(Client.Instance.playerInfo)).Value?.LastOrDefault();
+                        if(_spectatedPlayer.PlayerInfo != null)
+                            Misc.Logger.Info("Spectating " + _spectatedPlayer.PlayerInfo.playerName);
                     }
                     
                     if (_spectatedPlayer.PlayerInfo != null)
                     {
                         float minOffset = _playerInfos[_spectatedPlayer.PlayerInfo.playerId].Min(x => Math.Abs(x.playerProgress - audioTimeSync.songTime));
                         
-                        int index = _playerInfos[_spectatedPlayer.PlayerInfo.playerId].FindIndex(x => Math.Abs(x.playerProgress - audioTimeSync.songTime) == minOffset);
+                        int index = _playerInfos[_spectatedPlayer.PlayerInfo.playerId].FindIndex(x => Math.Abs(x.playerProgress - audioTimeSync.songTime - minOffset) <= float.Epsilon );
                         PlayerInfo lerpTo;
                         float lerpProgress;
                         
@@ -184,12 +175,14 @@ namespace BeatSaberMultiplayer
                             lerpProgress = Remap(audioTimeSync.songTime, lerpTo.playerProgress, _spectatedPlayer.PlayerInfo.playerProgress, 0f, 1f);
                         }
                         
-                        _spectatedPlayer.PlayerInfo.leftHandPos = Vector3.Lerp(_spectatedPlayer.PlayerInfo.leftHandPos, lerpTo.leftHandPos, 0);
-                        _spectatedPlayer.PlayerInfo.rightHandPos = Vector3.Lerp(_spectatedPlayer.PlayerInfo.rightHandPos, lerpTo.rightHandPos, 0);
+                        _spectatedPlayer.PlayerInfo.leftHandPos = Vector3.Lerp(_spectatedPlayer.PlayerInfo.leftHandPos, lerpTo.leftHandPos, lerpProgress);
+                        _spectatedPlayer.PlayerInfo.rightHandPos = Vector3.Lerp(_spectatedPlayer.PlayerInfo.rightHandPos, lerpTo.rightHandPos, lerpProgress);
+                        _spectatedPlayer.PlayerInfo.headPos = Vector3.Lerp(_spectatedPlayer.PlayerInfo.headPos, lerpTo.headPos, lerpProgress);
 
-                        _spectatedPlayer.PlayerInfo.leftHandRot = Quaternion.Lerp(_spectatedPlayer.PlayerInfo.leftHandRot, lerpTo.leftHandRot, 0);
-                        _spectatedPlayer.PlayerInfo.rightHandRot = Quaternion.Lerp(_spectatedPlayer.PlayerInfo.rightHandRot, lerpTo.rightHandRot, 0);
-                                                    
+                        _spectatedPlayer.PlayerInfo.leftHandRot = Quaternion.Lerp(_spectatedPlayer.PlayerInfo.leftHandRot, lerpTo.leftHandRot, lerpProgress);
+                        _spectatedPlayer.PlayerInfo.rightHandRot = Quaternion.Lerp(_spectatedPlayer.PlayerInfo.rightHandRot, lerpTo.rightHandRot, lerpProgress);
+                        _spectatedPlayer.PlayerInfo.headRot = Quaternion.Lerp(_spectatedPlayer.PlayerInfo.headRot, lerpTo.headRot, lerpProgress);
+
                         if (_leftController != null && _rightController != null)
                         {
                             _leftController.owner = _spectatedPlayer;

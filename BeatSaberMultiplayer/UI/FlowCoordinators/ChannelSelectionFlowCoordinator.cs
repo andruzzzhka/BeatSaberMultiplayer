@@ -10,6 +10,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
 using VRUI;
@@ -52,8 +53,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     PresentFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false, false);
                     PluginUI.instance.radioFlowCoordinator.JoinChannel(channel.ip, channel.port, channel.channelId);
-                    PluginUI.instance.radioFlowCoordinator.didFinishEvent -= () => { DismissFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false); };
-                    PluginUI.instance.radioFlowCoordinator.didFinishEvent += () => { DismissFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false); };
+                    PluginUI.instance.radioFlowCoordinator.didFinishEvent -= DismissRadio;
+                    PluginUI.instance.radioFlowCoordinator.didFinishEvent += DismissRadio;
                 };
 
             }
@@ -63,6 +64,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             ProvideInitialViewControllers(channelSelectionNavController, null, null);
             
             StartCoroutine(GetChannelsList());
+        }
+
+        private void DismissRadio()
+        {
+            DismissFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false);
         }
 
         IEnumerator GetChannelsList()
@@ -178,7 +184,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 Misc.Logger.Info($"Creating message...");
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
-                outMsg.Write(Plugin.pluginVersion);
+
+                Version assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
+                byte[] version = new byte[4] { (byte)assemblyVersion.Major, (byte)assemblyVersion.Minor, (byte)assemblyVersion.Build, (byte)assemblyVersion.Revision };
+
+                outMsg.Write(version);
                 new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).AddToMessage(outMsg);
 
                 Misc.Logger.Info($"Connecting to {channelInfos[0].ip}:{channelInfos[0].port}...");

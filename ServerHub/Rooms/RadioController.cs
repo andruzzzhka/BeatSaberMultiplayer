@@ -117,9 +117,12 @@ namespace ServerHub.Rooms
             {
                 foreach(PlaylistSong song in playlist.songs)
                 {
+                    if (song == null)
+                        continue;
+
                     if (!string.IsNullOrEmpty(song.hash))
                     {
-                        if (song.levelId.Length >= 32)
+                        if (song.hash.Length >= 32)
                         {
                             radioChannels[channelId].radioQueue.Enqueue(new SongInfo() { levelId = song.hash.ToUpper().Substring(0, 32), songName = song.songName, key = song.key });
                             continue;

@@ -45,7 +45,7 @@ namespace BeatSaberMultiplayer.VOIP
         public static void Resample(float[] source, float[] target, int inputNum, int outputNum, int inputSampleRate, int outputSampleRate)
         {
             float ratio = inputSampleRate / (float)outputSampleRate;
-            if (ratio % 1 == 0)
+            if (ratio % 1 <= float.Epsilon)
             {
                 int intRatio = (int)ratio;
                 for (int i = 0; i < outputNum; i++)

@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;LOCALRADIO</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -80,8 +80,9 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="TextMeshPro-1.0.55.2017.1.0b12">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\TextMeshPro-1.0.55.2017.1.0b12.dll</HintPath>
+    <Reference Include="Unity.TextMeshPro, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.dll</HintPath>
@@ -157,9 +158,10 @@
     <Compile Include="Data\RoomPreset.cs" />
     <Compile Include="Data\RoomSettings.cs" />
     <Compile Include="Data\SongInfo.cs" />
+    <Compile Include="Data\StartLevelInfo.cs" />
     <Compile Include="DebugForm.cs" />
     <Compile Include="InGameOnlineController.cs" />
-    <Compile Include="Misc\BeatSaverDownloaderHelper.cs" />
+    <Compile Include="Misc\BSEvents.cs" />
     <Compile Include="Misc\ControllersHelper.cs" />
     <Compile Include="Misc\ScrappedData.cs" />
     <Compile Include="Misc\Sprites.cs" />
@@ -173,7 +175,6 @@
     <Compile Include="Misc\Serialization.cs" />
     <Compile Include="Misc\SongDownloader.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
-    <Compile Include="Misc\SteamHelper.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
     <Compile Include="OverriddenClasses\OnlineAudioTimeController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapCallbackController.cs" />
@@ -208,7 +209,7 @@
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\LeaderboardViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\QuickSettingsViewController.cs" />
-    <Compile Include="UI\ViewControllers\RoomScreen\RoomManagementViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\PlayerManagementViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />

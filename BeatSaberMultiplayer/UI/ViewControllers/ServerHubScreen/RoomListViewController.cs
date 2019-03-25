@@ -99,7 +99,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 //ReflectionUtil.SetPrivateField(_serverTableView, "_pageUpButton", _pageUpButton);
                 //ReflectionUtil.SetPrivateField(_serverTableView, "_pageDownButton", _pageDownButton);
 
-                _serverTableView.didSelectRowEvent += ServerTableView_DidSelectRow;
+                _serverTableView.didSelectCellWithIdxEvent += ServerTableView_DidSelectRow;
                 _serverTableView.dataSource = this;
 
             }
@@ -142,7 +142,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             yield return null;
             yield return null;
 
-            _serverTableView.ScrollToRow(0, false);
+            _serverTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
         }
 
         public void SetRefreshButtonState(bool enabled)
@@ -155,7 +155,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             selectedRoom?.Invoke(availableRooms[row]);
         }
 
-        public TableCell CellForRow(int row)
+        public TableCell CellForIdx(int row)
         {
             LevelListTableCell cell = Instantiate(_serverTableCellInstance);
             cell.reuseIdentifier = "ServerTableCell";
@@ -164,24 +164,32 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             
             if (room.usePassword)
             {
-                cell.coverImage = Sprites.lockedRoomIcon;
+                cell.SetIcon(Sprites.lockedRoomIcon);
             }
             else
             {
                 cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
             }
-            cell.songName = $"({room.players}/{((room.maxPlayers == 0)? "INF":room.maxPlayers.ToString())})" + room.name;
-            cell.author = $"{room.roomState.ToString()}{(room.noFail ? ", No Fail" : "")}";
+            cell.SetText($"({room.players}/{((room.maxPlayers == 0)? "INF":room.maxPlayers.ToString())})" + room.name);
+            cell.SetSubText($"{room.roomState.ToString()}");
+
+            cell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
+            cell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
+            cell.SetPrivateField("_bought", true);
+            foreach (var icon in cell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
+            {
+                Destroy(icon.gameObject);
+            }
 
             return cell;
         }
 
-        public int NumberOfRows()
+        public int NumberOfCells()
         {
             return availableRooms.Count;
         }
 
-        public float RowHeight()
+        public float CellSize()
         {
             return 10f;
         }

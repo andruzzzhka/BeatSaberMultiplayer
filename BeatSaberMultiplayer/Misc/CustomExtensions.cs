@@ -1,16 +1,13 @@
 ﻿using BeatSaberMultiplayer.Data;
-using BeatSaberMultiplayer.UI.UIElements;
 using HMUI;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Zenject;
 
 namespace BeatSaberMultiplayer.Misc
 {
@@ -31,25 +28,115 @@ namespace BeatSaberMultiplayer.Misc
             }
         }
 
+        public static List<string> basePackIDs = new List<string>() { "OstVol1", "OstVol2", "Extras" };
+
         public static void SetButtonStrokeColor(this Button btn, Color color)
         {
             btn.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").color = color;
         }
-        
+
+        public static IDifficultyBeatmap GetDifficultyBeatmap(this BeatmapLevelSO level, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, bool strictDifficulty = false)
+        {
+            IDifficultyBeatmapSet difficultySet = null;
+            if (characteristic == null)
+            {
+                difficultySet = level.difficultyBeatmapSets.FirstOrDefault();
+            }
+            else
+            {
+                difficultySet = level.difficultyBeatmapSets.FirstOrDefault(x => x.beatmapCharacteristic == characteristic);
+            }
+
+            if (difficultySet == null)
+            {
+                return null;
+            }
+
+            IDifficultyBeatmap beatmap = difficultySet.difficultyBeatmaps.FirstOrDefault(x => x.difficulty == difficulty);
+
+            if(beatmap == null && !strictDifficulty)
+            {
+                return difficultySet.difficultyBeatmaps[GetClosestDifficultyIndex(difficultySet.difficultyBeatmaps, difficulty)];
+            }
+            else
+            {
+                return beatmap;
+            }
+        }
+
+        public static int GetClosestDifficultyIndex(IDifficultyBeatmap[] beatmaps, BeatmapDifficulty difficulty)
+        {
+            int num = -1;
+            foreach (IDifficultyBeatmap difficultyBeatmap in beatmaps)
+            {
+                if (difficulty < difficultyBeatmap.difficulty)
+                {
+                    break;
+                }
+                num++;
+            }
+            if (num == -1)
+            {
+                num = 0;
+            }
+            return num;
+        }
+
         public static int FindIndexInList<T>(this List<T> list, T b)
         {
             return list.FindIndex(x => x.Equals(b));
         }
 
+        public static TextSegmentedControl CreateTextSegmentedControl(RectTransform parent, Vector2 anchoredPosition)
+        {
+            return CreateTextSegmentedControl(parent, anchoredPosition, new Vector2(-20f, 7f));
+        }
+
+        public static TextSegmentedControl CreateTextSegmentedControl(RectTransform parent, Vector2 anchoredPosition, Vector2 sizeDelta)
+        {
+            var segmentedControl = new GameObject("CustomSegmentedControl", typeof(RectTransform)).AddComponent<TextSegmentedControl>();
+            segmentedControl.gameObject.AddComponent<HorizontalLayoutGroup>();
+
+            TextSegmentedControlCellNew[] _segments = Resources.FindObjectsOfTypeAll<TextSegmentedControlCellNew>();
+
+            segmentedControl.SetPrivateField("_singleCellPrefab", _segments.First(x => x.name == "HSingleTextSegmentedControlCell"));
+            segmentedControl.SetPrivateField("_firstCellPrefab", _segments.First(x => x.name == "LeftTextSegmentedControlCell"));
+            segmentedControl.SetPrivateField("_middleCellPrefab", _segments.First(x => x.name == "HMiddleTextSegmentedControlCell"));
+            segmentedControl.SetPrivateField("_lastCellPrefab", _segments.First(x => x.name == "RightTextSegmentedControlCell"));
+
+            segmentedControl.SetPrivateField("_container", Resources.FindObjectsOfTypeAll<TextSegmentedControl>().Select(x => x.GetPrivateField<object>("_container")).First(x => x != null));
+
+            segmentedControl.transform.SetParent(parent, false);
+            (segmentedControl.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
+            (segmentedControl.transform as RectTransform).anchorMin = new Vector2(0f, 1f);
+            (segmentedControl.transform as RectTransform).anchoredPosition = anchoredPosition;
+            (segmentedControl.transform as RectTransform).sizeDelta = sizeDelta;
+
+            segmentedControl.SetPrivateField("_fontSize", 4f);
+            segmentedControl.SetPrivateField("_padding", 8f);
+
+            return segmentedControl;
+        }
+
         public static TextMeshPro CreateWorldText(Transform parent, string text="TEXT")
         {
-            TextMeshPro textMesh = new GameObject("CustomUIText").AddComponent<TextMeshPro>();
-            textMesh.transform.SetParent(parent, false);
+            GameObject textMeshGO = new GameObject("CustomUIText");
+            
+            textMeshGO.SetActive(false);
+
+            TextMeshPro textMesh = textMeshGO.AddComponent<TextMeshPro>();
+            TMP_FontAsset font = UnityEngine.Object.Instantiate(Resources.FindObjectsOfTypeAll<TMP_FontAsset>().First(x => x.name == "Teko-Medium SDF No Glow"));
+            textMesh.renderer.sharedMaterial = font.material;
+            textMesh.fontSharedMaterial = font.material;
+            textMesh.font = font;
+
+            textMesh.transform.SetParent(parent, true);
             textMesh.text = text;
             textMesh.fontSize = 5f;
             textMesh.color = Color.white;
-            textMesh.font = Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault(x => x.name.Contains("Teko-Medium SDF No Glow"));
             textMesh.renderer.material.shader = CustomTextShader;
+
+            textMesh.gameObject.SetActive(true);
 
             return textMesh;
         }
@@ -79,6 +166,13 @@ namespace BeatSaberMultiplayer.Misc
         public static T Random<T>(this T[] list)
         {
             return list[(int)Mathf.Round(UnityEngine.Random.Range(0, list.Length))];
+        }
+
+        public static byte[] ToBytes(this BitArray bits)
+        {
+            byte[] bytes = new byte[(int)Math.Ceiling(bits.Count/(double)8)];
+            bits.CopyTo(bytes, 0);
+            return bytes;
         }
 
         public static void ToShortArray(this float[] input, short[] output, int offset, int len)

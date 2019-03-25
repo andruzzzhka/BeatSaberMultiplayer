@@ -134,7 +134,7 @@ namespace BeatSaberMultiplayer.UI
             for (int i = 1; i <= 10; i++)
             {
                 TextMeshProButton textButton = Instantiate(_keyButtonPrefab);
-                textButton.text.text = i.ToString().Last().ToString();
+                textButton.text.text = (i % 10).ToString();
 
                 string key = i.ToString().Last().ToString();
                 textButton.button.onClick.AddListener(delegate ()

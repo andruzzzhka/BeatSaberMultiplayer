@@ -13,9 +13,12 @@ namespace BeatSaberMultiplayer.Data
 {
     public class SongInfo
     {
-        public static Dictionary<string, LevelSO> originalLevels = new Dictionary<string, LevelSO>();
+        public static Dictionary<string, BeatmapLevelSO> originalLevels = new Dictionary<string, BeatmapLevelSO>();
 
         public string songName;
+        public string songSubName;
+        public string authorName;
+        public string key;
         public string levelId;
         public float songDuration;
 
@@ -28,23 +31,43 @@ namespace BeatSaberMultiplayer.Data
         {
             originalLevels.Clear();
 
-            foreach (var item in SongLoader.CustomLevelCollectionSO.levels.Where(y => y.levelID.Length < 32))
+            foreach (var item in SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).Where(y => y.levelID.Length < 32 && y is BeatmapLevelSO))
             {
-                originalLevels.Add(BitConverter.ToString(HexConverter.GetStringHashBytes(item.levelID)).Replace("-", ""), item);
+                originalLevels.Add(BitConverter.ToString(HexConverter.GetStringHashBytes(item.levelID)).Replace("-", ""), (BeatmapLevelSO)item);
             }
         }
         
-        public SongInfo(LevelSO level)
+        public SongInfo(BeatmapLevelSO level)
         {
-            songName = level.songName + " "+level.songSubName;
+            songName = level.songName;
+            songSubName = level.songSubName;
+            authorName = level.levelAuthorName;
+            
+            key = "";
+            if (level is CustomLevel)
+            {
+                Regex keyMatch = new Regex("\\d+-\\d+");
+                var matches = keyMatch.Matches((level as CustomLevel).customSongInfo.path);
+                if (matches.Count > 0)
+                {
+                    key = matches[matches.Count - 1].Value;
+                }
+            }
+            
             levelId = level.levelID.Substring(0, Math.Min(32, level.levelID.Length));
-
+            
             if (originalLevels.ContainsKey(levelId))
             {
                 levelId = originalLevels[levelId].levelID;
             }
-
-            songDuration = level.audioClip.length;
+            if (level.beatmapLevelData == null || level.beatmapLevelData.audioClip == null)
+            {
+                songDuration = 0f;
+            }
+            else
+            {
+                songDuration = level.beatmapLevelData.audioClip.length;
+            }
         }
 
         public SongInfo(NetIncomingMessage msg)
@@ -52,6 +75,9 @@ namespace BeatSaberMultiplayer.Data
             if (msg.LengthBytes > 16)
             {
                 songName = msg.ReadString();
+                songSubName = msg.ReadString();
+                authorName = msg.ReadString();
+                key = msg.ReadString();
                 levelId = BitConverter.ToString(msg.ReadBytes(16)).Replace("-", "");
 
                 if (originalLevels.ContainsKey(levelId))
@@ -66,7 +92,9 @@ namespace BeatSaberMultiplayer.Data
         public void AddToMessage(NetOutgoingMessage msg)
         {
             msg.Write(songName);
-
+            msg.Write(songSubName);
+            msg.Write(authorName);
+            msg.Write(key);
 
             if (levelId.Length >= 32)
             {

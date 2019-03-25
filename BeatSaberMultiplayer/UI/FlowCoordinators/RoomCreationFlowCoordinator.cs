@@ -21,8 +21,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         RoomCreationServerHubsListViewController _serverHubsViewController;
         MainRoomCreationViewController _mainRoomCreationViewController;
         PresetsListViewController _presetsListViewController;
-
-        LevelCollectionSO _levelCollection;
+        
         BeatmapCharacteristicSO[] _beatmapCharacteristics;
 
         ServerHubClient _selectedServerHub;
@@ -33,7 +32,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
             _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
-            _levelCollection = SongLoader.CustomLevelCollectionSO;
 
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
@@ -46,6 +44,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _mainRoomCreationViewController.SavePresetPressed += SavePreset;
                 _mainRoomCreationViewController.LoadPresetPressed += LoadPresetPressed;
                 _mainRoomCreationViewController.keyboardDidFinishEvent += _mainRoomCreationViewController_keyboardDidFinishEvent;
+                _mainRoomCreationViewController.presentKeyboardEvent += PresentKeyboard;
                 _mainRoomCreationViewController.didFinishEvent += () => { DismissViewController(_mainRoomCreationViewController); SetLeftScreenViewController(null); };
                 
                 _presetsListViewController = BeatSaberUI.CreateViewController<PresetsListViewController>();
@@ -85,9 +84,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         
         private void SavePreset(RoomSettings settings, string name)
         {
-            RoomSettings presetSettings = new RoomSettings();
-            presetSettings = settings;
-            RoomPreset preset = new RoomPreset(presetSettings);
+            RoomPreset preset = new RoomPreset(settings);
             preset.SavePreset("UserData/RoomPresets/"+name+".json");
             PresetsCollection.ReloadPresets();
         }
@@ -121,7 +118,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             _mainRoomCreationViewController.CreateButtonInteractable(false);
             
-            if(!Client.Instance.Connected || (Client.Instance.Connected && (Client.Instance.ip != _selectedServerHub.ip || Client.Instance.port != _selectedServerHub.port)))
+            if(!Client.Instance.Connected || (Client.Instance.ip != _selectedServerHub.ip || Client.Instance.port != _selectedServerHub.port))
             {
                 Client.Instance.Disconnect();
                 Client.Instance.Connect(_selectedServerHub.ip, _selectedServerHub.port);

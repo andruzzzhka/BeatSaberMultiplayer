@@ -55,7 +55,7 @@ namespace ServerHub.Hub
                 channelId = _channel.channelInfo.channelId;
                 name = _channel.channelInfo.name;
                 icon = _channel.channelInfo.iconUrl;
-                difficulty = _channel.channelInfo.preferredDifficulty.ToString();
+                difficulty = _channel.channelInfo.currentLevelOptions.difficulty.ToString();
                 currentSong = _channel.channelInfo.currentSong == null ? "NULL" : _channel.channelInfo.currentSong.songName;
                 queueLength = _channel.radioQueue.Count;
             }

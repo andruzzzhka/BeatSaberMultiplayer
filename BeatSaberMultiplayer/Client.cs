@@ -19,7 +19,7 @@ using UnityEngine;
 namespace BeatSaberMultiplayer
 {
 
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions }
 
     public class Client : MonoBehaviour
     {
@@ -60,6 +60,7 @@ namespace BeatSaberMultiplayer
         public event Action ConnectedToServerHub;
 
         public event Action<NetIncomingMessage> MessageReceived;
+        public event Action<NetIncomingMessage> PlayerInfoUpdateReceived;
 
         public bool Connected;
         public bool InRoom;
@@ -132,7 +133,11 @@ namespace BeatSaberMultiplayer
 
             Misc.Logger.Info($"Creating message...");
             NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
-            outMsg.Write(Plugin.pluginVersion);
+
+            Version assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            byte[] version = new byte[4] { (byte)assemblyVersion.Major, (byte)assemblyVersion.Minor, (byte)assemblyVersion.Build, (byte)assemblyVersion.Revision };
+
+            outMsg.Write(version);
             playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
             playerInfo.AddToMessage(outMsg);
 
@@ -169,6 +174,22 @@ namespace BeatSaberMultiplayer
                     
                     if (lastUpdate != null)
                     {
+                        foreach(NetIncomingMessage msg in _receivedMessages.Where(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo))
+                        {
+                            foreach (Action<NetIncomingMessage> nextDel in PlayerInfoUpdateReceived.GetInvocationList())
+                            {
+                                try
+                                {
+                                    msg.Position = 0;
+                                    nextDel.Invoke(msg);
+                                }
+                                catch (Exception e)
+                                {
+                                    Misc.Logger.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
+                                }
+                            }
+                        }
+
                         _receivedMessages.RemoveAll(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
 
                         foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
@@ -221,10 +242,6 @@ namespace BeatSaberMultiplayer
                                     else if(status == NetConnectionStatus.Disconnected && !Connected)
                                     {
                                         Misc.Logger.Info("ServerHub refused connection! Reason: " + msg.ReadString());
-                                    }
-                                    else
-                                    {
-                                        Misc.Logger.Info("New connection state: " + status);
                                     }
                                 }
                                 break;
@@ -564,8 +581,23 @@ namespace BeatSaberMultiplayer
 #endif
             }
         }
-        
-        public void StartLevel(LevelSO song, BeatmapDifficulty difficulty)
+
+        public void SetLevelOptions(GameplayModifiers modifiers, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty)
+        {
+            if (Connected && NetworkClient != null)
+            {
+                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.SetLevelOptions);
+                new StartLevelInfo(difficulty, modifiers, characteristic.serializedName).AddToMessage(outMsg);
+
+                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+#if DEBUG
+                Misc.Logger.Info("Updating level options for selected song...");
+#endif
+            }
+        }
+
+        public void StartLevel(BeatmapLevelSO song, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, GameplayModifiers modifiers)
         {
             if (Connected && NetworkClient != null)
             {
@@ -574,8 +606,11 @@ namespace BeatSaberMultiplayer
 #endif
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.StartLevel);
-                outMsg.Write((byte)difficulty);
-                new SongInfo() { songName = song.songName + " " + song.songSubName, levelId = song.levelID.Substring(0, Math.Min(32, song.levelID.Length)), songDuration = song.audioClip.length }.AddToMessage(outMsg);
+
+                new StartLevelInfo(difficulty, modifiers, characteristic.serializedName).AddToMessage(outMsg);
+                SongInfo selectedSong = new SongInfo(song);
+                selectedSong.songDuration = selectedSong.songDuration / modifiers.songSpeedMul;
+                selectedSong.AddToMessage(outMsg);
 
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }

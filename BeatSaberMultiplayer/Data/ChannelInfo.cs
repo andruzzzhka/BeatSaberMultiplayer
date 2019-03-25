@@ -17,7 +17,7 @@ namespace BeatSaberMultiplayer.Data
         public string iconUrl;
         public ChannelState state;
         public SongInfo currentSong;
-        public BeatmapDifficulty preferredDifficulty;
+        public StartLevelInfo currentLevelOptions;
         public int playerCount;
         public string ip;
         public int port;
@@ -35,13 +35,18 @@ namespace BeatSaberMultiplayer.Data
             name = msg.ReadString();
             iconUrl = msg.ReadString();
             state = (ChannelState)msg.ReadByte();
+
             if (state != ChannelState.Voting)
             {
                 currentSong = new SongInfo(msg);
+                currentLevelOptions = new StartLevelInfo(msg);
+
+                if (currentSong.songName == "Selecting song..." && currentSong.levelId == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+                {
+                    currentSong = null;
+                    currentLevelOptions = null;
+                }
             }
-            else
-                currentSong = null;
-            preferredDifficulty = (BeatmapDifficulty)msg.ReadByte();
             playerCount = msg.ReadInt32();
         }
 
@@ -51,11 +56,21 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(name);
             msg.Write(iconUrl);
             msg.Write((byte)state);
+
             if (state != ChannelState.Voting)
             {
-                currentSong.AddToMessage(msg);
+                if (currentSong != null)
+                {
+                    currentSong.AddToMessage(msg);
+                    currentLevelOptions.AddToMessage(msg);
+                }
+                else
+                {
+                    new SongInfo() { songName = "Selecting song...", levelId = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" }.AddToMessage(msg);
+                    new StartLevelInfo(BeatmapDifficulty.Hard, new GameplayModifiers(), "Standard").AddToMessage(msg);
+                }
             }
-            msg.Write((byte)preferredDifficulty);
+
             msg.Write(playerCount);
         }
     }

@@ -15,8 +15,17 @@ namespace ServerHub.Misc
         public static event Action<ShutdownEventArgs> Shutdown;
         static void RaiseShutdownEvent(ShutdownEventArgs args)
         {
-            if (null != Shutdown)
-                Shutdown(args);
+            foreach(var action in Shutdown.GetInvocationList())
+            {
+                try
+                {
+                    action.DynamicInvoke(args);
+                }
+                catch (Exception e)
+                {
+                    Logger.Instance.Warning($"Exception on Shutdown event in {action.Target.GetType().ToString()}.{action.Method.Name}: {e}");
+                }
+            }
         }
 
 #if (!NETCOREAPP2_0)

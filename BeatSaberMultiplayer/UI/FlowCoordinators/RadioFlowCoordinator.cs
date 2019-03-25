@@ -60,13 +60,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         BeatmapCharacteristicSO[] _beatmapCharacteristics;
         BeatmapCharacteristicSO _standardCharacteristics;
-        LevelCollectionSO _levelCollection;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
             _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
             _standardCharacteristics = _beatmapCharacteristics.First(x => x.characteristicName == "Standard");
-            _levelCollection = SongLoader.CustomLevelCollectionSO;
 
             if (firstActivation)
             {
@@ -92,7 +90,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             this.port = port;
             this.channelId = channelId;
             
-            if (!Client.Instance.Connected || (Client.Instance.Connected && (Client.Instance.ip != ip || Client.Instance.port != port)))
+            if (!Client.Instance.Connected || (Client.Instance.ip != ip || Client.Instance.port != port))
             {
                 Client.Instance.Disconnect();
                 Client.Instance.Connect(ip, port);
@@ -144,12 +142,26 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         public void ReturnToChannel()
         {
             joined = true;
+            Client.Instance.MessageReceived -= MessageReceived;
             Client.Instance.MessageReceived += MessageReceived;
             Client.Instance.RequestChannelInfo(channelId);
         }
 
         private void MessageReceived(NetIncomingMessage msg)
         {
+            if(msg == null)
+            {
+                InGameOnlineController.Instance.needToSendUpdates = false;
+
+                PopAllViewControllers();
+                InGameOnlineController.Instance.DestroyPlayerControllers();
+                PreviewPlayer.CrossfadeToDefault();
+                joined = false;
+
+                _radioNavController.DisplayError("Lost connection to the ServerHub!");
+                return;
+            }
+
             CommandType commandType = (CommandType)msg.ReadByte();
             if (!joined)
             {
@@ -212,14 +224,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case CommandType.GetSongDuration:
                             {
                                 SongInfo requestedSong = new SongInfo(msg);
-                                LevelSO level = SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID.StartsWith(channelInfo.currentSong.levelId));
+                                BeatmapLevelSO level = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(channelInfo.currentSong.levelId)) as BeatmapLevelSO;
 
                                 if (level != null)
                                 {
                                     SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level, 
                                     (loadedLevel) =>
                                     {
-                                        Client.Instance.SendSongDuration(new SongInfo() { songName = $"{level.songName} {level.songSubName}", levelId = level.levelID.Substring(0, Math.Min(32, level.levelID.Length)), songDuration = level.audioClip.length });
+                                        Client.Instance.SendSongDuration(new SongInfo(loadedLevel));
                                     });
                                 }
                             }
@@ -238,9 +250,18 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     return;
                                 }
 
-                                byte difficulty = msg.ReadByte();
+                                StartLevelInfo levelInfo = new StartLevelInfo(msg);
+
+                                BeatmapCharacteristicSO characteristic = _beatmapCharacteristics.First(x => x.serializedName == levelInfo.characteristicName);
+
                                 SongInfo songInfo = new SongInfo(msg);
-                                LevelSO level = _levelCollection.GetLevelsWithBeatmapCharacteristic(_standardCharacteristics).First(x => x.levelID.StartsWith(songInfo.levelId));
+                                BeatmapLevelSO level = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(songInfo.levelId)) as BeatmapLevelSO;
+
+                                if(level == null)
+                                {
+                                    Misc.Logger.Error("Unable to start level! Level is null! LevelID="+songInfo.levelId);
+                                    return;
+                                }
 
                                 SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
                                 (levelLoaded) =>
@@ -255,7 +276,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                     }
 
-                                    StartLevel(levelLoaded, (BeatmapDifficulty)difficulty);
+                                    StartLevel(levelLoaded, characteristic, levelInfo.difficulty, levelInfo.modifiers);
                                 });
                             }
                             break;
@@ -286,18 +307,21 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                                 int playersCount = msg.ReadInt32();
 
                                                 List<PlayerInfo> playerInfos = new List<PlayerInfo>();
-                                                for (int j = 0; j < playersCount; j++)
+
+                                                try
                                                 {
-                                                    try
+                                                    for (int j = 0; j < playersCount; j++)
                                                     {
+
                                                         playerInfos.Add(new PlayerInfo(msg));
                                                     }
-                                                    catch (Exception e)
-                                                    {
+                                                }
+                                                catch (Exception e)
+                                                {
 #if DEBUG
-                                                        Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
+                                                    Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
 #endif
-                                                    }
+                                                    return;
                                                 }
 
                                                 playerInfos = playerInfos.Where(x => x.playerScore > 0 && (x.playerState == PlayerState.Game || x.playerState == PlayerState.Room)).ToList();
@@ -310,16 +334,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case CommandType.Disconnect:
                             {
                                 InGameOnlineController.Instance.needToSendUpdates = false;
-                                if(msg == null)
-                                {
-                                    PopAllViewControllers();
-                                    InGameOnlineController.Instance.DestroyPlayerControllers();
-                                    PreviewPlayer.CrossfadeToDefault();
-                                    joined = false;
 
-                                    _radioNavController.DisplayError("Lost connection to the ServerHub!");
-                                }
-                                else if (msg.LengthBytes > 3)
+                                if (msg.LengthBytes > 3)
                                 {
                                     string reason = msg.ReadString();
 
@@ -341,12 +357,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
                 catch (Exception e)
                 {
-                    Misc.Logger.Exception("Unable to parse packet!");
-                    if (msg != null)
-                    {
-                        Misc.Logger.Exception($"Packet={commandType}, DataLength={msg.LengthBytes}");
-                    }
-                    Misc.Logger.Exception(e.ToString());
+                    Misc.Logger.Exception($"Unable to parse packet! Packet={commandType}, DataLength={msg.LengthBytes}\nException: {e}");
                 }
             }
         }
@@ -362,7 +373,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         
                         ShowNextSongScreen();
 
-                        LevelSO level = SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID.StartsWith(channelInfo.currentSong.levelId));
+                        BeatmapLevelSO level = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(channelInfo.currentSong.levelId)) as BeatmapLevelSO;
 
                         if (level == null)
                         {
@@ -373,8 +384,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 SongDownloader.Instance.DownloadSong(song, "RadioSongs",
                                 () =>
                                 {
-                                    SongLoader.Instance.RefreshSongs(false);
-
                                     Action<SongLoader, List<CustomLevel>> onLoaded = null;
                                     onLoaded = (sender, songs) =>
                                     {
@@ -385,7 +394,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                             SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
                                              (levelLoaded) =>
                                              {
-                                                 PreviewPlayer.CrossfadeTo(levelLoaded.audioClip, levelLoaded.previewStartTime, Math.Max(totalTime - currentTime, levelLoaded.previewDuration));
+                                                 PreviewPlayer.CrossfadeTo(levelLoaded.beatmapLevelData.audioClip, levelLoaded.previewStartTime, Math.Max(totalTime - currentTime, levelLoaded.previewDuration));
                                              });
                                     };
 
@@ -424,37 +433,34 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        public void StartLevel(LevelSO level, BeatmapDifficulty difficulty, float startTime = 0f)
+        public void StartLevel(BeatmapLevelSO level, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, GameplayModifiers modifiers, float startTime = 0f)
         {
             Client.Instance.playerInfo.playerComboBlocks = 0;
             Client.Instance.playerInfo.playerCutBlocks = 0;
             Client.Instance.playerInfo.playerEnergy = 0f;
             Client.Instance.playerInfo.playerScore = 0;
 
-            MenuSceneSetupDataSO menuSceneSetupData = Resources.FindObjectsOfTypeAll<MenuSceneSetupDataSO>().FirstOrDefault();
+            MenuTransitionsHelperSO menuSceneSetupData = Resources.FindObjectsOfTypeAll<MenuTransitionsHelperSO>().FirstOrDefault();
 
             if (menuSceneSetupData != null)
             {
-                GameplayModifiers gameplayModifiers = new GameplayModifiers();
-
-                gameplayModifiers.noFail = true;
-
                 PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().currentLocalPlayer.playerSpecificSettings;
 
                 channelInfo.state = ChannelState.InGame;
                 Client.Instance.playerInfo.playerState = PlayerState.Game;
 
-                IDifficultyBeatmap difficultyBeatmap = level.GetDifficultyBeatmap(difficulty);
+                IDifficultyBeatmap difficultyBeatmap = level.GetDifficultyBeatmap(characteristic, difficulty, false);
 
-                if(difficultyBeatmap == null)
-                {
-                    difficultyBeatmap = level.GetDifficultyBeatmap(GetClosestDifficulty(level, difficulty));
-                }
-
+#if DEBUG
                 Misc.Logger.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={difficulty}");
+#endif
 
                 PracticeSettings practiceSettings = new PracticeSettings(PracticeSettings.defaultPracticeSettings);
-                practiceSettings.startSongTime = startTime + 1.5f;
+
+                if (startTime > 1.5f)
+                {
+                    practiceSettings.startSongTime = startTime + 1.5f;
+                }
 
                 Client.Instance.MessageReceived -= MessageReceived;
 
@@ -467,7 +473,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 }
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, gameplayModifiers, playerSettings, (startTime > 1f ? practiceSettings : null), null, (StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, gameplayModifiers, (practiceSettings != null)); });
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1.5f ? practiceSettings : null), null, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, (practiceSettings != null)); });
                 return;
             }
             else
@@ -479,7 +485,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         private void PlayNow_Pressed()
         {
             SongInfo info = channelInfo.currentSong;
-            LevelSO level = SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID.StartsWith(info.levelId));
+            BeatmapLevelSO level = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(info.levelId)) as BeatmapLevelSO;
             if (level == null)
             {
                 SongDownloader.Instance.RequestSongByLevelID(info.levelId, 
@@ -488,7 +494,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     SongDownloader.Instance.DownloadSong(song, "RadioSongs",
                     () =>
                     {
-                        SongLoader.Instance.RefreshSongs(false);
                         SongLoader.SongsLoadedEvent += PlayNow_SongsLoaded;
                     },
                     (progress) =>
@@ -502,27 +507,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level, 
                 (levelLoaded) =>
                 {
-                    StartLevel(levelLoaded, channelInfo.preferredDifficulty, currentTime);
+                    StartLevel(levelLoaded, _beatmapCharacteristics.First(x => x.serializedName == channelInfo.currentLevelOptions.characteristicName), channelInfo.currentLevelOptions.difficulty, channelInfo.currentLevelOptions.modifiers, currentTime);
                 });
             }
-        }
-
-        public BeatmapDifficulty GetClosestDifficulty(LevelSO level, BeatmapDifficulty difficulty)
-        {
-            int num = -1;
-            foreach (IDifficultyBeatmap difficultyBeatmap in level.difficultyBeatmaps)
-            {
-                if (difficulty < difficultyBeatmap.difficulty)
-                {
-                    break;
-                }
-                num++;
-            }
-            if (num == -1)
-            {
-                num = 0;
-            }
-            return level.difficultyBeatmaps[num].difficulty;
         }
 
         private void PlayNow_SongsLoaded(SongLoader arg1, List<CustomLevel> arg2)
@@ -544,20 +531,24 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             HideResultsScreen();
         }
 
-        #region In-Game Screen
+#region In-Game Screen
         public void ShowInGameScreen()
         {
             if (!_radioNavController.viewControllers.Contains(_inGameViewController))
             {
                 PushViewControllerToNavigationController(_radioNavController, _inGameViewController, null, true);
                 _inGameViewController.SetSongInfo(channelInfo.currentSong);
-                LevelSO level = SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID.StartsWith(channelInfo.currentSong.levelId));
+                BeatmapLevelSO level = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(channelInfo.currentSong.levelId)) as BeatmapLevelSO;
                 if (level != null)
                     SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
                     (levelLoaded) =>
                     {
-                        PreviewPlayer.CrossfadeTo(levelLoaded.audioClip, levelLoaded.previewStartTime, Math.Max(totalTime - currentTime, levelLoaded.previewDuration));
+                        PreviewPlayer.CrossfadeTo(levelLoaded.beatmapLevelData.audioClip, levelLoaded.previewStartTime, Math.Max(totalTime - currentTime, levelLoaded.previewDuration));
                     });
+                else
+                {
+                    Misc.Logger.Error("Unable to play preview for song! Level is null! levelID="+channelInfo.currentSong.levelId);
+                }
             }
         }
 
@@ -574,21 +565,21 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             PreviewPlayer.CrossfadeToDefault();
         }
-        #endregion
+#endregion
 
-        #region Next Song Screen
+#region Next Song Screen
         public void ShowNextSongScreen()
         {
             if (!_radioNavController.viewControllers.Contains(_nextSongScreenViewController))
             {
                 PushViewControllerToNavigationController(_radioNavController, _nextSongScreenViewController, null, true);
                 _nextSongScreenViewController.SetSongInfo(channelInfo.currentSong);
-                LevelSO level = SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID.StartsWith(channelInfo.currentSong.levelId));
+                BeatmapLevelSO level = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(channelInfo.currentSong.levelId)) as BeatmapLevelSO;
                 if (level != null)
                     SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
                      (levelLoaded) =>
                      {
-                         PreviewPlayer.CrossfadeTo(levelLoaded.audioClip, levelLoaded.previewStartTime, Math.Max(totalTime - currentTime, levelLoaded.previewDuration));
+                         PreviewPlayer.CrossfadeTo(levelLoaded.beatmapLevelData.audioClip, levelLoaded.previewStartTime, Math.Max(totalTime - currentTime, levelLoaded.previewDuration));
                      });
             }
         }
@@ -606,9 +597,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             PreviewPlayer.CrossfadeToDefault();
         }
-        #endregion
+#endregion
 
-        #region Results Screen
+#region Results Screen
         public void ShowResultsScreen()
         {
             if (!_radioNavController.viewControllers.Contains(_resultsScreenViewController))
@@ -616,16 +607,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 PushViewControllerToNavigationController(_radioNavController, _resultsScreenViewController, null, true);
 
                 if(lastDifficulty == null || lastResults == null)
-                    _resultsScreenViewController.SetSongInfo(channelInfo.currentSong, channelInfo.preferredDifficulty);
+                    _resultsScreenViewController.SetSongInfo(channelInfo.currentSong, channelInfo.currentLevelOptions.difficulty);
                 else
                     _resultsScreenViewController.SetSongInfo(lastDifficulty, lastResults);
 
-                LevelSO level = SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID.StartsWith(channelInfo.currentSong.levelId));
+                BeatmapLevelSO level = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(channelInfo.currentSong.levelId)) as BeatmapLevelSO;
                 if (level != null)
                     SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
                     (levelLoaded) =>
                     {
-                        PreviewPlayer.CrossfadeTo(levelLoaded.audioClip, levelLoaded.previewStartTime, Math.Max(totalTime - currentTime, levelLoaded.previewDuration));
+                        PreviewPlayer.CrossfadeTo(levelLoaded.beatmapLevelData.audioClip, levelLoaded.previewStartTime, Math.Max(totalTime - currentTime, levelLoaded.previewDuration));
                     });
             }
         }
@@ -645,6 +636,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             PreviewPlayer.CrossfadeToDefault();
         }
-        #endregion
+#endregion
     }
 }

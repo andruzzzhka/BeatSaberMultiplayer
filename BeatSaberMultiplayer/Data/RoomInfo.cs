@@ -15,6 +15,7 @@ namespace BeatSaberMultiplayer.Data
 
         public string name;
         public bool usePassword;
+        public bool perPlayerDifficulty;
 
         public RoomState roomState;
         public SongSelectionType songSelectionType;
@@ -23,12 +24,11 @@ namespace BeatSaberMultiplayer.Data
         public int players;
         public int maxPlayers;
 
-        public bool noFail;
-
-        public byte selectedDifficulty;
+        public bool songSelected;
+        
+        public StartLevelInfo startLevelInfo;
         public SongInfo selectedSong;
-
-
+        
         public RoomInfo()
         {
 
@@ -39,7 +39,8 @@ namespace BeatSaberMultiplayer.Data
             roomId = msg.ReadUInt32();
             name = msg.ReadString();
             usePassword = msg.ReadBoolean();
-            noFail = msg.ReadBoolean();
+            perPlayerDifficulty = msg.ReadBoolean();
+            songSelected = msg.ReadBoolean();
             msg.SkipPadBits();
             roomState = (RoomState)msg.ReadByte();
             songSelectionType = (SongSelectionType)msg.ReadByte();
@@ -48,13 +49,14 @@ namespace BeatSaberMultiplayer.Data
             maxPlayers = msg.ReadInt32();
             try
             {
-                selectedDifficulty = msg.ReadByte();
-                if (selectedDifficulty != 255)
+                if (songSelected)
                 {
+                    startLevelInfo = new StartLevelInfo(msg);
                     selectedSong = new SongInfo(msg);
                 }
                 else
                 {
+                    startLevelInfo = null;
                     selectedSong = null;
                 }
             }
@@ -66,12 +68,13 @@ namespace BeatSaberMultiplayer.Data
 
         public void AddToMessage(NetOutgoingMessage msg)
         {
-            List<byte> buffer = new List<byte>();
+            songSelected = selectedSong != null && roomState != RoomState.SelectingSong;
 
             msg.Write(roomId);
             msg.Write(name);
             msg.Write(usePassword);
-            msg.Write(noFail);
+            msg.Write(perPlayerDifficulty);
+            msg.Write(songSelected);
             msg.WritePadBits();
             msg.Write((byte)roomState);
             msg.Write((byte)songSelectionType);
@@ -81,14 +84,10 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(players);
             msg.Write(maxPlayers);
 
-            if (selectedSong != null && roomState != RoomState.SelectingSong)
+            if (songSelected)
             {
-                msg.Write(selectedDifficulty);
+                startLevelInfo.AddToMessage(msg);
                 selectedSong.AddToMessage(msg);
-            }
-            else
-            {
-                msg.Write((byte)255);
             }
         }
 
@@ -96,7 +95,7 @@ namespace BeatSaberMultiplayer.Data
         {
             if (obj is RoomInfo)
             {
-                return (name == ((RoomInfo)obj).name) && (usePassword == ((RoomInfo)obj).usePassword) && (players == ((RoomInfo)obj).players) && (maxPlayers == ((RoomInfo)obj).maxPlayers) && (noFail == ((RoomInfo)obj).noFail) && (roomHost.Equals(((RoomInfo)obj).roomHost));
+                return (name == ((RoomInfo)obj).name) && (usePassword == ((RoomInfo)obj).usePassword) && (players == ((RoomInfo)obj).players) && (maxPlayers == ((RoomInfo)obj).maxPlayers) && (roomHost.Equals(((RoomInfo)obj).roomHost));
             }
             else
             {
@@ -113,7 +112,6 @@ namespace BeatSaberMultiplayer.Data
             hashCode = hashCode * -1521134295 + EqualityComparer<PlayerInfo>.Default.GetHashCode(roomHost);
             hashCode = hashCode * -1521134295 + players.GetHashCode();
             hashCode = hashCode * -1521134295 + maxPlayers.GetHashCode();
-            hashCode = hashCode * -1521134295 + noFail.GetHashCode();
             return hashCode;
         }
     }

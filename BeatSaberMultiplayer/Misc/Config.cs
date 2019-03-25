@@ -39,7 +39,7 @@ namespace BeatSaberMultiplayer {
             if (_instance != null) return false;
             try
             {
-                FileLocation?.Directory?.Create();
+                FileLocation.Directory.Create();
                 Misc.Logger.Info($"Attempting to load JSON @ {FileLocation.FullName}");
                 _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
                 _instance.MarkDirty();
@@ -58,7 +58,7 @@ namespace BeatSaberMultiplayer {
             if (_instance != null) return false;
             try
             {
-                FileLocation?.Directory?.Create();
+                FileLocation.Directory.Create();
                 Misc.Logger.Info($"Creating new config @ {FileLocation.FullName}");
                 Instance.Save();
             }

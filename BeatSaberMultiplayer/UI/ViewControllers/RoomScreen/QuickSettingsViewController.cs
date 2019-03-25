@@ -24,25 +24,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             if (firstActivation)
             {
-                _settingsSegments = new GameObject("CustomSegmentedControl", typeof(RectTransform)).AddComponent<TextSegmentedControl>();
-                _settingsSegments.gameObject.AddComponent<HorizontalLayoutGroup>();
+                _settingsSegments = CustomExtensions.CreateTextSegmentedControl(rectTransform, new Vector2(0f, -9f));
 
-                TextSegmentedControlCellNew[] _segments = Resources.FindObjectsOfTypeAll<TextSegmentedControlCellNew>();
-                
-                _settingsSegments.SetPrivateField("_firstCellPrefab", _segments.First(x => x.name == "LeftTextSegmentedControlCell"));
-                _settingsSegments.SetPrivateField("_middleCellPrefab", _segments.First(x => x.name == "HMiddleTextSegmentedControlCell"));
-                _settingsSegments.SetPrivateField("_lastCellPrefab", _segments.First(x => x.name == "RightTextSegmentedControlCell"));
-                
-                _settingsSegments.transform.SetParent(rectTransform, false);
-                (_settingsSegments.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
-                (_settingsSegments.transform as RectTransform).anchorMin = new Vector2(0f, 1f);
-                (_settingsSegments.transform as RectTransform).anchoredPosition = new Vector2(0f, -9f);
-                (_settingsSegments.transform as RectTransform).sizeDelta = new Vector2(-20f, 7f);
-
-                _settingsSegments.SetPrivateField("_fontSize", 4f);
-                _settingsSegments.SetPrivateField("_padding", 8f);
                 _settingsSegments.SetTexts(new string[] { "General", "Voice" });
-
                 _settingsSegments.didSelectCellEvent += SettingsCellSelected;
 
                 #region General Settings

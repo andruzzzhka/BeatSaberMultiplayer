@@ -86,7 +86,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 ReflectionUtil.SetPrivateField(_presetsTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_presetsTableView, "_pageDownButton", _pageDownButton);
 
-                _presetsTableView.didSelectRowEvent += SongsTableView_DidSelectRow;
+                _presetsTableView.didSelectCellWithIdxEvent += SongsTableView_DidSelectRow;
                 _presetsTableView.dataSource = this;
 
                 _selectPresetText = BeatSaberUI.CreateText(rectTransform, "Select preset", new Vector2(0f, 36f));
@@ -130,10 +130,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             yield return null;
             yield return null;
 
-            _presetsTableView.ScrollToRow(0, false);
+            _presetsTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
         }
 
-        public TableCell CellForRow(int row)
+        public TableCell CellForIdx(int row)
         {
             LevelListTableCell cell = Instantiate(_presetsTableCellInstance);
 
@@ -141,20 +141,28 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
             cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
 
-            cell.songName = $"{preset.GetName()}";
-            cell.author = $"{preset.settings.Name}";
+            cell.SetText($"{preset.GetName()}");
+            cell.SetSubText($"{preset.settings.Name}");
 
             cell.reuseIdentifier = "PresetCell";
+
+            cell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
+            cell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
+            cell.SetPrivateField("_bought", true);
+            foreach (var icon in cell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
+            {
+                Destroy(icon.gameObject);
+            }
 
             return cell;
         }
 
-        public int NumberOfRows()
+        public int NumberOfCells()
         {
             return availablePresets.Count;
         }
 
-        public float RowHeight()
+        public float CellSize()
         {
             return 10f;
         }

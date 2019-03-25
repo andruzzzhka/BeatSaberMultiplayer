@@ -102,7 +102,20 @@ namespace BeatSaberMultiplayer.VOIP
                             var data = encoder.Encode(resampleBuffer);
 
                             bytes += data.Length + 11;
-                            OnAudioGenerated( new VoipFragment(0, index, data, encoder.mode) );
+
+                            VoipFragment frag = new VoipFragment(0, index, data, encoder.mode);
+
+                            foreach(var action in OnAudioGenerated.GetInvocationList())
+                            {
+                                try
+                                {
+                                    action.DynamicInvoke(frag);
+                                }
+                                catch(Exception e)
+                                {
+                                    Misc.Logger.Error($"Exception on OnAudioGenerated event in {action.Target.GetType().ToString()}.{action.Method.Name}: {e}");
+                                }
+                            }
                         }
                     }
                 }

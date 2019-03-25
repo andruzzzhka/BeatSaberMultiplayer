@@ -6,7 +6,6 @@ using BeatSaberMultiplayer.UI.ViewControllers;
 using BS_Utils.Gameplay;
 using CustomUI.BeatSaber;
 using CustomUI.Settings;
-using CustomUI.Utilities;
 using SimpleJSON;
 using SongLoaderPlugin;
 using SongLoaderPlugin.OverrideClasses;
@@ -125,15 +124,21 @@ namespace BeatSaberMultiplayer.UI
 
         private void CreateOnlineButton()
         {
-            _newVersionText = BeatSaberUI.CreateText(_mainMenuRectTransform, "A new version of the mod\nis available!", new Vector2(18.25f, 30f));
+            _newVersionText = BeatSaberUI.CreateText(_mainMenuRectTransform, "A new version of the mod\nis available!", new Vector2(55.5f, 33f));
             _newVersionText.fontSize = 5f;
-            _newVersionText.lineSpacing = -30;
-            _newVersionText.alignment = TextAlignmentOptions.Center;
+            _newVersionText.lineSpacing = -52;
             _newVersionText.gameObject.SetActive(false);
 
-            _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "SoloFreePlayButton");
-            _multiplayerButton.transform.SetParent(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "SoloFreePlayButton").transform.parent);
-            _multiplayerButton.transform.SetSiblingIndex(2);
+            Button[] mainButtons = Resources.FindObjectsOfTypeAll<RectTransform>().First(x => x.name == "MainButtons" && x.parent.name == "MainMenuViewController").GetComponentsInChildren<Button>();
+
+            foreach(var item in mainButtons)
+            {
+                (item.transform as RectTransform).sizeDelta = new Vector2(35f, 30f);
+            }
+
+            _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "CampaignButton");
+            _multiplayerButton.transform.SetParent(mainButtons.First(x => x.name == "CampaignButton").transform.parent);
+            _multiplayerButton.transform.SetSiblingIndex(3);
 
             _multiplayerButton.SetButtonText("Online");
             _multiplayerButton.SetButtonIcon(Sprites.onlineIcon);
@@ -289,9 +294,10 @@ namespace BeatSaberMultiplayer.UI
 
                 if (newTag)
                 {
-                    Misc.Logger.Info($"A new version of the mod is available!\nNew version: {(string)latestRelease["tag_name"]}\nCurrent version: {Plugin.instance.Version}");
+                    Misc.Logger.Info($"An update for the mod is available!\nNew mod version: {(string)latestRelease["tag_name"]}\nCurrent mod version: {Plugin.instance.Version}");
                     _newVersionText.gameObject.SetActive(true);
-                    _newVersionText.text = $"Version {(string)latestRelease["tag_name"]}\nis available!\nCurrent version: {Plugin.instance.Version}";
+                    _newVersionText.text = $"Version {(string)latestRelease["tag_name"]}\n of the mod is available!\nCurrent mod version: {Plugin.instance.Version}";
+                    _newVersionText.alignment = TextAlignmentOptions.Center;
                 }
             }
         }

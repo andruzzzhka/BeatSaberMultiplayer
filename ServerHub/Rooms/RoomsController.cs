@@ -26,7 +26,7 @@ namespace ServerHub.Rooms
             room.StartRoom();
             WebSocketListener.AddRoom(room);
 #if DEBUG
-            Logger.Instance.Log($"New room created! Host={host.playerName}({host.playerId}) Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, noFail={settings.NoFail}, songSelecionType={settings.SelectionType}");
+            Logger.Instance.Log($"New room created! Host={host.playerName}({host.playerId}) Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, songSelecionType={settings.SelectionType}");
 #endif
             return room.roomId;
         }
@@ -39,7 +39,7 @@ namespace ServerHub.Rooms
             room.StartRoom();
             WebSocketListener.AddRoom(room);
 #if DEBUG
-            Logger.Instance.Log($"New room created! Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, noFail={settings.NoFail}, songSelecionType={settings.SelectionType}");
+            Logger.Instance.Log($"New room created! Settings: name={settings.Name}, password={settings.Password}, usePassword={settings.UsePassword}, maxPlayers={settings.MaxPlayers}, songSelecionType={settings.SelectionType}");
 #endif
             return room.roomId;
         }

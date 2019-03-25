@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
+using BS_Utils.Gameplay;
 using IllusionPlugin;
 using System;
 using System.IO;
@@ -12,8 +13,7 @@ namespace BeatSaberMultiplayer
     {
         public string Name => "Beat Saber Multiplayer";
 
-        public string Version => "0.6.1.4";
-        public static uint pluginVersion = 614;
+        public string Version => "0.6.2.0";
 
         public static Plugin instance;
 
@@ -37,7 +37,11 @@ namespace BeatSaberMultiplayer
             DebugForm.OnLoad();
 #endif
 
-            SceneManager.activeSceneChanged += ActiveSceneChanged;
+            BSEvents.OnLoad();
+            BSEvents.menuSceneLoadedFresh += MenuSceneLoadedFresh;
+            BSEvents.menuSceneLoaded += MenuSceneLoaded;
+            BSEvents.gameSceneLoaded += GameSceneLoaded;
+
             if (Config.Load())
                 Misc.Logger.Info("Loaded config!");
             else
@@ -53,33 +57,30 @@ namespace BeatSaberMultiplayer
             Sprites.ConvertSprites();
 
             ScrappedData.Instance.DownloadScrappedData(null);
-            
+
         }
 
-        private void ActiveSceneChanged(Scene from, Scene to)
+        private void MenuSceneLoadedFresh()
         {
-#if DEBUG
-           Misc.Logger.Info($"Active scene changed from \"{from.name}\" to \"{to.name}\"");
-#endif
-            try
-            {
-                if (from.name == "EmptyTransition" && to.name == "Menu")
-                {
-                    ModelSaberAPI.HashAllAvatars();
-                    PluginUI.OnLoad();
-                    InGameOnlineController.OnLoad(to);
-                    SpectatingController.OnLoad();
-                }
-                else
-                {
-                    InGameOnlineController.Instance?.ActiveSceneChanged(from, to);
-                    if (Config.Instance.SpectatorMode)
-                        SpectatingController.Instance?.ActiveSceneChanged(from, to);
-                }
-            }catch(Exception e)
-            {
-                Misc.Logger.Exception("Exception on active scene change: "+e);
-            }
+            ModelSaberAPI.HashAllAvatars();
+            PluginUI.OnLoad();
+            InGameOnlineController.OnLoad();
+            SpectatingController.OnLoad();
+            GetUserInfo.UpdateUserInfo();
+        }
+
+        private void MenuSceneLoaded()
+        {
+            InGameOnlineController.Instance?.MenuSceneLoaded();
+            if (Config.Instance.SpectatorMode)
+                SpectatingController.Instance?.MenuSceneLoaded();
+        }
+
+        private void GameSceneLoaded()
+        {
+            InGameOnlineController.Instance?.GameSceneLoaded();
+            if (Config.Instance.SpectatorMode)
+                SpectatingController.Instance?.GameSceneLoaded();
         }
 
         public void OnFixedUpdate()

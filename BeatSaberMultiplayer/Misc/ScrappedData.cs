@@ -86,7 +86,7 @@ namespace BeatSaberMultiplayer.Misc
             {
                 yield return null;
                 time += Time.deltaTime;
-                if (time >= 5f && asyncRequest.progress == 0f)
+                if (time >= 5f && asyncRequest.progress <= float.Epsilon)
                 {
                     www.Abort();
                     timeout = true;

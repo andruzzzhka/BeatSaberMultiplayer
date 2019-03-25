@@ -48,7 +48,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
                 _currentSongCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")), rectTransform, false);
                 (_currentSongCell.transform as RectTransform).anchoredPosition = new Vector2(55f, -27f);
-
+                _currentSongCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
+                _currentSongCell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
+                _currentSongCell.SetPrivateField("_bought", true);
+                foreach (var icon in _currentSongCell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
+                {
+                    Destroy(icon.gameObject);
+                }
 
                 _progressBarRect = new GameObject("ProgressBar", typeof(RectTransform)).GetComponent<RectTransform>();
 
@@ -107,24 +113,24 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
             if (_currentSongCell != null)
             {
-                LevelSO level = SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID.StartsWith(songInfo.levelId));
+                BeatmapLevelSO level = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(songInfo.levelId)) as BeatmapLevelSO;
                 if (level == null)
                 {
-                    _currentSongCell.songName = _currentSongInfo.songName;
-                    _currentSongCell.author = "Loading info...";
+                    _currentSongCell.SetText(_currentSongInfo.songName);
+                    _currentSongCell.SetSubText("Loading info...");
                     SongDownloader.Instance.RequestSongByLevelID(_currentSongInfo.levelId, (song) =>
                     {
-                        _currentSongCell.songName = $"{song.songName}\n<size=80%>{song.songSubName}</size>";
-                        _currentSongCell.author = song.authorName;
-                        StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverUrl, (cover) => { _currentSongCell.coverImage = cover; }));
+                        _currentSongCell.SetText($"{song.songName} <size=80%>{song.songSubName}</size>");
+                        _currentSongCell.SetSubText(song.authorName);
+                        StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverUrl, (cover) => { _currentSongCell.SetIcon(cover); }));
                     }
                     );
                 }
                 else
                 {
-                    _currentSongCell.songName = $"{level.songName}\n<size=80%>{level.songSubName}</size>";
-                    _currentSongCell.author = level.songAuthorName;
-                    _currentSongCell.coverImage = level.coverImage;
+                    _currentSongCell.SetText($"{level.songName} <size=80%>{level.songSubName}</size>");
+                    _currentSongCell.SetSubText(level.songAuthorName);
+                    _currentSongCell.SetIcon(level.coverImage);
                 }
 
             }

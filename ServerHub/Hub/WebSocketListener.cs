@@ -26,15 +26,15 @@ namespace ServerHub.Hub
         }
     }
 
-    public struct SongWithDifficulty
+    public struct SongWithOptions
     {
         public SongInfo song;
-        public byte difficulty;
+        public StartLevelInfo options;
 
-        public SongWithDifficulty(SongInfo songInfo, byte diff)
+        public SongWithOptions(SongInfo songInfo, StartLevelInfo optionsInfo)
         {
             song = songInfo;
-            difficulty = diff;
+            options = optionsInfo;
         }
     }
 

@@ -7,6 +7,7 @@ using System.Text;
 
 namespace BeatSaberMultiplayer.Data
 {
+    [Serializable]
     public class RoomSettings
     {
         public string Name;
@@ -16,7 +17,8 @@ namespace BeatSaberMultiplayer.Data
 
         public SongSelectionType SelectionType;
         public int MaxPlayers;
-        public bool NoFail;
+        public float ResultsShowTime;
+        public bool PerPlayerDifficulty;
         
         public RoomSettings()
         {
@@ -30,7 +32,8 @@ namespace BeatSaberMultiplayer.Data
             Password = node["Password"];
             SelectionType = (SongSelectionType)node["SelectionType"].AsInt;
             MaxPlayers = node["MaxPlayers"];
-            NoFail = node["NoFail"];
+            ResultsShowTime = node["ResultsShowTime"];
+            PerPlayerDifficulty = node["PerPlayerDifficulty"];
         }
         
         public RoomSettings(NetIncomingMessage msg)
@@ -39,7 +42,7 @@ namespace BeatSaberMultiplayer.Data
             Name = msg.ReadString();
 
             UsePassword = msg.ReadBoolean();
-            NoFail = msg.ReadBoolean();
+            PerPlayerDifficulty = msg.ReadBoolean();
 
             msg.SkipPadBits();
 
@@ -47,6 +50,7 @@ namespace BeatSaberMultiplayer.Data
                 Password = msg.ReadString();
 
             MaxPlayers = msg.ReadInt32();
+            ResultsShowTime = msg.ReadSingle();
             SelectionType = (SongSelectionType)msg.ReadByte();
 
         }
@@ -56,7 +60,7 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(Name);
 
             msg.Write(UsePassword);
-            msg.Write(NoFail);
+            msg.Write(PerPlayerDifficulty);
 
             msg.WritePadBits();
 
@@ -64,6 +68,7 @@ namespace BeatSaberMultiplayer.Data
                 msg.Write(Password);
 
             msg.Write(MaxPlayers);
+            msg.Write(ResultsShowTime);
             msg.Write((byte)SelectionType);
         }
 
@@ -71,7 +76,7 @@ namespace BeatSaberMultiplayer.Data
         {
             if (obj is RoomSettings)
             {
-                return (Name == ((RoomSettings)obj).Name) && (UsePassword == ((RoomSettings)obj).UsePassword) && (Password == ((RoomSettings)obj).Password) && (MaxPlayers == ((RoomSettings)obj).MaxPlayers) && (NoFail == ((RoomSettings)obj).NoFail);
+                return (Name == ((RoomSettings)obj).Name) && (UsePassword == ((RoomSettings)obj).UsePassword) && (Password == ((RoomSettings)obj).Password) && (MaxPlayers == ((RoomSettings)obj).MaxPlayers) && (PerPlayerDifficulty == ((RoomSettings)obj).PerPlayerDifficulty) && (ResultsShowTime == ((RoomSettings)obj).ResultsShowTime);
             }
             else
             {
@@ -86,7 +91,8 @@ namespace BeatSaberMultiplayer.Data
             hashCode = hashCode * -1521134295 + UsePassword.GetHashCode();
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Password);
             hashCode = hashCode * -1521134295 + MaxPlayers.GetHashCode();
-            hashCode = hashCode * -1521134295 + NoFail.GetHashCode();
+            hashCode = hashCode * -1521134295 + PerPlayerDifficulty.GetHashCode();
+            hashCode = hashCode * -1521134295 + ResultsShowTime.GetHashCode();
             return hashCode;
         }
     }

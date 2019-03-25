@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 
 namespace ServerHub.Misc {
-    public class Logger {
+    public class Logger : IDisposable {
         private static Logger _instance;
         
         public static Logger Instance {
@@ -103,6 +103,13 @@ namespace ServerHub.Misc {
 
         public void Stop() {
             _instance = null;
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            LogWriter.Flush();
+            LogWriter.Close();
         }
     }
 }

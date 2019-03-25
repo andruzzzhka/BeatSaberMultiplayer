@@ -42,16 +42,18 @@ namespace BeatSaberMultiplayer
 
         void Awake()
         {
+            Vector2 offset = new Vector2(40f, -47.5f);
+
             playerPlaceText = CustomExtensions.CreateWorldText(transform, "");
-            playerPlaceText.rectTransform.anchoredPosition = new Vector2(2.5f, 0f);
+            playerPlaceText.rectTransform.anchoredPosition = new Vector2(2.5f, 0f) + offset;
             playerPlaceText.fontSize = 8f;
 
             playerNameText = CustomExtensions.CreateWorldText(transform, "");
-            playerNameText.rectTransform.anchoredPosition = new Vector2(4f, 0f);
+            playerNameText.rectTransform.anchoredPosition = new Vector2(4f, 0f) + offset;
             playerNameText.fontSize = 7f;
 
             playerScoreText = CustomExtensions.CreateWorldText(transform, "");
-            playerScoreText.rectTransform.anchoredPosition = new Vector2(15f, 0f);
+            playerScoreText.rectTransform.anchoredPosition = new Vector2(15f, 0f) + offset;
             playerScoreText.fontSize = 8f;
             
             playerSpeakerIcon = new GameObject("Player Speaker Icon", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();

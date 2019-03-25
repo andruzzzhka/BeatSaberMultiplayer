@@ -41,7 +41,7 @@ namespace ServerHub.Rooms
         {
             channelId = newChannelId;
 
-            channelInfo = new ChannelInfo() { channelId = channelId, name = Settings.Instance.Radio.RadioChannels[channelId].ChannelName, currentSong = null, preferredDifficulty = Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty, playerCount = 0, iconUrl = Settings.Instance.Radio.RadioChannels[channelId].ChannelIconUrl, state = ChannelState.NextSong, ip = "", port = 0 };
+            channelInfo = new ChannelInfo() { channelId = channelId, name = Settings.Instance.Radio.RadioChannels[channelId].ChannelName, currentSong = null, currentLevelOptions = new StartLevelInfo(Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty, new GameplayModifiers() { noFail = true }, "Standard"), playerCount = 0, iconUrl = Settings.Instance.Radio.RadioChannels[channelId].ChannelIconUrl, state = ChannelState.NextSong, ip = "", port = 0 };
 
             if (File.Exists($"RadioQueue{channelId}.json"))
             {
@@ -140,7 +140,6 @@ namespace ServerHub.Rooms
             channelInfo.playerCount = radioClients.Count;
             channelInfo.name = Settings.Instance.Radio.RadioChannels[channelId].ChannelName;
             channelInfo.iconUrl = Settings.Instance.Radio.RadioChannels[channelId].ChannelIconUrl;
-            channelInfo.preferredDifficulty = Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty;
 
             if (radioClients.Count == 0)
             {
@@ -221,7 +220,8 @@ namespace ServerHub.Rooms
                             channelInfo.state = ChannelState.InGame;
 
                             outMsg.Write((byte)CommandType.StartLevel);
-                            outMsg.Write((byte)Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty);
+                            //outMsg.Write((byte)Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty);
+                            channelInfo.currentLevelOptions.AddToMessage(outMsg);
 
                             channelInfo.currentSong.songDuration = Misc.Math.Median(songDurationResponses.Values.ToArray());
                             songDurationResponses.Clear();
@@ -233,7 +233,7 @@ namespace ServerHub.Rooms
                             songStartTime = DateTime.Now;
 
                             if (radioClients.Count > 0)
-                                BroadcastWebSocket(CommandType.StartLevel, new SongWithDifficulty(channelInfo.currentSong, (byte)channelInfo.preferredDifficulty));
+                                BroadcastWebSocket(CommandType.StartLevel, new SongWithOptions(channelInfo.currentSong, channelInfo.currentLevelOptions));
                         }
                         else if (DateTime.Now.Subtract(nextSongScreenStartTime).TotalSeconds >= Settings.Instance.Radio.NextSongPrepareTime * 0.75 && !requestingSongDuration)
                         {

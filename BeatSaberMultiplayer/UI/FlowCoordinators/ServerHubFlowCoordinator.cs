@@ -15,6 +15,7 @@ using UnityEngine;
 using VRUI;
 using Lidgren.Network;
 using BS_Utils.Gameplay;
+using System.Reflection;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
@@ -85,6 +86,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void RoomCreationFlowCoordinator_didFinishEvent(bool immediately)
         {
+            PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent -= RoomCreationFlowCoordinator_didFinishEvent;
             try
             {
                 DismissFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, immediately);
@@ -118,6 +120,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void RoomFlowCoordinator_didFinishEvent()
         {
+            PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent -= RoomCreationFlowCoordinator_didFinishEvent;
             DismissFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false);
         }
 
@@ -220,16 +223,23 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             try
             {
-                NetworkClient.Start();
+                Task.Run(() =>
+                {
+                    NetworkClient.Start();
 
-                Misc.Logger.Info($"Creating message...");
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
-                outMsg.Write(Plugin.pluginVersion);
-                new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).AddToMessage(outMsg);
+                    Misc.Logger.Info($"Creating message...");
+                    NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
 
-                Misc.Logger.Info($"Connecting to {ip}:{port}...");
+                    Version assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
+                    byte[] version = new byte[4] { (byte)assemblyVersion.Major, (byte)assemblyVersion.Minor, (byte)assemblyVersion.Build, (byte)assemblyVersion.Revision };
 
-                NetworkClient.Connect(ip, port, outMsg);
+                    outMsg.Write(version);
+                    new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).AddToMessage(outMsg);
+
+                    Misc.Logger.Info($"Connecting to {ip}:{port}...");
+
+                    NetworkClient.Connect(ip, port, outMsg);
+                }).ConfigureAwait(false);
             }
             catch(Exception e)
             {

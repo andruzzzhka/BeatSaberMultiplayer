@@ -61,7 +61,7 @@ namespace BeatSaberMultiplayer
         SpeexCodex speexDec;
         private VoipListener voiceChatListener;
         
-        public static void OnLoad(Scene to)
+        public static void OnLoad()
         {
             if (Instance != null)
                 return;
@@ -80,7 +80,7 @@ namespace BeatSaberMultiplayer
                 _currentScene = SceneManager.GetActiveScene().name;
                 
                 _messageDisplayText = CustomExtensions.CreateWorldText(transform, "");
-                transform.position = new Vector3(0f, 3.75f, 3.75f);
+                transform.position = new Vector3(40f, -43.75f, 3.75f);
                 transform.rotation = Quaternion.Euler(-30f, 0f, 0f);
                 _messageDisplayText.overflowMode = TextOverflowModes.Overflow;
                 _messageDisplayText.enableWordWrapping = false;
@@ -215,48 +215,37 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void ActiveSceneChanged(Scene from, Scene to)
+        public void MenuSceneLoaded()
         {
-            try
+            _currentScene = "Menu";
+            loaded = false;
+            DestroyPlayerControllers();
+            if (Client.Instance != null && Client.Instance.Connected)
             {
-                Misc.Logger.Info($"(OnlineController) Travelling from {from.name} to {to.name}");
-                if (to.name == "GameCore" || to.name == "Menu")
+                if (Client.Instance.InRadioMode)
                 {
-                    _currentScene = to.name;
-                    if (_currentScene == "GameCore")
-                    {
-                        DestroyPlayerControllers();
-                        DestroyScoreScreens();
-                        if (Client.Instance != null && Client.Instance.Connected)
-                        {
-                            StartCoroutine(WaitForControllers());
-                            needToSendUpdates = true;
-                        }
-                    }
-                    else if (_currentScene == "Menu")
-                    {
-                        loaded = false;
-                        DestroyPlayerControllers();
-                        if (Client.Instance != null && Client.Instance.Connected)
-                        {
-                            if (Client.Instance.InRadioMode)
-                            {
-                                PluginUI.instance.radioFlowCoordinator.ReturnToChannel();
-                            }
-                            else
-                            {
-                                PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
-                            }
-                            needToSendUpdates = true;
-                        }
-                    }
+                    PluginUI.instance.radioFlowCoordinator.ReturnToChannel();
                 }
-            }
-            catch (Exception e)
-            {
-                Misc.Logger.Exception($"(OnlineController) Exception on {_currentScene} scene activation! Exception: {e}");
+                else
+                {
+                    PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
+                }
+                needToSendUpdates = true;
             }
         }
+
+        public void GameSceneLoaded()
+        {
+            _currentScene = "GameCore";
+            DestroyPlayerControllers();
+            DestroyScoreScreens();
+            if (Client.Instance != null && Client.Instance.Connected)
+            {
+                StartCoroutine(WaitForControllers());
+                needToSendUpdates = true;
+            }
+        }
+
 
         private void PacketReceived(NetIncomingMessage msg)
         {
@@ -268,6 +257,7 @@ namespace BeatSaberMultiplayer
                     property.DeclaringType.GetProperty("gameState");
                     property.GetSetMethod(true).Invoke(_gameManager, new object[] { StandardLevelGameplayManager.GameState.Failed });
                 }
+                return;
             }
 
             switch ((CommandType)msg.ReadByte())
@@ -278,20 +268,20 @@ namespace BeatSaberMultiplayer
                         float totalTime = msg.ReadFloat();
 
                         int playersCount = msg.ReadInt32();
-
                         List<PlayerInfo> playerInfos = new List<PlayerInfo>();
-                        for (int j = 0; j < playersCount; j++)
+                        try
                         {
-                            try
+                            for (int j = 0; j < playersCount; j++)
                             {
                                 playerInfos.Add(new PlayerInfo(msg));
                             }
-                            catch (Exception e)
-                            {
+                        }
+                        catch (Exception e)
+                        {
 #if DEBUG
-                                Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
+                            Misc.Logger.Exception($"Unable to parse PlayerInfo! Player count={playersCount} Message size={msg.LengthBytes} Excpetion: {e}");
 #endif
-                            }
+                            return;
                         }
 
                         playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "Menu")).OrderByDescending(x => x.playerId).ToList();
@@ -746,7 +736,7 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SongFinished(StandardLevelSceneSetupDataSO sender, LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers, bool practice)
+        public void SongFinished(StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers, bool practice)
         {
             if(Client.Instance.InRadioMode)
             {
@@ -770,7 +760,8 @@ namespace BeatSaberMultiplayer
             bool cleared = levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared;
             string levelID = difficultyBeatmap.level.levelID;
             BeatmapDifficulty difficulty = difficultyBeatmap.difficulty;
-            PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(levelID, difficulty);
+            BeatmapCharacteristicSO beatmapCharacteristic = difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic;
+            PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(levelID, difficulty, beatmapCharacteristic);
             bool newHighScore = playerLevelStatsData.highScore < levelCompletionResults.score;
             playerLevelStatsData.IncreaseNumberOfGameplays();
             if (cleared)

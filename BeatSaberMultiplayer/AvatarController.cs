@@ -188,12 +188,9 @@ namespace BeatSaberMultiplayer
         {
             if (_playerInfo == null)
             {
-                playerNameText.gameObject.SetActive(false);
-                playerSpeakerIcon.gameObject.SetActive(false);
-                if (avatar != null)
-                {
-                    Destroy(avatar.GameObject);
-                }
+                if (playerNameText != null) playerNameText.gameObject.SetActive(false);
+                if (playerSpeakerIcon != null) playerSpeakerIcon.gameObject.SetActive(false);
+                if (avatar != null) Destroy(avatar.GameObject);
                 return;
             }
 
@@ -218,6 +215,7 @@ namespace BeatSaberMultiplayer
                     else
                     {
                         playerNameText.gameObject.SetActive(true);
+                        playerNameText.alignment = TextAlignmentOptions.Center;
                         playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(playerInfo.playerId));
                     }
                 }

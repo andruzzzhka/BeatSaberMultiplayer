@@ -34,7 +34,7 @@ namespace BeatSaberMultiplayer
         List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
         List<LeaderboardTableCell> _tableCells = new List<LeaderboardTableCell>();
 
-        public LevelSO _selectedSong;
+        public BeatmapLevelSO _selectedSong;
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
@@ -42,6 +42,13 @@ namespace BeatSaberMultiplayer
             {
                 _songTableCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")), rectTransform);
                 (_songTableCell.transform as RectTransform).anchoredPosition = new Vector2(100f, -1.5f);
+                _songTableCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
+                _songTableCell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
+                _songTableCell.SetPrivateField("_bought", true);
+                foreach (var icon in _songTableCell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
+                {
+                    Destroy(icon.gameObject);
+                }
 
                 _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
@@ -155,7 +162,7 @@ namespace BeatSaberMultiplayer
             yield return null;
             yield return null;
 
-            _leaderboardTableView.ScrollToRow(0, false);
+            _leaderboardTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
         }
 
         public void SetSong(SongInfo info)
@@ -163,23 +170,23 @@ namespace BeatSaberMultiplayer
             if (_songTableCell == null)
                 return;
             
-            _selectedSong = SongLoader.CustomLevelCollectionSO.levels.FirstOrDefault(x => x.levelID.StartsWith(info.levelId));
+            _selectedSong = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(info.levelId)) as BeatmapLevelSO;
 
             if (_selectedSong != null)
             {
-                _songTableCell.songName = _selectedSong.songName + "\n<size=80%>" + _selectedSong.songSubName + "</size>";
-                _songTableCell.author = _selectedSong.songAuthorName;
-                _songTableCell.coverImage = _selectedSong.coverImage;
+                _songTableCell.SetText(_selectedSong.songName + " <size=80%>" + _selectedSong.songSubName + "</size>");
+                _songTableCell.SetSubText(_selectedSong.songAuthorName);
+                _songTableCell.SetIcon(_selectedSong.coverImage);
             }
             else
             {
-                _songTableCell.songName = info.songName;
-                _songTableCell.author = "Loading info...";
+                _songTableCell.SetText(info.songName);
+                _songTableCell.SetSubText("Loading info...");
                 SongDownloader.Instance.RequestSongByLevelID(info.levelId, (song) =>
                 {
-                    _songTableCell.songName = $"{song.songName}\n<size=80%>{song.songSubName}</size>";
-                    _songTableCell.author = song.authorName;
-                    StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverUrl, (cover) => { _songTableCell.coverImage = cover; }));
+                    _songTableCell.SetText( $"{song.songName} <size=80%>{song.songSubName}</size>");
+                    _songTableCell.SetSubText(song.authorName);
+                    StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverUrl, (cover) => { _songTableCell.SetIcon(cover); }));
 
                 });
             }
@@ -208,7 +215,7 @@ namespace BeatSaberMultiplayer
             return minutes.ToString() + ":" + string.Format("{0:00}", seconds);
         }
 
-        public TableCell CellForRow(int row)
+        public TableCell CellForIdx(int row)
         {
             LeaderboardTableCell cell = Instantiate(_leaderboardTableCellInstance);
 
@@ -223,12 +230,12 @@ namespace BeatSaberMultiplayer
             return cell;
         }
 
-        public int NumberOfRows()
+        public int NumberOfCells()
         {
             return _playerInfos.Count;
         }
 
-        public float RowHeight()
+        public float CellSize()
         {
             return 7f;
         }

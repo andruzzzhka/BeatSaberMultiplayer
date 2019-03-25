@@ -1,4 +1,5 @@
 using Lidgren.Network;
+using Newtonsoft.Json;
 using ServerHub.Data;
 using ServerHub.Misc;
 using ServerHub.Rooms;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Hub
 {
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions }
 
     public static class HubListener
     {
@@ -106,7 +107,7 @@ namespace ServerHub.Hub
             {
                 _ticksLength.RemoveAt(0);
             }
-            _ticksLength.Add(DateTime.UtcNow.Subtract(_lastTick).Ticks/TimeSpan.TicksPerMillisecond);
+            _ticksLength.Add(DateTime.UtcNow.Subtract(_lastTick).Ticks/(float)TimeSpan.TicksPerMillisecond);
             _lastTick = DateTime.UtcNow;
             List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
 
@@ -133,19 +134,23 @@ namespace ServerHub.Hub
                         case NetIncomingMessageType.ConnectionApproval:
                             {
                                 byte[] versionBytes = msg.PeekBytes(4);
-                                uint version = msg.ReadUInt32();
+                                byte[] version = msg.ReadBytes(4);
 
-                                if(version >= 620)
+                                if (version[0] == 0 && version[1] == 0)
                                 {
-                                    version = ((uint)versionBytes[0]).ConcatUInts(versionBytes[1]).ConcatUInts(versionBytes[2]).ConcatUInts(versionBytes[3]);
+                                    uint versionUint = BitConverter.ToUInt32(version, 0);
+                                    uint serverVersionUint = ((uint)Assembly.GetEntryAssembly().GetName().Version.Major).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Minor).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Build).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Revision);
+                                    msg.SenderConnection.Deny($"Version mismatch!\nServer:{serverVersionUint}\nClient:{versionUint}");
+                                    Logger.Instance.Log($"Client version v{versionUint} tried to connect");
+                                    break;
                                 }
 
-                                uint serverVersion = ((uint)Assembly.GetEntryAssembly().GetName().Version.Major).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Minor).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Build).ConcatUInts((uint)Assembly.GetEntryAssembly().GetName().Version.Revision);
+                                byte[] serverVersion = new byte[4] { (byte)Assembly.GetEntryAssembly().GetName().Version.Major, (byte)Assembly.GetEntryAssembly().GetName().Version.Minor, (byte)Assembly.GetEntryAssembly().GetName().Version.Build, (byte)Assembly.GetEntryAssembly().GetName().Version.Revision };
 
-                                if (CompareVersions(version, serverVersion))
+                                if (version[0] != serverVersion[0] || version[1] != serverVersion[1] || version[2] != serverVersion[2])
                                 {
-                                    msg.SenderConnection.Deny($"Version mismatch!\nServer:{serverVersion}\nClient:{version}");
-                                    Logger.Instance.Log($"Client version v{version} tried to connect");
+                                    msg.SenderConnection.Deny($"Version mismatch|{string.Join('.', serverVersion)}|{string.Join('.', version)}");
+                                    Logger.Instance.Log($"Client version v{string.Join('.', version)} tried to connect");
                                     break;
                                 }
 
@@ -338,6 +343,18 @@ namespace ServerHub.Hub
                                             }
                                         }
                                         break;
+                                    case CommandType.SetLevelOptions:
+                                        {
+                                            if (client != null && client.joinedRoomID != 0)
+                                            {
+                                                BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                                if (joinedRoom != null)
+                                                {
+                                                    joinedRoom.SetLevelOptions(client.playerInfo, new StartLevelInfo(msg));
+                                                }
+                                            }
+                                        }
+                                        break;
                                     case CommandType.StartLevel:
                                         {
 #if DEBUG
@@ -349,10 +366,10 @@ namespace ServerHub.Hub
                                                 BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
                                                 if (joinedRoom != null)
                                                 {
-                                                    byte difficulty = msg.ReadByte();
+                                                    StartLevelInfo options = new StartLevelInfo(msg);
                                                     SongInfo song = new SongInfo(msg);
                                                     song.songDuration += 2.5f;
-                                                    joinedRoom.StartLevel(client.playerInfo, difficulty, song);
+                                                    joinedRoom.StartLevel(client.playerInfo, options, song);
                                                 }
                                             }
                                         }

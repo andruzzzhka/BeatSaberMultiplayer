@@ -89,9 +89,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     ReflectionUtil.SetPrivateField(_serverHubsTableView, "_pageUpButton", _pageUpButton);
                     ReflectionUtil.SetPrivateField(_serverHubsTableView, "_pageDownButton", _pageDownButton);
 
-                    _serverHubsTableView.didSelectRowEvent += ServerHubs_didSelectRowEvent;
+                    _serverHubsTableView.didSelectCellWithIdxEvent += ServerHubs_didSelectRowEvent;
                     _serverHubsTableView.dataSource = this;
-                    _serverHubsTableView.ScrollToRow(0, false);
+                    _serverHubsTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
                 }
             }
             else
@@ -115,7 +115,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     _serverHubsTableView.ReloadData();
                 }
 
-                _serverHubsTableView.ScrollToRow(0, false);
+                _serverHubsTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
             }
         }
 
@@ -125,7 +125,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 selectedServerHub?.Invoke(_serverHubClients[row]);
         }
 
-        public TableCell CellForRow(int row)
+        public TableCell CellForIdx(int row)
         {
             LevelListTableCell cell = Instantiate(_serverTableCellInstance);
             cell.reuseIdentifier = "ServerHubCell";
@@ -133,26 +133,34 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             ServerHubClient client = _serverHubClients[row];
 
             cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
-            cell.songName = $"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.ip}:{client.port} (PING: {Mathf.RoundToInt(client.ping*1000)})";
+            cell.SetText($"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.ip}:{client.port} (PING: {Mathf.RoundToInt(client.ping*1000)})");
 
             if (client.serverHubCompatible)
             {
-                cell.author = $"{client.playersCount} players, {client.availableRoomsCount} rooms";
+                cell.SetSubText($"{client.playersCount} players, {client.availableRoomsCount} rooms");
             }
             else
             {
-                cell.author = $"{(client.serverHubAvailable ? "VERSION MISMATCH" : "SERVER DOWN")}";
+                cell.SetSubText($"{(client.serverHubAvailable ? "VERSION MISMATCH" : "SERVER DOWN")}");
+            }
+
+            cell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
+            cell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
+            cell.SetPrivateField("_bought", true);
+            foreach (var icon in cell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
+            {
+                Destroy(icon.gameObject);
             }
 
             return cell;
         }
 
-        public int NumberOfRows()
+        public int NumberOfCells()
         {
             return _serverHubClients.Count; 
         }
 
-        public float RowHeight()
+        public float CellSize()
         {
             return 10f;
         }

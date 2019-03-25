@@ -38,14 +38,16 @@ namespace BeatSaberMultiplayer.UI
                 _customKeyboard.cancelButtonWasPressedEvent += () => { backButtonPressed?.Invoke(); };
                 _customKeyboard.okButtonWasPressedEvent += () => { enterButtonPressed?.Invoke(inputString); };
 
-                _inputText = BeatSaberUI.CreateText(rectTransform, inputString, new Vector2(0f, 22f));
+                _inputText = BeatSaberUI.CreateText(rectTransform, "", new Vector2(0f, 22f));
                 _inputText.alignment = TextAlignmentOptions.Center;
                 _inputText.fontSize = 6f;
 
+                UpdateInputText();
             }
             else
             {
                 inputString = "";
+                _inputText.alignment = TextAlignmentOptions.Center;
                 UpdateInputText();
             }
 
@@ -55,7 +57,7 @@ namespace BeatSaberMultiplayer.UI
         {
             if (_inputText != null)
             {
-                _inputText.text = inputString.ToUpper();
+                _inputText.text = inputString?.ToUpper() ?? "";
                 if (string.IsNullOrEmpty(inputString) && !allowEmptyInput)
                 {
                     _customKeyboard.OkButtonInteractivity = false;

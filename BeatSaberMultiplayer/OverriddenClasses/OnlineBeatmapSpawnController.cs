@@ -40,7 +40,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
             if (onlineCallbackController != null)
             {
-                _noteSpawnCallbackId = onlineCallbackController.AddBeatmapObjectCallback(new BeatmapObjectCallbackController.BeatmapObjectCallback(NoteSpawnCallback), _spawnAheadTime);
+                _noteSpawnCallbackId = onlineCallbackController.AddBeatmapObjectCallback(new BeatmapObjectCallbackController.BeatmapObjectCallback(BeatmapObjectSpawnCallback), _spawnAheadTime);
             }
 
             _localPlayer = FindObjectsOfType<PlayerController>().First(x => !x.name.Contains("Online"));
@@ -55,7 +55,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             _activeObstacles = new List<ObstacleController>();
         }
 
-        public override void NoteSpawnCallback(BeatmapObjectData beatmapObjectData)
+        public override void BeatmapObjectSpawnCallback(BeatmapObjectData beatmapObjectData)
         {
             if (_disableSpawning)
             {
@@ -109,7 +109,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     noteJump.SetPrivateField("_audioTimeSyncController", onlineSyncController);
                     bombNoteController.GetComponent<NoteFloorMovement>().SetPrivateField("_audioTimeSyncController", onlineSyncController);
                     bombNoteController.noteDidFinishJumpEvent += ResetControllers;
-                    bombNoteController.noteWasCutEvent += (controller, info) => { ResetControllers(controller); };
+                    bombNoteController.noteWasCutEvent += ResetControllersNoteWasCut;
                     bombNoteController.noteDidDissolveEvent += ResetControllers;
                     _activeNotes.Add(bombNoteController);
                 }
@@ -123,7 +123,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     GameNoteController gameNoteController = basicNoteController as GameNoteController;
                     if (gameNoteController != null)
                     {
-                        gameNoteController.Init(noteData, a4 + noteOffset3, a5 + noteOffset3, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity, _disappearingArrows);
+                        gameNoteController.Init(noteData, a4 + noteOffset3, a5 + noteOffset3, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity, _disappearingArrows, _ghostNotes);
                     }
                     else
                     {
@@ -136,7 +136,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     basicNoteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "BigCuttable").size = _defaultBigCuttableSize * 1.65f;
                     basicNoteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "SmallCuttable").size = _defaultSmallCuttableSize * 1.65f;
                     basicNoteController.noteDidFinishJumpEvent += ResetControllers;
-                    basicNoteController.noteWasCutEvent += (controller, info) => { ResetControllers(controller); };
+                    basicNoteController.noteWasCutEvent += ResetControllersNoteWasCut;
                     basicNoteController.noteDidDissolveEvent += ResetControllers;
                     _prevSpawnedNormalNoteController = basicNoteController;
                     _activeNotes.Add(basicNoteController);
@@ -165,15 +165,20 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     {
                         if (hit.noteWasCut)
                         {
-                            controller.SendNoteWasCutEvent(hit.GetCutInfo());
+                            controller.InvokePrivateMethod("SendNoteWasCutEvent", new object[] { hit.GetCutInfo() });
                         }
                         else
                         {
-                            controller.HandleNoteDidPassMissedMarkerEvent();
+                            controller.InvokePrivateMethod("HandleNoteDidPassMissedMarkerEvent", new object[0]);
                         }
                     }
                 }
             }
+        }
+
+        private void ResetControllersNoteWasCut(NoteController controller, NoteCutInfo info)
+        {
+            ResetControllers(controller);
         }
 
         public void ResetControllers(NoteController noteController)
@@ -187,7 +192,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             noteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "SmallCuttable").size = _defaultSmallCuttableSize;
 
             noteController.noteDidFinishJumpEvent -= ResetControllers;
-            noteController.noteWasCutEvent -= (controller, info) => { ResetControllers(controller); };
+            noteController.noteWasCutEvent -= ResetControllersNoteWasCut;
             noteController.noteDidDissolveEvent -= ResetControllers;
 
             if (_activeNotes != null)
