@@ -12,11 +12,11 @@ namespace BeatSaberMultiplayer.UI.UIElements
     {
         public static T AddListSetting<T>(RectTransform parent, string name, Vector2 position) where T : MonoBehaviour
         {
-            var volumeSettings = Resources.FindObjectsOfTypeAll<VolumeSettingsController>().FirstOrDefault();
-            GameObject newSettingsObject = UnityEngine.Object.Instantiate(volumeSettings.gameObject, parent);
+            var listSettings = Resources.FindObjectsOfTypeAll<FormattedFloatListSettingsController>().FirstOrDefault();
+            GameObject newSettingsObject = UnityEngine.Object.Instantiate(listSettings.gameObject, parent);
             newSettingsObject.name = name;
 
-            VolumeSettingsController volume = newSettingsObject.GetComponent<VolumeSettingsController>();
+            ListSettingsController volume = newSettingsObject.GetComponent<ListSettingsController>();
             T newListSettingsController = volume.gameObject.AddComponent<T>();
             UnityEngine.Object.DestroyImmediate(volume);
 
@@ -31,11 +31,11 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         public static T AddListSetting<T>(RectTransform parent, string name) where T : MonoBehaviour
         {
-            var volumeSettings = Resources.FindObjectsOfTypeAll<VolumeSettingsController>().FirstOrDefault();
-            GameObject newSettingsObject = UnityEngine.Object.Instantiate(volumeSettings.gameObject, parent);
+            var listSettings = Resources.FindObjectsOfTypeAll<FormattedFloatListSettingsController>().FirstOrDefault();
+            GameObject newSettingsObject = UnityEngine.Object.Instantiate(listSettings.gameObject, parent);
             newSettingsObject.name = name;
 
-            VolumeSettingsController volume = newSettingsObject.GetComponent<VolumeSettingsController>();
+            ListSettingsController volume = newSettingsObject.GetComponent<ListSettingsController>();
             T newListSettingsController = volume.gameObject.AddComponent<T>();
             UnityEngine.Object.DestroyImmediate(volume);
 
@@ -46,11 +46,11 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         public static T AddToggleSetting<T>(RectTransform parent, string name, Vector2 position) where T : MonoBehaviour
         {
-            var volumeSettings = Resources.FindObjectsOfTypeAll<WindowModeSettingsController>().FirstOrDefault();
-            GameObject newSettingsObject = UnityEngine.Object.Instantiate(volumeSettings.gameObject, parent);
+            var switchSettings = Resources.FindObjectsOfTypeAll<SwitchSettingsController>().FirstOrDefault();
+            GameObject newSettingsObject = UnityEngine.Object.Instantiate(switchSettings.gameObject, parent);
             newSettingsObject.name = name;
 
-            WindowModeSettingsController volume = newSettingsObject.GetComponent<WindowModeSettingsController>();
+            SwitchSettingsController volume = newSettingsObject.GetComponent<SwitchSettingsController>();
             T newToggleSettingsController = volume.gameObject.AddComponent<T>();
             UnityEngine.Object.DestroyImmediate(volume);
 
