@@ -87,12 +87,12 @@ namespace BeatSaberMultiplayer
 #endif
                 syncStartInfo = _info;
                 syncEndInfo = _info;
-                
-                if (SceneManager.GetActiveScene().name != "Menu" && Config.Instance.ShowOtherPlayersBlocks && !Client.Instance.playerInfo.Equals(PlayerInfo))
-                {
-                    SpawnBeatmapControllers();
-                    SpawnSabers();
-                }
+            }
+
+            if (SceneManager.GetActiveScene().name == "GameCore" && Config.Instance.ShowOtherPlayersBlocks && !Client.Instance.playerInfo.Equals(PlayerInfo))
+            {
+                SpawnBeatmapControllers();
+                SpawnSabers();
             }
         }
 
@@ -138,15 +138,21 @@ namespace BeatSaberMultiplayer
                 avatar.SetPlayerInfo(_info, avatarOffset, Client.Instance.playerInfo.Equals(_info));
             }
 
-            if(voipSource != null && !voipSource.isPlaying)
+            if (voipSource != null)
             {
-                _silentFrames++;
+                if (!voipSource.isPlaying)
+                {
+                    _silentFrames++;
+                }
+                else
+                {
+                    _silentFrames = 0;
+                }
             }
             else
             {
-                _silentFrames = 0;
+                _silentFrames = 999;
             }
-
         }
 
         public void FixedUpdate()

@@ -88,6 +88,9 @@ namespace BeatSaberMultiplayer.UI.UIElements
             playerSpeakerIcon.sprite = Sprites.speakerIcon;
             playerSpeakerIcon.material = Sprites.NoGlowMat;
 
+            _scoreText.overflowMode = TextOverflowModes.Overflow;
+            _scoreText.enableWordWrapping = false;
+
         }
 
     }

@@ -46,14 +46,5 @@ namespace BeatSaberMultiplayer.Misc
             }
         }
 
-        static public IEnumerator LoadAudioCoroutine(string audioPath, object obj, string fieldName)
-        {
-            using (var www = new WWW(audioPath))
-            {
-                yield return www;
-                ReflectionUtil.SetPrivateField(obj, fieldName, www.GetAudioClip(true, true, AudioType.UNKNOWN));
-            }
-        }
-
     }
 }

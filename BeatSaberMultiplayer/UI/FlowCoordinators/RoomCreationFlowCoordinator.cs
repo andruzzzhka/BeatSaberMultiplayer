@@ -122,6 +122,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 Client.Instance.Disconnect();
                 Client.Instance.Connect(_selectedServerHub.ip, _selectedServerHub.port);
+                Client.Instance.ConnectedToServerHub -= ConnectedToServerHub;
                 Client.Instance.ConnectedToServerHub += ConnectedToServerHub;
             }
             else

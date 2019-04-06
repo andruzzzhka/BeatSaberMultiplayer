@@ -24,26 +24,49 @@ namespace BeatSaberMultiplayer
     public class Client : MonoBehaviour
     {
 #if DEBUG
-        public static FileStream packetWriter = File.Open("packetDump.mpdmp", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+        public static FileStream packetWriter;
         public static Queue<byte[]> packetsBuffer = new Queue<byte[]>();
+        public static bool startNewDump;
 
         public static async void WritePackets()
         {
+
             byte[] data;
             while (true)
             {
-                if (packetsBuffer.Count > 0)
+                try
                 {
-                    int packets = packetsBuffer.Count;
-                    while (packetsBuffer.Count > 0)
+                    if (startNewDump && packetWriter != null && packetWriter.Position > 16)
                     {
-                        data = packetsBuffer.Dequeue();
-                        
-                        await packetWriter.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
+                        Misc.Logger.Info("Closing old dump...");
+                        await packetWriter.FlushAsync().ConfigureAwait(false);
+                        packetWriter.Close();
+                        packetWriter = null;
+                        startNewDump = false;
                     }
 
-                    await packetWriter.FlushAsync().ConfigureAwait(false);
-                    Misc.Logger.Info(packets+" update packets are written to disk!");
+                    if (packetWriter == null)
+                    {
+                        Misc.Logger.Info("Starting new dump...");
+                        packetWriter = File.Open($"packetDump{Directory.GetFiles(Environment.CurrentDirectory, "*.mpdmp", SearchOption.TopDirectoryOnly).Length}.mpdmp", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+                    }
+
+                    if (packetsBuffer.Count > 0)
+                    {
+                        int packets = packetsBuffer.Count;
+                        while (packetsBuffer.Count > 0)
+                        {
+                            data = packetsBuffer.Dequeue();
+
+                            await packetWriter.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
+                        }
+
+                        await packetWriter.FlushAsync().ConfigureAwait(false);
+                        Misc.Logger.Info(packets + " update packets are written to disk!");
+                    }
+                }catch(Exception e)
+                {
+                    Misc.Logger.Error("Unable to write update packets to packet dump! Exception: "+e);
                 }
                 await Task.Delay(TimeSpan.FromSeconds(2.5)).ConfigureAwait(false);
             }
@@ -329,6 +352,9 @@ namespace BeatSaberMultiplayer
                                     }
                                     else if (commandType == CommandType.StartLevel)
                                     {
+#if DEBUG
+                                        startNewDump = true;
+#endif
                                         if (playerInfo.playerState == PlayerState.Room)
                                             foreach (Action nextDel in ClientLevelStarted.GetInvocationList())
                                             {

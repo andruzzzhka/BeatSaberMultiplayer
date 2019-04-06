@@ -21,7 +21,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public static bool isCalculatingHashes;
 
-        public static IEnumerator DownloadAvatarCoroutine(string hash, Action<string> callback)
+        public static IEnumerator DownloadAvatarCoroutine(string hash)
         {
             queuedAvatars.Add(hash);
             string downloadUrl = "";
@@ -36,7 +36,6 @@ namespace BeatSaberMultiplayer.Misc
             {
                 Logger.Error(www.error);
                 queuedAvatars.Remove(hash);
-                callback?.Invoke(null);
                 yield break;
             }
             else
@@ -51,7 +50,6 @@ namespace BeatSaberMultiplayer.Misc
                     Logger.Error($"Avatar with hash {hash} doesn't exist on ModelSaber!");
                     cachedAvatars.Add(hash, null);
                     queuedAvatars.Remove(hash);
-                    callback?.Invoke(null);
                     yield break;
                 }
 
@@ -62,7 +60,6 @@ namespace BeatSaberMultiplayer.Misc
             if(string.IsNullOrEmpty(downloadUrl))
             {
                 queuedAvatars.Remove(hash);
-                callback?.Invoke(null);
                 yield break;
             }
 
@@ -82,7 +79,6 @@ namespace BeatSaberMultiplayer.Misc
             {
                 Logger.Error(e);
                 queuedAvatars.Remove(hash);
-                callback?.Invoke(null);
                 yield break;
             }
 
@@ -105,7 +101,6 @@ namespace BeatSaberMultiplayer.Misc
             {
                 queuedAvatars.Remove(hash);
                 Logger.Error("Unable to download avatar! " + (www.isNetworkError ? $"Network error: {www.error}" : (www.isHttpError ? $"HTTP error: {www.error}" : "Unknown error")));
-                callback?.Invoke(null);
             }
             else
             {
@@ -125,21 +120,33 @@ namespace BeatSaberMultiplayer.Misc
                     customAvatarPath = docPath + "/CustomAvatars/" + avatarName;
 
                     File.WriteAllBytes(customAvatarPath, data);
+                    Logger.Info($"Saving avatar to \"{customAvatarPath}\"...");
 
                     CustomAvatar.CustomAvatar downloadedAvatar = CustomExtensions.CreateInstance<CustomAvatar.CustomAvatar>(customAvatarPath);
                     
-                    queuedAvatars.Remove(hash);
-                    cachedAvatars.Add(hash, downloadedAvatar);
-
-                    downloadedAvatar.Load((CustomAvatar.CustomAvatar avatar, CustomAvatar.AvatarLoadResult result) => { if (result == CustomAvatar.AvatarLoadResult.Completed) { callback?.Invoke(hash); avatarDownloaded?.Invoke(hash); } else callback?.Invoke(null);  });
-                    
                     Logger.Info("Downloaded avatar!");
+                    Logger.Info($"Loading avatar...");
+
+                    downloadedAvatar.Load(
+                        (CustomAvatar.CustomAvatar avatar, CustomAvatar.AvatarLoadResult result) => 
+                        {
+                            if (result == CustomAvatar.AvatarLoadResult.Completed)
+                            {
+                                queuedAvatars.Remove(hash);
+                                cachedAvatars.Add(hash, downloadedAvatar);
+                                avatarDownloaded?.Invoke(hash);
+                            }
+                            else
+                            {
+                                Logger.Error("Unable to load avatar! "+result.ToString());
+                            }
+                        });
+                    
                 }
                 catch (Exception e)
                 {
                     Logger.Exception(e);
                     queuedAvatars.Remove(hash);
-                    callback?.Invoke(null);
                     yield break;
                 }
             }
@@ -153,6 +160,7 @@ namespace BeatSaberMultiplayer.Misc
                 Misc.Logger.Info("Hashing all avatars...");
                 try
                 {
+                    cachedAvatars.Clear();
                     foreach (CustomAvatar.CustomAvatar avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
                     {
                         Task.Run(() =>
@@ -164,9 +172,9 @@ namespace BeatSaberMultiplayer.Misc
                                 {
                                     cachedAvatars.Add(hash, avatar);
 #if DEBUG
-                                Misc.Logger.Info("Hashed avatar "+avatar.Name+"! Hash: "+hash);
+                                    Misc.Logger.Info("Hashed avatar "+avatar.Name+"! Hash: "+hash);
 #endif
-                            }
+                                }
                             }
                         }).ConfigureAwait(false);
 

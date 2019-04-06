@@ -37,10 +37,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             {
                 _serverTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
 
-                _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
+                _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -14f);
+                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -14.5f);
                 (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
                 _pageUpButton.interactable = true;
                 _pageUpButton.onClick.AddListener(delegate ()
@@ -52,7 +52,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
                 (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
                 (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
-                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 8f);
+                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 9f);
                 (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
                 _pageDownButton.interactable = true;
                 _pageDownButton.onClick.AddListener(delegate ()
@@ -61,7 +61,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
 
                 });
 
-                _refreshButton = this.CreateUIButton("PracticeButton", new Vector2(-25f, 36.25f), new Vector2(6.5f, 6.5f), () => { refreshPressed?.Invoke(); }, "", Sprites.refreshIcon);
+                _refreshButton = this.CreateUIButton("PracticeButton", new Vector2(-25f, 36.5f), new Vector2(6.5f, 6.5f), () => { refreshPressed?.Invoke(); }, "", Sprites.refreshIcon);
                 var _refreshIconLayout = _refreshButton.GetComponentsInChildren<HorizontalLayoutGroup>().First(x => x.name == "Content");
                 _refreshIconLayout.padding = new RectOffset(0, 0, 1, 1);
 
@@ -69,7 +69,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 _createRoom.SetButtonText("Create room");
                 _createRoom.SetButtonTextSize(3f);
                 (_createRoom.transform as RectTransform).sizeDelta = new Vector2(38f, 6f);
-                (_createRoom.transform as RectTransform).anchoredPosition = new Vector2(0f, 36f);
+                (_createRoom.transform as RectTransform).anchoredPosition = new Vector2(0f, 36.5f);
                 _createRoom.onClick.RemoveAllListeners();
                 _createRoom.onClick.AddListener(delegate ()
                 {
@@ -95,9 +95,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 (_serverTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
                 (_serverTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
                 (_serverTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
-
-                //ReflectionUtil.SetPrivateField(_serverTableView, "_pageUpButton", _pageUpButton);
-                //ReflectionUtil.SetPrivateField(_serverTableView, "_pageDownButton", _pageDownButton);
 
                 _serverTableView.didSelectCellWithIdxEvent += ServerTableView_DidSelectRow;
                 _serverTableView.dataSource = this;

@@ -37,17 +37,17 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 {
                     _serverTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
 
-                    _selectText = BeatSaberUI.CreateText(rectTransform, "Select ServerHub", new Vector2(0f, 35f));
+                    _selectText = BeatSaberUI.CreateText(rectTransform, "Select ServerHub", new Vector2(0f, 35.5f));
                     _selectText.alignment = TextAlignmentOptions.Center;
                     _selectText.fontSize = 7f;
 
                     _backButton = BeatSaberUI.CreateBackButton(rectTransform);
                     _backButton.onClick.AddListener(delegate () { didFinishEvent?.Invoke(); });
 
-                    _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
+                    _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "PageUpButton")), rectTransform, false);
                     (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                     (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                    (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -14f);
+                    (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -14.5f);
                     (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
                     _pageUpButton.interactable = true;
                     _pageUpButton.onClick.AddListener(delegate ()
@@ -60,7 +60,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
                     (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
                     (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
-                    (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 8f);
+                    (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 9f);
                     (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
                     _pageDownButton.interactable = true;
                     _pageDownButton.onClick.AddListener(delegate ()
@@ -133,11 +133,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             ServerHubClient client = _serverHubClients[row];
 
             cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
-            cell.SetText($"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.ip}:{client.port} (PING: {Mathf.RoundToInt(client.ping*1000)})");
+            cell.SetText($"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.ip}:{client.port}");
 
             if (client.serverHubCompatible)
             {
-                cell.SetSubText($"{client.playersCount} players, {client.availableRoomsCount} rooms");
+                cell.SetSubText($"{client.playersCount} players, {client.availableRoomsCount} rooms,  ping: {Mathf.RoundToInt(client.ping * 1000)}");
             }
             else
             {

@@ -95,6 +95,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 Client.Instance.Disconnect();
                 Client.Instance.Connect(ip, port);
                 Client.Instance.InRadioMode = true;
+                Client.Instance.ConnectedToServerHub -= ConnectedToServerHub;
                 Client.Instance.ConnectedToServerHub += ConnectedToServerHub;
             }
             else
@@ -456,6 +457,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 #endif
 
                 PracticeSettings practiceSettings = new PracticeSettings(PracticeSettings.defaultPracticeSettings);
+                practiceSettings.songSpeedMul = modifiers.songSpeedMul;
 
                 if (startTime > 1.5f)
                 {
@@ -504,11 +506,18 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             else
             {
-                SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level, 
-                (levelLoaded) =>
+                if (level is CustomLevel)
                 {
-                    StartLevel(levelLoaded, _beatmapCharacteristics.First(x => x.serializedName == channelInfo.currentLevelOptions.characteristicName), channelInfo.currentLevelOptions.difficulty, channelInfo.currentLevelOptions.modifiers, currentTime);
-                });
+                    SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
+                    (levelLoaded) =>
+                    {
+                        StartLevel(levelLoaded, _beatmapCharacteristics.First(x => x.serializedName == channelInfo.currentLevelOptions.characteristicName), channelInfo.currentLevelOptions.difficulty, channelInfo.currentLevelOptions.modifiers, currentTime);
+                    });
+                }
+                else
+                {
+                    StartLevel(level, _beatmapCharacteristics.First(x => x.serializedName == channelInfo.currentLevelOptions.characteristicName), channelInfo.currentLevelOptions.difficulty, channelInfo.currentLevelOptions.modifiers, currentTime);
+                }
             }
         }
 

@@ -601,6 +601,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 PracticeSettings practiceSettings = new PracticeSettings(PracticeSettings.defaultPracticeSettings);
                 practiceSettings.startSongTime = startTime + 1.5f;
+                practiceSettings.songSpeedMul = modifiers.songSpeedMul;
 
                 menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, false); });
                 return;
@@ -911,6 +912,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     () =>
                     {
                         SongLoader.SongsLoadedEvent += PlayNow_SongsLoaded;
+                        _leaderboardViewController.SetProgressBarState(false, 0f);
                     },
                     (progress) =>
                     {
@@ -920,13 +922,21 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             else
             {
-                SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
-                (levelLoaded) =>
+                if (level is CustomLevel)
                 {
-                    _leaderboardViewController.SetProgressBarState(false, 0f);
+                    SongLoader.Instance.LoadAudioClipForLevel((CustomLevel)level,
+                    (levelLoaded) =>
+                    {
+                        _leaderboardViewController.SetProgressBarState(false, 0f);
+                        BeatmapCharacteristicSO characteristic = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>().FirstOrDefault(x => x.serializedName == roomInfo.startLevelInfo.characteristicName);
+                        StartLevel(levelLoaded, characteristic, roomInfo.startLevelInfo.difficulty, roomInfo.startLevelInfo.modifiers, currentTime);
+                    });
+                }
+                else
+                {
                     BeatmapCharacteristicSO characteristic = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>().FirstOrDefault(x => x.serializedName == roomInfo.startLevelInfo.characteristicName);
-                    StartLevel(levelLoaded, characteristic, roomInfo.startLevelInfo.difficulty, roomInfo.startLevelInfo.modifiers, currentTime);
-                });
+                    StartLevel(level, characteristic, roomInfo.startLevelInfo.difficulty, roomInfo.startLevelInfo.modifiers, currentTime);
+                }
             }
         }
 

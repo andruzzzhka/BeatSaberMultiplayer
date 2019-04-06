@@ -226,7 +226,6 @@ namespace WebSocketSharp.Net
         sock = lsnr._socket.EndAccept (asyncResult);
       }
       catch (SocketException) {
-        // TODO: Should log the error code when this class has a logging.
       }
       catch (ObjectDisposedException) {
         return;

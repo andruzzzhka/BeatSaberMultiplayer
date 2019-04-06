@@ -51,7 +51,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading;
 
-// TODO: Logging.
 namespace WebSocketSharp.Net
 {
   /// <summary>

@@ -217,7 +217,7 @@ namespace BeatSaberMultiplayer
 
         public void MenuSceneLoaded()
         {
-            _currentScene = "Menu";
+            _currentScene = "MenuCore";
             loaded = false;
             DestroyPlayerControllers();
             if (Client.Instance != null && Client.Instance.Connected)
@@ -284,7 +284,8 @@ namespace BeatSaberMultiplayer
                             return;
                         }
 
-                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "Menu")).OrderByDescending(x => x.playerId).ToList();
+
+                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "MenuCore") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "MenuCore")).OrderByDescending(x => x.playerId).ToList();
 
                         int localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
                         
@@ -292,6 +293,7 @@ namespace BeatSaberMultiplayer
                         {
                             int index = 0;
                             OnlinePlayerController player = null;
+
                             foreach (PlayerInfo info in playerInfos)
                             {
                                 try
@@ -682,7 +684,7 @@ namespace BeatSaberMultiplayer
 
         private bool ShowAvatarsInRoom()
         {
-            return Config.Instance.ShowAvatarsInRoom && _currentScene == "Menu";
+            return Config.Instance.ShowAvatarsInRoom && _currentScene == "MenuCore";
         }
 
         public static PosRot GetXRNodeWorldPosRot(XRNode node)
@@ -743,8 +745,18 @@ namespace BeatSaberMultiplayer
             }
 
             if (Config.Instance.SpectatorMode || Client.disableScoreSubmission || ScoreSubmission.Disabled || ScoreSubmission.ProlongedDisabled)
+            {
+                List<string> reasons = new List<string>();
+
+                if (Config.Instance.SpectatorMode) reasons.Add("Spectator mode");
+                if (Client.disableScoreSubmission) reasons.Add("Multiplayer score submission disabled by another mod");
+                if (ScoreSubmission.Disabled) reasons.Add("Score submission is disabled by "+ ScoreSubmission.ModString);
+                if (ScoreSubmission.ProlongedDisabled) reasons.Add("Score submission is disabled for a prolonged time by " + ScoreSubmission.ProlongedModString);
+
+                Misc.Logger.Warning("\nScore submission is disabled! Reason:\n"+string.Join(",\n", reasons));
                 return;
-            
+            }
+
             PlayerDataModelSO _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
             
             _playerDataModel.currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
@@ -764,8 +776,10 @@ namespace BeatSaberMultiplayer
             playerLevelStatsData.IncreaseNumberOfGameplays();
             if (cleared)
             {
+                Misc.Logger.Info("Submitting score...");
                 playerLevelStatsData.UpdateScoreData(levelCompletionResults.score, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
                 Resources.FindObjectsOfTypeAll<PlatformLeaderboardsModel>().First().AddScore(difficultyBeatmap, levelCompletionResults.unmodifiedScore, gameplayModifiers);
+                Misc.Logger.Info("Score submitted!");
             }
         }
 

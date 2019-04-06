@@ -4,6 +4,7 @@ using BS_Utils.Gameplay;
 using IllusionPlugin;
 using System;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -13,7 +14,7 @@ namespace BeatSaberMultiplayer
     {
         public string Name => "Beat Saber Multiplayer";
 
-        public string Version => "0.6.2.0";
+        public string Version => "0.6.2.1";
 
         public static Plugin instance;
 
@@ -67,6 +68,9 @@ namespace BeatSaberMultiplayer
             InGameOnlineController.OnLoad();
             SpectatingController.OnLoad();
             GetUserInfo.UpdateUserInfo();
+#if DEBUG
+            DebugForm.MenuLoaded();
+#endif
         }
 
         private void MenuSceneLoaded()
@@ -74,6 +78,9 @@ namespace BeatSaberMultiplayer
             InGameOnlineController.Instance?.MenuSceneLoaded();
             if (Config.Instance.SpectatorMode)
                 SpectatingController.Instance?.MenuSceneLoaded();
+#if DEBUG
+            DebugForm.MenuLoaded();
+#endif
         }
 
         private void GameSceneLoaded()
@@ -81,6 +88,9 @@ namespace BeatSaberMultiplayer
             InGameOnlineController.Instance?.GameSceneLoaded();
             if (Config.Instance.SpectatorMode)
                 SpectatingController.Instance?.GameSceneLoaded();
+#if DEBUG
+            DebugForm.GameLoaded();
+#endif
         }
 
         public void OnFixedUpdate()

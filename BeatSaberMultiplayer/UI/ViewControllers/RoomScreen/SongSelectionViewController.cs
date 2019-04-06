@@ -53,18 +53,18 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 _songTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
 
-                _searchButton = this.CreateUIButton("CreditsButton", new Vector2(-15f, 36.25f), new Vector2(30f, 6f), () => { SearchPressed?.Invoke(); }, "Search");
+                _searchButton = this.CreateUIButton("CreditsButton", new Vector2(-15f, 36.5f), new Vector2(30f, 6f), () => { SearchPressed?.Invoke(); }, "Search");
                 _searchButton.SetButtonTextSize(3f);
                 _searchButton.ToggleWordWrapping(false);
 
-                _sortByButton = this.CreateUIButton("CreditsButton", new Vector2(15f, 36.25f), new Vector2(30f, 6f), () =>
+                _sortByButton = this.CreateUIButton("CreditsButton", new Vector2(15f, 36.5f), new Vector2(30f, 6f), () =>
                 {
                     SelectTopButtons(TopButtonsState.SortBy);
                 }, "Sort By");
                 _sortByButton.SetButtonTextSize(3f);
                 _sortByButton.ToggleWordWrapping(false);
 
-                _defButton = this.CreateUIButton("CreditsButton", new Vector2(-20f, 36.25f), new Vector2(20f, 6f), () =>
+                _defButton = this.CreateUIButton("CreditsButton", new Vector2(-20f, 36.5f), new Vector2(20f, 6f), () =>
                 {
                     SelectTopButtons(TopButtonsState.Select);
                     SortPressed?.Invoke(SortMode.Default);
@@ -75,7 +75,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _defButton.ToggleWordWrapping(false);
                 _defButton.gameObject.SetActive(false);
 
-                _newButton = this.CreateUIButton("CreditsButton", new Vector2(0f, 36.25f), new Vector2(20f, 6f), () =>
+                _newButton = this.CreateUIButton("CreditsButton", new Vector2(0f, 36.5f), new Vector2(20f, 6f), () =>
                 {
                     SelectTopButtons(TopButtonsState.Select);
                     SortPressed?.Invoke(SortMode.Newest);
@@ -86,7 +86,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _newButton.gameObject.SetActive(false);
 
 
-                _diffButton = this.CreateUIButton("CreditsButton", new Vector2(20f, 36.25f), new Vector2(20f, 6f), () =>
+                _diffButton = this.CreateUIButton("CreditsButton", new Vector2(20f, 36.5f), new Vector2(20f, 6f), () =>
                 {
                     SelectTopButtons(TopButtonsState.Select);
                     SortPressed?.Invoke(SortMode.Difficulty);
@@ -96,10 +96,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _diffButton.ToggleWordWrapping(false);
                 _diffButton.gameObject.SetActive(false);
 
-                _fastPageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
+                _fastPageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_fastPageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                 (_fastPageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                (_fastPageUpButton.transform as RectTransform).anchoredPosition = new Vector2(-26f, -12f);
+                (_fastPageUpButton.transform as RectTransform).anchoredPosition = new Vector2(-26f, -12.5f);
                 (_fastPageUpButton.transform as RectTransform).sizeDelta = new Vector2(8f, 6f);
                 _fastPageUpButton.GetComponentsInChildren<RectTransform>().First(x => x.name == "BG").sizeDelta = new Vector2(8f, 6f);
                 _fastPageUpButton.GetComponentsInChildren<Image>().First(x => x.name == "Arrow").sprite = Sprites.doubleArrow;
@@ -112,7 +112,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _fastPageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
                 (_fastPageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
                 (_fastPageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
-                (_fastPageDownButton.transform as RectTransform).anchoredPosition = new Vector2(-26f, 6f);
+                (_fastPageDownButton.transform as RectTransform).anchoredPosition = new Vector2(-26f, 7f);
                 (_fastPageDownButton.transform as RectTransform).sizeDelta = new Vector2(8f, 6f);
                 _fastPageDownButton.GetComponentsInChildren<RectTransform>().First(x => x.name == "BG").sizeDelta = new Vector2(8f, 6f);
                 _fastPageDownButton.GetComponentsInChildren<Image>().First(x => x.name == "Arrow").sprite = Sprites.doubleArrow;
@@ -122,10 +122,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 });
                 _fastPageDownButton.interactable = true;
 
-                _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageUpButton")), rectTransform, false);
+                _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -12f);
+                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -12.5f);
                 (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
@@ -137,7 +137,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
                 (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
                 (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
-                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 6f);
+                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 7f);
                 (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
                 _pageDownButton.onClick.AddListener(delegate ()
                 {

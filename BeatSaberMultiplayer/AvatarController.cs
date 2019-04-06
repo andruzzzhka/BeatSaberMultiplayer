@@ -205,12 +205,12 @@ namespace BeatSaberMultiplayer
                     {
                         playerNameText.gameObject.SetActive(false);
                         playerSpeakerIcon.gameObject.SetActive(false);
-#if !DEBUG
+//#if !DEBUG
                         if (avatar != null)
                         {
                             Destroy(avatar.GameObject);
                         }
-#endif
+//#endif
                     }
                     else
                     {
@@ -251,6 +251,8 @@ namespace BeatSaberMultiplayer
                                     exclusionScript.SetVisible();
                                 
                                 pendingAvatars.Add(cachedAvatar);
+                                AvatarLoaded -= AvatarController_AvatarLoaded;
+                                AvatarLoaded += AvatarController_AvatarLoaded;
                                 cachedAvatar.Load((CustomAvatar.CustomAvatar loadedAvatar, AvatarLoadResult result) =>
                                {
                                    if (result == AvatarLoadResult.Completed)
@@ -259,7 +261,6 @@ namespace BeatSaberMultiplayer
                                        AvatarLoaded?.Invoke(ModelSaberAPI.cachedAvatars.First(x => x.Value == loadedAvatar).Key);
                                    }
                                });
-                                AvatarLoaded += AvatarController_AvatarLoaded;
                             }
                             else
                             {
@@ -283,11 +284,14 @@ namespace BeatSaberMultiplayer
                         {
                             if (ModelSaberAPI.queuedAvatars.Contains(playerInfo.avatarHash))
                             {
+                                ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
                                 ModelSaberAPI.avatarDownloaded += AvatarDownloaded;
                             }
                             else
                             {
-                                SharedCoroutineStarter.instance.StartCoroutine(ModelSaberAPI.DownloadAvatarCoroutine(playerInfo.avatarHash, (string hash) => { AvatarDownloaded(hash); }));
+                                ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
+                                ModelSaberAPI.avatarDownloaded += AvatarDownloaded;
+                                SharedCoroutineStarter.instance.StartCoroutine(ModelSaberAPI.DownloadAvatarCoroutine(playerInfo.avatarHash));
 
                                 if (avatar != null)
                                 {
@@ -327,7 +331,8 @@ namespace BeatSaberMultiplayer
 
         private void AvatarController_AvatarLoaded(string hash)
         {
-            if (this != null && ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash && playerInfo.avatarHash == hash)
+            Misc.Logger.Info($"Avatar with hash \"{hash}\" loaded! (1)");
+            if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash) && playerInfo.avatarHash == hash)
             {
                 AvatarLoaded -= AvatarController_AvatarLoaded;
 
@@ -346,7 +351,8 @@ namespace BeatSaberMultiplayer
 
         private void AvatarDownloaded(string hash)
         {
-            if (this != null && ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash && playerInfo.avatarHash == hash)
+            Misc.Logger.Info($"Avatar with hash \"{hash}\" loaded! (2)");
+            if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash) && playerInfo.avatarHash == hash)
             {
                 ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
 

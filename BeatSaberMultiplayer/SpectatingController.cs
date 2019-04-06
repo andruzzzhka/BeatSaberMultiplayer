@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
-using CustomAvatar;
 using Lidgren.Network;
 using TMPro;
 using UnityEngine;
@@ -61,7 +60,7 @@ namespace BeatSaberMultiplayer
 
         public void MenuSceneLoaded()
         {
-            _currentScene = "Menu";
+            _currentScene = "MenuCore";
             DestroyAvatar();
         }
 

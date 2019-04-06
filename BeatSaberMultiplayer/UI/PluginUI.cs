@@ -6,6 +6,7 @@ using BeatSaberMultiplayer.UI.ViewControllers;
 using BS_Utils.Gameplay;
 using CustomUI.BeatSaber;
 using CustomUI.Settings;
+using Polyglot;
 using SimpleJSON;
 using SongLoaderPlugin;
 using SongLoaderPlugin.OverrideClasses;
@@ -137,11 +138,13 @@ namespace BeatSaberMultiplayer.UI
             }
 
             _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "CampaignButton");
+            Destroy(_multiplayerButton.GetComponentInChildren<LocalizedTextMeshProUGUI>());
             _multiplayerButton.transform.SetParent(mainButtons.First(x => x.name == "CampaignButton").transform.parent);
             _multiplayerButton.transform.SetSiblingIndex(3);
 
             _multiplayerButton.SetButtonText("Online");
             _multiplayerButton.SetButtonIcon(Sprites.onlineIcon);
+            BeatSaberUI.AddHintText(_multiplayerButton.transform as RectTransform, "Play with your friends online!");
 
             _multiplayerButton.onClick.AddListener(delegate ()
             {
@@ -203,6 +206,7 @@ namespace BeatSaberMultiplayer.UI
             }
 
             _publicAvatarOption.UpdateText();
+            onlineSubMenu.viewController.AddSubmenuOption(_publicAvatarOption.gameObject);
             LoadAllAvatars();
             
             var spectatorMode = onlineSubMenu.AddBool("Spectator Mode", "<color=red>BETA</color>\nWatch other players playing a song (e.g. tournaments)\n<color=red>You can't play songs while \"Spectator Mode\" is on!</color>");
@@ -240,6 +244,7 @@ namespace BeatSaberMultiplayer.UI
             pushToTalkButton.textForValues = new string[] { "L Grip", "R Grip", "L Trigger", "R Trigger", "L+R Grip", "L+R Trigger", "Any Grip", "Any Trigger" };
             pushToTalkButton.Value = Config.Instance.PushToTalkButton;
             pushToTalkButton.UpdateText();
+            voiceSubMenu.viewController.AddSubmenuOption(pushToTalkButton.gameObject);
         }
 
         void UpdateSelectedAvatar()
@@ -261,7 +266,12 @@ namespace BeatSaberMultiplayer.UI
                         if (result == CustomAvatar.AvatarLoadResult.Completed)
                         {
                             UpdateAvatarsList();
-                            Misc.Logger.Info($"Loading avatar \"{loadedAvatar.Name}\"!");
+                            Misc.Logger.Info($"Loaded avatar \"{loadedAvatar.Name}\"!");
+                        }
+                        else
+                        {
+                            Misc.Logger.Info($"Unable to load avatar! "+result.ToString());
+
                         }
                     });
                 }

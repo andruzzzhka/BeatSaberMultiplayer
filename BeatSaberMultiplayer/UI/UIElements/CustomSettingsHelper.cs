@@ -15,6 +15,11 @@ namespace BeatSaberMultiplayer.UI.UIElements
             var listSettings = Resources.FindObjectsOfTypeAll<FormattedFloatListSettingsController>().FirstOrDefault();
             GameObject newSettingsObject = UnityEngine.Object.Instantiate(listSettings.gameObject, parent);
             newSettingsObject.name = name;
+            
+            var incBg = newSettingsObject.transform.Find("Value").Find("IncButton").Find("BG").gameObject.GetComponent<UnityEngine.UI.Image>();
+            (incBg.transform as RectTransform).localScale *= new Vector2(0.8f, 0.8f);
+            var decBg = newSettingsObject.transform.Find("Value").Find("DecButton").Find("BG").gameObject.GetComponent<UnityEngine.UI.Image>();
+            (decBg.transform as RectTransform).localScale *= new Vector2(0.8f, 0.8f);
 
             ListSettingsController volume = newSettingsObject.GetComponent<ListSettingsController>();
             T newListSettingsController = volume.gameObject.AddComponent<T>();
@@ -34,6 +39,11 @@ namespace BeatSaberMultiplayer.UI.UIElements
             var listSettings = Resources.FindObjectsOfTypeAll<FormattedFloatListSettingsController>().FirstOrDefault();
             GameObject newSettingsObject = UnityEngine.Object.Instantiate(listSettings.gameObject, parent);
             newSettingsObject.name = name;
+
+            var incBg = newSettingsObject.transform.Find("Value").Find("IncButton").Find("BG").gameObject.GetComponent<UnityEngine.UI.Image>();
+            (incBg.transform as RectTransform).localScale *= new Vector2(0.8f, 0.8f);
+            var decBg = newSettingsObject.transform.Find("Value").Find("DecButton").Find("BG").gameObject.GetComponent<UnityEngine.UI.Image>();
+            (decBg.transform as RectTransform).localScale *= new Vector2(0.8f, 0.8f);
 
             ListSettingsController volume = newSettingsObject.GetComponent<ListSettingsController>();
             T newListSettingsController = volume.gameObject.AddComponent<T>();

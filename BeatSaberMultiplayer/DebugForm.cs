@@ -25,17 +25,13 @@ namespace BeatSaberMultiplayer
         static int packetsReceived;
         static int playersActive;
         static int visiblePlayers;
-        static RoomInfo roomInfo;
-        private static Scene _currentScene;
+        private static string _currentScene;
 
         static List<PlayerInfo> playerInfos = new List<PlayerInfo>();
 
         public static void OnLoad()
         {
             Client.Instance.MessageReceived += PacketReceived;
-
-            _currentScene = SceneManager.GetActiveScene();
-            SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
 
             debugForm = new Form();
 
@@ -97,18 +93,14 @@ namespace BeatSaberMultiplayer
             debugForm.Show();
         }
 
-        private static void SceneManager_activeSceneChanged(Scene from, Scene to)
+        public static void MenuLoaded()
         {
-            try
-            {
-                if (to.name == "GameCore" || to.name == "Menu")
-                {
-                    _currentScene = to;
-                }
-            }
-            catch
-            {
-            }
+            _currentScene = "MenuCore";
+        }
+
+        public static void GameLoaded()
+        {
+            _currentScene = "GameCore";
         }
 
         private static void Timer_Elapsed(object sender, ElapsedEventArgs e)
@@ -143,95 +135,47 @@ namespace BeatSaberMultiplayer
         private static void PacketReceived(NetIncomingMessage msg)
         {
             UpdateUI();
-            /*
+
+            if (msg == null)
+                return;
+
             try
             {
                 CommandType commandType = (CommandType)msg.ReadByte();
-
+                
                 if (commandType == CommandType.UpdatePlayerInfo)
                 {
                     packetsReceived++;
 
+                    msg.ReadFloat();
+                    msg.ReadFloat();
+
                     playersActive = msg.ReadInt32();
-
-                    Stream byteStream = new MemoryStream(msg.additionalData, 12, msg.additionalData.Length - 12);
-
-
-                    playersListBox.Items.Clear();
 
                     playerInfos.Clear();
                     for (int j = 0; j < playersActive; j++)
                     {
-                        byte[] sizeBytes = new byte[4];
-                        byteStream.Read(sizeBytes, 0, 4);
-
-                        int playerInfoSize = BitConverter.ToInt32(sizeBytes, 0);
-
-                        byte[] playerInfoBytes = new byte[playerInfoSize];
-                        byteStream.Read(playerInfoBytes, 0, playerInfoSize);
-
                         try
                         {
-                            PlayerInfo playerInfo = new PlayerInfo(playerInfoBytes);
+                            PlayerInfo playerInfo = new PlayerInfo(msg);
                             playerInfos.Add(playerInfo);
                         }
                         catch (Exception e)
                         {
-                            //MessageBox.Show($"Unable to parse PlayerInfo! Excpetion: {e}", "Exception");
+                            Misc.Logger.Info($"Unable to parse PlayerInfo! Excpetion: {e}");
                         }
                     }
 
-                    visiblePlayers = playerInfos.Count(x => (x.playerState == PlayerState.Game && _currentScene.name == "GameCore") || (x.playerState == PlayerState.Room && _currentScene.name == "Menu") || (x.playerState == PlayerState.DownloadingSongs && _currentScene.name == "Menu"));
+                    visiblePlayers = playerInfos.Count(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "MenuCore") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "MenuCore"));
 
                     UpdateUI();
                 }
-                else if (commandType == CommandType.GetRoomInfo)
-                {
-                    if (msg.additionalData[0] == 1)
-                    {
-                        int songsCount = BitConverter.ToInt32(msg.additionalData, 1);
-
-                        Stream byteStream = new MemoryStream(msg.additionalData, 5, msg.additionalData.Length - 5);
-
-                        for (int j = 0; j < songsCount; j++)
-                        {
-                            byte[] sizeBytes = new byte[4];
-                            byteStream.Read(sizeBytes, 0, 4);
-
-                            int songInfoSize = BitConverter.ToInt32(sizeBytes, 0);
-
-                            byte[] songInfoBytes = new byte[songInfoSize];
-                            byteStream.Read(songInfoBytes, 0, songInfoSize);
-                        }
-
-                        byte[] roomInfoSizeBytes = new byte[4];
-                        byteStream.Read(roomInfoSizeBytes, 0, 4);
-
-                        int roomInfoSize = BitConverter.ToInt32(roomInfoSizeBytes, 0);
-
-                        byte[] roomInfoBytes = new byte[roomInfoSize];
-                        byteStream.Read(roomInfoBytes, 0, roomInfoSize);
-
-                        roomInfo = new RoomInfo(roomInfoBytes);
-                    }
-                    else
-                    {
-                        if (BitConverter.ToInt32(msg.additionalData, 1) == msg.additionalData.Length - 5)
-                        {
-                            roomInfo = new RoomInfo(msg.additionalData.Skip(5).ToArray());
-                        }
-                        else
-                        {
-                            roomInfo = new RoomInfo(msg.additionalData.Skip(1).ToArray());
-                        }
-                    }
-                }
             }
-            catch
+            catch(Exception e)
             {
-
+                Misc.Logger.Info("Unable to process packet in debug form! Exception: "+e);
             }
-            */
+            
         }
     }
 
