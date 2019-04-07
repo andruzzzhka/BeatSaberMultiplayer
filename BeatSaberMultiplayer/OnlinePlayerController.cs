@@ -123,10 +123,21 @@ namespace BeatSaberMultiplayer
             var leftController = _leftSaber.gameObject.AddComponent<OnlineVRController>();
             leftController.owner = this;
 
+
+            var leftTrail = leftController.GetComponentInChildren<SaberWeaponTrail>();
+            var colorManager = Resources.FindObjectsOfTypeAll<ColorManager>().First();
+            leftTrail.SetPrivateField("_colorManager", colorManager);
+            leftTrail.SetPrivateField("_saberTypeObject", leftController.GetComponentInChildren<SaberTypeObject>());
+
             Misc.Logger.Info("Spawning right saber...");
             _rightSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "RightSaber"), transform, false);
             var rightController = _rightSaber.gameObject.AddComponent<OnlineVRController>();
             rightController.owner = this;
+
+            var rightTrail = rightController.GetComponentInChildren<SaberWeaponTrail>();
+            rightTrail.SetPrivateField("_colorManager", colorManager);
+            rightTrail.SetPrivateField("_saberTypeObject", rightController.GetComponentInChildren<SaberTypeObject>());
+
 
             Misc.Logger.Info("Sabers spawned!");
         }

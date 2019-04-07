@@ -20,8 +20,6 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
         private List<NoteController> _activeNotes = new List<NoteController>();
         private List<ObstacleController> _activeObstacles = new List<ObstacleController>();
-        private Vector3 _defaultBigCuttableSize = new Vector3(0.8f, 0.5f, 1f);
-        private Vector3 _defaultSmallCuttableSize = new Vector3(0.35f, 0.35f, 0.35f);
 
         public void Init(OnlinePlayerController newOwner, OnlineBeatmapCallbackController callbackController, OnlineAudioTimeController syncController)
         {
@@ -46,7 +44,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             _localPlayer = FindObjectsOfType<PlayerController>().First(x => !x.name.Contains("Online"));
             _localSyncController = FindObjectsOfType<AudioTimeSyncController>().First(x => !x.name.Contains("Online"));
 
-            (this as BeatmapObjectSpawnController).noteWasMissedEvent += FindObjectOfType<MissedNoteEffectSpawner>().HandleNoteWasMissed;
+            //(this as BeatmapObjectSpawnController).noteWasMissedEvent += FindObjectOfType<MissedNoteEffectSpawner>().HandleNoteWasMissed;
             (this as BeatmapObjectSpawnController).noteWasCutEvent += FindObjectOfType<NoteCutSoundEffectManager>().HandleNoteWasCut;
             (this as BeatmapObjectSpawnController).noteWasCutEvent += FindObjectOfType<BombCutSoundEffectManager>().HandleNoteWasCut;
             (this as BeatmapObjectSpawnController).noteWasCutEvent += FindObjectOfType<NoteCutEffectSpawner>().HandleNoteWasCutEvent;
@@ -133,8 +131,6 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     noteJump.SetPrivateField("_playerController", owner);
                     noteJump.SetPrivateField("_audioTimeSyncController", onlineSyncController);
                     basicNoteController.GetComponent<NoteFloorMovement>().SetPrivateField("_audioTimeSyncController", onlineSyncController);
-                    basicNoteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "BigCuttable").size = _defaultBigCuttableSize * 1.65f;
-                    basicNoteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "SmallCuttable").size = _defaultSmallCuttableSize * 1.65f;
                     basicNoteController.noteDidFinishJumpEvent += ResetControllers;
                     basicNoteController.noteWasCutEvent += ResetControllersNoteWasCut;
                     basicNoteController.noteDidDissolveEvent += ResetControllers;
@@ -187,9 +183,6 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             noteJump.SetPrivateField("_playerController", _localPlayer);
             noteJump.SetPrivateField("_audioTimeSyncController", _localSyncController);
             noteController.GetComponent<NoteFloorMovement>().SetPrivateField("_audioTimeSyncController", _localSyncController);
-
-            noteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "BigCuttable").size = _defaultBigCuttableSize;
-            noteController.GetComponentsInChildren<BoxCollider>().First(x => x.name == "SmallCuttable").size = _defaultSmallCuttableSize;
 
             noteController.noteDidFinishJumpEvent -= ResetControllers;
             noteController.noteWasCutEvent -= ResetControllersNoteWasCut;
