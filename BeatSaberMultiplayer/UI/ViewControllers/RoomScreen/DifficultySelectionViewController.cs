@@ -92,10 +92,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _playButton.onClick.AddListener(delegate () { playPressed?.Invoke(_selectedSong, selectedCharacteristic, selectedDifficulty); });
                 _playButton.gameObject.SetActive(isHost);
 
-                _characteristicControl = CustomExtensions.CreateTextSegmentedControl(rectTransform, new Vector2(0f, -6f), new Vector2(-30f, 7f));
-
+                _characteristicControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 34f), new Vector2(110f, 7f), _characteristicControl_didSelectCellEvent);
                 _characteristicControl.SetTexts(new string[] { "Standard", "No Arrows", "One Saber" });
-                _characteristicControl.didSelectCellEvent += _characteristicControl_didSelectCellEvent;
 
                 _characteristicControlBlocker = new GameObject("CharacteristicControlBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
                 _characteristicControlBlocker.SetParent(rectTransform, false);
@@ -105,11 +103,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _characteristicControlBlocker.sizeDelta = new Vector2(-30f, 7f);
                 _characteristicControlBlocker.anchoredPosition = new Vector2(0f, -6f);
 
-                _difficultyControl = CustomExtensions.CreateTextSegmentedControl(rectTransform, new Vector2(0f, -16f), new Vector2(-30f, 7f));
-
+                _difficultyControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 24f), new Vector2(110f, 7f), _difficultyControl_didSelectCellEvent);
                 _difficultyControl.SetTexts(new string[] { "Easy", "Normal", "Hard", "Expert", "Expert+" });
-                _difficultyControl.didSelectCellEvent += _difficultyControl_didSelectCellEvent;
-
+                
                 _difficultyControlBlocker = new GameObject("DifficultyControlBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
                 _difficultyControlBlocker.SetParent(rectTransform, false);
                 _difficultyControlBlocker.gameObject.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
@@ -157,7 +153,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _progressBarRect.gameObject.SetActive(false);
         }
 
-        private void _characteristicControl_didSelectCellEvent(SegmentedControl arg1, int arg2)
+        private void _characteristicControl_didSelectCellEvent(int arg2)
         {
             selectedCharacteristic = _selectedSong.beatmapCharacteristics[arg2];
             
@@ -171,7 +167,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             if (!difficulties.Any(x => x.difficulty == selectedDifficulty))
             {
-                _difficultyControl_didSelectCellEvent(null, closestDifficultyIndex);
+                _difficultyControl_didSelectCellEvent(closestDifficultyIndex);
             }
             else
             {
@@ -179,7 +175,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
         }
 
-        private void _difficultyControl_didSelectCellEvent(SegmentedControl arg1, int arg2)
+        private void _difficultyControl_didSelectCellEvent(int arg2)
         {
             selectedDifficulty = _selectedSong.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps[arg2].difficulty;
 
@@ -218,7 +214,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 int standardCharacteristicIndex = Array.FindIndex(_selectedSong.beatmapCharacteristics, x => x.serializedName == "Standard");
 
                 _characteristicControl.SelectCellWithNumber((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
-                _characteristicControl_didSelectCellEvent(null, (standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
+                _characteristicControl_didSelectCellEvent((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
             }
             else
             {
@@ -241,7 +237,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 int charIndex = Array.IndexOf(_selectedSong.beatmapCharacteristics, characteristic);
 
                 _characteristicControl.SelectCellWithNumber(charIndex);
-                _characteristicControl_didSelectCellEvent(null, charIndex);
+                _characteristicControl_didSelectCellEvent(charIndex);
             }
         }
 
@@ -252,7 +248,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 int diffIndex = Array.IndexOf(_selectedSong.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps, difficulty);
 
                 _difficultyControl.SelectCellWithNumber(diffIndex);
-                _difficultyControl_didSelectCellEvent(null, diffIndex);
+                _difficultyControl_didSelectCellEvent(diffIndex);
             }
         }
 

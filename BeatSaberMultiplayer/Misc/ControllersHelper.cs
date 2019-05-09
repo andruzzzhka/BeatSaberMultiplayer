@@ -9,12 +9,25 @@ namespace BeatSaberMultiplayer.Misc
 {
     static class ControllersHelper
     {
+        private static bool initialized = false;
+        private static bool rumbleEnahncerInstalled = false;
+
+        public static void Init()
+        {
+            rumbleEnahncerInstalled = IPA.Loader.PluginManager.AllPlugins.Any(x => x.Metadata.Id == "rumbleenhancer");
+            Plugin.log.Info("Rumble Enahncer installed: "+ rumbleEnahncerInstalled);
+        }
 
         public static bool GetRightGrip()
         {
+            if (!initialized)
+            {
+                Init();
+            }
+
             if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
             {
-                return OpenVRRightGrip();
+                return rumbleEnahncerInstalled ? OpenVRRightGrip() : OpenVRRightGripWithLock();
             }
             else if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
             {
@@ -22,7 +35,7 @@ namespace BeatSaberMultiplayer.Misc
             }
             else if (Environment.CommandLine.Contains("fpfc") && VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Unknown)
             {
-                return Input.GetKey(KeyCode.G);
+                return Input.GetKey(KeyCode.H);
             }
             else
             {
@@ -32,9 +45,14 @@ namespace BeatSaberMultiplayer.Misc
 
         public static bool GetLeftGrip()
         {
+            if (!initialized)
+            {
+                Init();
+            }
+
             if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
             {
-                return OpenVRLeftGrip();
+                return rumbleEnahncerInstalled ? OpenVRLeftGrip() : OpenVRLeftGripWithLock();
             }
             else if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
             {
@@ -42,7 +60,7 @@ namespace BeatSaberMultiplayer.Misc
             }
             else if (Environment.CommandLine.Contains("fpfc") && VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Unknown)
             {
-                return Input.GetKey(KeyCode.G);
+                return Input.GetKey(KeyCode.H);
             }
             else
             {
@@ -60,14 +78,57 @@ namespace BeatSaberMultiplayer.Misc
             return OVRInput.Get(OVRInput.Axis1D.PrimaryHandTrigger, OVRInput.Controller.LTouch) > 0.85f;
         }
 
-        private static bool OpenVRRightGrip()
-        {
-            return SteamVR_Controller.Input(SteamVR_Controller.GetDeviceIndex(SteamVR_Controller.DeviceRelation.Rightmost)).GetPress(Valve.VR.EVRButtonId.k_EButton_Grip);
-        }
+        private static int _leftControllerIndex = -1;
+        private static int _rightControllerIndex = -1;
 
         private static bool OpenVRLeftGrip()
         {
-            return SteamVR_Controller.Input(SteamVR_Controller.GetDeviceIndex(SteamVR_Controller.DeviceRelation.Leftmost)).GetPress(Valve.VR.EVRButtonId.k_EButton_Grip);
+            if (_leftControllerIndex == -1)
+            {
+                _leftControllerIndex = SteamVR_Controller.GetDeviceIndex(SteamVR_Controller.DeviceRelation.Leftmost);
+                Plugin.log.Info("Leftmost controller index: " + _leftControllerIndex);
+            }
+
+            return SteamVR_Controller.Input(_leftControllerIndex).GetPress(SteamVR_Controller.ButtonMask.Grip);
+        }
+
+        private static bool OpenVRLeftGripWithLock()
+        {
+            lock (Rumbleenhancer.Plugin.asyncRumbleLock)
+            {
+                if (_leftControllerIndex == -1)
+                {
+                    _leftControllerIndex = SteamVR_Controller.GetDeviceIndex(SteamVR_Controller.DeviceRelation.Leftmost);
+                    Plugin.log.Info("Leftmost controller index: " + _leftControllerIndex);
+                }
+
+                return SteamVR_Controller.Input(_leftControllerIndex).GetPress(SteamVR_Controller.ButtonMask.Grip);
+            }
+        }
+
+        private static bool OpenVRRightGrip()
+        {
+            if (_rightControllerIndex == -1)
+            {
+                _rightControllerIndex = SteamVR_Controller.GetDeviceIndex(SteamVR_Controller.DeviceRelation.Rightmost);
+                Plugin.log.Info("Rightmost controller index: " + _rightControllerIndex);
+            }
+
+            return SteamVR_Controller.Input(_rightControllerIndex).GetPress(SteamVR_Controller.ButtonMask.Grip);
+        }
+
+        private static bool OpenVRRightGripWithLock()
+        {
+            lock (Rumbleenhancer.Plugin.asyncRumbleLock)
+            {
+                if (_rightControllerIndex == -1)
+                {
+                    _rightControllerIndex = SteamVR_Controller.GetDeviceIndex(SteamVR_Controller.DeviceRelation.Rightmost);
+                    Plugin.log.Info("Rightmost controller index: " + _rightControllerIndex);
+                }
+
+                return SteamVR_Controller.Input(_rightControllerIndex).GetPress(SteamVR_Controller.ButtonMask.Grip);
+            }
         }
 
 

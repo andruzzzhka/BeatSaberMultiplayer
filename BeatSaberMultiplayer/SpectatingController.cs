@@ -76,7 +76,7 @@ namespace BeatSaberMultiplayer
             if (!Config.Instance.SpectatorMode || Client.Instance.InRadioMode)
                 yield break;
 
-            Misc.Logger.Info("Waiting for controllers...");
+            Plugin.log.Info("Waiting for controllers...");
             yield return new WaitWhile(delegate() { return !Resources.FindObjectsOfTypeAll<Saber>().Any(); });
 
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
@@ -92,11 +92,11 @@ namespace BeatSaberMultiplayer
 
             _playerController = Resources.FindObjectsOfTypeAll<PlayerController>().First();
 
-            Misc.Logger.Info("Controllers found!");
+            Plugin.log.Info("Controllers found!");
 
             _scoreController = FindObjectOfType<ScoreController>();
 
-            Misc.Logger.Info("Score controller found!");
+            Plugin.log.Info("Score controller found!");
         }
 
         private void PacketReceived(NetIncomingMessage msg)
@@ -133,7 +133,7 @@ namespace BeatSaberMultiplayer
                         catch (Exception e)
                         {
 #if DEBUG
-                            Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
+                            Plugin.log.Critical($"Unable to parse PlayerInfo! Excpetion: {e}");
 #endif
                         }
                     }
@@ -148,7 +148,7 @@ namespace BeatSaberMultiplayer
                     {
                         _spectatedPlayer.PlayerInfo = _playerInfos.FirstOrDefault(x => !x.Key.Equals(Client.Instance.playerInfo)).Value?.LastOrDefault();
                         if(_spectatedPlayer.PlayerInfo != null)
-                            Misc.Logger.Info("Spectating " + _spectatedPlayer.PlayerInfo.playerName);
+                            Plugin.log.Info("Spectating " + _spectatedPlayer.PlayerInfo.playerName);
                     }
                     
                     if (_spectatedPlayer.PlayerInfo != null)
@@ -204,7 +204,7 @@ namespace BeatSaberMultiplayer
                         {
 #if DEBUG
                             if(_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress > 2f)
-                                Misc.Logger.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - audioTimeSync.songTime}");
+                                Plugin.log.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - audioTimeSync.songTime}");
 #endif
                             SetPositionInSong(_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - 1f);
                             InGameOnlineController.Instance.PauseSong();
@@ -215,7 +215,7 @@ namespace BeatSaberMultiplayer
                         {
 #if DEBUG
                             if (_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress > 2f)
-                                Misc.Logger.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - audioTimeSync.songTime}");
+                                Plugin.log.Info($"Syncing song with a spectated player...\nOffset: {_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - audioTimeSync.songTime}");
 #endif
                             InGameOnlineController.Instance.PauseSong();
                             _paused = true;
@@ -263,7 +263,7 @@ namespace BeatSaberMultiplayer
                 {
                     if(_playerInfos[_spectatedPlayer.PlayerInfo.playerId].Last().playerProgress - audioTimeSync.songTime > 1.9f)
                     {
-                        Misc.Logger.Info("Resuming song...");
+                        Plugin.log.Info("Resuming song...");
                         InGameOnlineController.Instance.ResumeSong();
                         _paused = false;
                     }

@@ -117,7 +117,7 @@ namespace BeatSaberMultiplayer.Data
                     string match = expression.Match(level.customSongInfo.path).Value;
                     if (string.IsNullOrEmpty(match))
                     {
-                        Misc.Logger.Warning("Unable to retrieve BeatSaver ID of the song from the path! Are you sure you are using the correct folder structure?");
+                        Plugin.log.Warn("Unable to retrieve BeatSaver ID of the song from the path! Are you sure you are using the correct folder structure?");
                         return "0-0";
                     }
                     else
@@ -127,7 +127,7 @@ namespace BeatSaberMultiplayer.Data
                 }
                 else
                 {
-                    Misc.Logger.Warning("Song with id "+levelId+" not found!");
+                    Plugin.log.Warn("Song with ID " +levelId+" not found!");
                     return "0-0";
                 }
             }

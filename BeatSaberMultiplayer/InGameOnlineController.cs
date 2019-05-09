@@ -279,7 +279,7 @@ namespace BeatSaberMultiplayer
                         catch (Exception e)
                         {
 #if DEBUG
-                            Misc.Logger.Exception($"Unable to parse PlayerInfo! Player count={playersCount} Message size={msg.LengthBytes} Excpetion: {e}");
+                            Plugin.log.Critical($"Unable to parse PlayerInfo! Player count={playersCount} Message size={msg.LengthBytes} Excpetion: {e}");
 #endif
                             return;
                         }
@@ -430,7 +430,7 @@ namespace BeatSaberMultiplayer
                             catch (Exception e)
                             {
 #if DEBUG
-                                Misc.Logger.Exception($"Unable to parse VoIP fragment! Excpetion: {e}");
+                                Plugin.log.Error($"Unable to parse VoIP fragment! Excpetion: {e}");
 #endif
                             }
                         }
@@ -536,22 +536,22 @@ namespace BeatSaberMultiplayer
                 if (Input.GetKeyDown(KeyCode.Keypad0))
                 {
                     fixedSendRate = 0;
-                    Misc.Logger.Info($"Variable send rate");
+                    Plugin.log.Info($"Variable send rate");
                 }
                 else if(Input.GetKeyDown(KeyCode.Keypad1))
                 {
                     fixedSendRate = 1;
-                    Misc.Logger.Info($"Forced full send rate");
+                    Plugin.log.Info($"Forced full send rate");
                 }
                 else if (Input.GetKeyDown(KeyCode.Keypad2))
                 {
                     fixedSendRate = 2;
-                    Misc.Logger.Info($"Forced half send rate");
+                    Plugin.log.Info($"Forced half send rate");
                 }
                 else if(Input.GetKeyDown(KeyCode.Keypad3))
                 {
                     fixedSendRate = 3;
-                    Misc.Logger.Info($"Forced one third send rate");
+                    Plugin.log.Info($"Forced one third send rate");
                 }
             }
 
@@ -562,7 +562,7 @@ namespace BeatSaberMultiplayer
                     sendRateCounter = 0;
                     UpdatePlayerInfo();
 #if DEBUG && VERBOSE
-                    Misc.Logger.Info($"Full send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
+                    Plugin.log.Info($"Full send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
 #endif
                 }
                 else if (fixedSendRate == 2 || (fixedSendRate == 0 && Client.Instance.Tickrate > 37.5f * (1f / 90 / Time.deltaTime)))
@@ -573,7 +573,7 @@ namespace BeatSaberMultiplayer
                         sendRateCounter = 0;
                         UpdatePlayerInfo();
 #if DEBUG && VERBOSE
-                        Misc.Logger.Info($"Half send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
+                        Plugin.log.Info($"Half send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
 #endif
                     }
                 }
@@ -585,7 +585,7 @@ namespace BeatSaberMultiplayer
                         sendRateCounter = 0;
                         UpdatePlayerInfo();
 #if DEBUG && VERBOSE
-                        Misc.Logger.Info($"One third send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
+                        Plugin.log.Info($"One third send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
 #endif
                     }
                 }
@@ -619,7 +619,7 @@ namespace BeatSaberMultiplayer
                     Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
                 }
 #if DEBUG
-                Misc.Logger.Info("Updating avatar hash... New hash: "+(Client.Instance.playerInfo.avatarHash == null ? "NULL" : Client.Instance.playerInfo.avatarHash));
+                Plugin.log.Info("Updating avatar hash... New hash: "+(Client.Instance.playerInfo.avatarHash == null ? "NULL" : Client.Instance.playerInfo.avatarHash));
 #endif
             }
 
@@ -636,6 +636,48 @@ namespace BeatSaberMultiplayer
 
             Client.Instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
             Client.Instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
+
+            if (CustomAvatar.Plugin.IsFullBodyTracking)
+            {
+                Client.Instance.playerInfo.fullBodyTracking = true;
+                
+                if (CustomAvatar.Plugin.FullBodyTrackingType == CustomAvatar.Plugin.TrackingType.Hips && CustomAvatar.Plugin.Trackers.Count >= 1)
+                {
+                    Client.Instance.playerInfo.pelvisPos = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[0]).Position;
+                    Client.Instance.playerInfo.pelvisRot = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[0]).Rotation;
+                }
+                else if (CustomAvatar.Plugin.FullBodyTrackingType == CustomAvatar.Plugin.TrackingType.Full && CustomAvatar.Plugin.Trackers.Count >= 3)
+                {
+                    Client.Instance.playerInfo.pelvisPos = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[2]).Position;
+                    Client.Instance.playerInfo.pelvisRot = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[2]).Rotation;
+                }
+                else
+                {
+                    Client.Instance.playerInfo.pelvisPos = new Vector3();
+                    Client.Instance.playerInfo.pelvisRot = new Quaternion();
+                }
+
+                if (CustomAvatar.Plugin.FullBodyTrackingType >= CustomAvatar.Plugin.TrackingType.Feet && CustomAvatar.Plugin.Trackers.Count >= 2)
+                {
+                    Client.Instance.playerInfo.leftLegPos = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[0]).Position;
+                    Client.Instance.playerInfo.leftLegRot = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[0]).Rotation;
+
+                    Client.Instance.playerInfo.rightLegPos = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[1]).Position;
+                    Client.Instance.playerInfo.rightLegRot = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[1]).Rotation;
+                }
+                else
+                {
+                    Client.Instance.playerInfo.leftLegPos = new Vector3();
+                    Client.Instance.playerInfo.leftLegRot = new Quaternion();
+
+                    Client.Instance.playerInfo.rightLegPos = new Vector3();
+                    Client.Instance.playerInfo.rightLegRot = new Quaternion();
+                }
+            }
+            else
+            {
+                Client.Instance.playerInfo.fullBodyTracking = false;
+            }
 
             if(_vrPlatformHelper == null)
             {
@@ -701,6 +743,35 @@ namespace BeatSaberMultiplayer
             return new PosRot(pos, rot);
         }
 
+        public static PosRot GetTrackerWorldPosRot(XRNodeState tracker)
+        {
+            Vector3 pos = new Vector3();
+            Quaternion rot = new Quaternion();
+            try
+            {
+                var notes = new List<XRNodeState>();
+                InputTracking.GetNodeStates(notes);
+                foreach (XRNodeState note in notes)
+                {
+                    if (note.uniqueID != tracker.uniqueID)
+                        continue;
+                    if (note.TryGetPosition(out pos) && note.TryGetRotation(out rot))
+                    {
+                        var roomCenter = BeatSaberUtil.GetRoomCenter();
+                        var roomRotation = BeatSaberUtil.GetRoomRotation();
+                        pos = roomRotation * pos;
+                        pos += roomCenter;
+                        rot = roomRotation * rot;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.log.Error("Unable to get tracker position and rotation! Exception: "+e.Message + "\n" + e.StackTrace);
+            }
+            return new PosRot(pos, rot);
+        }
+
         public void DestroyPlayerControllers()
         {
             try
@@ -711,10 +782,10 @@ namespace BeatSaberMultiplayer
                         Destroy(_players[i].gameObject);
                 }
                 _players.Clear();
-                Misc.Logger.Info("Destroyed player controllers!");
+                Plugin.log.Info("Destroyed player controllers!");
             }catch(Exception e)
             {
-                Misc.Logger.Exception($"Unable to destroy player controllers! Exception: {e}");
+                Plugin.log.Critical(e);
             }
         }
 
@@ -732,7 +803,7 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Misc.Logger.Exception($"Unable to destroy score screens! Exception: {e}");
+                Plugin.log.Critical(e);
             }
         }
 
@@ -753,7 +824,7 @@ namespace BeatSaberMultiplayer
                 if (ScoreSubmission.Disabled) reasons.Add("Score submission is disabled by "+ ScoreSubmission.ModString);
                 if (ScoreSubmission.ProlongedDisabled) reasons.Add("Score submission is disabled for a prolonged time by " + ScoreSubmission.ProlongedModString);
 
-                Misc.Logger.Warning("\nScore submission is disabled! Reason:\n"+string.Join(",\n", reasons));
+                Plugin.log.Warn("\nScore submission is disabled! Reason:\n" +string.Join(",\n", reasons));
                 return;
             }
 
@@ -776,21 +847,21 @@ namespace BeatSaberMultiplayer
             playerLevelStatsData.IncreaseNumberOfGameplays();
             if (cleared)
             {
-                Misc.Logger.Info("Submitting score...");
+                Plugin.log.Info("Submitting score...");
                 playerLevelStatsData.UpdateScoreData(levelCompletionResults.score, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
                 Resources.FindObjectsOfTypeAll<PlatformLeaderboardsModel>().First().AddScore(difficultyBeatmap, levelCompletionResults.unmodifiedScore, gameplayModifiers);
-                Misc.Logger.Info("Score submitted!");
+                Plugin.log.Info("Score submitted!");
             }
         }
 
         IEnumerator WaitForControllers()
         {
 #if DEBUG
-            Misc.Logger.Info("Waiting for game controllers...");
+            Plugin.log.Info("Waiting for game controllers...");
 #endif
             yield return new WaitUntil(delegate () { return FindObjectOfType<ScoreController>() != null; });
 #if DEBUG
-            Misc.Logger.Info("Game controllers found!");
+            Plugin.log.Info("Game controllers found!");
 #endif
             _gameManager = Resources.FindObjectsOfTypeAll<StandardLevelGameplayManager>().First();
 
@@ -812,11 +883,11 @@ namespace BeatSaberMultiplayer
                 }
                 catch (Exception e)
                 {
-                    Misc.Logger.Exception(e.ToString());
+                    Plugin.log.Critical(e);
                 }
             }
 #if DEBUG
-            Misc.Logger.Info("Disabled pause button!");
+            Plugin.log.Info("Disabled pause button!");
 #endif
             _scoreController = FindObjectOfType<ScoreController>();
 
@@ -828,7 +899,7 @@ namespace BeatSaberMultiplayer
                 _scoreController.noteWasMissedEvent += NoteWasMissedEvent;
             }
 #if DEBUG
-            Misc.Logger.Info("Found score controller");
+            Plugin.log.Info("Found score controller");
 #endif
 
             _energyController = FindObjectOfType<GameEnergyCounter>();
@@ -838,7 +909,7 @@ namespace BeatSaberMultiplayer
                 _energyController.gameEnergyDidChangeEvent += EnergyDidChangeEvent;
             }
 #if DEBUG
-            Misc.Logger.Info("Found energy controller");
+            Plugin.log.Info("Found energy controller");
 #endif
 
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
@@ -851,7 +922,7 @@ namespace BeatSaberMultiplayer
             }
 
 #if DEBUG
-            Misc.Logger.Info("Found pause manager");
+            Plugin.log.Info("Found pause manager");
 #endif
 
             loaded = true;
@@ -865,7 +936,7 @@ namespace BeatSaberMultiplayer
             }
             catch(Exception e)
             {
-                Misc.Logger.Error("Unable to show menu! Exception: "+e);
+                Plugin.log.Error("Unable to show menu! Exception: " +e);
             }
         }
 

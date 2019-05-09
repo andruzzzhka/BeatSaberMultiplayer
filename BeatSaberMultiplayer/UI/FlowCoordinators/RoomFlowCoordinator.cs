@@ -18,7 +18,6 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using VRUI;
-using Logger = BeatSaberMultiplayer.Misc.Logger;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
@@ -174,7 +173,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             catch
             {
-                Logger.Info("Unable to disconnect from ServerHub properly!");
+                Plugin.log.Info("Unable to disconnect from ServerHub properly!");
             }
 
             Client.Instance.MessageReceived -= PacketReceived;
@@ -409,7 +408,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                 if(level == null)
                                 {
-                                    Logger.Error("Unable to start level! Level is null! LevelID="+songInfo.levelId);
+                                    Plugin.log.Error("Unable to start level! Level is null! LevelID="+songInfo.levelId);
                                 }
 
                                 if (roomInfo.perPlayerDifficulty && _difficultySelectionViewController != null)
@@ -447,7 +446,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                         catch (Exception e)
                                         {
 #if DEBUG
-                                            Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
+                                            Plugin.log.Critical($"Unable to parse PlayerInfo! Excpetion: {e}");
 #endif
                                         }
                                     }
@@ -488,7 +487,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     }
                 }catch(Exception e)
                 {
-                    Logger.Exception($"Unable to parse packet! Packet={commandType}, DataLength={msg.LengthBytes}\nException: {e}");
+                    Plugin.log.Error($"Unable to parse packet! Packet={commandType}, DataLength={msg.LengthBytes}\nException: {e}");
                 }
             }
         }
@@ -585,7 +584,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 IDifficultyBeatmap difficultyBeatmap = level.GetDifficultyBeatmap(characteristic, difficulty, true);
 
 #if DEBUG
-                Logger.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={difficulty}");
+                Plugin.log.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={difficulty}");
 #endif
 
                 Client.Instance.MessageReceived -= PacketReceived;
@@ -608,7 +607,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             else
             {
-                Logger.Error("SceneSetupData is null!");
+                Plugin.log.Error("SceneSetupData is null!");
             }
         }
 

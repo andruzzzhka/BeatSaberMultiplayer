@@ -2,7 +2,6 @@
 using System.IO;
 using System.Reflection;
 using BeatSaberMultiplayer.Misc;
-using IllusionPlugin;
 using SimpleJSON;
 using UnityEngine;
 
@@ -40,14 +39,14 @@ namespace BeatSaberMultiplayer {
             try
             {
                 FileLocation.Directory.Create();
-                Misc.Logger.Info($"Attempting to load JSON @ {FileLocation.FullName}");
+                Plugin.log.Info($"Attempting to load JSON @ {FileLocation.FullName}");
                 _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
                 _instance.MarkDirty();
                 _instance.Save();
             }
             catch (Exception)
             {
-                Misc.Logger.Error($"Unable to load config @ {FileLocation.FullName}");
+                Plugin.log.Error($"Unable to load config @ {FileLocation.FullName}");
                 return false;
             }
             return true;
@@ -59,12 +58,12 @@ namespace BeatSaberMultiplayer {
             try
             {
                 FileLocation.Directory.Create();
-                Misc.Logger.Info($"Creating new config @ {FileLocation.FullName}");
+                Plugin.log.Info($"Creating new config @ {FileLocation.FullName}");
                 Instance.Save();
             }
             catch (Exception)
             {
-                Misc.Logger.Error($"Unable to create new config @ {FileLocation.FullName}");
+                Plugin.log.Error($"Unable to create new config @ {FileLocation.FullName}");
                 return false;
             }
             return true;
@@ -286,7 +285,7 @@ namespace BeatSaberMultiplayer {
             if (!IsDirty) return false;
             try {
                 using (var f = new StreamWriter(FileLocation.FullName)) {
-                    Misc.Logger.Info($"Writing to File @ {FileLocation.FullName}");
+                    Plugin.log.Info($"Writing to File @ {FileLocation.FullName}");
                     var json = JsonUtility.ToJson(this, true);
                     f.Write(json);
                 }
@@ -294,7 +293,7 @@ namespace BeatSaberMultiplayer {
                 return true;
             }
             catch (Exception ex) {
-                Misc.Logger.Exception($"Unable to write the config file! Exception: {ex}");
+                Plugin.log.Critical(ex);
                 return false;
             }
         }

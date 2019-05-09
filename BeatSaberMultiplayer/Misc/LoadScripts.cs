@@ -19,7 +19,7 @@ namespace BeatSaberMultiplayer.Misc
         {
             Texture2D tex;
 
-            Logger.Info("Loading sprite...");
+            Plugin.log.Info("Loading sprite...");
 
             if (_cachedSprites.ContainsKey(spritePath))
             {
@@ -33,11 +33,11 @@ namespace BeatSaberMultiplayer.Misc
 
                 if (www.isHttpError || www.isNetworkError)
                 {
-                    Logger.Warning("Unable to download sprite! Exception: "+www.error);
+                    Plugin.log.Warn("Unable to download sprite! Exception: "+www.error);
                 }
                 else
                 {
-                    Logger.Info("Received response...");
+                    Plugin.log.Info("Received response...");
                     tex = DownloadHandlerTexture.GetContent(www);
                     var newSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), Vector2.one * 0.5f, 100, 1);
                     _cachedSprites.Add(spritePath, newSprite);

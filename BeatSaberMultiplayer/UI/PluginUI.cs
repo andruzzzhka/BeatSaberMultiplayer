@@ -119,7 +119,7 @@ namespace BeatSaberMultiplayer.UI
             }
             catch (Exception e)
             {
-                Misc.Logger.Exception($"Unable to create UI! Exception: {e}");
+                Plugin.log.Critical($"Unable to create UI! Exception: {e}");
             }
         }
 
@@ -156,7 +156,7 @@ namespace BeatSaberMultiplayer.UI
                 }
                 catch (Exception e)
                 {
-                    Misc.Logger.Exception($"Unable to present flow coordinator! Exception: {e}");
+                    Plugin.log.Critical($"Unable to present flow coordinator! Exception: {e}");
                 }
             });
         }
@@ -257,7 +257,7 @@ namespace BeatSaberMultiplayer.UI
 
         void LoadAllAvatars(Action callback = null)
         {
-            Misc.Logger.Info($"Loading all avatars...");
+            Plugin.log.Info($"Loading all avatars...");
             foreach (var avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
             {
                 if (!avatar.IsLoaded)
@@ -266,11 +266,11 @@ namespace BeatSaberMultiplayer.UI
                         if (result == CustomAvatar.AvatarLoadResult.Completed)
                         {
                             UpdateAvatarsList();
-                            Misc.Logger.Info($"Loaded avatar \"{loadedAvatar.Name}\"!");
+                            Plugin.log.Info($"Loaded avatar \"{loadedAvatar.Name}\"!");
                         }
                         else
                         {
-                            Misc.Logger.Info($"Unable to load avatar! "+result.ToString());
+                            Plugin.log.Info($"Unable to load avatar! "+result.ToString());
 
                         }
                     });
@@ -287,7 +287,7 @@ namespace BeatSaberMultiplayer.UI
         IEnumerator CheckVersion()
         {
 
-            Misc.Logger.Info("Checking for updates...");
+            Plugin.log.Info("Checking for updates...");
 
             UnityWebRequest www = UnityWebRequest.Get($"https://api.github.com/repos/andruzzzhka/BeatSaberMultiplayer/releases");
             www.timeout = 10;
@@ -298,15 +298,18 @@ namespace BeatSaberMultiplayer.UI
             {
                 JSONNode releases = JSON.Parse(www.downloadHandler.text);
 
-                JSONNode latestRelease = releases[0];                
+                JSONNode latestRelease = releases[0];
 
-                bool newTag = (!((string)latestRelease["tag_name"]).StartsWith(Plugin.instance.Version));
+                SemVer.Version currentVer = IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Metadata.Version;
+                SemVer.Version githubVer = new SemVer.Version(latestRelease["tag_name"], true);
+
+                bool newTag = new SemVer.Range($">{currentVer}").IsSatisfied(githubVer);
 
                 if (newTag)
                 {
-                    Misc.Logger.Info($"An update for the mod is available!\nNew mod version: {(string)latestRelease["tag_name"]}\nCurrent mod version: {Plugin.instance.Version}");
+                    Plugin.log.Info($"An update for the mod is available!\nNew mod version: {(string)latestRelease["tag_name"]}\nCurrent mod version: {currentVer}");
                     _newVersionText.gameObject.SetActive(true);
-                    _newVersionText.text = $"Version {(string)latestRelease["tag_name"]}\n of the mod is available!\nCurrent mod version: {Plugin.instance.Version}";
+                    _newVersionText.text = $"Version {(string)latestRelease["tag_name"]}\n of the mod is available!\nCurrent mod version: {currentVer}";
                     _newVersionText.alignment = TextAlignmentOptions.Center;
                 }
             }

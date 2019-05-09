@@ -63,7 +63,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public IEnumerator DownloadScrappedDataCoroutine(Action<List<ScrappedSong>> callback)
         {
-            Logger.Info("Downloading scrapped data...");
+            Plugin.log.Info("Downloading scrapped data...");
 
             UnityWebRequest www;
             bool timeout = false;
@@ -78,7 +78,7 @@ namespace BeatSaberMultiplayer.Misc
             }
             catch (Exception e)
             {
-                Logger.Error(e);
+                Plugin.log.Error(e);
                 yield break;
             }
 
@@ -90,32 +90,34 @@ namespace BeatSaberMultiplayer.Misc
                 {
                     www.Abort();
                     timeout = true;
-                    Logger.Error("Connection timed out!");
+                    Plugin.log.Error("Connection timed out!");
                 }
             }
 
 
             if (www.isNetworkError || www.isHttpError || timeout)
             {
-                Logger.Error("Unable to download scrapped data! " + (www.isNetworkError ? $"Network error: {www.error}" : (www.isHttpError ? $"HTTP error: {www.error}" : "Unknown error")));
+                Plugin.log.Error("Unable to download scrapped data! " + (www.isNetworkError ? $"Network error: {www.error}" : (www.isHttpError ? $"HTTP error: {www.error}" : "Unknown error")));
             }
             else
             {
-                Logger.Info("Received response from github.com...");
+                Plugin.log.Info("Received response from github.com...");
 
-                Task parsing = Task.Run( () => { Songs = JsonConvert.DeserializeObject<List<ScrappedSong>>(www.downloadHandler.text).OrderByDescending(x => x.Diffs.Count > 0 ? x.Diffs.Max(y => y.Stars) : 0).ToList(); });
+                Task parsing = new Task( () => { Songs = JsonConvert.DeserializeObject<List<ScrappedSong>>(www.downloadHandler.text).OrderByDescending(x => x.Diffs.Count > 0 ? x.Diffs.Max(y => y.Stars) : 0).ToList(); });
                 parsing.ConfigureAwait(false);
 
-                Logger.Info("Parsing scrapped data...");
+                Plugin.log.Info("Parsing scrapped data...");
                 Stopwatch timer = new Stopwatch();
+
                 timer.Start();
+                parsing.Start();
 
                 yield return new WaitUntil(() => parsing.IsCompleted);
 
                 timer.Stop();
                 Downloaded = true;
                 callback?.Invoke(Songs);
-                Logger.Info($"Scrapped data parsed! Time: {timer.Elapsed.TotalSeconds.ToString("0.00")}s");
+                Plugin.log.Info($"Scrapped data parsed! Time: {timer.Elapsed.TotalSeconds.ToString("0.00")}s");
             }
         }
         

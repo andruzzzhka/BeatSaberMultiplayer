@@ -34,20 +34,20 @@ namespace BeatSaberMultiplayer.Misc
             
             if (www.isNetworkError || www.isHttpError)
             {
-                Logger.Error(www.error);
+                Plugin.log.Error($"Unable to download avatar! {(www.isNetworkError ? $"Network error: " + www.error : (www.isHttpError ? $"HTTP error: "+www.error : "Unknown error"))}");
                 queuedAvatars.Remove(hash);
                 yield break;
             }
             else
             {
 #if DEBUG
-                Logger.Info("Received response from ModelSaber...");
+                Plugin.log.Info("Received response from ModelSaber...");
 #endif
                 JSONNode node = JSON.Parse(www.downloadHandler.text);
 
                 if (node.Count == 0)
                 {
-                    Logger.Error($"Avatar with hash {hash} doesn't exist on ModelSaber!");
+                    Plugin.log.Error($"Avatar with hash {hash} doesn't exist on ModelSaber!");
                     cachedAvatars.Add(hash, null);
                     queuedAvatars.Remove(hash);
                     yield break;
@@ -77,7 +77,7 @@ namespace BeatSaberMultiplayer.Misc
             }
             catch (Exception e)
             {
-                Logger.Error(e);
+                Plugin.log.Error($"Unable to download avatar! Exception: {e}");
                 queuedAvatars.Remove(hash);
                 yield break;
             }
@@ -92,7 +92,7 @@ namespace BeatSaberMultiplayer.Misc
                 {
                     www.Abort();
                     timeout = true;
-                    Logger.Error("Connection timed out!");
+                    Plugin.log.Error("Connection timed out!");
                 }
             }
 
@@ -100,12 +100,12 @@ namespace BeatSaberMultiplayer.Misc
             if (www.isNetworkError || www.isHttpError || timeout)
             {
                 queuedAvatars.Remove(hash);
-                Logger.Error("Unable to download avatar! " + (www.isNetworkError ? $"Network error: {www.error}" : (www.isHttpError ? $"HTTP error: {www.error}" : "Unknown error")));
+                Plugin.log.Error("Unable to download avatar! " + (www.isNetworkError ? $"Network error: {www.error}" : (www.isHttpError ? $"HTTP error: {www.error}" : "Unknown error")));
             }
             else
             {
 #if DEBUG
-                Logger.Info("Received response from ModelSaber...");
+                Plugin.log.Info("Received response from ModelSaber...");
 #endif
                 string docPath = "";
                 string customAvatarPath = "";
@@ -120,12 +120,12 @@ namespace BeatSaberMultiplayer.Misc
                     customAvatarPath = docPath + "/CustomAvatars/" + avatarName;
 
                     File.WriteAllBytes(customAvatarPath, data);
-                    Logger.Info($"Saving avatar to \"{customAvatarPath}\"...");
+                    Plugin.log.Info($"Saving avatar to \"{customAvatarPath}\"...");
 
                     CustomAvatar.CustomAvatar downloadedAvatar = CustomExtensions.CreateInstance<CustomAvatar.CustomAvatar>(customAvatarPath);
-                    
-                    Logger.Info("Downloaded avatar!");
-                    Logger.Info($"Loading avatar...");
+
+                    Plugin.log.Info("Downloaded avatar!");
+                    Plugin.log.Info($"Loading avatar...");
 
                     downloadedAvatar.Load(
                         (CustomAvatar.CustomAvatar avatar, CustomAvatar.AvatarLoadResult result) => 
@@ -138,14 +138,14 @@ namespace BeatSaberMultiplayer.Misc
                             }
                             else
                             {
-                                Logger.Error("Unable to load avatar! "+result.ToString());
+                                Plugin.log.Error("Unable to load avatar! " + result.ToString());
                             }
                         });
                     
                 }
                 catch (Exception e)
                 {
-                    Logger.Exception(e);
+                    Plugin.log.Critical(e);
                     queuedAvatars.Remove(hash);
                     yield break;
                 }
@@ -157,7 +157,7 @@ namespace BeatSaberMultiplayer.Misc
             if (cachedAvatars.Count != CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count)
             {
                 isCalculatingHashes = true;
-                Misc.Logger.Info("Hashing all avatars...");
+                Plugin.log.Info("Hashing all avatars...");
                 try
                 {
                     cachedAvatars.Clear();
@@ -172,19 +172,19 @@ namespace BeatSaberMultiplayer.Misc
                                 {
                                     cachedAvatars.Add(hash, avatar);
 #if DEBUG
-                                    Misc.Logger.Info("Hashed avatar "+avatar.Name+"! Hash: "+hash);
+                                    Plugin.log.Info("Hashed avatar "+avatar.Name+"! Hash: "+hash);
 #endif
                                 }
                             }
                         }).ConfigureAwait(false);
 
                     }
-                    Misc.Logger.Info("All avatars hashed!");
+                    Plugin.log.Info("All avatars hashed!");
                     hashesCalculated?.Invoke();
                 }
                 catch(Exception e)
                 {
-                    Misc.Logger.Warning($"Unable to hash avatars! Exception: {e}");
+                    Plugin.log.Error($"Unable to hash avatars! Exception: {e}");
                 }
                 isCalculatingHashes = false;
             }

@@ -30,7 +30,7 @@ namespace BeatSaberMultiplayer.Misc
 
                 List<string> presetFiles = Directory.GetFiles(Path.Combine(Path.Combine(Environment.CurrentDirectory, "UserData"), "RoomPresets"), "*.json").ToList();
 
-                Logger.Info($"Found {presetFiles.Count} presets in RoomPresets folder");
+                Plugin.log.Info($"Found {presetFiles.Count} presets in RoomPresets folder");
 
                 foreach (string path in presetFiles)
                 {
@@ -38,17 +38,17 @@ namespace BeatSaberMultiplayer.Misc
                     {
                         RoomPreset preset = RoomPreset.LoadPreset(path);
                         loadedPresets.Add(preset);
-                        Logger.Info($"Found preset \"{preset.GetName()}\"");
+                        Plugin.log.Info($"Found preset \"{preset.GetName()}\"");
                     }
                     catch (Exception e)
                     {
-                        Logger.Info($"Unable to parse preset @ {path}! Exception: {e}");
+                        Plugin.log.Info($"Unable to parse preset @ {path}! Exception: {e}");
                     }
                 }
             }
             catch (Exception e)
             {
-                Logger.Exception("Unable to load presets! Exception: " + e);
+                Plugin.log.Error("Unable to load presets! Exception: " + e);
             }
         }
     }

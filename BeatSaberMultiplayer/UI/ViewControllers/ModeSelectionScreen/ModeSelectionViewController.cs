@@ -17,7 +17,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
         public event Action didSelectRooms;
         public event Action didSelectRadio;
 
-        private string[] _dllPaths = new[] { @"Beat Saber_Data\Managed\Lidgren.Network.dll", @"Beat Saber_Data\Managed\NSpeex.dll" };
+        private string[] _dllPaths = new[] { @"Libs\Lidgren.Network.2012.1.7.0.dll", @"Libs\NSpeex.1.1.1.0.dll" };
         private bool _filesMising;
         private string _missingFilesString = "Missing DLL files:";
 

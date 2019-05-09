@@ -46,10 +46,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
                 _downloadListTableCellInstance = Resources.FindObjectsOfTypeAll<LeaderboardTableCell>().First();
-
-                _tabControl = CustomExtensions.CreateTextSegmentedControl(rectTransform, new Vector2(0f, -9f));
+                
+                _tabControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 31f), new Vector2(100f, 7f), _tabControl_didSelectCellEvent);
                 _tabControl.SetTexts(new string[] { "Players", "Modifiers" });
-                _tabControl.didSelectCellEvent += _tabControl_didSelectCellEvent;
 
                 #region Modifiers tab
 
@@ -153,7 +152,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _pingText = this.CreateText("PING: 0", new Vector2(75f, 22.5f));
                 _pingText.alignment = TextAlignmentOptions.Left;
 
-                _tabControl_didSelectCellEvent(null, 0);
+                _tabControl_didSelectCellEvent(0);
             }
 
             if (activationType == ActivationType.AddedToHierarchy)
@@ -162,7 +161,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
         }
 
-        private void _tabControl_didSelectCellEvent(SegmentedControl arg1, int selectedIndex)
+        private void _tabControl_didSelectCellEvent(int selectedIndex)
         {
             _playersTab.gameObject.SetActive(selectedIndex == 0);
             _modifiersTab.gameObject.SetActive(selectedIndex == 1);
@@ -222,7 +221,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
             catch (Exception e)
             {
-                Misc.Logger.Exception($"Unable to update players list! Exception: {e}");
+                Plugin.log.Error($"Unable to update players list! Exception: {e}");
             }
         }
 
@@ -236,7 +235,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetGameplayModifiers(GameplayModifiers modifiers)
         {
-            Misc.Logger.Info("Setting gameplay modifiers");
+            Plugin.log.Info("Setting gameplay modifiers");
             if (_modifiersPanel != null)
             {
                 _modifiersPanel.Init(modifiers);

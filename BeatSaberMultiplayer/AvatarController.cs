@@ -13,7 +13,7 @@ using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer
 {
-    public class AvatarController : MonoBehaviour, IAvatarInput
+    public class AvatarController : MonoBehaviour, IAvatarFullBodyInput
     {
         static CustomAvatar.CustomAvatar defaultAvatarInstance;
 
@@ -33,10 +33,17 @@ namespace BeatSaberMultiplayer
         Vector3 HeadPos;
         Vector3 LeftHandPos;
         Vector3 RightHandPos;
+        Vector3 LeftLegPos;
+        Vector3 RightLegPos;
+        Vector3 PelvisPos;
+
         Quaternion HeadRot;
         Quaternion LeftHandRot;
         Quaternion RightHandRot;
-        
+        Quaternion LeftLegRot;
+        Quaternion RightLegRot;
+        Quaternion PelvisRot;
+
         Camera _camera;
 
         VRCenterAdjust _centerAdjust;
@@ -46,6 +53,12 @@ namespace BeatSaberMultiplayer
         public PosRot LeftPosRot => new PosRot(LeftHandPos, LeftHandRot);
 
         public PosRot RightPosRot => new PosRot(RightHandPos, RightHandRot);
+
+        public PosRot LeftLegPosRot => new PosRot(LeftLegPos, LeftLegRot);
+
+        public PosRot RightLegPosRot => new PosRot(RightLegPos, RightLegRot);
+
+        public PosRot PelvisPosRot => new PosRot(PelvisPos, PelvisRot);
 
         public static void LoadAvatars()
         {
@@ -87,7 +100,7 @@ namespace BeatSaberMultiplayer
 
             }
 #if DEBUG
-            Misc.Logger.Info($"Found avatar, isLoaded={defaultAvatarInstance.IsLoaded}");
+            Plugin.log.Info($"Found avatar, isLoaded={defaultAvatarInstance.IsLoaded}");
 #endif
             if (!defaultAvatarInstance.IsLoaded)
             {
@@ -105,7 +118,7 @@ namespace BeatSaberMultiplayer
             if (!defaultAvatarInstance.IsLoaded)
             {
 #if DEBUG
-                Misc.Logger.Info("Waiting for avatar to load");
+                Plugin.log.Info("Waiting for avatar to load");
 #endif
                 yield return new WaitWhile(delegate () { return !defaultAvatarInstance.IsLoaded; });
             }
@@ -115,7 +128,7 @@ namespace BeatSaberMultiplayer
             }
 
 #if DEBUG
-            Misc.Logger.Info("Spawning avatar");
+            Plugin.log.Info("Spawning avatar");
 #endif
             _centerAdjust = FindObjectOfType<VRCenterAdjust>();
 
@@ -149,7 +162,7 @@ namespace BeatSaberMultiplayer
             {
                 if (playerNameText != null)
                 {
-                    if (IllusionInjector.PluginManager.Plugins.Any(x => x.Name == "CameraPlus") && _camera == null)
+                    if (IPA.Loader.PluginManager.AllPlugins.Any(x => x.Metadata.Name == "CameraPlus") && _camera == null)
                     {
                         _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name.StartsWith("CamPlus_"));
                     }
@@ -171,7 +184,7 @@ namespace BeatSaberMultiplayer
             }
             catch(Exception e)
             {
-                Misc.Logger.Warning($"Unable to rotate text to the camera! Exception: {e}");
+                Plugin.log.Warn($"Unable to rotate text to the camera! Exception: {e}");
             }
 
         }
@@ -179,7 +192,7 @@ namespace BeatSaberMultiplayer
         void OnDestroy()
         {
 #if DEBUG
-            Misc.Logger.Info("Destroying avatar");
+            Plugin.log.Info("Destroying avatar");
 #endif
             Destroy(avatar.GameObject);
         }
@@ -308,15 +321,34 @@ namespace BeatSaberMultiplayer
                 }
 
                 Vector3 offsetVector = new Vector3(offset, 0f, 0f);
-                
+
                 HeadPos = playerInfo.headPos + offsetVector;
                 RightHandPos = playerInfo.rightHandPos + offsetVector;
                 LeftHandPos = playerInfo.leftHandPos + offsetVector;
-
+                
                 HeadRot = playerInfo.headRot;
                 RightHandRot = playerInfo.rightHandRot;
                 LeftHandRot = playerInfo.leftHandRot;
-                
+
+                if (playerInfo.fullBodyTracking)
+                {
+                    RightLegPos = playerInfo.rightLegPos + offsetVector;
+                    LeftLegPos = playerInfo.leftLegPos + offsetVector;
+                    PelvisPos = playerInfo.pelvisPos + offsetVector;
+                    RightLegRot = playerInfo.rightLegRot;
+                    LeftLegRot = playerInfo.leftLegRot;
+                    PelvisRot = playerInfo.pelvisRot;
+                }
+                else
+                {
+                    RightLegPos = new Vector3();
+                    LeftLegPos = new Vector3();
+                    PelvisPos = new Vector3();
+                    RightLegRot = new Quaternion();
+                    LeftLegRot = new Quaternion();
+                    PelvisRot = new Quaternion();
+                }
+
                 transform.position = HeadPos;
 
                 playerNameText.text = playerInfo.playerName;
@@ -324,14 +356,14 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Misc.Logger.Exception($"Avatar controller exception: {playerInfo.playerName}: {e}");
+                Plugin.log.Critical(e);
             }
 
         }
 
         private void AvatarController_AvatarLoaded(string hash)
         {
-            Misc.Logger.Info($"Avatar with hash \"{hash}\" loaded! (1)");
+            Plugin.log.Info($"Avatar with hash \"{hash}\" loaded! (1)");
             if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash) && playerInfo.avatarHash == hash)
             {
                 AvatarLoaded -= AvatarController_AvatarLoaded;
@@ -351,7 +383,7 @@ namespace BeatSaberMultiplayer
 
         private void AvatarDownloaded(string hash)
         {
-            Misc.Logger.Info($"Avatar with hash \"{hash}\" loaded! (2)");
+            Plugin.log.Info($"Avatar with hash \"{hash}\" loaded! (2)");
             if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash) && playerInfo.avatarHash == hash)
             {
                 ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;

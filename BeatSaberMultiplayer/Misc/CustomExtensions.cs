@@ -20,7 +20,7 @@ namespace BeatSaberMultiplayer.Misc
             {
                 if(_customTextShader == null)
                 {
-                    Logger.Info("Loading text shader asset bundle...");
+                    Plugin.log.Info("Loading text shader asset bundle...");
                     AssetBundle assetBundle = AssetBundle.LoadFromStream(Assembly.GetCallingAssembly().GetManifestResourceStream("BeatSaberMultiplayer.Assets.Shader.asset"));
                     _customTextShader = assetBundle.LoadAsset<Shader>("Assets/TextMesh Pro/Resources/Shaders/TMP_SDF_ZeroAlphaWrite_ZWrite.shader");
                 }
@@ -85,37 +85,6 @@ namespace BeatSaberMultiplayer.Misc
         public static int FindIndexInList<T>(this List<T> list, T b)
         {
             return list.FindIndex(x => x.Equals(b));
-        }
-
-        public static TextSegmentedControl CreateTextSegmentedControl(RectTransform parent, Vector2 anchoredPosition)
-        {
-            return CreateTextSegmentedControl(parent, anchoredPosition, new Vector2(-20f, 7f));
-        }
-
-        public static TextSegmentedControl CreateTextSegmentedControl(RectTransform parent, Vector2 anchoredPosition, Vector2 sizeDelta)
-        {
-            var segmentedControl = new GameObject("CustomSegmentedControl", typeof(RectTransform)).AddComponent<TextSegmentedControl>();
-            segmentedControl.gameObject.AddComponent<HorizontalLayoutGroup>();
-
-            TextSegmentedControlCellNew[] _segments = Resources.FindObjectsOfTypeAll<TextSegmentedControlCellNew>();
-
-            segmentedControl.SetPrivateField("_singleCellPrefab", _segments.First(x => x.name == "HSingleTextSegmentedControlCell"));
-            segmentedControl.SetPrivateField("_firstCellPrefab", _segments.First(x => x.name == "LeftTextSegmentedControlCell"));
-            segmentedControl.SetPrivateField("_middleCellPrefab", _segments.First(x => x.name == "HMiddleTextSegmentedControlCell"));
-            segmentedControl.SetPrivateField("_lastCellPrefab", _segments.First(x => x.name == "RightTextSegmentedControlCell"));
-
-            segmentedControl.SetPrivateField("_container", Resources.FindObjectsOfTypeAll<TextSegmentedControl>().Select(x => x.GetPrivateField<object>("_container")).First(x => x != null));
-
-            segmentedControl.transform.SetParent(parent, false);
-            (segmentedControl.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
-            (segmentedControl.transform as RectTransform).anchorMin = new Vector2(0f, 1f);
-            (segmentedControl.transform as RectTransform).anchoredPosition = anchoredPosition;
-            (segmentedControl.transform as RectTransform).sizeDelta = sizeDelta;
-
-            segmentedControl.SetPrivateField("_fontSize", 4f);
-            segmentedControl.SetPrivateField("_padding", 8f);
-
-            return segmentedControl;
         }
 
         public static TextMeshPro CreateWorldText(Transform parent, string text="TEXT")

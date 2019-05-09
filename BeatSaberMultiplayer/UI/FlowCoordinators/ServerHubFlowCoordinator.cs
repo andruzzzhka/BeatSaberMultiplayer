@@ -92,7 +92,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 DismissFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, immediately);
             }catch(Exception e)
             {
-                Misc.Logger.Warning("Unable to dismiss flow coordinator! Exception: "+e);
+                Plugin.log.Warn("Unable to dismiss flow coordinator! Exception: "+e);
             }
         }
 
@@ -137,7 +137,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void UpdateRoomsList()
         {
-            Misc.Logger.Info("Updating rooms list...");
+            Plugin.log.Info("Updating rooms list...");
             _serverHubClients.ForEach(x =>
             {
                 if (x != null)
@@ -171,7 +171,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _roomListViewController.SetRefreshButtonState(false);
             _serverHubClients.ForEach(x => x.GetRooms());
 
-            Misc.Logger.Info("Requested rooms lists from ServerHubs...");
+            Plugin.log.Info("Requested rooms lists from ServerHubs...");
         }
 
         private void ReceivedRoomsList(ServerHubClient sender, List<RoomInfo> rooms)
@@ -179,7 +179,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _roomsList.AddRange(rooms.Select(x => new ServerHubRoom(sender.ip, sender.port, x)));
             HMMainThreadDispatcher.instance.Enqueue(delegate ()
             {
-                Misc.Logger.Info($"Received rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
+                Plugin.log.Info($"Received rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
                 _roomListViewController.SetRooms(_roomsList);
                 _serverHubNavigationController.SetLoadingState(false);
                 _roomListViewController.SetRefreshButtonState(true);
@@ -188,7 +188,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void ServerHubException(ServerHubClient sender, Exception e)
         {
-            Misc.Logger.Error($"ServerHub exception ({sender.ip}:{sender.port}): {e}");
+            Plugin.log.Error($"ServerHub exception ({sender.ip}:{sender.port}): {e}");
         }
     }
 
@@ -227,7 +227,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     NetworkClient.Start();
 
-                    Misc.Logger.Info($"Creating message...");
+                    Plugin.log.Info($"Creating message...");
                     NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
 
                     Version assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
@@ -236,7 +236,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     outMsg.Write(version);
                     new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).AddToMessage(outMsg);
 
-                    Misc.Logger.Info($"Connecting to {ip}:{port}...");
+                    Plugin.log.Info($"Connecting to {ip}:{port}...");
 
                     NetworkClient.Connect(ip, port, outMsg);
                 }).ConfigureAwait(false);
@@ -326,15 +326,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             };
                             break;
                         case NetIncomingMessageType.WarningMessage:
-                            Misc.Logger.Warning(msg.ReadString());
+                            Plugin.log.Warn(msg.ReadString());
                             break;
                         case NetIncomingMessageType.ErrorMessage:
-                            Misc.Logger.Error(msg.ReadString());
+                            Plugin.log.Error(msg.ReadString());
                             break;
 #if DEBUG
                         case NetIncomingMessageType.VerboseDebugMessage:
                         case NetIncomingMessageType.DebugMessage:
-                            Misc.Logger.Info(msg.ReadString());
+                            Plugin.log.Info(msg.ReadString());
                             break;
                         default:
                             Console.WriteLine("Unhandled type: " + msg.MessageType);

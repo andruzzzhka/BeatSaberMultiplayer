@@ -1,0 +1,19 @@
+{
+  "$schema": "https://github.com/nike4613/BSIPA-MetadataFileSchema/master/Schema.json",
+  "author": "andruzzzhka",
+  "description": "Allows you to play with friends online!",
+  "gameVersion": "0.13.2",
+  "id": "BeatSaberMultiplayer",
+  "name": "Beat Saber Multiplayer",
+  "version": "0.6.2.2",
+  "dependsOn": {
+    "CustomUI": "^1.5.4",
+    "BS Utils": "^1.2.3",
+    "SongLoader": "^6.10.1"
+  },
+  "features": [
+    "print",
+    "debug",
+    "warn"
+  ]
+}

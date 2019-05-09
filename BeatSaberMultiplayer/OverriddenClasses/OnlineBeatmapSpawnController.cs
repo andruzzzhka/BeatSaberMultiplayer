@@ -206,7 +206,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         {
             base.OnDestroy();
 
-            Misc.Logger.Info("Spawn controller is destroyed! Dissolving notes...");
+            Plugin.log.Info("Spawn controller is destroyed! Dissolving notes...");
 
             foreach (NoteController controller in _activeNotes)
             {
@@ -218,7 +218,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 controller.Dissolve(1f);
             }
 
-            Misc.Logger.Info("Notes dissolved!");
+            Plugin.log.Info("Notes dissolved!");
         }
     }
 }

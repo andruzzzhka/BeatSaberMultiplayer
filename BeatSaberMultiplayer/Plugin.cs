@@ -1,7 +1,7 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using BS_Utils.Gameplay;
-using IllusionPlugin;
+using IPA;
 using System;
 using System.IO;
 using System.Linq;
@@ -10,27 +10,25 @@ using UnityEngine.SceneManagement;
 
 namespace BeatSaberMultiplayer
 {
-    public class Plugin : IPlugin
+    public class Plugin : IBeatSaberPlugin
     {
-        public string Name => "Beat Saber Multiplayer";
-
-        public string Version => "0.6.2.1";
-
         public static Plugin instance;
+        public static IPA.Logging.Logger log;
 
-        public void OnApplicationQuit()
+        public void Init(object nullObject, IPA.Logging.Logger logger)
         {
+            log = logger;
         }
 
         public void OnApplicationStart()
         {
 #if DEBUG
             if (Environment.CommandLine.Contains("fpfc"))
-                QualitySettings.vSyncCount = 1;
+            {
+                QualitySettings.vSyncCount = 2;
+                Application.targetFrameRate = 60;
+            }
 #endif
-
-            if (File.Exists("MPLog.txt"))
-                File.Delete("MPLog.txt");
             
             instance = this;
 
@@ -44,17 +42,19 @@ namespace BeatSaberMultiplayer
             BSEvents.gameSceneLoaded += GameSceneLoaded;
 
             if (Config.Load())
-                Misc.Logger.Info("Loaded config!");
+                log.Info("Loaded config!");
             else
                 Config.Create();
+
             try
             {
                 PresetsCollection.ReloadPresets();
             }
             catch (Exception e)
             {
-                Misc.Logger.Warning("Unable to load presets! Exception: "+e);
+                log.Warn("Unable to load presets! Exception: "+e);
             }
+
             Sprites.ConvertSprites();
 
             ScrappedData.Instance.DownloadScrappedData(null);
@@ -93,19 +93,27 @@ namespace BeatSaberMultiplayer
 #endif
         }
 
-        public void OnFixedUpdate()
-        {
-        }
-
-        public void OnLevelWasInitialized(int level)
-        {
-        }
-
-        public void OnLevelWasLoaded(int level)
+        public void OnApplicationQuit()
         {
         }
 
         public void OnUpdate()
+        {
+        }
+
+        public void OnFixedUpdate()
+        {
+        }
+
+        public void OnSceneLoaded(Scene scene, LoadSceneMode sceneMode)
+        {
+        }
+
+        public void OnSceneUnloaded(Scene scene)
+        {
+        }
+
+        public void OnActiveSceneChanged(Scene prevScene, Scene nextScene)
         {
         }
     }

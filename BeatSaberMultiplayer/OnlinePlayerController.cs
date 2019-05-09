@@ -72,7 +72,7 @@ namespace BeatSaberMultiplayer
         public void Start()
         {
 #if DEBUG
-            Misc.Logger.Info($"Player controller created!");
+            Plugin.log.Info($"Player controller created!");
 #endif
             voipSource = gameObject.AddComponent<AudioSource>();
 
@@ -83,7 +83,7 @@ namespace BeatSaberMultiplayer
             if (_info != null)
             {
 #if DEBUG
-                Misc.Logger.Info($"Starting player controller for {_info.playerName}:{_info.playerId}...");
+                Plugin.log.Info($"Starting player controller for {_info.playerName}:{_info.playerId}...");
 #endif
                 syncStartInfo = _info;
                 syncEndInfo = _info;
@@ -98,27 +98,27 @@ namespace BeatSaberMultiplayer
 
         void SpawnBeatmapControllers()
         {
-            Misc.Logger.Info("Creating beatmap controllers...");
+            Plugin.log.Info("Creating beatmap controllers...");
 
             beatmapCallbackController = new GameObject("OnlineBeatmapCallbackController").AddComponent<OnlineBeatmapCallbackController>();
-            Misc.Logger.Info("Created beatmap callback controller!");
+            Plugin.log.Info("Created beatmap callback controller!");
             beatmapCallbackController.Init(this);
-            Misc.Logger.Info("Initialized beatmap callback controller!");
+            Plugin.log.Info("Initialized beatmap callback controller!");
             
             audioTimeController = new GameObject("OnlineAudioTimeController").AddComponent<OnlineAudioTimeController>();
-            Misc.Logger.Info("Created audio time controller!");
+            Plugin.log.Info("Created audio time controller!");
             audioTimeController.Init(this);
-            Misc.Logger.Info("Initialized audio time controller!");
+            Plugin.log.Info("Initialized audio time controller!");
 
             beatmapSpawnController = new GameObject("OnlineBeatmapSpawnController").AddComponent<OnlineBeatmapSpawnController>();
-            Misc.Logger.Info("Created beatmap spawn controller!");
+            Plugin.log.Info("Created beatmap spawn controller!");
             beatmapSpawnController.Init(this, beatmapCallbackController, audioTimeController);
-            Misc.Logger.Info("Initialized beatmap spawn controller!");
+            Plugin.log.Info("Initialized beatmap spawn controller!");
         }
 
         void SpawnSabers()
         {
-            Misc.Logger.Info("Spawning left saber...");
+            Plugin.log.Info("Spawning left saber...");
             _leftSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "LeftSaber"), transform, false);
             var leftController = _leftSaber.gameObject.AddComponent<OnlineVRController>();
             leftController.owner = this;
@@ -129,7 +129,7 @@ namespace BeatSaberMultiplayer
             leftTrail.SetPrivateField("_colorManager", colorManager);
             leftTrail.SetPrivateField("_saberTypeObject", leftController.GetComponentInChildren<SaberTypeObject>());
 
-            Misc.Logger.Info("Spawning right saber...");
+            Plugin.log.Info("Spawning right saber...");
             _rightSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "RightSaber"), transform, false);
             var rightController = _rightSaber.gameObject.AddComponent<OnlineVRController>();
             rightController.owner = this;
@@ -139,7 +139,7 @@ namespace BeatSaberMultiplayer
             rightTrail.SetPrivateField("_saberTypeObject", rightController.GetComponentInChildren<SaberTypeObject>());
 
 
-            Misc.Logger.Info("Sabers spawned!");
+            Plugin.log.Info("Sabers spawned!");
         }
 
         public override void Update()
@@ -177,6 +177,9 @@ namespace BeatSaberMultiplayer
                 _info.headPos = Vector3.Lerp(syncStartInfo.headPos, syncEndInfo.headPos, lerpProgress);
                 _info.leftHandPos = Vector3.Lerp(syncStartInfo.leftHandPos, syncEndInfo.leftHandPos, lerpProgress);
                 _info.rightHandPos = Vector3.Lerp(syncStartInfo.rightHandPos, syncEndInfo.rightHandPos, lerpProgress);
+                _info.leftLegPos = Vector3.Lerp(syncStartInfo.leftLegPos, syncEndInfo.leftLegPos, lerpProgress);
+                _info.rightLegPos = Vector3.Lerp(syncStartInfo.rightLegPos, syncEndInfo.rightLegPos, lerpProgress);
+                _info.pelvisPos = Vector3.Lerp(syncStartInfo.pelvisPos, syncEndInfo.pelvisPos, lerpProgress);
 
                 _overrideHeadPos = true;
                 _overriddenHeadPos = _info.headPos;
@@ -186,7 +189,10 @@ namespace BeatSaberMultiplayer
                 _info.headRot = Quaternion.Lerp(syncStartInfo.headRot, syncEndInfo.headRot, lerpProgress);
                 _info.leftHandRot = Quaternion.Lerp(syncStartInfo.leftHandRot, syncEndInfo.leftHandRot, lerpProgress);
                 _info.rightHandRot = Quaternion.Lerp(syncStartInfo.rightHandRot, syncEndInfo.rightHandRot, lerpProgress);
-                
+                _info.leftLegRot = Quaternion.Lerp(syncStartInfo.leftLegRot, syncEndInfo.leftLegRot, lerpProgress);
+                _info.rightLegRot = Quaternion.Lerp(syncStartInfo.rightLegRot, syncEndInfo.rightLegRot, lerpProgress);
+                _info.pelvisRot = Quaternion.Lerp(syncStartInfo.pelvisRot, syncEndInfo.pelvisRot, lerpProgress);
+
                 _info.playerProgress = Mathf.Lerp(syncStartInfo.playerProgress, syncEndInfo.playerProgress, lerpProgress);
             }
         }
@@ -195,9 +201,9 @@ namespace BeatSaberMultiplayer
         {
 #if DEBUG
             if(_info == null)
-                Misc.Logger.Info("Destroying player controller!");
+                Plugin.log.Info("Destroying player controller!");
             else
-                Misc.Logger.Info($"Destroying player controller! Name: {_info.playerName}, ID: {_info.playerId}");
+                Plugin.log.Info($"Destroying player controller! Name: {_info.playerName}, ID: {_info.playerId}");
 #endif
             destroyed = true;
             
@@ -234,7 +240,10 @@ namespace BeatSaberMultiplayer
                 syncStartInfo.headRot = Quaternion.identity;
                 syncStartInfo.leftHandRot = Quaternion.identity;
                 syncStartInfo.rightHandRot = Quaternion.identity;
-                Misc.Logger.Warning("Start rotation is NaN!");
+                syncStartInfo.leftLegRot = Quaternion.identity;
+                syncStartInfo.rightLegRot = Quaternion.identity;
+                syncStartInfo.pelvisRot = Quaternion.identity;
+                Plugin.log.Warn("Start rotation is NaN!");
             }
 
             syncEndInfo = newPlayerInfo;
@@ -243,7 +252,10 @@ namespace BeatSaberMultiplayer
                 syncEndInfo.headRot = Quaternion.identity;
                 syncEndInfo.leftHandRot = Quaternion.identity;
                 syncEndInfo.rightHandRot = Quaternion.identity;
-                Misc.Logger.Warning("Target rotation is NaN!");
+                syncEndInfo.leftLegRot = Quaternion.identity;
+                syncEndInfo.rightLegRot = Quaternion.identity;
+                syncEndInfo.pelvisRot = Quaternion.identity;
+                Plugin.log.Warn("Target rotation is NaN!");
             }
 
             _info.playerProgress = syncEndInfo.playerProgress;

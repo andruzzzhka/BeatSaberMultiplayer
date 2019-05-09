@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 
-namespace BeatSaberMultiplayer.UI.UIElements
+namespace BeatSaberMultiplayer.Misc
 {
     class CustomSettingsHelper
     {

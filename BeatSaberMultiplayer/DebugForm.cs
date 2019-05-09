@@ -162,7 +162,7 @@ namespace BeatSaberMultiplayer
                         }
                         catch (Exception e)
                         {
-                            Misc.Logger.Info($"Unable to parse PlayerInfo! Excpetion: {e}");
+                            Plugin.log.Info($"Unable to parse PlayerInfo! Excpetion: {e}");
                         }
                     }
 
@@ -173,7 +173,7 @@ namespace BeatSaberMultiplayer
             }
             catch(Exception e)
             {
-                Misc.Logger.Info("Unable to process packet in debug form! Exception: "+e);
+                Plugin.log.Info("Unable to process packet in debug form! Exception: "+e);
             }
             
         }

@@ -80,19 +80,19 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             UnityWebRequest www = UnityWebRequest.Get("https://radio.assistant.moe/Channels/");
 #endif
 
-            Misc.Logger.Info("Requesting channels list...");
+            Plugin.log.Info("Requesting channels list...");
             channelSelectionViewController.SetLoadingState(true);
 
             yield return www.SendWebRequest();
 
             if (www.isNetworkError || www.isHttpError)
             {
-                Misc.Logger.Error(www.error);
+                Plugin.log.Error(www.error);
             }
             else
             {
 #if DEBUG
-                Misc.Logger.Info("Received response!");
+                Plugin.log.Info("Received response!");
 #endif
                 JSONNode node = JSON.Parse(www.downloadHandler.text);
 
@@ -101,7 +101,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 if (node["channels"].Count == 0)
                 {
-                    Misc.Logger.Error($"No channels available");
+                    Plugin.log.Error($"No channels available");
                     yield break;
                 }
 
@@ -111,8 +111,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
 
                 currentChannel = 0;
-                
-                Misc.Logger.Info("Requesting channel infos...");
+
+                Plugin.log.Info("Requesting channel infos...");
 
                 _channelClients.ForEach(x =>
                 {
@@ -138,14 +138,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
                 
                 _channelClients.ForEach(x => x.GetRooms());
-                Misc.Logger.Info("Requested channel infos!");
+                Plugin.log.Info("Requested channel infos!");
             }
 
         }
 
         private void ChannelException(RadioClient sender, Exception ex)
         {
-            Misc.Logger.Warning("Channel exception: "+ex);
+            Plugin.log.Warn("Channel exception: "+ex);
         }
 
         private void ReceivedResponse(RadioClient sender, ChannelInfo info)
@@ -182,7 +182,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 NetworkClient.Start();
 
-                Misc.Logger.Info($"Creating message...");
+                Plugin.log.Info($"Creating message...");
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
 
                 Version assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
@@ -191,7 +191,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 outMsg.Write(version);
                 new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).AddToMessage(outMsg);
 
-                Misc.Logger.Info($"Connecting to {channelInfos[0].ip}:{channelInfos[0].port}...");
+                Plugin.log.Info($"Connecting to {channelInfos[0].ip}:{channelInfos[0].port}...");
 
                 NetworkClient.Connect(channelInfos[0].ip, channelInfos[0].port, outMsg);
             }
@@ -263,14 +263,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             };
                             break;
                         case NetIncomingMessageType.WarningMessage:
-                            Misc.Logger.Warning(msg.ReadString());
+                            Plugin.log.Warn(msg.ReadString());
                             break;
                         case NetIncomingMessageType.ErrorMessage:
-                            Misc.Logger.Error(msg.ReadString());
+                            Plugin.log.Error(msg.ReadString());
                             break;
                         case NetIncomingMessageType.VerboseDebugMessage:
                         case NetIncomingMessageType.DebugMessage:
-                            Misc.Logger.Info(msg.ReadString());
+                            Plugin.log.Info(msg.ReadString());
                             break;
                         default:
                             Console.WriteLine("Unhandled type: " + msg.MessageType);

@@ -121,7 +121,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             catch
             {
-                Misc.Logger.Info("Unable to disconnect from ServerHub properly!");
+                Plugin.log.Info("Unable to disconnect from ServerHub properly!");
             }
             
             PreviewPlayer.CrossfadeToDefault();
@@ -260,7 +260,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                 if(level == null)
                                 {
-                                    Misc.Logger.Error("Unable to start level! Level is null! LevelID="+songInfo.levelId);
+                                    Plugin.log.Error("Unable to start level! Level is null! LevelID="+songInfo.levelId);
                                     return;
                                 }
 
@@ -320,7 +320,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                                 catch (Exception e)
                                                 {
 #if DEBUG
-                                                    Misc.Logger.Exception($"Unable to parse PlayerInfo! Excpetion: {e}");
+                                                    Plugin.log.Critical($"Unable to parse PlayerInfo! Excpetion: {e}");
 #endif
                                                     return;
                                                 }
@@ -358,7 +358,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
                 catch (Exception e)
                 {
-                    Misc.Logger.Exception($"Unable to parse packet! Packet={commandType}, DataLength={msg.LengthBytes}\nException: {e}");
+                    Plugin.log.Error($"Unable to parse packet! Packet={commandType}, DataLength={msg.LengthBytes}\nException: {e}");
                 }
             }
         }
@@ -453,7 +453,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 IDifficultyBeatmap difficultyBeatmap = level.GetDifficultyBeatmap(characteristic, difficulty, false);
 
 #if DEBUG
-                Misc.Logger.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={difficulty}");
+                Plugin.log.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={difficulty}");
 #endif
 
                 PracticeSettings practiceSettings = new PracticeSettings(PracticeSettings.defaultPracticeSettings);
@@ -480,7 +480,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             else
             {
-                Misc.Logger.Error("SceneSetupData is null!");
+                Plugin.log.Error("SceneSetupData is null!");
             }
         }
 
@@ -556,7 +556,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     });
                 else
                 {
-                    Misc.Logger.Error("Unable to play preview for song! Level is null! levelID="+channelInfo.currentSong.levelId);
+                    Plugin.log.Error("Unable to play preview for song! Level is null! levelID="+channelInfo.currentSong.levelId);
                 }
             }
         }

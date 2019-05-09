@@ -108,11 +108,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ChannelSelectionScreen
                     _loadingIndicator.SetActive(false);
                     _channelCover.sprite = image;
                 }));
-                Misc.Logger.Info("Loading icon from URL: \""+channelInfo.iconUrl+"\"");
+                Plugin.log.Info("Loading icon from URL: \""+channelInfo.iconUrl+"\"");
             }
             else
             {
-                Misc.Logger.Info("Icon URL is empty!");
+                Plugin.log.Info("Icon URL is empty!");
                 _channelCover.sprite = Sprites.radioIcon;
             }
 

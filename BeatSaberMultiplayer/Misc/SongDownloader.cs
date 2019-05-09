@@ -78,7 +78,7 @@ namespace BeatSaberMultiplayer.Misc
             }
             catch (Exception e)
             {
-                Logger.Error(e);
+                Plugin.log.Error(e);
                 songInfo.songQueueState = SongQueueState.Error;
                 songInfo.downloadingProgress = 1f;
 
@@ -95,7 +95,7 @@ namespace BeatSaberMultiplayer.Misc
                 {
                     www.Abort();
                     timeout = true;
-                    Logger.Error("Download aborted!");
+                    Plugin.log.Error("Download aborted!");
                 }
 
                 songInfo.downloadingProgress = asyncRequest.progress;
@@ -108,11 +108,11 @@ namespace BeatSaberMultiplayer.Misc
             if (www.isNetworkError || www.isHttpError || timeout || songInfo.songQueueState == SongQueueState.Error)
             {
                 songInfo.songQueueState = SongQueueState.Error;
-                Logger.Error("Unable to download song! " + (www.isNetworkError ? $"Network error: {www.error}" : (www.isHttpError ? $"HTTP error: {www.error}" : "Unknown error")));
+                Plugin.log.Error("Unable to download song! " + (www.isNetworkError ? $"Network error: {www.error}" : (www.isHttpError ? $"HTTP error: {www.error}" : "Unknown error")));
             }
             else
             {
-                Logger.Info("Received response from BeatSaver.com...");
+                Plugin.log.Info("Received response from BeatSaver.com...");
 
                 string docPath = "";
                 string customSongsPath = "";
@@ -132,11 +132,11 @@ namespace BeatSaberMultiplayer.Misc
                         Directory.CreateDirectory(customSongsPath);
                     }
                     zipStream = new MemoryStream(data);
-                    Logger.Info("Downloaded zip!");
+                    Plugin.log.Info("Downloaded zip!");
                 }
                 catch (Exception e)
                 {
-                    Logger.Exception("Unable to download zip! Exception: " +e);
+                    Plugin.log.Critical("Unable to download zip! Exception: " +e);
                     songInfo.songQueueState = SongQueueState.Error;
                     yield break;
                 }
@@ -154,15 +154,15 @@ namespace BeatSaberMultiplayer.Misc
                 {
                     string dirName = customSongsPath.Substring(customSongsPath.LastIndexOf("CustomSongs") + 12);
 #if DEBUG
-                    Logger.Info("Original path: " + customSongsPath);
-                    Logger.Info("Folder name: " + dirName);
+                    Plugin.log.Info("Original path: " + customSongsPath);
+                    Plugin.log.Info("Folder name: " + dirName);
 #endif
 
                     SongLoader.Instance.RetrieveNewSong(dirName);
                 }
                 catch (Exception e)
                 {
-                    Logger.Exception("Unable to load song! Exception: " + e);
+                    Plugin.log.Critical("Unable to load song! Exception: " + e);
                 }
             }
         }
@@ -171,7 +171,7 @@ namespace BeatSaberMultiplayer.Misc
         {
             try
             {
-                Logger.Info("Extracting...");
+                Plugin.log.Info("Extracting...");
                 _extractingZip = true;
                 ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Read);
                 await Task.Run(() => archive.ExtractToDirectory(customSongsPath)).ConfigureAwait(false);
@@ -180,7 +180,7 @@ namespace BeatSaberMultiplayer.Misc
             }
             catch (Exception e)
             {
-                Logger.Exception($"Unable to extract ZIP! Exception: {e}");
+                Plugin.log.Critical($"Unable to extract ZIP! Exception: {e}");
                 songInfo.songQueueState = SongQueueState.Error;
                 _extractingZip = false;
                 return;
@@ -196,7 +196,7 @@ namespace BeatSaberMultiplayer.Misc
             _extractingZip = false;
             songInfo.songQueueState = SongQueueState.Downloaded;
             _alreadyDownloadedSongs.Add(songInfo);
-            Logger.Info($"Extracted {songInfo.songName} {songInfo.songSubName}!");
+            Plugin.log.Info($"Extracted {songInfo.songName} {songInfo.songSubName}!");
         }
 
         public bool DeleteSong(Song song)
@@ -226,7 +226,7 @@ namespace BeatSaberMultiplayer.Misc
 
             if (zippedSong)
             {
-                Logger.Info("Deleting \"" + path.Substring(path.LastIndexOf('/')) + "\"...");
+                Plugin.log.Info("Deleting \"" + path.Substring(path.LastIndexOf('/')) + "\"...");
                 Directory.Delete(path, true);
 
                 string songHash = Directory.GetParent(path).Name;
@@ -235,13 +235,13 @@ namespace BeatSaberMultiplayer.Misc
                 {
                     if (Directory.GetFileSystemEntries(path.Substring(0, path.LastIndexOf('/'))).Length == 0)
                     {
-                        Logger.Info("Deleting empty folder \"" + path.Substring(0, path.LastIndexOf('/')) + "\"...");
+                        Plugin.log.Info("Deleting empty folder \"" + path.Substring(0, path.LastIndexOf('/')) + "\"...");
                         Directory.Delete(path.Substring(0, path.LastIndexOf('/')), false);
                     }
                 }
                 catch
                 {
-                    Logger.Warning("Can't find or delete empty folder!");
+                    Plugin.log.Warn("Can't find or delete empty folder!");
                 }
 
                 string docPath = Application.dataPath;
@@ -266,26 +266,26 @@ namespace BeatSaberMultiplayer.Misc
             }
             else
             {
-                Logger.Info("Deleting \"" + path.Substring(path.LastIndexOf('/')) + "\"...");
+                Plugin.log.Info("Deleting \"" + path.Substring(path.LastIndexOf('/')) + "\"...");
                 Directory.Delete(path, true);
 
                 try
                 {
                     if (Directory.GetFileSystemEntries(path.Substring(0, path.LastIndexOf('/'))).Length == 0)
                     {
-                        Logger.Info("Deleting empty folder \"" + path.Substring(0, path.LastIndexOf('/')) + "\"...");
+                        Plugin.log.Info("Deleting empty folder \"" + path.Substring(0, path.LastIndexOf('/')) + "\"...");
                         Directory.Delete(path.Substring(0, path.LastIndexOf('/')), false);
                     }
                 }
                 catch
                 {
-                    Logger.Warning("Unable to delete empty folder!");
+                    Plugin.log.Warn("Unable to delete empty folder!");
                 }
             }
 
             if (level != null)
                 SongLoader.Instance.RemoveSongWithLevelID(level.levelID);
-            Logger.Info($"{_alreadyDownloadedSongs.RemoveAll(x => x.Compare(song))} song removed");
+            Plugin.log.Info($"{_alreadyDownloadedSongs.RemoveAll(x => x.Compare(song))} song removed");
             return true;
         }
 
@@ -347,18 +347,18 @@ namespace BeatSaberMultiplayer.Misc
 
             if (wwwId.isNetworkError || wwwId.isHttpError)
             {
-                Logger.Error(wwwId.error);
+                Plugin.log.Error(wwwId.error);
             }
             else
             {
 #if DEBUG
-                Logger.Info("Received response from BeatSaver...");
+                Plugin.log.Info("Received response from BeatSaver...");
 #endif
                 JSONNode node = JSON.Parse(wwwId.downloadHandler.text);
 
                 if (node["songs"].Count == 0)
                 {
-                    Logger.Error($"Song {levelId} doesn't exist on BeatSaver!");
+                    Plugin.log.Error($"Song {levelId} doesn't exist on BeatSaver!");
                     callback?.Invoke(null);
                     yield break;
                 }
@@ -383,12 +383,12 @@ namespace BeatSaberMultiplayer.Misc
 
             if (wwwId.isNetworkError || wwwId.isHttpError)
             {
-                Logger.Error(wwwId.error);
+                Plugin.log.Error(wwwId.error);
             }
             else
             {
 #if DEBUG
-                Logger.Info("Received response from BeatSaver...");
+                Plugin.log.Info("Received response from BeatSaver...");
 #endif
                 JSONNode node = JSON.Parse(wwwId.downloadHandler.text);
                 

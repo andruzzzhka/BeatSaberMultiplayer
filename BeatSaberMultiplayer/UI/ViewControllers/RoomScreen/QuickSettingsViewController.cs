@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.UIElements;
+using CustomUI.BeatSaber;
 using HMUI;
 using System;
 using System.Collections.Generic;
@@ -24,10 +25,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             if (firstActivation)
             {
-                _settingsSegments = CustomExtensions.CreateTextSegmentedControl(rectTransform, new Vector2(0f, -9f));
-
+                _settingsSegments = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 31f), new Vector2(100f, 7f), SettingsCellSelected);
                 _settingsSegments.SetTexts(new string[] { "General", "Voice" });
-                _settingsSegments.didSelectCellEvent += SettingsCellSelected;
 
                 #region General Settings
                 int generalSettingsIndex = 0;
@@ -127,11 +126,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 #endregion
 
-                SettingsCellSelected(null, 0);
+                SettingsCellSelected(0);
             }
         }
 
-        private void SettingsCellSelected(SegmentedControl sender, int selectedIndex)
+        private void SettingsCellSelected(int selectedIndex)
         {
 
             foreach (var obj in _generalSettings)

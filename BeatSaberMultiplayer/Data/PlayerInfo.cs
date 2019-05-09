@@ -115,10 +115,16 @@ namespace BeatSaberMultiplayer.Data
         public Vector3 headPos;
         public Vector3 rightHandPos;
         public Vector3 leftHandPos;
+        public Vector3 rightLegPos;
+        public Vector3 leftLegPos;
+        public Vector3 pelvisPos;
 
         public Quaternion headRot;
         public Quaternion rightHandRot;
         public Quaternion leftHandRot;
+        public Quaternion rightLegRot;
+        public Quaternion leftLegRot;
+        public Quaternion pelvisRot;
 
         public string avatarHash;
 
@@ -157,13 +163,13 @@ namespace BeatSaberMultiplayer.Data
 
             if (fullBodyTracking)
             {
-                msg.ReadVector3(); //Pelvis Pos
-                msg.ReadVector3(); //Left Leg Pos
-                msg.ReadVector3(); //Right Leg Pos
+                pelvisPos = msg.ReadVector3();
+                leftLegPos = msg.ReadVector3();
+                rightLegPos = msg.ReadVector3();
 
-                msg.ReadQuaternion(); //Pelvis Rot
-                msg.ReadQuaternion(); //Left Leg Rot
-                msg.ReadQuaternion(); //Left Leg Pos
+                pelvisRot = msg.ReadQuaternion();
+                leftLegRot = msg.ReadQuaternion();
+                rightLegRot = msg.ReadQuaternion();
             }
 
             avatarHash = BitConverter.ToString(msg.ReadBytes(16)).Replace("-", "");
@@ -208,13 +214,13 @@ namespace BeatSaberMultiplayer.Data
 
             if (fullBodyTracking)
             {
-                Vector3.zero.AddToMessage(msg); //Pelvis Pos
-                Vector3.zero.AddToMessage(msg); //Left Leg Pos
-                Vector3.zero.AddToMessage(msg); //Right Leg Pos
+                pelvisPos.AddToMessage(msg);
+                leftLegPos.AddToMessage(msg);
+                rightLegPos.AddToMessage(msg);
 
-                Quaternion.identity.AddToMessage(msg); //Pelvis Rot
-                Quaternion.identity.AddToMessage(msg); //Left Leg Rot
-                Quaternion.identity.AddToMessage(msg); //Left Leg Pos
+                pelvisRot.AddToMessage(msg);
+                leftLegRot.AddToMessage(msg);
+                rightLegRot.AddToMessage(msg);
             }
 
             msg.Write(HexConverter.ConvertHexToBytesX(avatarHash));

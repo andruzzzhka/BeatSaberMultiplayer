@@ -54,7 +54,7 @@ namespace BeatSaberMultiplayer.VOIP
             }            
 
             recording = Microphone.Start(null, true, 20, inputFreq);
-            Misc.Logger.Info("Used mic sample rate: "+inputFreq+"Hz");
+            Plugin.log.Info("Used mic sample rate: "+inputFreq+"Hz");
         }
 
         public void StopRecording()
@@ -113,7 +113,7 @@ namespace BeatSaberMultiplayer.VOIP
                                 }
                                 catch(Exception e)
                                 {
-                                    Misc.Logger.Error($"Exception on OnAudioGenerated event in {action.Target.GetType().ToString()}.{action.Method.Name}: {e}");
+                                    Plugin.log.Error($"Exception on OnAudioGenerated event in {action.Target.GetType().ToString()}.{action.Method.Name}: {e}");
                                 }
                             }
                         }

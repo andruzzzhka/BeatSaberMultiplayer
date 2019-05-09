@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
-using Logger = BeatSaberMultiplayer.Misc.Logger;
 
 namespace BeatSaberMultiplayer.UI
 {
@@ -30,7 +29,7 @@ namespace BeatSaberMultiplayer.UI
         {
             _keyButtonPrefab = Resources.FindObjectsOfTypeAll<TextMeshProButton>().First(x => x.name == "KeyboardButton");
 
-            Logger.Info("Found keyboard button!");
+            Plugin.log.Info("Found keyboard button!");
 
             string[] array = new string[]
             {
