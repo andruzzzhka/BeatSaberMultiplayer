@@ -63,7 +63,7 @@ namespace BeatSaberMultiplayer.Data
             characteristicName = modifiersBits[14] ? "OneSaber" : (modifiersBits[13] ? "NoArrows" : "Standard");
         }
 
-        public void AddToMessage(NetOutgoingMessage outMsg)
+        public byte[] ToBytes()
         {
             BitArray modifiersBits = new BitArray(16);
 
@@ -107,7 +107,14 @@ namespace BeatSaberMultiplayer.Data
             //Reserved
             modifiersBits[15] = false;
 
-            outMsg.Write(modifiersBits.ToBytes());
+            return modifiersBits.ToBytes();
         }
+
+        public void AddToMessage(NetOutgoingMessage outMsg)
+        {
+            outMsg.Write(ToBytes());
+        }
+
+
     }
 }

@@ -76,7 +76,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 {
                     item.toggle.onValueChanged.AddListener( (enabled) => { gameplayModifiersChanged?.Invoke(); });
                 }
-
+                
                 _modifiersPanelBlocker = new GameObject("ModifiersPanelBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
                 _modifiersPanelBlocker.SetParent(_modifiersTab, false);
                 _modifiersPanelBlocker.gameObject.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
@@ -85,7 +85,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _modifiersPanelBlocker.pivot = new Vector2(0.5f, 0f);
                 _modifiersPanelBlocker.sizeDelta = new Vector2(-10f, 62f);
                 _modifiersPanelBlocker.anchoredPosition = new Vector2(0f, 0f);
-
+               
                 #endregion
 
                 #region Players tab
@@ -177,9 +177,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         }
 
-        public void UpdateViewController(bool isHost, bool modifiersInteractable)
+        public void UpdateViewController(bool isHost)
         {
-            _modifiersPanelBlocker.gameObject.SetActive(!isHost || !modifiersInteractable);
+            _modifiersPanelBlocker.gameObject.SetActive(!isHost);
         }
 
         public void UpdatePlayerList(List<PlayerInfo> players, RoomState state)

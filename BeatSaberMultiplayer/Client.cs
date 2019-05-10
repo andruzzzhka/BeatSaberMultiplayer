@@ -3,16 +3,13 @@ using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.VOIP;
 using BS_Utils.Gameplay;
 using Lidgren.Network;
-using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
-using System.Net.Sockets;
 using System.Reflection;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -26,6 +23,7 @@ namespace BeatSaberMultiplayer
 #if DEBUG
         public static FileStream packetWriter;
         public static Queue<byte[]> packetsBuffer = new Queue<byte[]>();
+        private static int packetsWrittenToCurrentDump;
         public static bool startNewDump;
 
         public static async void WritePackets()
@@ -36,25 +34,49 @@ namespace BeatSaberMultiplayer
             {
                 try
                 {
-                    if (startNewDump && packetWriter != null && packetWriter.Position > 16)
+                    if (startNewDump && packetWriter != null && packetsWrittenToCurrentDump > 0)
                     {
                         Plugin.log.Info("Closing old dump...");
                         await packetWriter.FlushAsync().ConfigureAwait(false);
                         packetWriter.Close();
+
+                        Plugin.log.Info("Compressing old dump...");
+                        using (FileStream zipStream = new FileStream(packetWriter.Name.Substring(0, packetWriter.Name.LastIndexOf('.')) + ".zip", FileMode.Create))
+                        using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
+                        {
+                            archive.CreateEntryFromFile(packetWriter.Name, Path.GetFileName(packetWriter.Name));
+                        }
+                        File.Delete(packetWriter.Name);
+                        Plugin.log.Info("Compressed!");
+
                         packetWriter = null;
-                        startNewDump = false;
+                        packetsWrittenToCurrentDump = 0;
                     }
+                    startNewDump = false;
 
                     if (packetWriter == null)
                     {
                         Plugin.log.Info("Starting new dump...");
-                        packetWriter = File.Open($"packetDump{Directory.GetFiles(Environment.CurrentDirectory, "*.mpdmp", SearchOption.TopDirectoryOnly).Length}.mpdmp", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+                        if (!Directory.Exists("MPDumps"))
+                        {
+                            Directory.CreateDirectory("MPDumps");
+                        }
+
+                        int dumpsCount = GetFiles(Path.Combine(Environment.CurrentDirectory, "MPDumps"), "*.mpdmp|*.zip", SearchOption.TopDirectoryOnly).Length;
+                        string newDumpPath;
+
+                        if (File.Exists($"MPDumps\\packetDump{dumpsCount - 1}.mpdmp") && new FileInfo($"MPDumps\\packetDump{dumpsCount - 1}.mpdmp").Length == 0)
+                            newDumpPath = $"MPDumps\\packetDump{dumpsCount - 1}.mpdmp";
+                        else
+                            newDumpPath = $"MPDumps\\packetDump{dumpsCount}.mpdmp";
+
+                        packetWriter = File.Open(newDumpPath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
                     }
 
-                    if (packetsBuffer.Count > 0)
+                    if (packetsBuffer.Count > 0 && !startNewDump)
                     {
                         int packets = packetsBuffer.Count;
-                        while (packetsBuffer.Count > 0)
+                        while (packetsBuffer.Count > 0 && !startNewDump)
                         {
                             data = packetsBuffer.Dequeue();
 
@@ -62,6 +84,7 @@ namespace BeatSaberMultiplayer
                         }
 
                         await packetWriter.FlushAsync().ConfigureAwait(false);
+                        packetsWrittenToCurrentDump += packets;
                         Plugin.log.Info(packets + " update packets are written to disk!");
                     }
                 }catch(Exception e)
@@ -72,6 +95,10 @@ namespace BeatSaberMultiplayer
             }
         }
 
+        private static string[] GetFiles(string sourceFolder, string filters, System.IO.SearchOption searchOption)
+        {
+            return filters.Split('|').SelectMany(filter => System.IO.Directory.GetFiles(sourceFolder, filter, searchOption)).ToArray();
+        }
 #endif
 
         public static event Action<string, string> EventMessageReceived;
@@ -354,6 +381,18 @@ namespace BeatSaberMultiplayer
                                     {
 #if DEBUG
                                         startNewDump = true;
+                                        packetsBuffer.Clear();
+                                        msg.Position = 8;
+                                        StartLevelInfo levelInfo = new StartLevelInfo(msg);
+                                        SongInfo songInfo = new SongInfo(msg);
+                                        List<byte> buffer = new List<byte>();
+                                        buffer.AddRange(levelInfo.ToBytes());
+                                        buffer.AddRange(HexConverter.ConvertHexToBytesX(songInfo.levelId));
+
+                                        Plugin.log.Info("LevelID: " + songInfo.levelId + ", Bytes: " + BitConverter.ToString(buffer.ToArray()));
+
+                                        packetsBuffer.Enqueue(buffer.ToArray());
+                                        msg.Position = 0;                                        
 #endif
                                         if (playerInfo.playerState == PlayerState.Room)
                                             foreach (Action nextDel in ClientLevelStarted.GetInvocationList())
@@ -608,17 +647,19 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SetLevelOptions(GameplayModifiers modifiers, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty)
+        public void SetLevelOptions(StartLevelInfo info)
         {
             if (Connected && NetworkClient != null)
             {
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.SetLevelOptions);
-                new StartLevelInfo(difficulty, modifiers, characteristic.serializedName).AddToMessage(outMsg);
+                info.AddToMessage(outMsg);
 
                 NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
-                Plugin.log.Info("Updating level options for selected song...");
+                Plugin.log.Info("Updating level options...");
+                Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers).Select(x => x.modifierName)));
+
 #endif
             }
         }

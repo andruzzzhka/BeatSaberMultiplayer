@@ -361,11 +361,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             break;
                         case CommandType.SetLevelOptions:
                             {
+                                roomInfo.startLevelInfo = new StartLevelInfo(msg);
+
+                                _playerManagementViewController.SetGameplayModifiers(roomInfo.startLevelInfo.modifiers);
+
                                 if (roomInfo.roomState == RoomState.SelectingSong)
                                 {
-                                    roomInfo.startLevelInfo = new StartLevelInfo(msg);
-
-                                    _playerManagementViewController.SetGameplayModifiers(roomInfo.startLevelInfo.modifiers);
                                     _difficultySelectionViewController.SetBeatmapCharacteristic(_beatmapCharacteristics.First(x => x.serializedName == roomInfo.startLevelInfo.characteristicName));
 
                                     if (!roomInfo.perPlayerDifficulty)
@@ -539,14 +540,25 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     }
                     break;
             }
-            _playerManagementViewController.UpdateViewController(Client.Instance.isHost, (state == RoomState.Preparing));
+            _playerManagementViewController.UpdateViewController(Client.Instance.isHost);
         }
         
         private void UpdateLevelOptions()
         {
-            if (Client.Instance.isHost && roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null && _playerManagementViewController != null)
+            if (Client.Instance.isHost && _playerManagementViewController != null)
             {
-                Client.Instance.SetLevelOptions(_playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic, _difficultySelectionViewController.selectedDifficulty);
+                if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
+                {
+                    StartLevelInfo info = new StartLevelInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
+                    Client.Instance.SetLevelOptions(info);
+                    roomInfo.startLevelInfo = info;
+                }
+                else
+                {
+                    StartLevelInfo info = new StartLevelInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
+                    Client.Instance.SetLevelOptions(info);
+                    roomInfo.startLevelInfo = info;
+                }
             }
         }
 

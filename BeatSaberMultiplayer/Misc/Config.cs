@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using BeatSaberMultiplayer.Misc;
+using IPA.Config;
 using SimpleJSON;
 using UnityEngine;
 
@@ -268,8 +269,8 @@ namespace BeatSaberMultiplayer {
             _spectatorMode = false;
             _separateAvatarForMultiplayer = false;
             _publicAvatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-            _maxSimultaneousDownloads = ModPrefs.GetInt("BeatSaverDownloader", "maxSimultaneousDownloads", 3);
-            _beatSaverURL = ModPrefs.GetString("BeatSaverDownloader", "beatsaverURL", "https://beatsaver.com");
+            _maxSimultaneousDownloads = 3;
+            _beatSaverURL = "https://beatsaver.com";
 
             _enableVoiceChat = true;
             _voiceChatVolume = 0.8f;
