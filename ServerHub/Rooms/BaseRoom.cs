@@ -71,7 +71,7 @@ namespace ServerHub.Rooms
         public PlayerInfo roomHost;
 
         public SongInfo selectedSong;
-        public StartLevelInfo startLevelInfo;
+        public LevelOptionsInfo startLevelInfo;
 
         public bool requestedRandomSong;
 
@@ -395,7 +395,7 @@ namespace ServerHub.Rooms
             }
         }
 
-        public virtual void SetLevelOptions(PlayerInfo sender, StartLevelInfo info)
+        public virtual void SetLevelOptions(PlayerInfo sender, LevelOptionsInfo info)
         {
             if (sender.Equals(roomHost))
             {
@@ -415,7 +415,7 @@ namespace ServerHub.Rooms
             }
         }
 
-        public virtual void StartLevel(PlayerInfo sender, StartLevelInfo options, SongInfo song)
+        public virtual void StartLevel(PlayerInfo sender, LevelOptionsInfo options, SongInfo song)
         {
             if (sender.Equals(roomHost))
             {

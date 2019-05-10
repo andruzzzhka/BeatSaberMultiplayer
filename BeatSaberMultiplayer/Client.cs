@@ -383,7 +383,7 @@ namespace BeatSaberMultiplayer
                                         startNewDump = true;
                                         packetsBuffer.Clear();
                                         msg.Position = 8;
-                                        StartLevelInfo levelInfo = new StartLevelInfo(msg);
+                                        LevelOptionsInfo levelInfo = new LevelOptionsInfo(msg);
                                         SongInfo songInfo = new SongInfo(msg);
                                         List<byte> buffer = new List<byte>();
                                         buffer.AddRange(levelInfo.ToBytes());
@@ -647,7 +647,7 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SetLevelOptions(StartLevelInfo info)
+        public void SetLevelOptions(LevelOptionsInfo info)
         {
             if (Connected && NetworkClient != null)
             {
@@ -674,7 +674,7 @@ namespace BeatSaberMultiplayer
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.StartLevel);
 
-                new StartLevelInfo(difficulty, modifiers, characteristic.serializedName).AddToMessage(outMsg);
+                new LevelOptionsInfo(difficulty, modifiers, characteristic.serializedName).AddToMessage(outMsg);
                 SongInfo selectedSong = new SongInfo(song);
                 selectedSong.songDuration = selectedSong.songDuration / modifiers.songSpeedMul;
                 selectedSong.AddToMessage(outMsg);

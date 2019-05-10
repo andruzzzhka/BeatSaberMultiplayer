@@ -348,7 +348,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     roomInfo.selectedSong = selectedSong;
 
                                     if(roomInfo.startLevelInfo == null)
-                                        roomInfo.startLevelInfo = new StartLevelInfo(BeatmapDifficulty.Hard, GameplayModifiers.defaultModifiers, "Standard");
+                                        roomInfo.startLevelInfo = new LevelOptionsInfo(BeatmapDifficulty.Hard, GameplayModifiers.defaultModifiers, "Standard");
 
                                     if (songToDownload != null)
                                     {
@@ -361,7 +361,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             break;
                         case CommandType.SetLevelOptions:
                             {
-                                roomInfo.startLevelInfo = new StartLevelInfo(msg);
+                                roomInfo.startLevelInfo = new LevelOptionsInfo(msg);
 
                                 _playerManagementViewController.SetGameplayModifiers(roomInfo.startLevelInfo.modifiers);
 
@@ -400,7 +400,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 if (Client.Instance.playerInfo.playerState == PlayerState.DownloadingSongs)
                                     return;
 
-                                StartLevelInfo levelInfo = new StartLevelInfo(msg);
+                                LevelOptionsInfo levelInfo = new LevelOptionsInfo(msg);
 
                                 BeatmapCharacteristicSO characteristic = _beatmapCharacteristics.First(x => x.serializedName == levelInfo.characteristicName);
                                 
@@ -549,15 +549,28 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
                 {
-                    StartLevelInfo info = new StartLevelInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
+                    LevelOptionsInfo info = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
                     Client.Instance.SetLevelOptions(info);
                     roomInfo.startLevelInfo = info;
+                    Client.Instance.playerInfo.playerLevelOptions = info;
                 }
                 else
                 {
-                    StartLevelInfo info = new StartLevelInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
+                    LevelOptionsInfo info = new LevelOptionsInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
                     Client.Instance.SetLevelOptions(info);
                     roomInfo.startLevelInfo = info;
+                    Client.Instance.playerInfo.playerLevelOptions = info;
+                }
+            }
+            else
+            {
+                if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
+                {
+                    Client.Instance.playerInfo.playerLevelOptions = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
+                }
+                else
+                {
+                    Client.Instance.playerInfo.playerLevelOptions = new LevelOptionsInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
                 }
             }
         }
@@ -569,6 +582,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             Client.Instance.playerInfo.playerTotalBlocks = 0;
             Client.Instance.playerInfo.playerEnergy = 0f;
             Client.Instance.playerInfo.playerScore = 0;
+            Client.Instance.playerInfo.playerLevelOptions = new LevelOptionsInfo(difficulty, modifiers, characteristic.serializedName);
 
             MenuTransitionsHelperSO menuSceneSetupData = Resources.FindObjectsOfTypeAll<MenuTransitionsHelperSO>().FirstOrDefault();
 

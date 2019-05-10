@@ -30,7 +30,7 @@ namespace ServerHub.Data
 
         public bool songSelected;
 
-        public StartLevelInfo startLevelInfo;
+        public LevelOptionsInfo startLevelInfo;
         public SongInfo selectedSong;
 
 
@@ -56,7 +56,7 @@ namespace ServerHub.Data
             {
                 if (songSelected)
                 {
-                    startLevelInfo = new StartLevelInfo(msg);
+                    startLevelInfo = new LevelOptionsInfo(msg);
                     selectedSong = new SongInfo(msg);
                 }
                 else
@@ -92,7 +92,7 @@ namespace ServerHub.Data
             if (songSelected)
             {
                 if (startLevelInfo == null)
-                    startLevelInfo = new StartLevelInfo(BeatmapDifficulty.Hard, new GameplayModifiers(), "Standard");
+                    startLevelInfo = new LevelOptionsInfo(BeatmapDifficulty.Hard, new GameplayModifiers(), "Standard");
 
                 startLevelInfo.AddToMessage(msg);
                 selectedSong.AddToMessage(msg);

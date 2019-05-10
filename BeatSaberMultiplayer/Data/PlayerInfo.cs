@@ -108,6 +108,8 @@ namespace BeatSaberMultiplayer.Data
 
         public float playerProgress;
 
+        public LevelOptionsInfo playerLevelOptions;
+
         public List<HitData> hitsLastUpdate = new List<HitData>();
 
         public bool fullBodyTracking;
@@ -152,6 +154,8 @@ namespace BeatSaberMultiplayer.Data
             msg.ReadPadBits();
             playerEnergy = msg.ReadFloat();
             playerProgress = msg.ReadFloat();
+
+            playerLevelOptions = new LevelOptionsInfo(msg);
 
             rightHandPos = msg.ReadVector3();
             leftHandPos = msg.ReadVector3();
@@ -203,6 +207,11 @@ namespace BeatSaberMultiplayer.Data
             msg.WritePadBits();
             msg.Write(playerEnergy);
             msg.Write(playerProgress);
+
+            if (playerLevelOptions == null)
+                new LevelOptionsInfo(BeatmapDifficulty.Hard, GameplayModifiers.defaultModifiers, "Standard").AddToMessage(msg);
+            else
+                playerLevelOptions.AddToMessage(msg);
 
             rightHandPos.AddToMessage(msg);
             leftHandPos.AddToMessage(msg);

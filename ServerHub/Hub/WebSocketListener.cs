@@ -29,9 +29,9 @@ namespace ServerHub.Hub
     public struct SongWithOptions
     {
         public SongInfo song;
-        public StartLevelInfo options;
+        public LevelOptionsInfo options;
 
-        public SongWithOptions(SongInfo songInfo, StartLevelInfo optionsInfo)
+        public SongWithOptions(SongInfo songInfo, LevelOptionsInfo optionsInfo)
         {
             song = songInfo;
             options = optionsInfo;

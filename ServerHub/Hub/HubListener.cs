@@ -350,7 +350,7 @@ namespace ServerHub.Hub
                                                 BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
                                                 if (joinedRoom != null)
                                                 {
-                                                    joinedRoom.SetLevelOptions(client.playerInfo, new StartLevelInfo(msg));
+                                                    joinedRoom.SetLevelOptions(client.playerInfo, new LevelOptionsInfo(msg));
                                                 }
                                             }
                                         }
@@ -366,7 +366,7 @@ namespace ServerHub.Hub
                                                 BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
                                                 if (joinedRoom != null)
                                                 {
-                                                    StartLevelInfo options = new StartLevelInfo(msg);
+                                                    LevelOptionsInfo options = new LevelOptionsInfo(msg);
                                                     SongInfo song = new SongInfo(msg);
                                                     song.songDuration += 2.5f;
                                                     joinedRoom.StartLevel(client.playerInfo, options, song);

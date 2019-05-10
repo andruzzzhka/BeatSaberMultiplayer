@@ -29,6 +29,8 @@ namespace ServerHub.Data
 
         public float playerProgress;
 
+        public LevelOptionsInfo playerLevelOptions; 
+
         public byte[] hitsLastUpdate;
 
         public bool fullBodyTracking;
@@ -58,7 +60,9 @@ namespace ServerHub.Data
             msg.ReadPadBits();
             playerEnergy = msg.ReadFloat();
             playerProgress = msg.ReadFloat();
-            
+
+            playerLevelOptions = new LevelOptionsInfo(msg);
+
             avatarData = msg.ReadBytes(84 * (fullBodyTracking ? 2 : 1) + 16);
 
             byte hitsCount = msg.ReadByte();
@@ -86,6 +90,11 @@ namespace ServerHub.Data
             msg.WritePadBits();
             msg.Write(playerEnergy);
             msg.Write(playerProgress);
+
+            if (playerLevelOptions == null)
+                new LevelOptionsInfo(BeatmapDifficulty.Hard, new GameplayModifiers(), "Standard").AddToMessage(msg);
+            else
+                playerLevelOptions.AddToMessage(msg);
 
             msg.Write(avatarData ?? new byte[84 * (fullBodyTracking ? 2 : 1) + 16]);
 

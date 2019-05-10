@@ -156,16 +156,31 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         private void _characteristicControl_didSelectCellEvent(int arg2)
         {
             selectedCharacteristic = _selectedSong.beatmapCharacteristics[arg2];
-            
-            IDifficultyBeatmap[] difficulties = _selectedSong.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps;
-            
-            _difficultyControl.SetTexts(difficulties.Select(x => x.difficulty.ToString().Replace("Plus", "+")).ToArray());
 
-            int closestDifficultyIndex = CustomExtensions.GetClosestDifficultyIndex(difficulties, selectedDifficulty);
+            Dictionary<IDifficultyBeatmap, string> difficulties = _selectedSong.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps.ToDictionary(x => x, x => x.difficulty.ToString().Replace("Plus", "+"));
+
+            if (_selectedSong is CustomLevel)
+            {
+                CustomLevel customSelectedSong = _selectedSong as CustomLevel;
+                for(int i = 0; i < difficulties.Keys.Count; i++)
+                {
+                    var diffKey = difficulties.Keys.ElementAt(i);
+                    var difficultyLevel = customSelectedSong.customSongInfo.difficultyLevels.FirstOrDefault(x => x.difficulty.ToLower() == diffKey.difficulty.ToString().ToLower());
+                    if (difficultyLevel != null && !string.IsNullOrEmpty(difficultyLevel.difficultyLabel))
+                    {
+                        difficulties[diffKey] = difficultyLevel.difficultyLabel;
+                        Plugin.log.Info($"Found difficulty label \"{difficulties[diffKey]}\" for difficulty {diffKey.difficulty.ToString()}");
+                    }
+                }
+            }
+                
+            _difficultyControl.SetTexts(difficulties.Values.ToArray());
+
+            int closestDifficultyIndex = CustomExtensions.GetClosestDifficultyIndex(difficulties.Keys.ToArray(), selectedDifficulty);
 
             _difficultyControl.SelectCellWithNumber(closestDifficultyIndex);
 
-            if (!difficulties.Any(x => x.difficulty == selectedDifficulty))
+            if (!difficulties.Any(x => x.Key.difficulty == selectedDifficulty))
             {
                 _difficultyControl_didSelectCellEvent(closestDifficultyIndex);
             }

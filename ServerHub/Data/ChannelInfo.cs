@@ -17,7 +17,7 @@ namespace ServerHub.Data
         public string iconUrl;
         public ChannelState state;
         public SongInfo currentSong;
-        public StartLevelInfo currentLevelOptions;
+        public LevelOptionsInfo currentLevelOptions;
         public int playerCount;
         public string ip;
         public int port;
@@ -37,7 +37,7 @@ namespace ServerHub.Data
             if (state != ChannelState.Voting)
             {
                 currentSong = new SongInfo(msg);
-                currentLevelOptions = new StartLevelInfo(msg);
+                currentLevelOptions = new LevelOptionsInfo(msg);
 
                 if (currentSong.songName == "Selecting song..." && currentSong.levelId == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
                 {
@@ -65,7 +65,7 @@ namespace ServerHub.Data
                 else
                 {
                     new SongInfo() { songName = "Selecting song...", levelId = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" }.AddToMessage(msg);
-                    new StartLevelInfo(BeatmapDifficulty.Hard, new GameplayModifiers(), "Standard").AddToMessage(msg);
+                    new LevelOptionsInfo(BeatmapDifficulty.Hard, new GameplayModifiers(), "Standard").AddToMessage(msg);
                 }
             }
 

@@ -8,27 +8,27 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Data
 {
-    public class StartLevelInfo
+    public class LevelOptionsInfo
     {
         public BeatmapDifficulty difficulty;
         public GameplayModifiers modifiers;
         public string characteristicName;
 
-        public StartLevelInfo(BeatmapDifficulty difficulty, GameplayModifiers modifiers, string characteristicName)
+        public LevelOptionsInfo(BeatmapDifficulty difficulty, GameplayModifiers modifiers, string characteristicName)
         {
             this.difficulty = difficulty;
             this.modifiers = modifiers;
             this.characteristicName = characteristicName;
         }
 
-        public StartLevelInfo(BeatmapDifficulty difficulty)
+        public LevelOptionsInfo(BeatmapDifficulty difficulty)
         {
             this.difficulty = difficulty;
             modifiers = new GameplayModifiers();
             characteristicName = "Standard";
         }
 
-        public StartLevelInfo(NetIncomingMessage msg)
+        public LevelOptionsInfo(NetIncomingMessage msg)
         {
             byte[] modifiersBytes = msg.ReadBytes(2);
 

@@ -41,7 +41,7 @@ namespace ServerHub.Rooms
         {
             channelId = newChannelId;
 
-            channelInfo = new ChannelInfo() { channelId = channelId, name = Settings.Instance.Radio.RadioChannels[channelId].ChannelName, currentSong = null, currentLevelOptions = new StartLevelInfo(Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty, new GameplayModifiers() { noFail = true }, "Standard"), playerCount = 0, iconUrl = Settings.Instance.Radio.RadioChannels[channelId].ChannelIconUrl, state = ChannelState.NextSong, ip = "", port = 0 };
+            channelInfo = new ChannelInfo() { channelId = channelId, name = Settings.Instance.Radio.RadioChannels[channelId].ChannelName, currentSong = null, currentLevelOptions = new LevelOptionsInfo(Settings.Instance.Radio.RadioChannels[channelId].PreferredDifficulty, new GameplayModifiers() { noFail = true }, "Standard"), playerCount = 0, iconUrl = Settings.Instance.Radio.RadioChannels[channelId].ChannelIconUrl, state = ChannelState.NextSong, ip = "", port = 0 };
 
             if (File.Exists($"RadioQueue{channelId}.json"))
             {

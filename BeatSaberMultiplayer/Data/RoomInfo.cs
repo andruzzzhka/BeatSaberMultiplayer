@@ -26,7 +26,7 @@ namespace BeatSaberMultiplayer.Data
 
         public bool songSelected;
         
-        public StartLevelInfo startLevelInfo;
+        public LevelOptionsInfo startLevelInfo;
         public SongInfo selectedSong;
         
         public RoomInfo()
@@ -51,7 +51,7 @@ namespace BeatSaberMultiplayer.Data
             {
                 if (songSelected)
                 {
-                    startLevelInfo = new StartLevelInfo(msg);
+                    startLevelInfo = new LevelOptionsInfo(msg);
                     selectedSong = new SongInfo(msg);
                 }
                 else

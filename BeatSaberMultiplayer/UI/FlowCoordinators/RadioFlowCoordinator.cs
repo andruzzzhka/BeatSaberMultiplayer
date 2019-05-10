@@ -251,7 +251,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     return;
                                 }
 
-                                StartLevelInfo levelInfo = new StartLevelInfo(msg);
+                                LevelOptionsInfo levelInfo = new LevelOptionsInfo(msg);
 
                                 BeatmapCharacteristicSO characteristic = _beatmapCharacteristics.First(x => x.serializedName == levelInfo.characteristicName);
 
