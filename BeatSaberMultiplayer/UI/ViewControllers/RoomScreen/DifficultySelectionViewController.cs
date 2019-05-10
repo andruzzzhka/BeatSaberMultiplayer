@@ -222,6 +222,19 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             {                
                 _selectedSongCell.SetText(_selectedSong.songName + " <size=80%>" + _selectedSong.songSubName + "</size>");
                 _selectedSongCell.SetSubText(_selectedSong.songAuthorName);
+
+                if (_selectedSong is CustomLevel)
+                {
+                    CustomLevel customLevel = _selectedSong as CustomLevel;
+                    if (customLevel.coverImage == CustomExtensions.songLoaderDefaultImage)
+                    {
+                        StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
+                            (_selectedSong as CustomLevel).SetCoverImage(sprite);
+                            _selectedSongCell.SetIcon(sprite);
+                        }));
+                    }
+                }
+
                 _selectedSongCell.SetIcon(_selectedSong.coverImage);
 
                 _characteristicControl.SetTexts(_selectedSong.beatmapCharacteristics.Select(x => x.characteristicName).ToArray());

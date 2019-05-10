@@ -12,6 +12,7 @@ using UnityEngine;
 using BeatSaberMultiplayer.Misc;
 using SongLoaderPlugin;
 using CustomUI.Utilities;
+using SongLoaderPlugin.OverrideClasses;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 {
@@ -131,6 +132,19 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
                 {
                     _currentSongCell.SetText($"{level.songName} <size=80%>{level.songSubName}</size>");
                     _currentSongCell.SetSubText(level.songAuthorName);
+
+                    if (level is CustomLevel)
+                    {
+                        CustomLevel customLevel = level as CustomLevel;
+                        if (customLevel.coverImage == CustomExtensions.songLoaderDefaultImage)
+                        {
+                            StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
+                                (level as CustomLevel).SetCoverImage(sprite);
+                                _currentSongCell.SetIcon(sprite);
+                            }));
+                        }
+                    }
+
                     _currentSongCell.SetIcon(level.coverImage);
                 }
 

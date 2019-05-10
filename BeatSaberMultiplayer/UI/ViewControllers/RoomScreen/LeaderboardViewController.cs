@@ -176,6 +176,19 @@ namespace BeatSaberMultiplayer
             {
                 _songTableCell.SetText(_selectedSong.songName + " <size=80%>" + _selectedSong.songSubName + "</size>");
                 _songTableCell.SetSubText(_selectedSong.songAuthorName);
+
+                if (_selectedSong is CustomLevel)
+                {
+                    CustomLevel customLevel = _selectedSong as CustomLevel;
+                    if (customLevel.coverImage == CustomExtensions.songLoaderDefaultImage)
+                    {
+                        StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
+                            (_selectedSong as CustomLevel).SetCoverImage(sprite);
+                            _songTableCell.SetIcon(sprite);
+                        }));
+                    }
+                }
+
                 _songTableCell.SetIcon(_selectedSong.coverImage);
             }
             else
