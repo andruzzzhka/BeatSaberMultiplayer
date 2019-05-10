@@ -319,6 +319,18 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             BeatmapLevelSO song = availableSongs[row];
 
+            if (song is CustomLevel)
+            {
+                CustomLevel customLevel = song as CustomLevel;
+                if (customLevel.coverImage == CustomExtensions.songLoaderDefaultImage)
+                {
+                    StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
+                        (song as CustomLevel).SetCoverImage(sprite);
+                        cell.SetIcon(sprite);
+                    }));
+                }
+            }
+
             cell.SetIcon(song.coverImage);
             cell.SetText($"{song.songName} <size=80%>{song.songSubName}</size>");
             cell.SetSubText(song.songAuthorName);

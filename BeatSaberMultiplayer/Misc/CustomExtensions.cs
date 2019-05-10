@@ -30,6 +30,20 @@ namespace BeatSaberMultiplayer.Misc
 
         public static List<string> basePackIDs = new List<string>() { "OstVol1", "OstVol2", "Extras" };
 
+        public static Sprite songLoaderDefaultImage {
+            get
+            {
+                if (_songLoaderDefaultImage == null) {
+                    Type type = typeof(SongLoaderPlugin.SongLoader);
+                    FieldInfo info = type.GetField("CustomSongsIcon", BindingFlags.NonPublic | BindingFlags.Static);
+                    _songLoaderDefaultImage = (Sprite)info.GetValue(null);
+                }
+
+                return _songLoaderDefaultImage ?? Sprites.whitePixel;
+            }
+        }
+        private static Sprite _songLoaderDefaultImage;
+
         public static void SetButtonStrokeColor(this Button btn, Color color)
         {
             btn.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").color = color;
