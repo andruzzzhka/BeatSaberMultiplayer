@@ -25,7 +25,7 @@ namespace BeatSaberMultiplayer
             set
             {
                 UpdatePrevPosRot(value);
-                if (_info != null && value != null && !noInterpolation)
+                if (_info != null && value != null)
                 {
                     _info.playerName = value.playerName;
                     _info.playerName = value.playerName;
@@ -61,8 +61,8 @@ namespace BeatSaberMultiplayer
         private int _lastVoipFragIndex;
         private int _silentFrames;
 
+        public float syncDelay = 0f;
         private float lastSynchronizationTime = 0f;
-        private float syncDelay = 0f;
         private float syncTime = 0f;
         private float lerpProgress = 0f;
 
@@ -89,7 +89,7 @@ namespace BeatSaberMultiplayer
                 syncEndInfo = _info;
             }
 
-            if (SceneManager.GetActiveScene().name == "GameCore" && Config.Instance.ShowOtherPlayersBlocks && !Client.Instance.playerInfo.Equals(PlayerInfo))
+            if (SceneManager.GetActiveScene().name == "GameCore" && Config.Instance.ShowOtherPlayersBlocks && !Client.Instance.playerInfo.Equals(PlayerInfo) && !Config.Instance.SpectatorMode)
             {
                 SpawnBeatmapControllers();
                 SpawnSabers();
@@ -142,6 +142,12 @@ namespace BeatSaberMultiplayer
             Plugin.log.Info("Sabers spawned!");
         }
 
+        public void SetSabers(Saber leftSaber, Saber rightSaber)
+        {
+            _leftSaber = leftSaber;
+            _rightSaber = rightSaber;
+        }
+
         public override void Update()
         {
             if (avatar != null)
@@ -168,32 +174,36 @@ namespace BeatSaberMultiplayer
 
         public void FixedUpdate()
         {
-            if (syncStartInfo != null && syncEndInfo != null && _info != null && !noInterpolation)
+            if (_info != null)
             {
-                syncTime += Time.fixedDeltaTime;
+                if (syncStartInfo != null && syncEndInfo != null && !noInterpolation)
+                {
+                    syncTime += Time.fixedDeltaTime;
 
-                lerpProgress = syncTime / syncDelay;
+                    lerpProgress = syncTime / syncDelay;
 
-                _info.headPos = Vector3.Lerp(syncStartInfo.headPos, syncEndInfo.headPos, lerpProgress);
-                _info.leftHandPos = Vector3.Lerp(syncStartInfo.leftHandPos, syncEndInfo.leftHandPos, lerpProgress);
-                _info.rightHandPos = Vector3.Lerp(syncStartInfo.rightHandPos, syncEndInfo.rightHandPos, lerpProgress);
-                _info.leftLegPos = Vector3.Lerp(syncStartInfo.leftLegPos, syncEndInfo.leftLegPos, lerpProgress);
-                _info.rightLegPos = Vector3.Lerp(syncStartInfo.rightLegPos, syncEndInfo.rightLegPos, lerpProgress);
-                _info.pelvisPos = Vector3.Lerp(syncStartInfo.pelvisPos, syncEndInfo.pelvisPos, lerpProgress);
+                    _info.headPos = Vector3.Lerp(syncStartInfo.headPos, syncEndInfo.headPos, lerpProgress);
+                    _info.leftHandPos = Vector3.Lerp(syncStartInfo.leftHandPos, syncEndInfo.leftHandPos, lerpProgress);
+                    _info.rightHandPos = Vector3.Lerp(syncStartInfo.rightHandPos, syncEndInfo.rightHandPos, lerpProgress);
+                    _info.leftLegPos = Vector3.Lerp(syncStartInfo.leftLegPos, syncEndInfo.leftLegPos, lerpProgress);
+                    _info.rightLegPos = Vector3.Lerp(syncStartInfo.rightLegPos, syncEndInfo.rightLegPos, lerpProgress);
+                    _info.pelvisPos = Vector3.Lerp(syncStartInfo.pelvisPos, syncEndInfo.pelvisPos, lerpProgress);
+
+                    _info.headRot = Quaternion.Lerp(syncStartInfo.headRot, syncEndInfo.headRot, lerpProgress);
+                    _info.leftHandRot = Quaternion.Lerp(syncStartInfo.leftHandRot, syncEndInfo.leftHandRot, lerpProgress);
+                    _info.rightHandRot = Quaternion.Lerp(syncStartInfo.rightHandRot, syncEndInfo.rightHandRot, lerpProgress);
+                    _info.leftLegRot = Quaternion.Lerp(syncStartInfo.leftLegRot, syncEndInfo.leftLegRot, lerpProgress);
+                    _info.rightLegRot = Quaternion.Lerp(syncStartInfo.rightLegRot, syncEndInfo.rightLegRot, lerpProgress);
+                    _info.pelvisRot = Quaternion.Lerp(syncStartInfo.pelvisRot, syncEndInfo.pelvisRot, lerpProgress);
+
+                    //_info.playerProgress = Mathf.Lerp(syncStartInfo.playerProgress, syncEndInfo.playerProgress, lerpProgress);
+                    _info.playerProgress += Time.fixedDeltaTime;
+                }
 
                 _overrideHeadPos = true;
                 _overriddenHeadPos = _info.headPos;
                 _headPos = _info.headPos + Vector3.right * avatarOffset;
                 transform.position = _headPos;
-
-                _info.headRot = Quaternion.Lerp(syncStartInfo.headRot, syncEndInfo.headRot, lerpProgress);
-                _info.leftHandRot = Quaternion.Lerp(syncStartInfo.leftHandRot, syncEndInfo.leftHandRot, lerpProgress);
-                _info.rightHandRot = Quaternion.Lerp(syncStartInfo.rightHandRot, syncEndInfo.rightHandRot, lerpProgress);
-                _info.leftLegRot = Quaternion.Lerp(syncStartInfo.leftLegRot, syncEndInfo.leftLegRot, lerpProgress);
-                _info.rightLegRot = Quaternion.Lerp(syncStartInfo.rightLegRot, syncEndInfo.rightLegRot, lerpProgress);
-                _info.pelvisRot = Quaternion.Lerp(syncStartInfo.pelvisRot, syncEndInfo.pelvisRot, lerpProgress);
-
-                _info.playerProgress = Mathf.Lerp(syncStartInfo.playerProgress, syncEndInfo.playerProgress, lerpProgress);
             }
         }
 
@@ -221,20 +231,16 @@ namespace BeatSaberMultiplayer
 
         public void UpdatePrevPosRot(PlayerInfo newPlayerInfo)
         {
-            if (newPlayerInfo == null || _info == null || noInterpolation)
+            if (newPlayerInfo == null || _info == null)
                 return;
 
-            syncTime = 0;
-            syncDelay = Time.time - lastSynchronizationTime;
-
-            if(syncDelay > 0.5f)
+            if (noInterpolation)
             {
-                syncDelay = 0.5f;
+                _info = newPlayerInfo;
+                return;
             }
-
-            lastSynchronizationTime = Time.time;
             
-            syncStartInfo = _info;
+            syncStartInfo = new PlayerInfo(_info);
             if (syncStartInfo.IsRotNaN())
             {
                 syncStartInfo.headRot = Quaternion.identity;
@@ -244,6 +250,11 @@ namespace BeatSaberMultiplayer
                 syncStartInfo.rightLegRot = Quaternion.identity;
                 syncStartInfo.pelvisRot = Quaternion.identity;
                 Plugin.log.Warn("Start rotation is NaN!");
+            }
+
+            if (Mathf.Abs(_info.playerProgress - newPlayerInfo.playerProgress) > 0.1f)
+            {
+                _info.playerProgress = newPlayerInfo.playerProgress;
             }
 
             syncEndInfo = newPlayerInfo;
@@ -257,8 +268,17 @@ namespace BeatSaberMultiplayer
                 syncEndInfo.pelvisRot = Quaternion.identity;
                 Plugin.log.Warn("Target rotation is NaN!");
             }
+            
+            syncTime = 0;
+            syncDelay = Time.time - lastSynchronizationTime;
 
-            _info.playerProgress = syncEndInfo.playerProgress;
+            if(syncDelay > 0.5f)
+            {
+                syncDelay = 0.5f;
+            }
+
+            lastSynchronizationTime = Time.time;
+
         }
 
         public void SetAvatarState(bool enabled)

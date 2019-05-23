@@ -1,5 +1,4 @@
-﻿using BeatSaberMultiplayer.Misc;
-using Lidgren.Network;
+﻿using Lidgren.Network;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BeatSaberMultiplayer.Data
+namespace ServerHub.Data
 {
     public class LevelOptionsInfo
     {
@@ -20,6 +19,13 @@ namespace BeatSaberMultiplayer.Data
             this.difficulty = difficulty;
             this.modifiers = modifiers;
             this.characteristicName = characteristicName;
+        }
+
+        public LevelOptionsInfo(BeatmapDifficulty difficulty)
+        {
+            this.difficulty = difficulty;
+            modifiers = new GameplayModifiers();
+            characteristicName = "Standard";
         }
 
         public LevelOptionsInfo(NetIncomingMessage msg)
@@ -59,11 +65,11 @@ namespace BeatSaberMultiplayer.Data
             //Standard = 00
             //No arrows = 01
             //One saber = 10
-            //Reserved = 11
-            characteristicName = modifiersBits[14] ? "OneSaber" : (modifiersBits[13] ? "NoArrows" : "Standard");
+            //Custom = 11
+            characteristicName = modifiersBits[14] ? (modifiersBits[13] ? msg.ReadString() : "OneSaber") : (modifiersBits[13] ? "NoArrows" : "Standard");
         }
 
-        public byte[] ToBytes()
+        public void AddToMessage(NetOutgoingMessage outMsg)
         {
             BitArray modifiersBits = new BitArray(16);
 
@@ -100,21 +106,42 @@ namespace BeatSaberMultiplayer.Data
             //Standard = 00
             //No arrows = 01
             //One saber = 10
-            //Reserved = 11
-            modifiersBits[13] = characteristicName == "NoArrows"; //First bit
-            modifiersBits[14] = characteristicName == "OneSaber"; //Second bit
+            //Custom = 11
+            switch (characteristicName)
+            {
+                case "Standard":
+                    modifiersBits[13] = false;
+                    modifiersBits[14] = false;
+                break;
+                case "NoArrows":
+                    modifiersBits[13] = false;
+                    modifiersBits[14] = true;
+                break;
+                case "OneSaber":
+                    modifiersBits[13] = true;
+                    modifiersBits[14] = false;
+                break;
+                default:
+                    modifiersBits[13] = true;
+                    modifiersBits[14] = true;
+                break;
+            }
 
             //Reserved
             modifiersBits[15] = false;
 
-            return modifiersBits.ToBytes();
+            outMsg.Write(ToBytes(modifiersBits));
+            if (modifiersBits[13] && modifiersBits[14])
+            {
+                outMsg.Write(characteristicName);
+            }
         }
 
-        public void AddToMessage(NetOutgoingMessage outMsg)
+        private byte[] ToBytes(BitArray bits)
         {
-            outMsg.Write(ToBytes());
+            byte[] bytes = new byte[(int)Math.Ceiling(bits.Count / (double)8)];
+            bits.CopyTo(bytes, 0);
+            return bytes;
         }
-
-
     }
 }

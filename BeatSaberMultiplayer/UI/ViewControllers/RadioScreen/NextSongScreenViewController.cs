@@ -94,7 +94,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
                 _progressBarRect.gameObject.SetActive(false);
 
-                _skipButton = BeatSaberUI.CreateUIButton(rectTransform, "QuitButton", new Vector2(-12.5f, -25f), new Vector2(20f, 8.8f), () => { skipPressedEvent?.Invoke(); }, "Skip");
+                _skipButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton", new Vector2(-12.5f, -25f), new Vector2(20f, 8.8f), () => { skipPressedEvent?.Invoke(); }, "Skip");
                 _skipButton.ToggleWordWrapping(false);
 
                 _skipText = BeatSaberUI.CreateText(rectTransform, " this song", new Vector2(8.5f, -21f));
@@ -135,7 +135,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
                     if (level is CustomLevel)
                     {
                         CustomLevel customLevel = level as CustomLevel;
-                        if (customLevel.coverImage == CustomExtensions.songLoaderDefaultImage)
+                        if (customLevel.coverImageTexture2D == CustomExtensions.songLoaderDefaultImage.texture)
                         {
                             StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
                                 (level as CustomLevel).SetCoverImage(sprite);
@@ -143,7 +143,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
                             }));
                         }
                     }
-                    _currentSongCell.SetIcon(level.coverImage);
+                    _currentSongCell.SetIcon(level.coverImageTexture2D);
                 }
 
             }

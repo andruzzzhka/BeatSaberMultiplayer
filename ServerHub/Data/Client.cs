@@ -25,6 +25,7 @@ namespace ServerHub.Data
         public PlayerInfo playerInfo;
         public DateTime joinTime;
 
+        public Queue<PlayerInfo> playerInfoHistory = new Queue<PlayerInfo>();
         public Queue<UnityVOIP.VoipFragment> playerVoIPQueue = new Queue<UnityVOIP.VoipFragment>();
 
         public uint joinedRoomID;
@@ -38,6 +39,17 @@ namespace ServerHub.Data
 
             active = true;
             joinTime = DateTime.Now;
+        }
+
+        public void UpdatePlayerInfo(PlayerInfo playerInfo)
+        {
+            this.playerInfo = playerInfo;
+            playerInfoHistory.Enqueue(playerInfo);
+
+            while (playerInfoHistory.Count > 180)
+            {
+                playerInfoHistory.Dequeue();
+            }
         }
 
         public void KickClient(string reason = "")

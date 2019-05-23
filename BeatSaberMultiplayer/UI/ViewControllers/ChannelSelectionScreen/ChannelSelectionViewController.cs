@@ -46,8 +46,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ChannelSelectionScreen
         {
             if (firstActivation)
             {
-                _prevChannelButton = BeatSaberUI.CreateUIButton(rectTransform, "QuitButton", new Vector2(-55f, 34f), () => { prevPressedEvent?.Invoke(); }, "<<");
-                _nextChannelButton = BeatSaberUI.CreateUIButton(rectTransform, "QuitButton", new Vector2(65f, 34f), () => { nextPressedEvent?.Invoke(); }, ">>");
+                _prevChannelButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton", new Vector2(-55f, 34f), () => { prevPressedEvent?.Invoke(); }, "<<");
+                _nextChannelButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton", new Vector2(65f, 34f), () => { nextPressedEvent?.Invoke(); }, ">>");
 
                 _loadingIndicator = BeatSaberUI.CreateLoadingSpinner(rectTransform);
                 (_loadingIndicator.transform as RectTransform).anchoredPosition = new Vector2(4.5f, 4.5f);
@@ -55,7 +55,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ChannelSelectionScreen
                 _container = new GameObject("Container", typeof(RectTransform));
                 _container.transform.SetParent(rectTransform, false);
 
-                _joinButton = BeatSaberUI.CreateUIButton(rectTransform, "QuitButton", new Vector2(4.5f, -30f), () => { joinPressedEvent?.Invoke(currentChannel); }, "Join");
+                _joinButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton", new Vector2(4.5f, -30f), () => { joinPressedEvent?.Invoke(currentChannel); }, "Join");
                 _joinButton.ToggleWordWrapping(false);
                 _joinButton.transform.SetParent(_container.transform, true);
 

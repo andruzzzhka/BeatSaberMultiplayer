@@ -33,7 +33,7 @@ namespace BeatSaberMultiplayer
 
         public override void Update()
         {
-            if (Client.Instance == null || !Client.Instance.Connected)
+            if (Client.Instance == null || !Client.Instance.connected)
             {
                 DefaultUpdate();
             }

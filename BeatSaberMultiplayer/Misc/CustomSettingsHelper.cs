@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Polyglot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,12 +25,14 @@ namespace BeatSaberMultiplayer.Misc
             ListSettingsController volume = newSettingsObject.GetComponent<ListSettingsController>();
             T newListSettingsController = volume.gameObject.AddComponent<T>();
             UnityEngine.Object.DestroyImmediate(volume);
+            UnityEngine.Object.DestroyImmediate(newSettingsObject.GetComponentInChildren<LocalizedTextMeshProUGUI>());
 
             newSettingsObject.GetComponentInChildren<TMP_Text>().text = name;
 
             (newListSettingsController.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
             (newListSettingsController.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
             (newListSettingsController.transform as RectTransform).anchoredPosition = position;
+            (newListSettingsController.transform as RectTransform).sizeDelta = new Vector2(105f, 0f);
 
             return newListSettingsController;
         }
@@ -63,12 +66,14 @@ namespace BeatSaberMultiplayer.Misc
             SwitchSettingsController volume = newSettingsObject.GetComponent<SwitchSettingsController>();
             T newToggleSettingsController = volume.gameObject.AddComponent<T>();
             UnityEngine.Object.DestroyImmediate(volume);
+            UnityEngine.Object.DestroyImmediate(newSettingsObject.GetComponentInChildren<LocalizedTextMeshProUGUI>());
 
             newSettingsObject.GetComponentInChildren<TMP_Text>().text = name;
 
             (newToggleSettingsController.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
             (newToggleSettingsController.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
             (newToggleSettingsController.transform as RectTransform).anchoredPosition = position;
+            (newToggleSettingsController.transform as RectTransform).sizeDelta = new Vector2(105f, 0f);
 
             return newToggleSettingsController;
         }

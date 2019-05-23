@@ -105,7 +105,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
             PluginUI.instance.roomFlowCoordinator.JoinRoom(ip, port, roomId, usePassword, pass);
-            Client.Instance.InRadioMode = false;
+            Client.Instance.inRadioMode = false;
             PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
             PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
         }

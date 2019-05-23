@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace ServerHub.Hub
 {
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions, GetPlayerUpdates }
 
     public static class HubListener
     {
@@ -204,8 +204,8 @@ namespace ServerHub.Hub
                                         {
                                             if (client != null)
                                             {
-                                                client.playerInfo = new PlayerInfo(msg);
-                                                if(Settings.Instance.Misc.PlayerColors.ContainsKey(client.playerInfo.playerId))
+                                                client.UpdatePlayerInfo(new PlayerInfo(msg));
+                                                if (Settings.Instance.Misc.PlayerColors.ContainsKey(client.playerInfo.playerId))
                                                 {
                                                     client.playerInfo.playerNameColor = Settings.Instance.Misc.PlayerColors[client.playerInfo.playerId];
                                                 }

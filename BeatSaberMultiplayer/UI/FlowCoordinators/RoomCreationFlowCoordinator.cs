@@ -118,7 +118,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             _mainRoomCreationViewController.CreateButtonInteractable(false);
             
-            if(!Client.Instance.Connected || (Client.Instance.ip != _selectedServerHub.ip || Client.Instance.port != _selectedServerHub.port))
+            if(!Client.Instance.connected || (Client.Instance.ip != _selectedServerHub.ip || Client.Instance.port != _selectedServerHub.port))
             {
                 Client.Instance.Disconnect();
                 Client.Instance.Connect(_selectedServerHub.ip, _selectedServerHub.port);

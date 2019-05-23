@@ -13,7 +13,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         
         public void Init(OnlinePlayerController newOwner)
         {
-            BeatmapObjectCallbackController original = FindObjectsOfType<BeatmapObjectCallbackController>().First(x => !x.name.StartsWith("Online"));
+            BeatmapObjectCallbackController original = FindObjectsOfType<BeatmapObjectCallbackController>().First(x => !(x is OnlineBeatmapCallbackController));
 
             foreach (FieldInfo info in original.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Default).Where(x => !x.Name.ToLower().Contains("event")))
             {

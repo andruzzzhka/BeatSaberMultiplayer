@@ -9,11 +9,7 @@
   "dependsOn": {
     "CustomUI": "^1.5.4",
     "BS Utils": "^1.2.3",
-    "SongLoader": "^6.10.1"
+    "SongLoader": "^7.0.0"
   },
-  "features": [
-    "print",
-    "debug",
-    "warn"
-  ]
+  "features": [ ]
 }

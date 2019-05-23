@@ -70,12 +70,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     });
                     _pageDownButton.interactable = false;
 
-                    _serverHubsTableView = new GameObject().AddComponent<TableView>();
+                    var tableGameObject = new GameObject("CustomTableView");
+                    tableGameObject.SetActive(false);
+                    _serverHubsTableView = tableGameObject.AddComponent<TableView>();
                     _serverHubsTableView.transform.SetParent(rectTransform, false);
 
                     _serverHubsTableView.SetPrivateField("_isInitialized", false);
                     _serverHubsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-                    _serverHubsTableView.Init();
+                    tableGameObject.SetActive(true);
 
                     RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _serverHubsTableView.transform, false);
                     viewportMask.transform.DetachChildren();
@@ -132,7 +134,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
             ServerHubClient client = _serverHubClients[row];
 
-            cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
+            cell.GetComponentsInChildren<UnityEngine.UI.RawImage>(true).First(x => x.name == "CoverImage").enabled = false;
             cell.SetText($"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.ip}:{client.port}");
 
             if (client.serverHubCompatible)

@@ -70,14 +70,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 container.sizeDelta = new Vector2(0f, 60f);
                 container.anchoredPosition = new Vector2(0f, -3f);
 
-                _presetsTableView = new GameObject("CustomTableView").AddComponent<TableView>();
+                var tableGameObject = new GameObject("CustomTableView");
+                tableGameObject.SetActive(false);
+                _presetsTableView = tableGameObject.AddComponent<TableView>();
                 _presetsTableView.gameObject.AddComponent<RectMask2D>();
                 _presetsTableView.transform.SetParent(container, false);
 
                 _presetsTableView.SetPrivateField("_isInitialized", false);
                 _presetsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-                _presetsTableView.Init();
-                
+                tableGameObject.SetActive(true);
+
                 (_presetsTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (_presetsTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
                 (_presetsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
@@ -139,7 +141,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
             RoomPreset preset = availablePresets[row];
 
-            cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
+            cell.GetComponentsInChildren<UnityEngine.UI.RawImage>(true).First(x => x.name == "CoverImage").enabled = false;
 
             cell.SetText($"{preset.GetName()}");
             cell.SetSubText($"{preset.settings.Name}");

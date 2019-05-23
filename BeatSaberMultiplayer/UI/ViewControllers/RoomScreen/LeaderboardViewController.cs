@@ -76,7 +76,7 @@ namespace BeatSaberMultiplayer
                 });
                 _pageDownButton.interactable = false;
 
-                _playNowButton = this.CreateUIButton("QuitButton", new Vector2(-39f, 34.5f), new Vector2(28f, 8.8f), () => { playNowButtonPressed?.Invoke(); }, "Play now");
+                _playNowButton = this.CreateUIButton("CancelButton", new Vector2(-39f, 34.5f), new Vector2(28f, 8.8f), () => { playNowButtonPressed?.Invoke(); }, "Play now");
                 _playNowButton.ToggleWordWrapping(false);
                 _progressText = BeatSaberUI.CreateText(rectTransform, "0.0%", new Vector2(8f, 32f));
                 _progressText.gameObject.SetActive(false);
@@ -90,13 +90,15 @@ namespace BeatSaberMultiplayer
                 container.sizeDelta = new Vector2(0f, 56f);
                 container.anchoredPosition = new Vector2(0f, -3f);
 
-                _leaderboardTableView = new GameObject("CustomTableView").AddComponent<TableView>();
+                var tableGameObject = new GameObject("CustomTableView");
+                tableGameObject.SetActive(false);
+                _leaderboardTableView = tableGameObject.AddComponent<TableView>();
                 _leaderboardTableView.gameObject.AddComponent<RectMask2D>();
                 _leaderboardTableView.transform.SetParent(container, false);
 
                 _leaderboardTableView.SetPrivateField("_isInitialized", false);
                 _leaderboardTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-                _leaderboardTableView.Init();
+                tableGameObject.SetActive(true);
 
                 RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _leaderboardTableView.transform, false);
                 viewportMask.transform.DetachChildren();
@@ -180,7 +182,7 @@ namespace BeatSaberMultiplayer
                 if (_selectedSong is CustomLevel)
                 {
                     CustomLevel customLevel = _selectedSong as CustomLevel;
-                    if (customLevel.coverImage == CustomExtensions.songLoaderDefaultImage)
+                    if (customLevel.coverImageTexture2D == CustomExtensions.songLoaderDefaultImage.texture)
                     {
                         StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
                             (_selectedSong as CustomLevel).SetCoverImage(sprite);
@@ -189,7 +191,7 @@ namespace BeatSaberMultiplayer
                     }
                 }
 
-                _songTableCell.SetIcon(_selectedSong.coverImage);
+                _songTableCell.SetIcon(_selectedSong.coverImageTexture2D);
             }
             else
             {

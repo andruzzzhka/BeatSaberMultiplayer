@@ -1,6 +1,7 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using BS_Utils.Gameplay;
+using CustomUI.Utilities;
 using IPA;
 using System;
 using System.IO;

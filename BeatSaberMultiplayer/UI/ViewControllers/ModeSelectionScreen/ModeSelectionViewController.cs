@@ -48,10 +48,12 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 }
                 else
                 {
-                    _roomsButton = BeatSaberUI.CreateUIButton(rectTransform, "SoloFreePlayButton", new Vector2(-5f, 10f), () => { didSelectRooms?.Invoke(); }, "ROOMS");
+                    _roomsButton = BeatSaberUI.CreateUIButton(rectTransform, "SoloFreePlayButton", new Vector2(-40f, 10f), () => { didSelectRooms?.Invoke(); }, "ROOMS");
+                    Destroy(_roomsButton.GetComponentInChildren<HoverHint>());
                     _roomsButton.SetButtonIcon(Sprites.roomsIcon);
 
-                    _radioButton = BeatSaberUI.CreateUIButton(rectTransform, "SoloFreePlayButton", new Vector2(45f, 10f), () => { didSelectRadio?.Invoke(); }, "RADIO");
+                    _radioButton = BeatSaberUI.CreateUIButton(rectTransform, "SoloFreePlayButton", new Vector2(10f, 10f), () => { didSelectRadio?.Invoke(); }, "RADIO");
+                    Destroy(_radioButton.GetComponentInChildren<HoverHint>());
                     _radioButton.SetButtonIcon(Sprites.radioIcon);
                 }
             }

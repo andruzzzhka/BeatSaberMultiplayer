@@ -53,18 +53,18 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 _songTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
 
-                _searchButton = this.CreateUIButton("CreditsButton", new Vector2(-15f, 36.5f), new Vector2(30f, 6f), () => { SearchPressed?.Invoke(); }, "Search");
+                _searchButton = this.CreateUIButton("CancelButton", new Vector2(-15f, 36.5f), new Vector2(30f, 6f), () => { SearchPressed?.Invoke(); }, "Search");
                 _searchButton.SetButtonTextSize(3f);
                 _searchButton.ToggleWordWrapping(false);
 
-                _sortByButton = this.CreateUIButton("CreditsButton", new Vector2(15f, 36.5f), new Vector2(30f, 6f), () =>
+                _sortByButton = this.CreateUIButton("CancelButton", new Vector2(15f, 36.5f), new Vector2(30f, 6f), () =>
                 {
                     SelectTopButtons(TopButtonsState.SortBy);
                 }, "Sort By");
                 _sortByButton.SetButtonTextSize(3f);
                 _sortByButton.ToggleWordWrapping(false);
 
-                _defButton = this.CreateUIButton("CreditsButton", new Vector2(-20f, 36.5f), new Vector2(20f, 6f), () =>
+                _defButton = this.CreateUIButton("CancelButton", new Vector2(-20f, 36.5f), new Vector2(20f, 6f), () =>
                 {
                     SelectTopButtons(TopButtonsState.Select);
                     SortPressed?.Invoke(SortMode.Default);
@@ -75,7 +75,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _defButton.ToggleWordWrapping(false);
                 _defButton.gameObject.SetActive(false);
 
-                _newButton = this.CreateUIButton("CreditsButton", new Vector2(0f, 36.5f), new Vector2(20f, 6f), () =>
+                _newButton = this.CreateUIButton("CancelButton", new Vector2(0f, 36.5f), new Vector2(20f, 6f), () =>
                 {
                     SelectTopButtons(TopButtonsState.Select);
                     SortPressed?.Invoke(SortMode.Newest);
@@ -86,7 +86,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _newButton.gameObject.SetActive(false);
 
 
-                _diffButton = this.CreateUIButton("CreditsButton", new Vector2(20f, 36.5f), new Vector2(20f, 6f), () =>
+                _diffButton = this.CreateUIButton("CancelButton", new Vector2(20f, 36.5f), new Vector2(20f, 6f), () =>
                 {
                     SelectTopButtons(TopButtonsState.Select);
                     SortPressed?.Invoke(SortMode.Difficulty);
@@ -153,13 +153,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 container.sizeDelta = new Vector2(0f, 60f);
                 container.anchoredPosition = new Vector2(0f, -3f);
 
-                _songsTableView = new GameObject("CustomTableView").AddComponent<TableView>();
+                var tableGameObject = new GameObject("CustomTableView");
+                tableGameObject.SetActive(false);
+                _songsTableView = tableGameObject.AddComponent<TableView>();
                 _songsTableView.gameObject.AddComponent<RectMask2D>();
                 _songsTableView.transform.SetParent(container, false);
 
                 _songsTableView.SetPrivateField("_isInitialized", false);
                 _songsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-                _songsTableView.Init();
+                tableGameObject.SetActive(true);
 
                 (_songsTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (_songsTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
@@ -322,7 +324,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             if (song is CustomLevel)
             {
                 CustomLevel customLevel = song as CustomLevel;
-                if (customLevel.coverImage == CustomExtensions.songLoaderDefaultImage)
+                if (customLevel.coverImageTexture2D == CustomExtensions.songLoaderDefaultImage.texture)
                 {
                     StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
                         (song as CustomLevel).SetCoverImage(sprite);
@@ -331,7 +333,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 }
             }
 
-            cell.SetIcon(song.coverImage);
+            cell.SetIcon(song.coverImageTexture2D);
             cell.SetText($"{song.songName} <size=80%>{song.songSubName}</size>");
             cell.SetSubText(song.songAuthorName);
 

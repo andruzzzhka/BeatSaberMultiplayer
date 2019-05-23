@@ -241,6 +241,36 @@ namespace ServerHub.Rooms
 
             if (roomClients.Count > 0)
                 BroadcastWebSocket(CommandType.UpdatePlayerInfo, roomClients.Select(x => x.playerInfo).ToArray());
+
+            int spectatorsCount = roomClients.Count(x => x.playerInfo.playerState == PlayerState.Spectating);
+            if (spectatorsCount > 0)
+            {
+                outMsg = HubListener.ListenerServer.CreateMessage();
+
+                outMsg.Write((byte)CommandType.GetPlayerUpdates);
+
+                outMsg.Write(roomClients.Count(x => x.playerInfo.playerState == PlayerState.Game && x.playerInfoHistory.Count > 0));
+
+                for (int i = 0; i < roomClients.Count; i++)
+                {
+                    if (i < roomClients.Count)
+                    {
+                        if (roomClients[i] != null && roomClients[i].playerInfo.playerState == PlayerState.Game && roomClients[i].playerInfoHistory.Count > 0)
+                        {
+                            int historyLength = roomClients[i].playerInfoHistory.Count;
+                            outMsg.Write(historyLength);
+                            
+                            for(int j = 0; j < historyLength; j++)
+                            {
+                                roomClients[i].playerInfoHistory.Dequeue().AddToMessage(outMsg);
+                            }
+                            roomClients[i].playerInfoHistory.Clear();
+                        }
+                    }
+                }
+
+                BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced, 2, roomClients.Where(x => x.playerInfo.playerState != PlayerState.Spectating).ToList());
+            }
         }
 
         public virtual void BroadcastVoIPData(object sender, HighResolutionTimerElapsedEventArgs e)

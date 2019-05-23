@@ -49,8 +49,6 @@ namespace BeatSaberMultiplayer.UI.UIElements
             
             _valueText = GetComponentsInChildren<TextMeshProUGUI>().First(x => x.name == "ValueText");
             _valueText.text = _value ? "ON" : "OFF";
-            
-            (transform as RectTransform).sizeDelta = new Vector2(105f, 8f);
 
             UpdateButtons();
         }

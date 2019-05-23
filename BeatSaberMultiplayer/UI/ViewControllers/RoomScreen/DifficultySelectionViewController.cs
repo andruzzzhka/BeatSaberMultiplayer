@@ -52,7 +52,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             if(firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
                 _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
-                _standardCharacteristic = _beatmapCharacteristics.First(x => x.characteristicName == "Standard");
+                _standardCharacteristic = _beatmapCharacteristics.First(x => x.serializedName == "Standard");
 
                 bool isHost = Client.Instance.isHost;
 
@@ -74,7 +74,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _playersReadyText.alignment = TextAlignmentOptions.Center;
                 _playersReadyText.fontSize = 5.5f;
 
-                _cancelButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _cancelButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
                 (_cancelButton.transform as RectTransform).anchoredPosition = new Vector2(-30f, -25f);
                 (_cancelButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
                 _cancelButton.SetButtonText("CANCEL");
@@ -83,13 +83,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _cancelButton.onClick.AddListener(delegate () { discardPressed?.Invoke(); });
                 _cancelButton.gameObject.SetActive(isHost);
 
-                _playButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _playButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
                 (_playButton.transform as RectTransform).anchoredPosition = new Vector2(30f, -25f);
                 (_playButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
                 _playButton.SetButtonText("PLAY");
                 _playButton.ToggleWordWrapping(false);
                 _playButton.SetButtonTextSize(5.5f);
                 _playButton.onClick.AddListener(delegate () { playPressed?.Invoke(_selectedSong, selectedCharacteristic, selectedDifficulty); });
+                var playGlow = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "PlayButton").GetComponentsInChildren<RectTransform>().First(x => x.name == "GlowContainer"), _playButton.transform); //Let's add some glow!
+                playGlow.transform.SetAsFirstSibling();
+                playGlow.GetComponentInChildren<UnityEngine.UI.Image>().color = new Color(0f, 0.7058824f, 1f, 0.7843137f);
                 _playButton.gameObject.SetActive(isHost);
 
                 _characteristicControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 34f), new Vector2(110f, 7f), _characteristicControl_didSelectCellEvent);
@@ -155,38 +158,69 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         private void _characteristicControl_didSelectCellEvent(int arg2)
         {
-            selectedCharacteristic = _selectedSong.beatmapCharacteristics[arg2];
-
-            Dictionary<IDifficultyBeatmap, string> difficulties = _selectedSong.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps.ToDictionary(x => x, x => x.difficulty.ToString().Replace("Plus", "+"));
-
-            if (_selectedSong is CustomLevel)
+            int errorCode = 0;
+            try
             {
-                CustomLevel customSelectedSong = _selectedSong as CustomLevel;
-                for(int i = 0; i < difficulties.Keys.Count; i++)
+                errorCode = 1;
+                selectedCharacteristic = _selectedSong.beatmapCharacteristics[arg2];
+
+                errorCode = 2;
+                Dictionary<IDifficultyBeatmap, string> difficulties = _selectedSong.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps.ToDictionary(x => x, x => x.difficulty.ToString().Replace("Plus", "+"));
+
+                errorCode = 3;
+                if (_selectedSong is CustomLevel)
                 {
-                    var diffKey = difficulties.Keys.ElementAt(i);
-                    var difficultyLevel = customSelectedSong.customSongInfo.difficultyLevels.FirstOrDefault(x => x.difficulty.ToLower() == diffKey.difficulty.ToString().ToLower());
-                    if (difficultyLevel != null && !string.IsNullOrEmpty(difficultyLevel.difficultyLabel))
+                    errorCode = 31;
+                    CustomLevel customSelectedSong = _selectedSong as CustomLevel;
+                    errorCode = 32;
+                    var songData = SongCore.Collections.RetrieveExtraSongData(customSelectedSong.levelID);
+                    if (songData != null && songData.difficulties != null)
                     {
-                        difficulties[diffKey] = difficultyLevel.difficultyLabel;
-                        Plugin.log.Info($"Found difficulty label \"{difficulties[diffKey]}\" for difficulty {diffKey.difficulty.ToString()}");
+                        for (int i = 0; i < difficulties.Keys.Count; i++)
+                        {
+                            errorCode = 33 + 100 * i;
+                            var diffKey = difficulties.Keys.ElementAt(i);
+
+                            errorCode = 34 + 100 * i;
+                            var difficultyLevel = songData.difficulties.FirstOrDefault(x => x.difficulty == diffKey.difficulty);
+                            errorCode = 35 + 100 * i;
+                            if (difficultyLevel != null && !string.IsNullOrEmpty(difficultyLevel.difficultyLabel))
+                            {
+                                errorCode = 36 + 100 * i;
+                                difficulties[diffKey] = difficultyLevel.difficultyLabel;
+                                Plugin.log.Info($"Found difficulty label \"{difficulties[diffKey]}\" for difficulty {diffKey.difficulty.ToString()}");
+                                errorCode = 37 + 100 * i;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Plugin.log.Warn($"Unable to retrieve extra song data for song with LevelID \"{customSelectedSong.levelID}\"!");
                     }
                 }
-            }
-                
-            _difficultyControl.SetTexts(difficulties.Values.ToArray());
+                errorCode = 4;
 
-            int closestDifficultyIndex = CustomExtensions.GetClosestDifficultyIndex(difficulties.Keys.ToArray(), selectedDifficulty);
+                _difficultyControl.SetTexts(difficulties.Values.ToArray());
 
-            _difficultyControl.SelectCellWithNumber(closestDifficultyIndex);
+                errorCode = 5;
+                int closestDifficultyIndex = CustomExtensions.GetClosestDifficultyIndex(difficulties.Keys.ToArray(), selectedDifficulty);
 
-            if (!difficulties.Any(x => x.Key.difficulty == selectedDifficulty))
+                errorCode = 6;
+                _difficultyControl.SelectCellWithNumber(closestDifficultyIndex);
+
+                errorCode = 7;
+                if (!difficulties.Any(x => x.Key.difficulty == selectedDifficulty))
+                {
+                    _difficultyControl_didSelectCellEvent(closestDifficultyIndex);
+                }
+                else
+                {
+                    levelOptionsChanged?.Invoke();
+                }
+            }catch(Exception e)
             {
-                _difficultyControl_didSelectCellEvent(closestDifficultyIndex);
-            }
-            else
-            {
-                levelOptionsChanged?.Invoke();
+                Plugin.log.Critical($"Exception in char control did select event: Error Code: {errorCode}, Exception: {e}");
+
             }
         }
 
@@ -226,7 +260,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 if (_selectedSong is CustomLevel)
                 {
                     CustomLevel customLevel = _selectedSong as CustomLevel;
-                    if (customLevel.coverImage == CustomExtensions.songLoaderDefaultImage)
+                    if (customLevel.coverImageTexture2D == CustomExtensions.songLoaderDefaultImage.texture)
                     {
                         StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
                             (_selectedSong as CustomLevel).SetCoverImage(sprite);
@@ -235,11 +269,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     }
                 }
 
-                _selectedSongCell.SetIcon(_selectedSong.coverImage);
+                _selectedSongCell.SetIcon(_selectedSong.coverImageTexture2D);
 
-                _characteristicControl.SetTexts(_selectedSong.beatmapCharacteristics.Select(x => x.characteristicName).ToArray());
+                _characteristicControl.SetTexts(_selectedSong.beatmapCharacteristics.Distinct().Select(x => x.characteristicNameLocalized).ToArray());
 
-                int standardCharacteristicIndex = Array.FindIndex(_selectedSong.beatmapCharacteristics, x => x.serializedName == "Standard");
+                int standardCharacteristicIndex = Array.FindIndex(_selectedSong.beatmapCharacteristics.Distinct().ToArray(), x => x.serializedName == "Standard");
 
                 _characteristicControl.SelectCellWithNumber((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
                 _characteristicControl_didSelectCellEvent((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));

@@ -73,31 +73,31 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _presetNameKeyboard.enterButtonPressed += PresetNameEntered;
                 _presetNameKeyboard.backButtonPressed += () => { keyboardDidFinishEvent?.Invoke(_presetNameKeyboard); };
 
-                _usePasswordToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "Use Password", new Vector2(0f, 16f));
+                _usePasswordToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "Use Password", new Vector2(0f, 11f));
                 _usePasswordToggle.ValueChanged += UsePasswordToggle_ValueChanged;
                 _usePasswordToggle.Value = _usePassword;
 
-                _songSelectionList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Song Selection", new Vector2(0f, 8f));
+                _songSelectionList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Song Selection", new Vector2(0f, 3f));
                 _songSelectionList.ValueChanged += SongSelection_ValueChanged;
                 _songSelectionList.maxValue = 1;
                 _songSelectionList.Value = (int)_songSelectionType;
                 _songSelectionList.textForValues = new string[] { "Manual", "Random" };
                 _songSelectionList.UpdateText();
 
-                _maxPlayersList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Max Players", new Vector2(0f, 0f));
+                _maxPlayersList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Max Players", new Vector2(0f, -5f));
                 _maxPlayersList.ValueChanged += MaxPlayers_ValueChanged;
                 _maxPlayersList.Value = _maxPlayers;
                 _maxPlayersList.maxValue = 16;
                 _maxPlayersList.textForValues = new string[] { "No limit" };
                 _maxPlayersList.UpdateText();
 
-                _resultsShowTimeList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Results Show Time", new Vector2(0f, -8f));
+                _resultsShowTimeList = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Results Show Time", new Vector2(0f, -13f));
                 _resultsShowTimeList.ValueChanged += ResultsShowTime_ValueChanged;
                 _resultsShowTimeList.minValue = 5;
                 _resultsShowTimeList.maxValue = 45;
                 _resultsShowTimeList.Value = _resultsShowTime;
 
-                _perPlayerDifficultyToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "Per player difficulty", new Vector2(0f, -16f));
+                _perPlayerDifficultyToggle = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "Per player difficulty", new Vector2(0f, -21f));
                 _perPlayerDifficultyToggle.ValueChanged += PerPlayerDifficultyToggle_ValueChanged;
                 _perPlayerDifficultyToggle.Value = _allowPerPlayerDifficulty;
 
@@ -105,7 +105,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _nameText = BeatSaberUI.CreateText(rectTransform, _roomName, new Vector2(-22.5f, 30f));
                 _nameText.fontSize = 5f;
 
-                _editNameButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _editNameButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
                 _editNameButton.SetButtonText("EDIT NAME");
                 (_editNameButton.transform as RectTransform).sizeDelta = new Vector2(34f, 8f);
                 (_editNameButton.transform as RectTransform).anchoredPosition = new Vector2(34f, 32f);
@@ -120,7 +120,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _passwordText = BeatSaberUI.CreateText(rectTransform, "ENTER PASSWORD", new Vector2(-22.5f, 20f));
                 _passwordText.fontSize = 5f;
 
-                _editPasswordButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _editPasswordButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
                 _editPasswordButton.SetButtonText("EDIT PASS");
                 (_editPasswordButton.transform as RectTransform).sizeDelta = new Vector2(34f, 8f);
                 (_editPasswordButton.transform as RectTransform).anchoredPosition = new Vector2(34f, 22f);
@@ -131,7 +131,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     presentKeyboardEvent?.Invoke(_passwordKeyboard);
                 });
 
-                _createRoomButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _createRoomButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
                 _createRoomButton.SetButtonText("Create Room");
                 (_createRoomButton.transform as RectTransform).sizeDelta = new Vector2(30f, 10f);
                 (_createRoomButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -32.5f);
@@ -141,7 +141,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 });
                 _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
 
-                _savePresetButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _savePresetButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
                 _savePresetButton.SetButtonText("Save Preset");
                 (_savePresetButton.transform as RectTransform).sizeDelta = new Vector2(30f, 10f);
                 (_savePresetButton.transform as RectTransform).anchoredPosition = new Vector2(-32f, -32.5f);
@@ -151,7 +151,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     presentKeyboardEvent?.Invoke(_presetNameKeyboard);
                 });
 
-                _loadPresetButton = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _loadPresetButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
                 _loadPresetButton.SetButtonText("Load Preset");
                 (_loadPresetButton.transform as RectTransform).sizeDelta = new Vector2(30f, 10f);
                 (_loadPresetButton.transform as RectTransform).anchoredPosition = new Vector2(32f, -32.5f);

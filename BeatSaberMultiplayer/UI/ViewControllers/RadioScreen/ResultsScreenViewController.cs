@@ -73,7 +73,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
                 lastSong = songInfo;
 
                 _songNameText.text = $"{songInfo.level.songName} <size=80%>{songInfo.level.songSubName}</size>";
-                _scoreText.text = ScoreFormatter.Format(results.score);
+                _scoreText.text = ScoreFormatter.Format(results.modifiedScore);
                 _difficultyText.text = songInfo.difficulty.Name();
                 _rankText.text = RankModel.GetRankName(results.rank);
                 _goodCutsText.text = $"{results.goodCutsCount}<size=50%> / {songInfo.beatmapData.notesCount}";

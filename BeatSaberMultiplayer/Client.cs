@@ -16,7 +16,7 @@ using UnityEngine;
 namespace BeatSaberMultiplayer
 {
 
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions, GetPlayerUpdates }
 
     public class Client : MonoBehaviour
     {
@@ -112,11 +112,11 @@ namespace BeatSaberMultiplayer
         public event Action<NetIncomingMessage> MessageReceived;
         public event Action<NetIncomingMessage> PlayerInfoUpdateReceived;
 
-        public bool Connected;
-        public bool InRoom;
-        public bool InRadioMode;
+        public bool connected;
+        public bool inRoom;
+        public bool inRadioMode;
 
-        public NetClient NetworkClient;
+        public NetClient networkClient;
         
         public string ip;
         public int port;
@@ -125,13 +125,13 @@ namespace BeatSaberMultiplayer
 
         public bool isHost;
 
-        DateTime _lastPacketTime;
-        List<float> _averagePacketTimes = new List<float>();
+        public float tickrate;
+
+        private DateTime _lastPacketTime;
+        private List<float> _averagePacketTimes = new List<float>();
         
         private List<NetIncomingMessage> _receivedMessages = new List<NetIncomingMessage>();
-
-        public float Tickrate;
-
+        
         public static Client Instance {
             get
             {
@@ -150,7 +150,7 @@ namespace BeatSaberMultiplayer
             GetUserInfo.UpdateUserInfo();
             playerInfo = new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID());
             NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer") { MaximumHandshakeAttempts = 2, AutoFlushSendQueue = false };
-            NetworkClient = new NetClient(Config);
+            networkClient = new NetClient(Config);
 
 #if DEBUG
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
@@ -161,17 +161,17 @@ namespace BeatSaberMultiplayer
 
         public void Disconnect()
         {
-            if (NetworkClient != null && NetworkClient.Status == NetPeerStatus.Running)
+            if (networkClient != null && networkClient.Status == NetPeerStatus.Running)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.Disconnect);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
-                NetworkClient.FlushSendQueue();
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.FlushSendQueue();
 
-                NetworkClient.Shutdown("");
+                networkClient.Shutdown("");
             }
-            Connected = false;
+            connected = false;
         }
 
         public void Connect(string IP, int Port)
@@ -179,10 +179,10 @@ namespace BeatSaberMultiplayer
             ip = IP;
             port = Port;
 
-            NetworkClient.Start();
+            networkClient.Start();
 
             Plugin.log.Info($"Creating message...");
-            NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+            NetOutgoingMessage outMsg = networkClient.CreateMessage();
 
             Version assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
             byte[] version = new byte[4] { (byte)assemblyVersion.Major, (byte)assemblyVersion.Minor, (byte)assemblyVersion.Build, (byte)assemblyVersion.Revision };
@@ -193,15 +193,15 @@ namespace BeatSaberMultiplayer
 
             Plugin.log.Info($"Connecting to {ip}:{port} with player name \"{playerInfo.playerName}\" and ID {playerInfo.playerId}");
 
-            InRadioMode = false;
-            InRoom = false;
+            inRadioMode = false;
+            inRoom = false;
 
-            NetworkClient.Connect(ip, port, outMsg);
+            networkClient.Connect(ip, port, outMsg);
         }
 
         public void Update()
         {
-            if (NetworkClient.ReadMessages(_receivedMessages) > 0)
+            if (networkClient.ReadMessages(_receivedMessages) > 0)
             {
                 try
                 {
@@ -215,45 +215,62 @@ namespace BeatSaberMultiplayer
                             if (_averagePacketTimes.Count > 150)
                                 _averagePacketTimes.RemoveAt(0);
 
-                            Tickrate = (float)Math.Round(1000f / _averagePacketTimes.Where(x => x > 2f).Average(), 2);
+                            tickrate = (float)Math.Round(1000f / _averagePacketTimes.Where(x => x > 2f).Average(), 2);
                         }
                         _lastPacketTime = DateTime.UtcNow;
                     }
-                    
-                    NetIncomingMessage lastUpdate = _receivedMessages.LastOrDefault(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
-                    
-                    if (lastUpdate != null)
+
+                    try
                     {
-                        foreach(NetIncomingMessage msg in _receivedMessages.Where(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo))
+                        if (Config.Instance.SpectatorMode)
                         {
-                            foreach (Action<NetIncomingMessage> nextDel in PlayerInfoUpdateReceived.GetInvocationList())
+                            foreach (var lastPlayerHistoryUpdates in _receivedMessages.Where(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.GetPlayerUpdates))
+                            {
+                                foreach (Action<NetIncomingMessage> nextDel in PlayerInfoUpdateReceived.GetInvocationList())
+                                {
+                                    try
+                                    {
+                                        lastPlayerHistoryUpdates.Position = 0;
+                                        nextDel?.Invoke(lastPlayerHistoryUpdates);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
+                                    }
+                                }
+                                lastPlayerHistoryUpdates.Position = 0;
+                            }
+                        }
+                    }catch(Exception e)
+                    {
+                        Plugin.log.Error("Unable to parse GetPlayerUpdates message! Exception: "+e);
+                    }
+                    
+                    try
+                    {
+                        NetIncomingMessage lastUpdate = _receivedMessages.LastOrDefault(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
+                        
+                        if (lastUpdate != null)
+                        {
+                            _receivedMessages.RemoveAll(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
+                            
+                            foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
                             {
                                 try
                                 {
-                                    msg.Position = 0;
-                                    nextDel.Invoke(msg);
+                                    lastUpdate.Position = 0;
+                                    nextDel?.Invoke(lastUpdate);
                                 }
                                 catch (Exception e)
                                 {
                                     Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
                                 }
                             }
+                            lastUpdate.Position = 0;
                         }
-
-                        _receivedMessages.RemoveAll(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
-
-                        foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
-                        {
-                            try
-                            {
-                                lastUpdate.Position = 0;
-                                nextDel.Invoke(lastUpdate);
-                            }
-                            catch (Exception e)
-                            {
-                                Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
-                            }
-                        }
+                    }catch(Exception e)
+                    {
+                        Plugin.log.Error("Unable to parse UpdatePlayerInfo message! Exception: "+e);
                     }
                     
                     foreach (NetIncomingMessage msg in _receivedMessages)
@@ -264,12 +281,12 @@ namespace BeatSaberMultiplayer
                                 {
                                     NetConnectionStatus status = (NetConnectionStatus)msg.ReadByte();
 
-                                    if (status == NetConnectionStatus.Connected && !Connected)
+                                    if (status == NetConnectionStatus.Connected && !connected)
                                     {
-                                        Connected = true;
+                                        connected = true;
                                         ConnectedToServerHub?.Invoke();
                                     }
-                                    else if(status == NetConnectionStatus.Disconnected && Connected)
+                                    else if(status == NetConnectionStatus.Disconnected && connected)
                                     {
 
 #if DEBUG
@@ -281,7 +298,7 @@ namespace BeatSaberMultiplayer
                                         {
                                             try
                                             {
-                                                nextDel.Invoke(null);
+                                                nextDel?.Invoke(null);
                                             }
                                             catch (Exception e)
                                             {
@@ -289,7 +306,7 @@ namespace BeatSaberMultiplayer
                                             }
                                         }
                                     }
-                                    else if(status == NetConnectionStatus.Disconnected && !Connected)
+                                    else if(status == NetConnectionStatus.Disconnected && !connected)
                                     {
                                         Plugin.log.Error("ServerHub refused connection! Reason: " + msg.ReadString());
                                     }
@@ -311,7 +328,7 @@ namespace BeatSaberMultiplayer
                                             try
                                             {
                                                 msg.Position = 0;
-                                                nextDel.Invoke(msg);
+                                                nextDel?.Invoke(msg);
                                             }
                                             catch (Exception e)
                                             {
@@ -333,7 +350,7 @@ namespace BeatSaberMultiplayer
                                         {
                                             try
                                             {
-                                                nextDel.Invoke(header, data);
+                                                nextDel?.Invoke(header, data);
                                             }
                                             catch (Exception e)
                                             {
@@ -349,7 +366,7 @@ namespace BeatSaberMultiplayer
                                                 try
                                                 {
                                                     msg.Position = 0;
-                                                    nextDel.Invoke(msg);
+                                                    nextDel?.Invoke(msg);
                                                 }
                                                 catch (Exception e)
                                                 {
@@ -368,7 +385,7 @@ namespace BeatSaberMultiplayer
                                             {
                                                 try
                                                 {
-                                                    nextDel.Invoke();
+                                                    nextDel?.Invoke();
                                                 }
                                                 catch (Exception e)
                                                 {
@@ -399,7 +416,7 @@ namespace BeatSaberMultiplayer
                                             {
                                                 try
                                                 {
-                                                    nextDel.Invoke();
+                                                    nextDel?.Invoke();
                                                 }
                                                 catch (Exception e)
                                                 {
@@ -426,7 +443,7 @@ namespace BeatSaberMultiplayer
                                 break;
 #endif
                         }
-                        NetworkClient.Recycle(msg);
+                        networkClient.Recycle(msg);
                     }
                 }catch(Exception e)
                 {
@@ -437,7 +454,7 @@ namespace BeatSaberMultiplayer
                 _receivedMessages.Clear();
             }
 
-            if(Connected && NetworkClient.ConnectionsCount == 0)
+            if(connected && networkClient.ConnectionsCount == 0)
             {
 
 #if DEBUG
@@ -461,19 +478,19 @@ namespace BeatSaberMultiplayer
 
         public void LateUpdate()
         {
-            if(NetworkClient != null)
+            if(networkClient != null)
             {
-                NetworkClient.FlushSendQueue();
+                networkClient.FlushSendQueue();
             }
         }
 
         public void ClearMessageQueue()
         {
-            while (NetworkClient.ReadMessages(_receivedMessages) > 0)
+            while (networkClient.ReadMessages(_receivedMessages) > 0)
             {
                 foreach (var message in _receivedMessages)
                 {
-                    NetworkClient.Recycle(message);
+                    networkClient.Recycle(message);
                 }
                 _receivedMessages.Clear();
             }
@@ -481,73 +498,73 @@ namespace BeatSaberMultiplayer
 
         public void GetRooms()
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.GetRooms);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void JoinRoom(uint roomId)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
 #if DEBUG
                 Plugin.log.Info("Joining room " + roomId);
 #endif
 
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.JoinRoom);
                 outMsg.Write(roomId);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void JoinRoom(uint roomId, string password)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
 #if DEBUG
                 Plugin.log.Info("Joining room " + roomId + " with password \"" + password + "\"");
 #endif
 
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.JoinRoom);
                 outMsg.Write(roomId);
                 outMsg.Write(password);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void JoinRadioChannel(int channelId)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
 #if DEBUG
                 Plugin.log.Info("Joining radio channel!");
 #endif
 
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.JoinChannel);
                 outMsg.Write(channelId);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void CreateRoom(RoomSettings settings)
         {
-            if(Connected && NetworkClient != null)
+            if(connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.CreateRoom);
                 settings.AddToMessage(outMsg);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                 
 #if DEBUG
                 Plugin.log.Info("Creating room...");
@@ -557,12 +574,12 @@ namespace BeatSaberMultiplayer
 
         public void LeaveRoom()
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.LeaveRoom);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 
 #if DEBUG
                 Plugin.log.Info("Leaving room...");
@@ -571,20 +588,20 @@ namespace BeatSaberMultiplayer
                 
             }
             isHost = false;
-            InRoom = false;
+            inRoom = false;
             playerInfo.playerState = PlayerState.Lobby;
         }
 
 
         public void DestroyRoom()
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
 
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.DestroyRoom);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
                 Plugin.log.Info("Destroying room...");
 #endif
@@ -595,12 +612,12 @@ namespace BeatSaberMultiplayer
 
         public void RequestRoomInfo()
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.GetRoomInfo);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
                 Plugin.log.Info("Requested RoomInfo...");
 #endif
@@ -609,13 +626,13 @@ namespace BeatSaberMultiplayer
 
         public void RequestChannelInfo(int channelId)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.GetChannelInfo);
                 outMsg.Write(channelId);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
                 Plugin.log.Info("Requested ChannelInfo...");
 #endif
@@ -624,22 +641,22 @@ namespace BeatSaberMultiplayer
 
         public void SetSelectedSong(SongInfo song)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 if (song == null)
                 {
                     outMsg.Write((byte)CommandType.SetSelectedSong);
                     outMsg.Write((byte)0);
 
-                    NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                    networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                 }
                 else
                 {
                     outMsg.Write((byte)CommandType.SetSelectedSong);
                     song.AddToMessage(outMsg);
 
-                    NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                    networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
                 }
 #if DEBUG
                 Plugin.log.Info("Sending SongInfo for selected song...");
@@ -649,13 +666,13 @@ namespace BeatSaberMultiplayer
 
         public void SetLevelOptions(LevelOptionsInfo info)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.SetLevelOptions);
                 info.AddToMessage(outMsg);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
                 Plugin.log.Info("Updating level options...");
                 Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers).Select(x => x.modifierName)));
@@ -666,12 +683,12 @@ namespace BeatSaberMultiplayer
 
         public void StartLevel(BeatmapLevelSO song, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, GameplayModifiers modifiers)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
 #if DEBUG
                 Plugin.log.Info("Starting level...");
 #endif
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.StartLevel);
 
                 new LevelOptionsInfo(difficulty, modifiers, characteristic.serializedName).AddToMessage(outMsg);
@@ -679,18 +696,16 @@ namespace BeatSaberMultiplayer
                 selectedSong.songDuration = selectedSong.songDuration / modifiers.songSpeedMul;
                 selectedSong.AddToMessage(outMsg);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void SendPlayerInfo()
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.UpdatePlayerInfo);
-                playerInfo.AddToMessage(outMsg);
-
 
 #if DEBUG
                 if (playerInfo.playerState == PlayerState.Game)
@@ -743,13 +758,13 @@ namespace BeatSaberMultiplayer
 
                         BitArray bits = new BitArray(8);
                         bits[0] = playerInfo.hitsLastUpdate[i].noteWasCut;
-                        bits[0] = playerInfo.hitsLastUpdate[i].isSaberA;
-                        bits[0] = playerInfo.hitsLastUpdate[i].speedOK;
-                        bits[0] = playerInfo.hitsLastUpdate[i].directionOK;
-                        bits[0] = playerInfo.hitsLastUpdate[i].saberTypeOK;
-                        bits[0] = playerInfo.hitsLastUpdate[i].wasCutTooSoon;
-                        bits[0] = playerInfo.hitsLastUpdate[i].reserved1;
-                        bits[0] = playerInfo.hitsLastUpdate[i].reserved2;
+                        bits[1] = playerInfo.hitsLastUpdate[i].isSaberA;
+                        bits[2] = playerInfo.hitsLastUpdate[i].speedOK;
+                        bits[3] = playerInfo.hitsLastUpdate[i].directionOK;
+                        bits[4] = playerInfo.hitsLastUpdate[i].saberTypeOK;
+                        bits[5] = playerInfo.hitsLastUpdate[i].wasCutTooSoon;
+                        bits[6] = playerInfo.hitsLastUpdate[i].reserved1;
+                        bits[7] = playerInfo.hitsLastUpdate[i].reserved2;
 
                         bits.CopyTo(hitData, 4);
 
@@ -761,57 +776,58 @@ namespace BeatSaberMultiplayer
                     packetsBuffer.Enqueue(buffer.ToArray());
                 }
 #endif
+                playerInfo.AddToMessage(outMsg);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
             }
         }
 
         public void SendVoIPData(VoipFragment audio)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.UpdateVoIPData);
                 audio.AddToMessage(outMsg);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 2);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 2);
             }
         }
 
         public void SendPlayerReady(bool ready)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.PlayerReady);
                 outMsg.Write(ready);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void SendEventMessage(string header, string data)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.SendEventMessage);
                 outMsg.Write(header);
                 outMsg.Write(data);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             }
         }
 
         public void SendSongDuration(SongInfo info)
         {
-            if (Connected && NetworkClient != null)
+            if (connected && networkClient != null)
             {
-                NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.GetSongDuration);
                 info.AddToMessage(outMsg);
 
-                NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
                 Plugin.log.Info("Requested ChannelInfo...");
 #endif

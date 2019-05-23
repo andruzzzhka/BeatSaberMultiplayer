@@ -11,7 +11,6 @@ namespace BeatSaberMultiplayer.OverriddenClasses
     public class OnlineAudioTimeController : AudioTimeSyncController
     {
         public OnlinePlayerController owner;
-        private float offset = 0.15f;
 
         public void Init(OnlinePlayerController newOwner)
         {
@@ -23,7 +22,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         public override void Update()
         {
             if(owner != null)
-                _songTime = Mathf.Max(0f, owner.PlayerInfo.playerProgress - offset);
+                _songTime = Mathf.Max(0f, owner.PlayerInfo.playerProgress - owner.syncDelay*2.5f);
         }
 
         public override void Awake()

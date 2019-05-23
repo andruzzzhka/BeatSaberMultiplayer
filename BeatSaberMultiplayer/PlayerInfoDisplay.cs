@@ -29,7 +29,7 @@ namespace BeatSaberMultiplayer
         {
             if (_playerInfo != null)
             {
-                progress += Time.deltaTime * Client.Instance.Tickrate;
+                progress += Time.deltaTime * Client.Instance.tickrate;
                 uint score = (uint)Mathf.Lerp(previousScore, currentScore, Mathf.Clamp01(progress));
 
 #if DEBUG
@@ -42,18 +42,16 @@ namespace BeatSaberMultiplayer
 
         void Awake()
         {
-            Vector2 offset = new Vector2(40f, -47.5f);
-
             playerPlaceText = CustomExtensions.CreateWorldText(transform, "");
-            playerPlaceText.rectTransform.anchoredPosition = new Vector2(2.5f, 0f) + offset;
+            playerPlaceText.rectTransform.anchoredPosition = new Vector2(42.5f, -47.5f);
             playerPlaceText.fontSize = 8f;
 
             playerNameText = CustomExtensions.CreateWorldText(transform, "");
-            playerNameText.rectTransform.anchoredPosition = new Vector2(4f, 0f) + offset;
+            playerNameText.rectTransform.anchoredPosition = new Vector2(44f, -47.5f);
             playerNameText.fontSize = 7f;
 
             playerScoreText = CustomExtensions.CreateWorldText(transform, "");
-            playerScoreText.rectTransform.anchoredPosition = new Vector2(15f, 0f) + offset;
+            playerScoreText.rectTransform.anchoredPosition = new Vector2(55f, -47.5f);
             playerScoreText.fontSize = 8f;
             
             playerSpeakerIcon = new GameObject("Player Speaker Icon", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();

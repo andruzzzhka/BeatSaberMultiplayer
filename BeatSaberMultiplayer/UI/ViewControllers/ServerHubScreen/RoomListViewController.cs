@@ -65,7 +65,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 var _refreshIconLayout = _refreshButton.GetComponentsInChildren<HorizontalLayoutGroup>().First(x => x.name == "Content");
                 _refreshIconLayout.padding = new RectOffset(0, 0, 1, 1);
 
-                _createRoom = BeatSaberUI.CreateUIButton(rectTransform, "CreditsButton");
+                _createRoom = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
                 _createRoom.SetButtonText("Create room");
                 _createRoom.SetButtonTextSize(3f);
                 (_createRoom.transform as RectTransform).sizeDelta = new Vector2(38f, 6f);
@@ -83,13 +83,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 container.sizeDelta = new Vector2(0f, 60f);
                 container.anchoredPosition = new Vector2(0f, -3f);
 
-                _serverTableView = new GameObject("CustomTableView").AddComponent<TableView>();
+                var tableGameObject = new GameObject("CustomTableView");
+                tableGameObject.SetActive(false);
+                _serverTableView = tableGameObject.AddComponent<TableView>();
                 _serverTableView.gameObject.AddComponent<RectMask2D>();
                 _serverTableView.transform.SetParent(container, false);
 
                 _serverTableView.SetPrivateField("_isInitialized", false);
                 _serverTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-                _serverTableView.Init();
+                tableGameObject.SetActive(true);
 
                 (_serverTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (_serverTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);

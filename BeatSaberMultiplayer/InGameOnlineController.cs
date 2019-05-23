@@ -54,9 +54,10 @@ namespace BeatSaberMultiplayer
         private float _messageDisplayTime;
 
         private string _currentScene;
-        private bool loaded;
-        private int sendRateCounter;
-        private int fixedSendRate = 0;
+        private bool _loaded;
+        private int _sendRateCounter;
+        private int _fixedSendRate = 0;
+        private bool _spectatorInRoom;
         
         SpeexCodex speexDec;
         private VoipListener voiceChatListener;
@@ -112,7 +113,7 @@ namespace BeatSaberMultiplayer
                 voiceChatListener.OnAudioGenerated += ProcesVoiceFragment;
                 DontDestroyOnLoad(voiceChatListener.gameObject);
 
-                if (Client.Instance.InRoom)
+                if (Client.Instance.inRoom)
                     VoiceChatStartRecording();
             }
             else if (!enabled && isVoiceChatActive)
@@ -183,25 +184,15 @@ namespace BeatSaberMultiplayer
         {
             Config.Instance.SeparateAvatarForMultiplayer = enabled;
 
-            if (Client.Instance.Connected)
+            if (Client.Instance.connected)
             {
                 if (enabled)
                 {
                     Client.Instance.playerInfo.avatarHash = Config.Instance.PublicAvatarHash;
-
-                    if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash))
-                    {
-                        Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-                    }
                 }
                 else
                 {
                     Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
-
-                    if (Client.Instance.playerInfo.avatarHash == null)
-                    {
-                        Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-                    }
                 }
             }
         }
@@ -209,7 +200,7 @@ namespace BeatSaberMultiplayer
         public void SetSeparatePublicAvatarHash(string hash)
         {
             Config.Instance.PublicAvatarHash = hash;
-            if (Client.Instance.Connected && Config.Instance.SeparateAvatarForMultiplayer)
+            if (Client.Instance.connected && Config.Instance.SeparateAvatarForMultiplayer)
             {
                 Client.Instance.playerInfo.avatarHash = Config.Instance.PublicAvatarHash;
             }
@@ -218,11 +209,11 @@ namespace BeatSaberMultiplayer
         public void MenuSceneLoaded()
         {
             _currentScene = "MenuCore";
-            loaded = false;
+            _loaded = false;
             DestroyPlayerControllers();
-            if (Client.Instance != null && Client.Instance.Connected)
+            if (Client.Instance != null && Client.Instance.connected)
             {
-                if (Client.Instance.InRadioMode)
+                if (Client.Instance.inRadioMode)
                 {
                     PluginUI.instance.radioFlowCoordinator.ReturnToChannel();
                 }
@@ -239,7 +230,7 @@ namespace BeatSaberMultiplayer
             _currentScene = "GameCore";
             DestroyPlayerControllers();
             DestroyScoreScreens();
-            if (Client.Instance != null && Client.Instance.Connected)
+            if (Client.Instance != null && Client.Instance.connected)
             {
                 StartCoroutine(WaitForControllers());
                 needToSendUpdates = true;
@@ -251,7 +242,7 @@ namespace BeatSaberMultiplayer
         {
             if(msg == null)
             {
-                if (_currentScene == "GameCore" && loaded)
+                if (_currentScene == "GameCore" && _loaded)
                 {
                     PropertyInfo property = typeof(StandardLevelGameplayManager).GetProperty("gameState");
                     property.DeclaringType.GetProperty("gameState");
@@ -271,9 +262,13 @@ namespace BeatSaberMultiplayer
                         List<PlayerInfo> playerInfos = new List<PlayerInfo>();
                         try
                         {
+                            PlayerInfo newPlayer;
+                            _spectatorInRoom = false;
                             for (int j = 0; j < playersCount; j++)
                             {
-                                playerInfos.Add(new PlayerInfo(msg));
+                                newPlayer = new PlayerInfo(msg);
+                                playerInfos.Add(newPlayer);
+                                _spectatorInRoom |= newPlayer.playerState == PlayerState.Spectating;
                             }
                         }
                         catch (Exception e)
@@ -285,7 +280,7 @@ namespace BeatSaberMultiplayer
                         }
 
 
-                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "MenuCore") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "MenuCore")).OrderByDescending(x => x.playerId).ToList();
+                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "MenuCore") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "MenuCore")).ToList();
 
                         int localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
                         
@@ -300,22 +295,15 @@ namespace BeatSaberMultiplayer
                                 {
                                     player = _players.FirstOrDefault(x => x != null && x.PlayerInfo.Equals(info));
 
-                                    if (player != null)
-                                    {
-                                        player.PlayerInfo = info;
-                                        player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 5f : 0f);
-                                        player.SetAvatarState(((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom()) && !Client.Instance.InRadioMode);
-                                    }
-                                    else
+                                    if (player == null)
                                     {
                                         player = new GameObject("OnlinePlayerController").AddComponent<OnlinePlayerController>();
-
-                                        player.PlayerInfo = info;
-                                        player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 5f : 0f);
-                                        player.SetAvatarState(((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && loaded) || ShowAvatarsInRoom()) && !Client.Instance.InRadioMode);
-
                                         _players.Add(player);
                                     }
+
+                                    player.PlayerInfo = info;
+                                    player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 5f : 0f);
+                                    player.SetAvatarState(((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && _loaded) || ShowAvatarsInRoom()) && !Client.Instance.inRadioMode);
 
                                     index++;
                                 }
@@ -340,7 +328,7 @@ namespace BeatSaberMultiplayer
                             Console.WriteLine($"PlayerControllers exception: {e}");
                         }
                         
-                        if (_currentScene == "GameCore" && loaded)
+                        if (_currentScene == "GameCore" && _loaded)
                         {
                             playerInfos = playerInfos.OrderByDescending(x => x.playerScore).ToList();
                             localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
@@ -438,7 +426,7 @@ namespace BeatSaberMultiplayer
                     break;
                 case CommandType.SetGameState:
                     {
-                        if (_currentScene == "GameCore" && loaded)
+                        if (_currentScene == "GameCore" && _loaded)
                         {
                             PropertyInfo property = typeof(StandardLevelGameplayManager).GetProperty("gameState");
                             property.DeclaringType.GetProperty("gameState");
@@ -476,6 +464,9 @@ namespace BeatSaberMultiplayer
         
         public void Update()
         {
+            if (!Client.Instance.connected)
+                return;
+
             if (_messageDisplayTime > 0f)
             {
                 _messageDisplayTime -= Time.deltaTime;
@@ -535,57 +526,57 @@ namespace BeatSaberMultiplayer
             {
                 if (Input.GetKeyDown(KeyCode.Keypad0))
                 {
-                    fixedSendRate = 0;
+                    _fixedSendRate = 0;
                     Plugin.log.Info($"Variable send rate");
                 }
                 else if(Input.GetKeyDown(KeyCode.Keypad1))
                 {
-                    fixedSendRate = 1;
+                    _fixedSendRate = 1;
                     Plugin.log.Info($"Forced full send rate");
                 }
                 else if (Input.GetKeyDown(KeyCode.Keypad2))
                 {
-                    fixedSendRate = 2;
+                    _fixedSendRate = 2;
                     Plugin.log.Info($"Forced half send rate");
                 }
                 else if(Input.GetKeyDown(KeyCode.Keypad3))
                 {
-                    fixedSendRate = 3;
+                    _fixedSendRate = 3;
                     Plugin.log.Info($"Forced one third send rate");
                 }
             }
 
             if (needToSendUpdates)
             {
-                if (fixedSendRate == 1 || (fixedSendRate == 0 && Client.Instance.Tickrate > 67.5f * (1f / 90 / Time.deltaTime)))
+                if (_fixedSendRate == 1 || (_fixedSendRate == 0 && Client.Instance.tickrate > (1f / Time.deltaTime / 3f * 2f + 5f)) || _spectatorInRoom)
                 {
-                    sendRateCounter = 0;
+                    _sendRateCounter = 0;
                     UpdatePlayerInfo();
 #if DEBUG && VERBOSE
-                    Plugin.log.Info($"Full send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
+                    Plugin.log.Info($"Full send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}, Trigger: TPS>{1f / Time.deltaTime / 3f * 2f + 5f}");
 #endif
                 }
-                else if (fixedSendRate == 2 || (fixedSendRate == 0 && Client.Instance.Tickrate > 37.5f * (1f / 90 / Time.deltaTime)))
+                else if (_fixedSendRate == 2 || (_fixedSendRate == 0 && Client.Instance.tickrate > (1f / Time.deltaTime / 3f + 5f)))
                 {
-                    sendRateCounter++;
-                    if (sendRateCounter >= 1)
+                    _sendRateCounter++;
+                    if (_sendRateCounter >= 1)
                     {
-                        sendRateCounter = 0;
+                        _sendRateCounter = 0;
                         UpdatePlayerInfo();
 #if DEBUG && VERBOSE
-                        Plugin.log.Info($"Half send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
+                        Plugin.log.Info($"Half send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}, Trigger: TPS>{1f / Time.deltaTime / 3f + 5f}");
 #endif
                     }
                 }
-                else if (fixedSendRate == 3 || (fixedSendRate == 0 && Client.Instance.Tickrate <= 37.5f * (1f / 90 / Time.deltaTime)))
+                else if (_fixedSendRate == 3 || (_fixedSendRate == 0 && Client.Instance.tickrate <= (1f / Time.deltaTime / 3f + 5f)))
                 {
-                    sendRateCounter++;
-                    if (sendRateCounter >= 2)
+                    _sendRateCounter++;
+                    if (_sendRateCounter >= 2)
                     {
-                        sendRateCounter = 0;
+                        _sendRateCounter = 0;
                         UpdatePlayerInfo();
 #if DEBUG && VERBOSE
-                        Plugin.log.Info($"One third send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}");
+                        Plugin.log.Info($"One third send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}, Trigger: TPS<={1f / Time.deltaTime / 3f + 5f}");
 #endif
                     }
                 }
@@ -594,21 +585,16 @@ namespace BeatSaberMultiplayer
 
         private void PlayerAvatarManager_AvatarChanged(CustomAvatar.CustomAvatar obj)
         {
-            if (!Config.Instance.SeparateAvatarForMultiplayer)
+            if (!Config.Instance.SeparateAvatarForMultiplayer && Client.Instance.connected)
             {
                 Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
-
-                if (Client.Instance.playerInfo.avatarHash == null)
-                {
-                    Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-                }
             }
         }
 
         public void UpdatePlayerInfo()
         {
 
-            if (Client.Instance.playerInfo.avatarHash == null || Client.Instance.playerInfo.avatarHash == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+            if (Client.Instance.playerInfo.avatarHash == null)
             {
                 if (Config.Instance.SeparateAvatarForMultiplayer)
                 {
@@ -619,13 +605,8 @@ namespace BeatSaberMultiplayer
                     Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
                 }
 #if DEBUG
-                Plugin.log.Info("Updating avatar hash... New hash: "+(Client.Instance.playerInfo.avatarHash == null ? "NULL" : Client.Instance.playerInfo.avatarHash));
+                Plugin.log.Info("Updating avatar hash... New hash: "+(Client.Instance.playerInfo.avatarHash ?? "NULL"));
 #endif
-            }
-
-            if (Client.Instance.playerInfo.avatarHash == null)
-            {
-                Client.Instance.playerInfo.avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
             }
 
             Client.Instance.playerInfo.headPos = GetXRNodeWorldPosRot(XRNode.Head).Position;
@@ -699,7 +680,7 @@ namespace BeatSaberMultiplayer
                 Client.Instance.playerInfo.rightHandPos += Client.Instance.playerInfo.rightHandRot * openVrPosOffset;
             }
 
-            if (_currentScene == "GameCore" && loaded)
+            if (_currentScene == "GameCore" && _loaded)
             {
                 Client.Instance.playerInfo.playerProgress = audioTimeSync.songTime;
             }
@@ -809,7 +790,8 @@ namespace BeatSaberMultiplayer
 
         public void SongFinished(StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers, bool practice)
         {
-            if(Client.Instance.InRadioMode)
+            /*
+            if(Client.Instance.inRadioMode)
             {
                 PluginUI.instance.radioFlowCoordinator.lastDifficulty = difficultyBeatmap;
                 PluginUI.instance.radioFlowCoordinator.lastResults = levelCompletionResults;
@@ -843,15 +825,16 @@ namespace BeatSaberMultiplayer
             BeatmapDifficulty difficulty = difficultyBeatmap.difficulty;
             BeatmapCharacteristicSO beatmapCharacteristic = difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic;
             PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(levelID, difficulty, beatmapCharacteristic);
-            bool newHighScore = playerLevelStatsData.highScore < levelCompletionResults.score;
+            bool newHighScore = playerLevelStatsData.highScore < levelCompletionResults.modifiedScore;
             playerLevelStatsData.IncreaseNumberOfGameplays();
             if (cleared)
             {
                 Plugin.log.Info("Submitting score...");
-                playerLevelStatsData.UpdateScoreData(levelCompletionResults.score, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
-                Resources.FindObjectsOfTypeAll<PlatformLeaderboardsModel>().First().AddScore(difficultyBeatmap, levelCompletionResults.unmodifiedScore, gameplayModifiers);
+                playerLevelStatsData.UpdateScoreData(levelCompletionResults.modifiedScore, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
+                Resources.FindObjectsOfTypeAll<PlatformLeaderboardsModel>().First().AddScore(difficultyBeatmap, levelCompletionResults.rawScore, gameplayModifiers);
                 Plugin.log.Info("Score submitted!");
             }
+            */ //TODO: Ask Umbra why score submission doesn't work
         }
 
         IEnumerator WaitForControllers()
@@ -925,7 +908,7 @@ namespace BeatSaberMultiplayer
             Plugin.log.Info("Found pause manager");
 #endif
 
-            loaded = true;
+            _loaded = true;
         }
         
         private void ShowMenu()
@@ -952,7 +935,7 @@ namespace BeatSaberMultiplayer
 
         private void EnergyDidChangeEvent(float energy)
         {
-            Client.Instance.playerInfo.playerEnergy = (int)Math.Round(energy * 100);
+            Client.Instance.playerInfo.playerEnergy = energy * 100;
         }
 
         private void ComboDidChangeEvent(int obj)
@@ -988,7 +971,7 @@ namespace BeatSaberMultiplayer
             Client.Instance.playerInfo.playerTotalBlocks++;
         }
 
-        private void ScoreChanged(int score)
+        private void ScoreChanged(int rawScore, int score)
         {
             Client.Instance.playerInfo.playerScore = (uint)score;
         }

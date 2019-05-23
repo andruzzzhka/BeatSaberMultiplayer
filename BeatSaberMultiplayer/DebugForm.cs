@@ -116,7 +116,7 @@ namespace BeatSaberMultiplayer
         {
             try
             {
-                tickRateLabel.Text = "Tickrate: " + Client.Instance.Tickrate.ToString();
+                tickRateLabel.Text = "Tickrate: " + Client.Instance.tickrate.ToString();
                 playersLabel.Text = "Players: " + playersActive.ToString();
                 visiblePlayersLabel.Text = "Visible players: " + visiblePlayers.ToString();
 

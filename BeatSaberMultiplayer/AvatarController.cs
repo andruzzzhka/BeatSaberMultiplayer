@@ -162,9 +162,11 @@ namespace BeatSaberMultiplayer
             {
                 if (playerNameText != null)
                 {
-                    if (IPA.Loader.PluginManager.AllPlugins.Any(x => x.Metadata.Name == "CameraPlus") && _camera == null)
+                    if (IPA.Loader.PluginManager.AllPlugins.Select(x => x.Metadata.Name) //BSIPA Plugins
+                        .Concat(IPA.Loader.PluginManager.Plugins.Select(x => x.Name))    //Old IPA Plugins
+                        .Any(x => x == "CameraPlus") && (_camera == null || !_camera.isActiveAndEnabled))
                     {
-                        _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => x.name.StartsWith("CamPlus_"));
+                        _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => (x.name.StartsWith("CamPlus_") || x.name.Contains("cameraplus")) && x.isActiveAndEnabled);
                     }
 
                     if (_camera != null)
@@ -238,7 +240,7 @@ namespace BeatSaberMultiplayer
                     return;
                 }
                 
-                if((avatar == null || currentAvatarHash != playerInfo.avatarHash) && !isLocal)
+                if ((avatar == null || currentAvatarHash == playerInfo.avatarHash) && !isLocal)
                 {
                     if (ModelSaberAPI.cachedAvatars.ContainsKey(playerInfo.avatarHash))
                     {

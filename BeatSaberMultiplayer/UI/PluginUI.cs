@@ -139,8 +139,9 @@ namespace BeatSaberMultiplayer.UI
 
             _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "CampaignButton");
             Destroy(_multiplayerButton.GetComponentInChildren<LocalizedTextMeshProUGUI>());
+            Destroy(_multiplayerButton.GetComponentInChildren<HoverHint>());
             _multiplayerButton.transform.SetParent(mainButtons.First(x => x.name == "CampaignButton").transform.parent);
-            _multiplayerButton.transform.SetSiblingIndex(3);
+            _multiplayerButton.transform.SetAsLastSibling();
 
             _multiplayerButton.SetButtonText("Online");
             _multiplayerButton.SetButtonIcon(Sprites.onlineIcon);
@@ -221,9 +222,9 @@ namespace BeatSaberMultiplayer.UI
             voiceEnabled.GetValue += delegate { return Config.Instance.EnableVoiceChat; };
             voiceEnabled.SetValue += delegate (bool value) { InGameOnlineController.Instance.ToggleVoiceChat(value); };
 
-            var voiceVolume = voiceSubMenu.AddInt("Voice Chat Volume", 1, 20, 1);
-            voiceVolume.GetValue += delegate { return (int)(Config.Instance.VoiceChatVolume * 20f); };
-            voiceVolume.SetValue += delegate (int value) { Config.Instance.VoiceChatVolume = value / 20f; InGameOnlineController.Instance.VoiceChatVolumeChanged(value / 20f); };
+            var voiceVolume = voiceSubMenu.AddInt("Voice Chat Volume", 0, 100, 5);
+            voiceVolume.GetValue += delegate { return (int)(Config.Instance.VoiceChatVolume * 100f); };
+            voiceVolume.SetValue += delegate (int value) { Config.Instance.VoiceChatVolume = value / 100f; InGameOnlineController.Instance.VoiceChatVolumeChanged(value / 100f); };
 
             var micEnabled = voiceSubMenu.AddBool("Enable Microphone");
             micEnabled.GetValue += delegate { return Config.Instance.MicEnabled; };

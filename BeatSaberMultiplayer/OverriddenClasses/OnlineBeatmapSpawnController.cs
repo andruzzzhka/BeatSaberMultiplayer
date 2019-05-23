@@ -38,11 +38,11 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
             if (onlineCallbackController != null)
             {
-                _noteSpawnCallbackId = onlineCallbackController.AddBeatmapObjectCallback(new BeatmapObjectCallbackController.BeatmapObjectCallback(BeatmapObjectSpawnCallback), _spawnAheadTime);
+                _beatmapObjectCallbackId = onlineCallbackController.AddBeatmapObjectCallback(new BeatmapObjectCallbackController.BeatmapObjectCallback(BeatmapObjectSpawnCallback), _spawnAheadTime);
             }
 
-            _localPlayer = FindObjectsOfType<PlayerController>().First(x => !x.name.Contains("Online"));
-            _localSyncController = FindObjectsOfType<AudioTimeSyncController>().First(x => !x.name.Contains("Online"));
+            _localPlayer = FindObjectsOfType<PlayerController>().First(x => !(x is OnlinePlayerController));
+            _localSyncController = FindObjectsOfType<AudioTimeSyncController>().First(x => !(x is OnlineAudioTimeController));
 
             //(this as BeatmapObjectSpawnController).noteWasMissedEvent += FindObjectOfType<MissedNoteEffectSpawner>().HandleNoteWasMissed;
             (this as BeatmapObjectSpawnController).noteWasCutEvent += FindObjectOfType<NoteCutSoundEffectManager>().HandleNoteWasCut;
@@ -149,29 +149,6 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             return transform.right * num + new Vector3(0f, LineYPosForLineLayer(noteLineLayer), 0f);
         }
 
-        public void Update()
-        {
-            if(owner != null && owner.PlayerInfo != null && owner.PlayerInfo.hitsLastUpdate != null)
-            {
-                foreach(HitData hit in owner.PlayerInfo.hitsLastUpdate)
-                {
-                    NoteController controller = _activeNotes.FirstOrDefault(x => Mathf.Approximately(x.noteData.time, hit.objectTime));
-
-                    if(controller != null)
-                    {
-                        if (hit.noteWasCut)
-                        {
-                            controller.InvokePrivateMethod("SendNoteWasCutEvent", new object[] { hit.GetCutInfo() });
-                        }
-                        else
-                        {
-                            controller.InvokePrivateMethod("HandleNoteDidPassMissedMarkerEvent", new object[0]);
-                        }
-                    }
-                }
-            }
-        }
-
         private void ResetControllersNoteWasCut(NoteController controller, NoteCutInfo info)
         {
             ResetControllers(controller);
@@ -217,8 +194,6 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             {
                 controller.Dissolve(1f);
             }
-
-            Plugin.log.Info("Notes dissolved!");
         }
     }
 }

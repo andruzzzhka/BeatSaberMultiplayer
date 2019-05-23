@@ -64,7 +64,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
             _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
-            _standardCharacteristics = _beatmapCharacteristics.First(x => x.characteristicName == "Standard");
+            _standardCharacteristics = _beatmapCharacteristics.First(x => x.serializedName == "Standard");
 
             if (firstActivation)
             {
@@ -90,11 +90,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             this.port = port;
             this.channelId = channelId;
             
-            if (!Client.Instance.Connected || (Client.Instance.ip != ip || Client.Instance.port != port))
+            if (!Client.Instance.connected || (Client.Instance.ip != ip || Client.Instance.port != port))
             {
                 Client.Instance.Disconnect();
                 Client.Instance.Connect(ip, port);
-                Client.Instance.InRadioMode = true;
+                Client.Instance.inRadioMode = true;
                 Client.Instance.ConnectedToServerHub -= ConnectedToServerHub;
                 Client.Instance.ConnectedToServerHub += ConnectedToServerHub;
             }
@@ -114,7 +114,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     Client.Instance.LeaveRoom();
                     joined = false;
                 }
-                if (Client.Instance.Connected)
+                if (Client.Instance.connected)
                 {
                     Client.Instance.Disconnect();
                 }
@@ -475,7 +475,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 }
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1.5f ? practiceSettings : null), false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, (practiceSettings != null)); });
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1.5f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, (practiceSettings != null)); });
                 return;
             }
             else

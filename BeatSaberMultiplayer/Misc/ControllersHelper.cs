@@ -28,7 +28,7 @@ namespace BeatSaberMultiplayer.Misc
 
             if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
             {
-                return rumbleEnahncerInstalled ? OpenVRRightGrip() : OpenVRRightGripWithLock();
+                return rumbleEnahncerInstalled ? OpenVRRightGripWithLock() : OpenVRRightGrip();
             }
             else if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
             {
@@ -53,7 +53,7 @@ namespace BeatSaberMultiplayer.Misc
 
             if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
             {
-                return rumbleEnahncerInstalled ? OpenVRLeftGrip() : OpenVRLeftGripWithLock();
+                return rumbleEnahncerInstalled ? OpenVRLeftGripWithLock() : OpenVRLeftGrip();
             }
             else if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
             {

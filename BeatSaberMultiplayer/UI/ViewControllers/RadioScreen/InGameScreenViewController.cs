@@ -95,7 +95,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
                 _progressBarRect.gameObject.SetActive(false);
 
-                _playNowButton = BeatSaberUI.CreateUIButton(rectTransform, "QuitButton", new Vector2(-25.5f, -25f), new Vector2(28f, 8.8f), () => { playPressedEvent?.Invoke(); }, "Play now");
+                _playNowButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton", new Vector2(-25.5f, -25f), new Vector2(28f, 8.8f), () => { playPressedEvent?.Invoke(); }, "Play now");
                 _playNowButton.ToggleWordWrapping(false);
 
                 _waitText = BeatSaberUI.CreateText(rectTransform, " or wait for the next song!", new Vector2(14f, -21f));
@@ -136,7 +136,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
                     if (level is CustomLevel)
                     {
                         CustomLevel customLevel = level as CustomLevel;
-                        if (customLevel.coverImage == CustomExtensions.songLoaderDefaultImage)
+                        if (customLevel.coverImageTexture2D == CustomExtensions.songLoaderDefaultImage.texture)
                         {
                             StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
                                 (level as CustomLevel).SetCoverImage(sprite);
@@ -145,7 +145,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
                         }
                     }
 
-                    _currentSongCell.SetIcon(level.coverImage);
+                    _currentSongCell.SetIcon(level.coverImageTexture2D);
                 }
 
             }

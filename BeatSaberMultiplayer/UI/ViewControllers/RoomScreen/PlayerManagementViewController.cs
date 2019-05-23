@@ -67,6 +67,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 (_modifiersPanel.transform as RectTransform).anchoredPosition = new Vector2(0f, -23f);
                 (_modifiersPanel.transform as RectTransform).sizeDelta = new Vector2(120f, -23f);
 
+                HoverHintController hoverHintController = Resources.FindObjectsOfTypeAll<HoverHintController>().First();
+
+                foreach (var hint in _modifiersPanel.GetComponentsInChildren<HoverHint>())
+                {
+                    hint.SetPrivateField("_hoverHintController", hoverHintController);
+                }
+
                 _modifiersPanel.Init(GameplayModifiers.defaultModifiers);
                 _modifiersPanel.Awake();
 
@@ -130,13 +137,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 container.sizeDelta = new Vector2(0f, 49f);
                 container.anchoredPosition = new Vector2(0f, -3f);
 
-                _playersTableView = new GameObject("CustomTableView").AddComponent<TableView>();
+                var tableGameObject = new GameObject("CustomTableView");
+                tableGameObject.SetActive(false);
+                _playersTableView = tableGameObject.AddComponent<TableView>();
                 _playersTableView.gameObject.AddComponent<RectMask2D>();
                 _playersTableView.transform.SetParent(container, false);
 
                 _playersTableView.SetPrivateField("_isInitialized", false);
                 _playersTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-                _playersTableView.Init();
+                tableGameObject.SetActive(true);
 
                 (_playersTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (_playersTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
@@ -170,16 +179,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public void Update()
         {
 
-            if(_pingText != null && Client.Instance.NetworkClient != null && Client.Instance.NetworkClient.Connections.Count > 0)
+            if(_pingText != null && Client.Instance.networkClient != null && Client.Instance.networkClient.Connections.Count > 0)
             {
-                _pingText.text = "PING: "+ Math.Round(Client.Instance.NetworkClient.Connections[0].AverageRoundtripTime*1000, 2);
+                _pingText.text = "PING: "+ Math.Round(Client.Instance.networkClient.Connections[0].AverageRoundtripTime*1000, 2);
             }
 
         }
 
-        public void UpdateViewController(bool isHost)
+        public void UpdateViewController(bool isHost, bool modifiersInteractable)
         {
-            _modifiersPanelBlocker.gameObject.SetActive(!isHost);
+            _modifiersPanelBlocker.gameObject.SetActive(!isHost || !modifiersInteractable);
         }
 
         public void UpdatePlayerList(List<PlayerInfo> players, RoomState state)

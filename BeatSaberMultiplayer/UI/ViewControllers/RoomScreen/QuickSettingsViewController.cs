@@ -98,6 +98,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 voiceVolume.Value = (int)(Config.Instance.VoiceChatVolume * 20f);
                 voiceVolume.ValueChanged += delegate (int value) { Config.Instance.VoiceChatVolume = value / 20f; InGameOnlineController.Instance.VoiceChatVolumeChanged(value / 20f); };
                 voiceVolume.maxValue = 20;
+                voiceVolume.textForValues = Enumerable.Range(0, 21).Select(x => $"{x * 5}%").ToArray();
+                voiceVolume.UpdateText();
                 _voiceSettings.Add(voiceVolume.gameObject);
 
                 var micEnabled = CustomSettingsHelper.AddToggleSetting<OnOffViewController>(rectTransform, "Enable Microphone", new Vector2(0f, 22.5f + -8f * voiceSettingsIndex++));
