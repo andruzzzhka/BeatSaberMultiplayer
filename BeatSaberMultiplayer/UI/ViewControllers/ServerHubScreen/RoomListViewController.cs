@@ -167,7 +167,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             }
             else
             {
-                cell.GetComponentsInChildren<UnityEngine.UI.Image>(true).First(x => x.name == "CoverImage").enabled = false;
+                cell.GetComponentsInChildren<UnityEngine.UI.RawImage>(true).First(x => x.name == "CoverImage").enabled = false;
             }
             cell.SetText($"({room.players}/{((room.maxPlayers == 0)? "INF":room.maxPlayers.ToString())})" + room.name);
             cell.SetSubText($"{room.roomState.ToString()}");
