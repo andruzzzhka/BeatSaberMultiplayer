@@ -71,16 +71,6 @@ namespace BeatSaberMultiplayer
                 Instance = this;
                 DontDestroyOnLoad(this);
 
-                try
-                {
-                    var harmony = HarmonyInstance.Create("com.andruzzzhka.BeatSaberMultiplayer");
-                    harmony.PatchAll(Assembly.GetExecutingAssembly());
-                }
-                catch (Exception e)
-                {
-                    Plugin.log.Info("Unable to patch assembly! Exception: " + e);
-                }
-
                 Client.Instance.PlayerInfoUpdateReceived -= PacketReceived;
                 Client.Instance.PlayerInfoUpdateReceived += PacketReceived;
                 _currentScene = SceneManager.GetActiveScene().name;
@@ -94,6 +84,14 @@ namespace BeatSaberMultiplayer
             if (!Config.Instance.SpectatorMode)
                 return;
             DestroyAvatar();
+            if (_spectatingText != null)
+            {
+                Destroy(_spectatingText);
+            }
+            if (_bufferingText != null)
+            {
+                Destroy(_bufferingText);
+            }
         }
 
         public void GameSceneLoaded()
@@ -107,16 +105,29 @@ namespace BeatSaberMultiplayer
                 return;
             }
 
-            active = true;
+            StartCoroutine(Delay(5, () => {
+                active = true;
+            }));
             _paused = false;
 
             DestroyAvatar();
             ReplaceControllers();
+            
+            if(_spectatingText != null)
+            {
+                Destroy(_spectatingText);
+            }
 
             _spectatingText = CustomExtensions.CreateWorldText(transform, "Spectating PLAYER");
             _spectatingText.alignment = TextAlignmentOptions.Center;
             _spectatingText.fontSize = 6f;
             _spectatingText.transform.position = new Vector3(0f, 3.75f, 12f);
+            _spectatingText.gameObject.SetActive(false);
+
+            if (_bufferingText != null)
+            {
+                Destroy(_bufferingText);
+            }
 
             _bufferingText = CustomExtensions.CreateWorldText(transform, "Buffering...");
             _bufferingText.alignment = TextAlignmentOptions.Center;
@@ -186,6 +197,13 @@ namespace BeatSaberMultiplayer
 
             Plugin.log.Info("Loaded "+ playerInfos[76561198047255565].Count + " packets!");
 #endif
+        }
+
+        IEnumerator Delay(int frames, Action callback)
+        {
+            for (int i = 0; i < frames; i++)
+                yield return null;
+            callback.Invoke();
         }
 
         void ReplaceControllers()
@@ -312,7 +330,7 @@ namespace BeatSaberMultiplayer
 
         public void Update()
         {
-            if (Config.Instance.SpectatorMode && _currentScene == "GameCore")
+            if (Config.Instance.SpectatorMode && _currentScene == "GameCore" && active)
             {
                 if (spectatedPlayer == null && _leftSaber != null && _rightSaber != null)
                 {
@@ -340,8 +358,9 @@ namespace BeatSaberMultiplayer
                     }
 
                     spectatedPlayer.PlayerInfo = playerInfos[playerInfos.Keys.ElementAt(index)].Last();
-                    Plugin.log.Info("Spactating player: " + spectatedPlayer.PlayerInfo.playerName);
-                    _spectatingText.text = "Spactating " + spectatedPlayer.PlayerInfo.playerName;
+                    Plugin.log.Info("Spectating player: " + spectatedPlayer.PlayerInfo.playerName);
+                    _spectatingText.gameObject.SetActive(true);
+                    _spectatingText.text = "Spectating " + spectatedPlayer.PlayerInfo.playerName;
                 }
 
                 if (Input.GetKeyDown(KeyCode.KeypadDivide))
@@ -353,8 +372,9 @@ namespace BeatSaberMultiplayer
                     }
 
                     spectatedPlayer.PlayerInfo = playerInfos[playerInfos.Keys.ElementAt(index)].Last();
-                    Plugin.log.Info("Spactating player: " + spectatedPlayer.PlayerInfo.playerName);
-                    _spectatingText.text = "Spactating " + spectatedPlayer.PlayerInfo.playerName;
+                    Plugin.log.Info("Spectating player: " + spectatedPlayer.PlayerInfo.playerName);
+                    _spectatingText.gameObject.SetActive(true);
+                    _spectatingText.text = "Spectating " + spectatedPlayer.PlayerInfo.playerName;
                 }
 
 
@@ -363,8 +383,9 @@ namespace BeatSaberMultiplayer
                     spectatedPlayer.PlayerInfo = playerInfos.FirstOrDefault(x => !x.Key.Equals(Client.Instance.playerInfo)).Value?.LastOrDefault();
                     if (spectatedPlayer.PlayerInfo != null)
                     {
-                        Plugin.log.Info("Spactating player: " + spectatedPlayer.PlayerInfo.playerName);
-                        _spectatingText.text = "Spactating " + spectatedPlayer.PlayerInfo.playerName;
+                        Plugin.log.Info("Spectating player: " + spectatedPlayer.PlayerInfo.playerName);
+                        _spectatingText.gameObject.SetActive(true);
+                        _spectatingText.text = "Spectating " + spectatedPlayer.PlayerInfo.playerName;
                     }
                 }
 
@@ -376,6 +397,32 @@ namespace BeatSaberMultiplayer
                     PlayerInfo lerpTo;
                     float lerpProgress;
 
+
+                    if (playerProgressMinMax.Item2 < currentSongTime + 2f && audioTimeSync.songLength > currentSongTime + 5f && !_paused)
+                    {
+                        Plugin.log.Info($"Pausing...");
+                        if (playerProgressMinMax.Item2 > 2.5f)
+                        {
+                            Plugin.log.Info($"Buffering...");
+                            _bufferingText.gameObject.SetActive(true);
+                            _bufferingText.alignment = TextAlignmentOptions.Center;
+                        }
+                        InGameOnlineController.Instance.PauseSong();
+                        _paused = true;
+                        Plugin.log.Info($"Paused!");
+                    }
+
+                    if (playerProgressMinMax.Item2 - currentSongTime > 3f && _paused)
+                    {
+                        _bufferingText.gameObject.SetActive(false);
+                        Plugin.log.Info("Resuming song...");
+                        InGameOnlineController.Instance.ResumeSong();
+                        _paused = false;
+                    }
+
+                    if (_paused)
+                        return;
+
                     if (playerProgressMinMax.Item1 < currentSongTime && playerProgressMinMax.Item2 > currentSongTime)
                     {
                         spectatedPlayer.PlayerInfo = playerInfos[spectatedPlayer.PlayerInfo.playerId][index];
@@ -385,8 +432,10 @@ namespace BeatSaberMultiplayer
                     }
                     else
                     {
-                        if(audioTimeSync.songLength - currentSongTime > 5f && currentSongTime > 3f)
+                        if (audioTimeSync.songLength - currentSongTime > 5f && currentSongTime > 3f)
+                        {
                             Plugin.log.Warn($"No data recorded for that point in time!\nStart time: {playerProgressMinMax.Item1}\nStop time: {playerProgressMinMax.Item2}\nCurrent time: {currentSongTime}");
+                        }
                         return;
                     }
 
@@ -447,35 +496,14 @@ namespace BeatSaberMultiplayer
 
                     if (_scoreController != null)
                     {
-                        _scoreController.SetPrivateField("_prevFrameScore", (int)spectatedPlayer.PlayerInfo.playerScore);
-                        _scoreController.SetPrivateField("_baseScore", (int)lerpTo.playerScore);
+                        _scoreController.SetPrivateField("_prevFrameRawScore", (int)spectatedPlayer.PlayerInfo.playerScore);
+                        _scoreController.SetPrivateField("_baseRawScore", (int)lerpTo.playerScore);
                         _scoreController.SetPrivateField("_combo", (int)lerpTo.playerComboBlocks);
                     }
 
                     if(_energyCounter != null)
                     {
                         _energyCounter.SetPrivateProperty("energy", lerpTo.playerEnergy / 100f);
-                    }
-
-                    
-                    if (playerProgressMinMax.Item2 < currentSongTime + 2f && audioTimeSync.songLength > currentSongTime + 5f && !_paused)
-                    {
-                        if (playerProgressMinMax.Item2 > 2.5f)
-                        {
-                            Plugin.log.Info($"Buffering...");
-                            _bufferingText.gameObject.SetActive(true);
-                            _bufferingText.alignment = TextAlignmentOptions.Center;
-                        }
-                        InGameOnlineController.Instance.PauseSong();
-                        _paused = true;
-                    }
-
-                    if (playerProgressMinMax.Item2 - currentSongTime > 3f && _paused)
-                    {
-                        _bufferingText.gameObject.SetActive(false);
-                        Plugin.log.Info("Resuming song...");
-                        InGameOnlineController.Instance.ResumeSong();
-                        _paused = false;
                     }
 
                 }

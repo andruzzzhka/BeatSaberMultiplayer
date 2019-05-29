@@ -158,7 +158,7 @@ namespace BeatSaberMultiplayer {
             {
                 if (value == null)
                 {
-                    _publicAvatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+                    _publicAvatarHash = Data.PlayerInfo.avatarHashPlaceholder;
                 }
                 else
                 {
@@ -268,7 +268,7 @@ namespace BeatSaberMultiplayer {
             _downloadAvatars = true;
             _spectatorMode = false;
             _separateAvatarForMultiplayer = false;
-            _publicAvatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+            _publicAvatarHash = Data.PlayerInfo.avatarHashPlaceholder;
             _maxSimultaneousDownloads = 3;
             _beatSaverURL = "https://beatsaver.com";
 

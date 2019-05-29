@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -119,10 +120,11 @@ namespace BeatSaberMultiplayer
         void SpawnSabers()
         {
             Plugin.log.Info("Spawning left saber...");
-            _leftSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "LeftSaber"), transform, false);
+            _leftSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "LeftSaber"), transform, false);//.gameObject.AddComponent<OnlineSaber>();
+            _leftSaber.gameObject.name = "CustomLeftSaber";
             var leftController = _leftSaber.gameObject.AddComponent<OnlineVRController>();
             leftController.owner = this;
-
+            _leftSaber.SetPrivateField("_vrController", leftController);
 
             var leftTrail = leftController.GetComponentInChildren<SaberWeaponTrail>();
             var colorManager = Resources.FindObjectsOfTypeAll<ColorManager>().First();
@@ -130,9 +132,11 @@ namespace BeatSaberMultiplayer
             leftTrail.SetPrivateField("_saberTypeObject", leftController.GetComponentInChildren<SaberTypeObject>());
 
             Plugin.log.Info("Spawning right saber...");
-            _rightSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "RightSaber"), transform, false);
+            _rightSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "RightSaber"), transform, false);//.gameObject.AddComponent<OnlineSaber>();
+            _rightSaber.gameObject.name = "CustomRightSaber";
             var rightController = _rightSaber.gameObject.AddComponent<OnlineVRController>();
             rightController.owner = this;
+            _rightSaber.SetPrivateField("_vrController", rightController);
 
             var rightTrail = rightController.GetComponentInChildren<SaberWeaponTrail>();
             rightTrail.SetPrivateField("_colorManager", colorManager);
@@ -170,6 +174,16 @@ namespace BeatSaberMultiplayer
             {
                 _silentFrames = 999;
             }
+
+            if (_rightSaber != null)
+            {
+                _rightSaber.ManualUpdate();
+            }
+
+            if (_leftSaber != null)
+            {
+                _leftSaber.ManualUpdate();
+            }
         }
 
         public void FixedUpdate()
@@ -196,8 +210,12 @@ namespace BeatSaberMultiplayer
                     _info.rightLegRot = Quaternion.Lerp(syncStartInfo.rightLegRot, syncEndInfo.rightLegRot, lerpProgress);
                     _info.pelvisRot = Quaternion.Lerp(syncStartInfo.pelvisRot, syncEndInfo.pelvisRot, lerpProgress);
 
-                    //_info.playerProgress = Mathf.Lerp(syncStartInfo.playerProgress, syncEndInfo.playerProgress, lerpProgress);
-                    _info.playerProgress += Time.fixedDeltaTime;
+                    float lerpedPlayerProgress = Mathf.Lerp(syncStartInfo.playerProgress, syncEndInfo.playerProgress, lerpProgress);
+
+                    if(_info.playerProgress < lerpedPlayerProgress && Mathf.Abs(_info.playerProgress - lerpedPlayerProgress) < 0.5f)
+                    {
+                        _info.playerProgress = lerpedPlayerProgress;
+                    }
                 }
 
                 _overrideHeadPos = true;

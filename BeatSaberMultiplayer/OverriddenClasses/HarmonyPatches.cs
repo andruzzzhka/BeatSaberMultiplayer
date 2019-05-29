@@ -75,7 +75,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 }
             }catch(Exception e)
             {
-                Plugin.log.Error("Exception in Harmony NoteWasCut patch: "+e);
+                Plugin.log.Error("Exception in Harmony patch BeatmapObjectSpawnController.NoteWasCut: " + e);
                 return true;
             }
         }
@@ -83,7 +83,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
     [HarmonyPatch(typeof(BeatmapObjectSpawnController))]
     [HarmonyPatch("HandleNoteWasMissed")]
-    [HarmonyPatch(new Type[] { typeof(NoteController)})]
+    [HarmonyPatch(new Type[] { typeof(NoteController) })]
     class SpectatorNoteWasMissedEventPatch
     {
         static bool Prefix(BeatmapObjectSpawnController __instance, NoteController noteController)
@@ -118,9 +118,43 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 {
                     return true;
                 }
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
-                Plugin.log.Error("Exception in Harmony NoteWasMissed patch: " + e);
+                Plugin.log.Error("Exception in Harmony patch BeatmapObjectSpawnController.NoteWasMissed: " + e);
+                return true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(GameEnergyCounter))]
+    [HarmonyPatch("AddEnergy")]
+    [HarmonyPatch(new Type[] { typeof(float) })]
+    class SpectatorGameEnergyCounterPatch
+    {
+        static bool Prefix(GameEnergyCounter __instance, float value)
+        {
+            try
+            {
+                if (Config.Instance.SpectatorMode && SpectatingController.Instance != null && SpectatingController.active && Client.Instance != null && Client.Instance.connected)
+                {
+                    if (__instance.energy + value <= 1E-05f && SpectatingController.Instance.spectatedPlayer.PlayerInfo.playerEnergy > 1E-04f)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.log.Error("Exception in Harmony patch GameEnergyCounter.AddEnergy: " + e);
                 return true;
             }
         }

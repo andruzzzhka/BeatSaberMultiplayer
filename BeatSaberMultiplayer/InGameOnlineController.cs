@@ -189,10 +189,20 @@ namespace BeatSaberMultiplayer
                 if (enabled)
                 {
                     Client.Instance.playerInfo.avatarHash = Config.Instance.PublicAvatarHash;
+
+                    if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash))
+                    {
+                        Client.Instance.playerInfo.avatarHash = PlayerInfo.avatarHashPlaceholder;
+                    }
                 }
                 else
                 {
                     Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+
+                    if (Client.Instance.playerInfo.avatarHash == null)
+                    {
+                        Client.Instance.playerInfo.avatarHash = PlayerInfo.avatarHashPlaceholder;
+                    }
                 }
             }
         }
@@ -588,13 +598,18 @@ namespace BeatSaberMultiplayer
             if (!Config.Instance.SeparateAvatarForMultiplayer && Client.Instance.connected)
             {
                 Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+
+                if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash))
+                {
+                    Client.Instance.playerInfo.avatarHash = PlayerInfo.avatarHashPlaceholder;
+                }
             }
         }
 
         public void UpdatePlayerInfo()
         {
 
-            if (Client.Instance.playerInfo.avatarHash == null)
+            if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash) || Client.Instance.playerInfo.avatarHash == PlayerInfo.avatarHashPlaceholder)
             {
                 if (Config.Instance.SeparateAvatarForMultiplayer)
                 {
@@ -925,12 +940,12 @@ namespace BeatSaberMultiplayer
 
         public void PauseSong()
         {
-            Resources.FindObjectsOfTypeAll<SongController>().First().PauseSong();
+            Resources.FindObjectsOfTypeAll<GameSongController>().First().PauseSong();
         }
 
         public void ResumeSong()
         {
-            Resources.FindObjectsOfTypeAll<SongController>().First().ResumeSong();
+            Resources.FindObjectsOfTypeAll<GameSongController>().First().ResumeSong();
         }
 
         private void EnergyDidChangeEvent(float energy)

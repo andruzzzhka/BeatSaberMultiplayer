@@ -21,8 +21,10 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
         public override void Update()
         {
-            if(owner != null)
-                _songTime = Mathf.Max(0f, owner.PlayerInfo.playerProgress - owner.syncDelay*2.5f);
+            if (owner != null)
+            {
+                _songTime = Mathf.Max(0f, owner.PlayerInfo.playerProgress);
+            }
         }
 
         public override void Awake()

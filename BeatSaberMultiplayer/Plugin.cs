@@ -2,10 +2,12 @@
 using BeatSaberMultiplayer.UI;
 using BS_Utils.Gameplay;
 using CustomUI.Utilities;
+using Harmony;
 using IPA;
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -59,6 +61,16 @@ namespace BeatSaberMultiplayer
             Sprites.ConvertSprites();
 
             ScrappedData.Instance.DownloadScrappedData(null);
+
+            try
+            {
+                var harmony = HarmonyInstance.Create("com.andruzzzhka.BeatSaberMultiplayer");
+                harmony.PatchAll(Assembly.GetExecutingAssembly());
+            }
+            catch (Exception e)
+            {
+                Plugin.log.Info("Unable to patch assembly! Exception: " + e);
+            }
 
         }
 

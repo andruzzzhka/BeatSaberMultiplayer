@@ -240,7 +240,7 @@ namespace BeatSaberMultiplayer
                     return;
                 }
                 
-                if ((avatar == null || currentAvatarHash == playerInfo.avatarHash) && !isLocal)
+                if ((avatar == null || currentAvatarHash != playerInfo.avatarHash) && !isLocal)
                 {
                     if (ModelSaberAPI.cachedAvatars.ContainsKey(playerInfo.avatarHash))
                     {

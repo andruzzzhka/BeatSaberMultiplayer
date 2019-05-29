@@ -123,7 +123,7 @@ namespace BeatSaberMultiplayer
                 playersListBox.Items.Clear();
                 foreach (var playerInfo in playerInfos)
                 {
-                    playersListBox.Items.Add($"{playerInfo.playerName}:{playerInfo.playerId} ({playerInfo.playerState}) Score: {playerInfo.playerScore}");
+                    playersListBox.Items.Add($"{playerInfo.playerName}:{playerInfo.playerId} ({playerInfo.playerState}) {playerInfo.avatarHash}");
                 }
             }
             catch

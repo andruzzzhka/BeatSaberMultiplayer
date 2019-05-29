@@ -1,9 +1,11 @@
-﻿using System;
+﻿using BeatSaberMultiplayer.Data;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace BeatSaberMultiplayer.OverriddenClasses
 {
@@ -24,6 +26,19 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
             _beatmapObjectDataCallbackCacheList = new List<BeatmapObjectData>();
             _beatmapObjectCallbackData = new List<BeatmapObjectCallbackData>();
+
+            _beatmapDataModel = new GameObject("CustomBeatmapDataModel").AddComponent<BeatmapDataModel>();
+            if (BS_Utils.Plugin.LevelData.IsSet)
+            {
+                LevelOptionsInfo levelInfo = owner.PlayerInfo.playerLevelOptions;
+                IDifficultyBeatmap diffBeatmap = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.level.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic.serializedName == owner.PlayerInfo.playerLevelOptions.characteristicName).difficultyBeatmaps.First(x => x.difficulty == owner.PlayerInfo.playerLevelOptions.difficulty);
+                BeatmapData data = diffBeatmap.beatmapData;
+
+                _beatmapDataModel.beatmapData = BeatDataTransformHelper.CreateTransformedBeatmapData(data, levelInfo.modifiers, PracticeSettings.defaultPracticeSettings, PlayerSpecificSettings.defaultSettings);
+                HandleBeatmapDataModelDidChangeBeatmapData();
+
+                Plugin.log.Info($"Set custom BeatmapDataModel for difficulty {levelInfo.difficulty}");
+            }
         }
 
         public override void LateUpdate()

@@ -114,6 +114,8 @@ namespace BeatSaberMultiplayer.Data
 
     public class PlayerInfo
     {
+        public const string avatarHashPlaceholder = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+
         public string playerName;
         public ulong playerId;
 
@@ -155,7 +157,7 @@ namespace BeatSaberMultiplayer.Data
         {
             playerName = _name;
             playerId = _id;
-            avatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+            avatarHash = avatarHashPlaceholder;
         }
 
         public PlayerInfo(PlayerInfo original)

@@ -32,6 +32,20 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
             owner = newOwner;
 
+            try
+            {
+                if (BS_Utils.Plugin.LevelData.IsSet)
+                {
+                    LevelOptionsInfo levelInfo = owner.PlayerInfo.playerLevelOptions;
+                    IDifficultyBeatmap diffBeatmap = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.level.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic.serializedName == owner.PlayerInfo.playerLevelOptions.characteristicName).difficultyBeatmaps.First(x => x.difficulty == owner.PlayerInfo.playerLevelOptions.difficulty);
+                    
+                    Init(diffBeatmap.level.beatsPerMinute, diffBeatmap.beatmapData.beatmapLinesData.Length, diffBeatmap.noteJumpMovementSpeed, diffBeatmap.noteJumpStartBeatOffset, levelInfo.modifiers.disappearingArrows, levelInfo.modifiers.ghostNotes);
+                }
+            }catch(Exception e)
+            {
+                Plugin.log.Warn("Unable to update beatmap data! Exception: "+e);
+            }
+
             onlineCallbackController = callbackController;
             _beatmapObjectCallbackController = onlineCallbackController;
             onlineSyncController = syncController;
@@ -44,10 +58,9 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             _localPlayer = FindObjectsOfType<PlayerController>().First(x => !(x is OnlinePlayerController));
             _localSyncController = FindObjectsOfType<AudioTimeSyncController>().First(x => !(x is OnlineAudioTimeController));
 
-            //(this as BeatmapObjectSpawnController).noteWasMissedEvent += FindObjectOfType<MissedNoteEffectSpawner>().HandleNoteWasMissed;
-            (this as BeatmapObjectSpawnController).noteWasCutEvent += FindObjectOfType<NoteCutSoundEffectManager>().HandleNoteWasCut;
-            (this as BeatmapObjectSpawnController).noteWasCutEvent += FindObjectOfType<BombCutSoundEffectManager>().HandleNoteWasCut;
-            (this as BeatmapObjectSpawnController).noteWasCutEvent += FindObjectOfType<NoteCutEffectSpawner>().HandleNoteWasCutEvent;
+            NoteCutEffectSpawner cutEffectSpawner = FindObjectOfType<NoteCutEffectSpawner>();
+
+            (this as BeatmapObjectSpawnController).noteWasCutEvent += (sender, controller, cutInfo) => { if(cutInfo.allIsOK) cutEffectSpawner.HandleNoteWasCutEvent(sender, controller, cutInfo); };
 
             _activeNotes = new List<NoteController>();
             _activeObstacles = new List<ObstacleController>();
