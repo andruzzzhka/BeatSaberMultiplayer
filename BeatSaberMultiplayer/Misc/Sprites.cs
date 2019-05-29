@@ -37,7 +37,10 @@ namespace BeatSaberMultiplayer
         }
         private static Material uiMat;
 
+        //https://thenounproject.com/term/globe/248/
+        //Globe by Edward Boatman from the Noun Project
         public static Sprite onlineIcon;
+
         public static Sprite lockedRoomIcon;
         public static Sprite addToFavorites;
         public static Sprite removeFromFavorites;
