@@ -76,9 +76,6 @@ namespace ServerHub.Rooms
 
         public static bool ClientJoined(Client client, uint roomId, string password)
         {
-#if DEBUG
-            Logger.Instance.Log($"Client joining room {roomId}");
-#endif
 
             NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
 
@@ -86,6 +83,10 @@ namespace ServerHub.Rooms
             {
                 BaseRoom room = rooms.First(x => x.roomId == roomId);
                 RoomInfo roomInfo = room.GetRoomInfo();
+
+#if DEBUG
+                Logger.Instance.Log($"Client joining room {roomId} {(roomInfo.usePassword ? $"with password \"{password}\" ({((room.roomSettings.Password == password) ? ("Correct") : ("Incorrect"))})": "")}");
+#endif
 
                 if (roomInfo.players < roomInfo.maxPlayers || roomInfo.maxPlayers == 0)
                 {

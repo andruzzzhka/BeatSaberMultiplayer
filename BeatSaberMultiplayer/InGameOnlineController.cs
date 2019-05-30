@@ -39,6 +39,8 @@ namespace BeatSaberMultiplayer
         public bool isVoiceChatActive;
         public bool isRecording;
 
+        public List<ulong> mutedPlayers = new List<ulong>();
+
         public AudioTimeSyncController audioTimeSync;
         private StandardLevelGameplayManager _gameManager;
         private ScoreController _scoreController;

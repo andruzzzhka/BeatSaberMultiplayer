@@ -639,6 +639,21 @@ namespace BeatSaberMultiplayer
             }
         }
 
+        public void TransferHost(PlayerInfo newHost)
+        {
+            if (connected && networkClient != null && isHost)
+            {
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.TransferHost);
+                newHost.AddToMessage(outMsg);
+
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+#if DEBUG
+                Plugin.log.Info("Transferred host to "+newHost.playerName);
+#endif
+            }
+        }
+
         public void SetSelectedSong(SongInfo song)
         {
             if (connected && networkClient != null)

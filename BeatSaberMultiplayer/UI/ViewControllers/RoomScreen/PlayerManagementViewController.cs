@@ -16,9 +16,16 @@ using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
-    class PlayerManagementViewController : VRUIViewController, TableView.IDataSource
+    public interface IPlayerManagementButtons
+    {
+        void MuteButtonWasPressed(PlayerInfo player);
+        void TransferHostButtonWasPressed(PlayerInfo player);
+    }
+
+    class PlayerManagementViewController : VRUIViewController, TableView.IDataSource, IPlayerManagementButtons
     {
         public event Action gameplayModifiersChanged;
+        public event Action<PlayerInfo> transferHostButtonPressed;
 
         public GameplayModifiers modifiers { get { return _modifiersPanel.gameplayModifiers; } }
 
@@ -163,6 +170,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 _tabControl_didSelectCellEvent(0);
             }
+            else
+            {
+                for(int i = 0; i < _tableCells.Count; i++)
+                {
+                    Destroy(_tableCells[i].gameObject);
+                }
+                _tableCells.Clear();
+                _playersList.Clear();
+                _playersTableView.ReloadData();
+            }
 
             if (activationType == ActivationType.AddedToHierarchy)
             {
@@ -217,13 +234,19 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 }
                 else
                 {
+                    PlayerListTableCell buffer;
                     for (int i = 0; i < _playersList.Count; i++)
                     {
                         if (_tableCells.Count > i)
                         {
-                            _tableCells[i].playerName = _playersList[i].playerName;
-                            _tableCells[i].progress = state == RoomState.Preparing ? (_playersList[i].playerState == PlayerState.DownloadingSongs ? (_playersList[i].playerProgress/100f) : 1f) : -1f;
-                            _tableCells[i].IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(_playersList[i].playerId);
+                            buffer = _tableCells[i];
+                            buffer.playerName = _playersList[i].playerName;
+                            buffer.progress = state == RoomState.Preparing ? (_playersList[i].playerState == PlayerState.DownloadingSongs ? (_playersList[i].playerProgress/100f) : 1f) : -1f;
+                            buffer.IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(_playersList[i].playerId);
+                            buffer.NameColor = _playersList[i].playerNameColor;
+                            buffer.playerInfo = _playersList[i];
+                            buffer.buttonsInterface = this;
+                            buffer.Update();
                         }
                     }
                 }
@@ -244,7 +267,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetGameplayModifiers(GameplayModifiers modifiers)
         {
-            Plugin.log.Info("Setting gameplay modifiers");
             if (_modifiersPanel != null)
             {
                 _modifiersPanel.Init(modifiers);
@@ -282,9 +304,34 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _tableCell.showFullCombo = false;
             _tableCell.playerName = _playersList[row].playerName;
             _tableCell.progress = (_playersList[row].playerState == PlayerState.DownloadingSongs ? (_playersList[row].playerProgress/100f) : 1f);
+            _tableCell.IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(_playersList[row].playerId);
+            _tableCell.NameColor = _playersList[row].playerNameColor;
+            _tableCell.playerInfo = _playersList[row];
+            _tableCell.buttonsInterface = this;
+            _tableCell.Update();
 
             _tableCells.Add(_tableCell);
             return _tableCell;
+        }
+
+        public void MuteButtonWasPressed(PlayerInfo player)
+        {
+            if (InGameOnlineController.Instance.mutedPlayers.Contains(player.playerId))
+            {
+                InGameOnlineController.Instance.mutedPlayers.Remove(player.playerId);
+            }
+            else
+            {
+                InGameOnlineController.Instance.mutedPlayers.Add(player.playerId);
+            }
+        }
+
+        public void TransferHostButtonWasPressed(PlayerInfo player)
+        {
+            if (Client.Instance.connected && Client.Instance.isHost)
+            {
+                transferHostButtonPressed?.Invoke(player);
+            }
         }
     }
 }

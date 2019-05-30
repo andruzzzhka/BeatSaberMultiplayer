@@ -101,6 +101,16 @@ namespace BeatSaberMultiplayer.Misc
             return list.FindIndex(x => x.Equals(b));
         }
 
+        public static int FindIndexInArray<T>(this T[] list, T b)
+        {
+            for(int i = 0; i < list.Length; i++)
+            {
+                if ((list[i] == null && b == null) || (list[i] != null && list[i].Equals(b)))
+                    return i;
+            }
+            return -1;
+        }
+
         public static TextMeshPro CreateWorldText(Transform parent, string text="TEXT")
         {
             GameObject textMeshGO = new GameObject("CustomUIText");

@@ -19,8 +19,6 @@ namespace BeatSaberMultiplayer.Misc
         {
             Texture2D tex;
 
-            Plugin.log.Info("Loading sprite...");
-
             if (_cachedSprites.ContainsKey(spritePath))
             {
                 done?.Invoke(_cachedSprites[spritePath]);
@@ -37,7 +35,6 @@ namespace BeatSaberMultiplayer.Misc
                 }
                 else
                 {
-                    Plugin.log.Info("Received response...");
                     tex = DownloadHandlerTexture.GetContent(www);
                     var newSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), Vector2.one * 0.5f, 100, 1);
                     _cachedSprites.Add(spritePath, newSprite);

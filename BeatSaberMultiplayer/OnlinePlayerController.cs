@@ -315,7 +315,7 @@ namespace BeatSaberMultiplayer
 
         public void PlayVoIPFragment(float[] data, int fragIndex)
         {
-            if(voipSource != null)
+            if(voipSource != null && !InGameOnlineController.Instance.mutedPlayers.Contains(_info.playerId))
             {
                 if (_voipBuffer == null || (_lastVoipFragIndex + 1) != fragIndex || _silentFrames > 20)
                 {

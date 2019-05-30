@@ -50,6 +50,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         SongSelectionViewController _songSelectionViewController;
         DifficultySelectionViewController _difficultySelectionViewController;
         LeaderboardViewController _leaderboardViewController;
+        LevelPacksViewController _packsViewController;
 
         PlayerManagementViewController _playerManagementViewController;
         QuickSettingsViewController _quickSettingsViewController;
@@ -58,6 +59,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         BeatmapCharacteristicSO _standardCharacteristic;
 
         BeatmapCharacteristicSO _lastCharacteristic;
+        IBeatmapLevelPack _lastSelectedPack;
         SortMode _lastSortMode;
         string _lastSearchRequest;
 
@@ -76,6 +78,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         string password;
 
         bool joined = false;
+        private SimpleDialogPromptViewController _simpleDialog;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -88,7 +91,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 _playerManagementViewController = BeatSaberUI.CreateViewController<PlayerManagementViewController>();
                 _playerManagementViewController.gameplayModifiersChanged += UpdateLevelOptions;
+                _playerManagementViewController.transferHostButtonPressed += TransferHostConfirmation;
 
+                _simpleDialog = ReflectionUtil.GetPrivateField<SimpleDialogPromptViewController>(FindObjectOfType<MainFlowCoordinator>(), "_simpleDialogPromptViewController");
+                _simpleDialog = Instantiate(_simpleDialog.gameObject, _simpleDialog.transform.parent).GetComponent<SimpleDialogPromptViewController>();
+                
                 _quickSettingsViewController = BeatSaberUI.CreateViewController<QuickSettingsViewController>();
 
                 _roomNavigationController = BeatSaberUI.CreateViewController<RoomNavigationController>();
@@ -194,6 +201,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _lastSearchRequest = "";
             Client.Instance.inRoom = false;
             PopAllViewControllers(_roomNavigationController);
+            if(leftScreenViewController == _simpleDialog)
+            {
+                SetLeftScreenViewController(_playerManagementViewController);
+            }
             didFinishEvent?.Invoke();
         }
 
@@ -202,7 +213,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             DismissViewController(_passwordKeyboard);
             if (!string.IsNullOrEmpty(input))
             {
-                JoinRoom(ip, port, roomId, usePassword, input);
+                JoinRoom(ip, port, roomId, usePassword, input.ToUpper());
             }
         }
 
@@ -575,6 +586,20 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
+        public void TransferHostConfirmation(PlayerInfo newHost)
+        {
+            _simpleDialog.Init("Pass host?", $"Are you sure yo want to pass host to <b>{newHost.playerName}</b>?", "Pass host", "Cancel",
+                (selectedButton) =>
+                {
+                    SetLeftScreenViewController(_playerManagementViewController);
+                    if (selectedButton == 0)
+                    {
+                        Client.Instance.TransferHost(newHost);
+                    }
+                });
+            SetLeftScreenViewController(_simpleDialog);
+        }
+
         public void StartLevel(BeatmapLevelSO level, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, GameplayModifiers modifiers, float startTime = 0f)
         {
             Client.Instance.playerInfo.playerComboBlocks = 0;
@@ -642,18 +667,44 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 _songSelectionViewController = BeatSaberUI.CreateViewController<SongSelectionViewController>();
                 _songSelectionViewController.SongSelected += SongSelected;
-                _songSelectionViewController.SortPressed += (sortMode) => { SetSongs(sortMode, _lastSearchRequest);  };
+                _songSelectionViewController.SortPressed += (sortMode) => { SetSongs(_lastSelectedPack, sortMode, _lastSearchRequest);  };
                 _songSelectionViewController.SearchPressed += () => { _searchKeyboard.inputString = ""; PresentViewController(_searchKeyboard, null);};
             }
+
+            if(_packsViewController == null)
+            {
+                _packsViewController = Instantiate(Resources.FindObjectsOfTypeAll<LevelPacksViewController>().First(x => x.name != "CustomLevelPacksViewController"));
+                _packsViewController.name = "CustomLevelPacksViewController";
+
+
+                if(_lastSelectedPack == null)
+                {
+                    _lastSelectedPack = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks[0];
+                }
+
+                _packsViewController.didSelectPackEvent += (sender, selectedPack) => { SetSongs(selectedPack, _lastSortMode, _lastSearchRequest); };
+            }
+
+            _packsViewController.SetData(SongLoader.CustomBeatmapLevelPackCollectionSO, SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.FindIndexInArray(_lastSelectedPack));
+
             if (_roomNavigationController.viewControllers.IndexOf(_songSelectionViewController) < 0)
             {
                 PushViewControllerToNavigationController(_roomNavigationController, _songSelectionViewController, null, true);
-                SetSongs(_lastSortMode, _lastSearchRequest);
+                SetSongs(_lastSelectedPack, _lastSortMode, _lastSearchRequest);
 
                 if (!string.IsNullOrEmpty(lastLevelId))
                 {
                     _songSelectionViewController.ScrollToLevel(lastLevelId);
                 }
+            }
+
+            if (Client.Instance.isHost)
+            {
+                SetBottomScreenViewController(_packsViewController);
+            }
+            else
+            {
+                SetBottomScreenViewController(null);
             }
 
             _songSelectionViewController.UpdateViewController(Client.Instance.isHost);
@@ -673,37 +724,46 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     PopViewControllerFromNavigationController(_roomNavigationController, null, true);
                 }
             }
+
+            if(bottomScreenViewController != null)
+            {
+                SetBottomScreenViewController(null);
+            }
         }
 
         public void SearchPressed(string input)
         {
             DismissViewController(_searchKeyboard);
-            SetSongs(_lastSortMode, input);
+            SetSongs(_lastSelectedPack,  _lastSortMode, input);
         }
 
-        public void SetSongs(SortMode sortMode, string searchRequest)
+        public void SetSongs(IBeatmapLevelPack selectedPack, SortMode sortMode, string searchRequest)
         {
             _lastSortMode = sortMode;
             _lastSearchRequest = searchRequest;
+            _lastSelectedPack = selectedPack;
 
             List<BeatmapLevelSO> levels = new List<BeatmapLevelSO>();
 
-            levels = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.Where(x => x.packID == "ModdedCustomMaps" || x.packID == "ModdedWIPMaps" || CustomExtensions.basePackIDs.Contains(x.packID)).SelectMany(x => x.beatmapLevelCollection.beatmapLevels).Cast<BeatmapLevelSO>().ToList();
+            if (_lastSelectedPack != null)
+            {
+                levels = _lastSelectedPack.beatmapLevelCollection.beatmapLevels.Where(x => x is BeatmapLevelSO).Cast<BeatmapLevelSO>().ToList();
 
-            if (string.IsNullOrEmpty(searchRequest))
-            {
-                switch (sortMode)
+                if (string.IsNullOrEmpty(searchRequest))
                 {
-                    case SortMode.Newest: { levels = SortLevelsByCreationTime(levels); }; break;
-                    case SortMode.Difficulty:
-                        {
-                            levels = levels.AsParallel().OrderBy(x => { int index = ScrappedData.Songs.FindIndex(y => x.levelID.StartsWith(y.Hash)); return (index == -1 ? (x.levelID.Length < 32 ? int.MaxValue : int.MaxValue - 1) : index); }).ToList();
-                        }; break;
+                    switch (sortMode)
+                    {
+                        case SortMode.Newest: { levels = SortLevelsByCreationTime(levels); }; break;
+                        case SortMode.Difficulty:
+                            {
+                                levels = levels.AsParallel().OrderBy(x => { int index = ScrappedData.Songs.FindIndex(y => x.levelID.StartsWith(y.Hash)); return (index == -1 ? (x.levelID.Length < 32 ? int.MaxValue : int.MaxValue - 1) : index); }).ToList();
+                            }; break;
+                    }
                 }
-            }
-            else
-            {
-                levels = levels.Where(x => ($"{x.songName} {x.songSubName} {x.levelAuthorName} {x.songAuthorName}".ToLower().Contains(searchRequest))).ToList();
+                else
+                {
+                    levels = levels.Where(x => ($"{x.songName} {x.songSubName} {x.levelAuthorName} {x.songAuthorName}".ToLower().Contains(searchRequest))).ToList();
+                }
             }
             
             _songSelectionViewController.SetSongs(levels);
