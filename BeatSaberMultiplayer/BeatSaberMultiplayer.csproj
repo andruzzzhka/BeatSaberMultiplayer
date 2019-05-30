@@ -236,7 +236,6 @@
     <Compile Include="UI\ViewControllers\MultiplayerNavigationController.cs" />
     <Compile Include="VOIP\AudioUtils.cs" />
     <Compile Include="VOIP\SpeexCodex.cs" />
-    <Compile Include="VOIP\VoipBehaviour.cs" />
     <Compile Include="Data\VoipFragment.cs" />
     <Compile Include="VOIP\VoipListener.cs" />
   </ItemGroup>

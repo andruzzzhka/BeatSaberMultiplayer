@@ -51,6 +51,8 @@ namespace BeatSaberMultiplayer
         private List<OnlinePlayerController> _players = new List<OnlinePlayerController>();
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
         private GameObject _scoreScreen;
+        
+        private List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
 
         private TextMeshPro _messageDisplayText;
         private float _messageDisplayTime;
@@ -95,6 +97,7 @@ namespace BeatSaberMultiplayer
                 {
                     voiceChatListener = new GameObject("Voice Chat Listener").AddComponent<VoipListener>();
 
+                    voiceChatListener.OnAudioGenerated -= ProcesVoiceFragment;
                     voiceChatListener.OnAudioGenerated += ProcesVoiceFragment;
 
                     DontDestroyOnLoad(voiceChatListener.gameObject);
@@ -112,6 +115,7 @@ namespace BeatSaberMultiplayer
             if (enabled && !isVoiceChatActive)
             {
                 voiceChatListener = new GameObject("Voice Chat Listener").AddComponent<VoipListener>();
+                voiceChatListener.OnAudioGenerated -= ProcesVoiceFragment;
                 voiceChatListener.OnAudioGenerated += ProcesVoiceFragment;
                 DontDestroyOnLoad(voiceChatListener.gameObject);
 
@@ -123,6 +127,7 @@ namespace BeatSaberMultiplayer
                 Destroy(voiceChatListener.gameObject);
                 voiceChatListener.OnAudioGenerated -= ProcesVoiceFragment;
                 isRecording = false;
+                voiceChatListener.isListening = isRecording;
             }
             
             isVoiceChatActive = enabled;
@@ -271,16 +276,28 @@ namespace BeatSaberMultiplayer
                         float totalTime = msg.ReadFloat();
 
                         int playersCount = msg.ReadInt32();
-                        List<PlayerInfo> playerInfos = new List<PlayerInfo>();
                         try
                         {
                             PlayerInfo newPlayer;
                             _spectatorInRoom = false;
+
+                            if(_playerInfos.Count > playersCount)
+                            {
+                                _playerInfos.RemoveRange(0, _playerInfos.Count - playersCount);
+                            }
+
                             for (int j = 0; j < playersCount; j++)
                             {
-                                newPlayer = new PlayerInfo(msg);
-                                playerInfos.Add(newPlayer);
-                                _spectatorInRoom |= newPlayer.playerState == PlayerState.Spectating;
+                                if (_playerInfos.Count > j)
+                                {
+                                    _playerInfos[j].GetFromMessage(msg);
+                                }
+                                else
+                                {
+                                    newPlayer = new PlayerInfo(msg);
+                                    _playerInfos.Add(newPlayer);
+                                    _spectatorInRoom |= newPlayer.playerState == PlayerState.Spectating;
+                                }
                             }
                         }
                         catch (Exception e)
@@ -292,16 +309,16 @@ namespace BeatSaberMultiplayer
                         }
 
 
-                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "MenuCore") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "MenuCore")).ToList();
+                        _playerInfos = _playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "MenuCore") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "MenuCore")).ToList();
 
-                        int localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
+                        int localPlayerIndex = _playerInfos.FindIndexInList(Client.Instance.playerInfo);
                         
                         try
                         {
                             int index = 0;
                             OnlinePlayerController player = null;
 
-                            foreach (PlayerInfo info in playerInfos)
+                            foreach (PlayerInfo info in _playerInfos)
                             {
                                 try
                                 {
@@ -325,9 +342,9 @@ namespace BeatSaberMultiplayer
                                 }
                             }
 
-                            if (_players.Count > playerInfos.Count)
+                            if (_players.Count > _playerInfos.Count)
                             {
-                                foreach (OnlinePlayerController controller in _players.Where(x => !playerInfos.Any(y => y.Equals(x.PlayerInfo))))
+                                foreach (OnlinePlayerController controller in _players.Where(x => !_playerInfos.Any(y => y.Equals(x.PlayerInfo))))
                                 {
                                     if(controller != null && !controller.destroyed)
                                         Destroy(controller.gameObject);
@@ -342,8 +359,8 @@ namespace BeatSaberMultiplayer
                         
                         if (_currentScene == "GameCore" && _loaded)
                         {
-                            playerInfos = playerInfos.OrderByDescending(x => x.playerScore).ToList();
-                            localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
+                            _playerInfos = _playerInfos.OrderByDescending(x => x.playerScore).ToList();
+                            localPlayerIndex = _playerInfos.FindIndexInList(Client.Instance.playerInfo);
                             if (_scoreDisplays.Count < 5)
                             {
                                 _scoreScreen = new GameObject("ScoreScreen");
@@ -362,13 +379,13 @@ namespace BeatSaberMultiplayer
                                 }
                             }
 
-                            if (playerInfos.Count <= 5)
+                            if (_playerInfos.Count <= 5)
                             {
-                                for (int i = 0; i < playerInfos.Count; i++)
+                                for (int i = 0; i < _playerInfos.Count; i++)
                                 {
-                                    _scoreDisplays[i].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                    _scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], _playerInfos.FindIndexInList(_playerInfos[i]));
                                 }
-                                for (int i = playerInfos.Count; i < _scoreDisplays.Count; i++)
+                                for (int i = _playerInfos.Count; i < _scoreDisplays.Count; i++)
                                 {
                                     _scoreDisplays[i].UpdatePlayerInfo(null, 0);
                                 }
@@ -379,21 +396,21 @@ namespace BeatSaberMultiplayer
                                 {
                                     for (int i = 0; i < 5; i++)
                                     {
-                                        _scoreDisplays[i].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                        _scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], _playerInfos.FindIndexInList(_playerInfos[i]));
                                     }
                                 }
-                                else if (localPlayerIndex > playerInfos.Count - 3)
+                                else if (localPlayerIndex > _playerInfos.Count - 3)
                                 {
-                                    for (int i = playerInfos.Count - 5; i < playerInfos.Count; i++)
+                                    for (int i = _playerInfos.Count - 5; i < _playerInfos.Count; i++)
                                     {
-                                        _scoreDisplays[i - (playerInfos.Count - 5)].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                        _scoreDisplays[i - (_playerInfos.Count - 5)].UpdatePlayerInfo(_playerInfos[i], _playerInfos.FindIndexInList(_playerInfos[i]));
                                     }
                                 }
                                 else
                                 {
                                     for (int i = localPlayerIndex - 2; i < localPlayerIndex + 3; i++)
                                     {
-                                        _scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                        _scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(_playerInfos[i], _playerInfos.FindIndexInList(_playerInfos[i]));
                                     }
                                 }
 
@@ -533,6 +550,7 @@ namespace BeatSaberMultiplayer
             {
                 isRecording = false;
             }
+            voiceChatListener.isListening = isRecording;
 
             if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
             {

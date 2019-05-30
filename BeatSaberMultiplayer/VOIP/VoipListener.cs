@@ -6,8 +6,9 @@ using UnityEngine;
 namespace BeatSaberMultiplayer.VOIP
 {
     //https://github.com/DwayneBull/UnityVOIP/blob/master/VoipListener.cs
-    public class VoipListener : VoipBehaviour
+    public class VoipListener : MonoBehaviour
     {
+
         private AudioClip recording;
         private float[] recordingBuffer;
         private float[] resampleBuffer;
@@ -25,10 +26,24 @@ namespace BeatSaberMultiplayer.VOIP
         public BandMode max = BandMode.Wide;
         public int inputFreq;
 
-        public bool IsListening
+        public bool isListening
         {
-            get { return recording != null; }
+            get
+            {
+                return _isListening;
+            }
+            set
+            {
+                if (!_isListening && value)
+                {
+                    index += 3;
+                    lastPos = Math.Max(Microphone.GetPosition(null) - recordingBuffer.Length, 0);
+                }
+                _isListening = value;
+            }
         }
+
+        private bool _isListening;
 
         void Awake()
         {
@@ -66,7 +81,7 @@ namespace BeatSaberMultiplayer.VOIP
 
         void Update()
         {
-            if ( recording == null )
+            if ( recording == null)
             {
                 return;
             }
@@ -82,7 +97,7 @@ namespace BeatSaberMultiplayer.VOIP
             
             while (length >= recordingBuffer.Length)
             {
-                if (recording.GetData(recordingBuffer, lastPos))
+                if (_isListening && recording.GetData(recordingBuffer, lastPos))
                 {
                     //Send..
                     var amplitude = AudioUtils.GetMaxAmplitude(recordingBuffer);
@@ -91,8 +106,6 @@ namespace BeatSaberMultiplayer.VOIP
                         index++;
                         if (OnAudioGenerated != null )
                         {
-                            chunkCount++;
-
                             //Downsample if needed.
                             if (recordingBuffer != resampleBuffer)
                             {
@@ -101,30 +114,15 @@ namespace BeatSaberMultiplayer.VOIP
 
                             var data = encoder.Encode(resampleBuffer);
 
-                            bytes += data.Length + 11;
-
                             VoipFragment frag = new VoipFragment(0, index, data, encoder.mode);
 
-                            foreach(var action in OnAudioGenerated.GetInvocationList())
-                            {
-                                try
-                                {
-                                    action.DynamicInvoke(frag);
-                                }
-                                catch(Exception e)
-                                {
-                                    Plugin.log.Error($"Exception on OnAudioGenerated event in {action.Target.GetType().ToString()}.{action.Method.Name}: {e}");
-                                }
-                            }
+                            OnAudioGenerated?.Invoke(frag);
                         }
                     }
                 }
                 length -= recordingBuffer.Length;
                 lastPos += recordingBuffer.Length;
-            }
-
-            UpdateStats();
-            
+            }            
         }
 
         void OnDestroy()
