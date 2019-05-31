@@ -51,8 +51,6 @@ namespace BeatSaberMultiplayer
         private List<OnlinePlayerController> _players = new List<OnlinePlayerController>();
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
         private GameObject _scoreScreen;
-        
-        private List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
 
         private TextMeshPro _messageDisplayText;
         private float _messageDisplayTime;
@@ -276,28 +274,17 @@ namespace BeatSaberMultiplayer
                         float totalTime = msg.ReadFloat();
 
                         int playersCount = msg.ReadInt32();
+                        List<PlayerInfo> playerInfos = new List<PlayerInfo>(playersCount);
                         try
                         {
                             PlayerInfo newPlayer;
                             _spectatorInRoom = false;
 
-                            if(_playerInfos.Count > playersCount)
-                            {
-                                _playerInfos.RemoveRange(0, _playerInfos.Count - playersCount);
-                            }
-
                             for (int j = 0; j < playersCount; j++)
                             {
-                                if (_playerInfos.Count > j)
-                                {
-                                    _playerInfos[j].GetFromMessage(msg);
-                                }
-                                else
-                                {
-                                    newPlayer = new PlayerInfo(msg);
-                                    _playerInfos.Add(newPlayer);
-                                    _spectatorInRoom |= newPlayer.playerState == PlayerState.Spectating;
-                                }
+                                newPlayer = new PlayerInfo(msg);
+                                playerInfos.Add(newPlayer);
+                                _spectatorInRoom |= newPlayer.playerState == PlayerState.Spectating;
                             }
                         }
                         catch (Exception e)
@@ -309,16 +296,16 @@ namespace BeatSaberMultiplayer
                         }
 
 
-                        _playerInfos = _playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "MenuCore") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "MenuCore")).ToList();
+                        playerInfos = playerInfos.Where(x => (x.playerState == PlayerState.Game && _currentScene == "GameCore") || (x.playerState == PlayerState.Room && _currentScene == "MenuCore") || (x.playerState == PlayerState.DownloadingSongs && _currentScene == "MenuCore")).ToList();
 
-                        int localPlayerIndex = _playerInfos.FindIndexInList(Client.Instance.playerInfo);
+                        int localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
                         
                         try
                         {
                             int index = 0;
                             OnlinePlayerController player = null;
 
-                            foreach (PlayerInfo info in _playerInfos)
+                            foreach (PlayerInfo info in playerInfos)
                             {
                                 try
                                 {
@@ -342,9 +329,9 @@ namespace BeatSaberMultiplayer
                                 }
                             }
 
-                            if (_players.Count > _playerInfos.Count)
+                            if (_players.Count > playerInfos.Count)
                             {
-                                foreach (OnlinePlayerController controller in _players.Where(x => !_playerInfos.Any(y => y.Equals(x.PlayerInfo))))
+                                foreach (OnlinePlayerController controller in _players.Where(x => !playerInfos.Any(y => y.Equals(x.PlayerInfo))))
                                 {
                                     if(controller != null && !controller.destroyed)
                                         Destroy(controller.gameObject);
@@ -359,8 +346,8 @@ namespace BeatSaberMultiplayer
                         
                         if (_currentScene == "GameCore" && _loaded)
                         {
-                            _playerInfos = _playerInfos.OrderByDescending(x => x.playerScore).ToList();
-                            localPlayerIndex = _playerInfos.FindIndexInList(Client.Instance.playerInfo);
+                            playerInfos = playerInfos.OrderByDescending(x => x.playerScore).ToList();
+                            localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
                             if (_scoreDisplays.Count < 5)
                             {
                                 _scoreScreen = new GameObject("ScoreScreen");
@@ -379,13 +366,13 @@ namespace BeatSaberMultiplayer
                                 }
                             }
 
-                            if (_playerInfos.Count <= 5)
+                            if (playerInfos.Count <= 5)
                             {
-                                for (int i = 0; i < _playerInfos.Count; i++)
+                                for (int i = 0; i < playerInfos.Count; i++)
                                 {
-                                    _scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], _playerInfos.FindIndexInList(_playerInfos[i]));
+                                    _scoreDisplays[i].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
                                 }
-                                for (int i = _playerInfos.Count; i < _scoreDisplays.Count; i++)
+                                for (int i = playerInfos.Count; i < _scoreDisplays.Count; i++)
                                 {
                                     _scoreDisplays[i].UpdatePlayerInfo(null, 0);
                                 }
@@ -396,21 +383,21 @@ namespace BeatSaberMultiplayer
                                 {
                                     for (int i = 0; i < 5; i++)
                                     {
-                                        _scoreDisplays[i].UpdatePlayerInfo(_playerInfos[i], _playerInfos.FindIndexInList(_playerInfos[i]));
+                                        _scoreDisplays[i].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
                                     }
                                 }
-                                else if (localPlayerIndex > _playerInfos.Count - 3)
+                                else if (localPlayerIndex > playerInfos.Count - 3)
                                 {
-                                    for (int i = _playerInfos.Count - 5; i < _playerInfos.Count; i++)
+                                    for (int i = playerInfos.Count - 5; i < playerInfos.Count; i++)
                                     {
-                                        _scoreDisplays[i - (_playerInfos.Count - 5)].UpdatePlayerInfo(_playerInfos[i], _playerInfos.FindIndexInList(_playerInfos[i]));
+                                        _scoreDisplays[i - (playerInfos.Count - 5)].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
                                     }
                                 }
                                 else
                                 {
                                     for (int i = localPlayerIndex - 2; i < localPlayerIndex + 3; i++)
                                     {
-                                        _scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(_playerInfos[i], _playerInfos.FindIndexInList(_playerInfos[i]));
+                                        _scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
                                     }
                                 }
 
