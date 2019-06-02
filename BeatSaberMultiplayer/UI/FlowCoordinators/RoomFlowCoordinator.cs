@@ -700,10 +700,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             if (Client.Instance.isHost)
             {
+                _packsViewController.gameObject.SetActive(true);
                 SetBottomScreenViewController(_packsViewController);
             }
             else
             {
+                _packsViewController.gameObject.SetActive(false);
                 SetBottomScreenViewController(null);
             }
 
@@ -841,9 +843,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             _difficultySelectionViewController.SetSelectedSong(song);
             _difficultySelectionViewController.UpdateViewController(Client.Instance.isHost, roomInfo.perPlayerDifficulty);
-            
-            BeatmapLevelSO selectedLevel = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.Where(x => x.packID == "ModdedCustomMaps" || x.packID == "ModdedWIPMaps" || CustomExtensions.basePackIDs.Contains(x.packID)).SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(song.levelId)) as BeatmapLevelSO;
 
+            BeatmapLevelSO selectedLevel = null;
+
+            foreach (var pack in SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks)
+            {
+                selectedLevel = pack.beatmapLevelCollection.beatmapLevels.FirstOrDefault(x => x.levelID.StartsWith(song.levelId)) as BeatmapLevelSO;
+                if (selectedLevel != null)
+                    break;
+            }
+            
             if (selectedLevel != null)
             {
                 if (selectedLevel is CustomLevel)
