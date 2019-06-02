@@ -181,49 +181,6 @@ namespace BeatSaberMultiplayer.Data
 
         public PlayerInfo(NetIncomingMessage msg)
         {
-            GetFromMessage(msg);   
-        }
-
-#if DEBUG
-        public PlayerInfo(byte[] data)
-        {
-            playerState = (PlayerState)data[0];
-
-            playerScore = BitConverter.ToUInt32(data, 1);
-            playerCutBlocks = BitConverter.ToUInt32(data, 5);
-            playerComboBlocks = BitConverter.ToUInt32(data, 9);
-            playerTotalBlocks = BitConverter.ToUInt32(data, 13);
-            playerEnergy = BitConverter.ToSingle(data, 17);
-            playerProgress = BitConverter.ToSingle(data, 21);
-
-            rightHandPos = new Vector3(BitConverter.ToSingle(data, 25), BitConverter.ToSingle(data, 29), BitConverter.ToSingle(data, 33));
-            leftHandPos = new Vector3(BitConverter.ToSingle(data, 37), BitConverter.ToSingle(data, 41), BitConverter.ToSingle(data, 45));
-            headPos = new Vector3(BitConverter.ToSingle(data, 49), BitConverter.ToSingle(data, 53), BitConverter.ToSingle(data, 57));
-
-            rightHandRot = new Quaternion(BitConverter.ToSingle(data, 61), BitConverter.ToSingle(data, 65), BitConverter.ToSingle(data, 69), BitConverter.ToSingle(data, 73));
-            leftHandRot = new Quaternion(BitConverter.ToSingle(data, 77), BitConverter.ToSingle(data, 81), BitConverter.ToSingle(data, 85), BitConverter.ToSingle(data, 89));
-            headRot = new Quaternion(BitConverter.ToSingle(data, 93), BitConverter.ToSingle(data, 97), BitConverter.ToSingle(data, 101), BitConverter.ToSingle(data, 105));
-
-            hitsLastUpdate.Clear();
-
-            byte hitsCount = data[109];
-
-            if (hitsCount > 0)
-            {
-                MemoryStream stream = new MemoryStream(data, 110, hitsCount * 5);
-
-                for (int i = 0; i < hitsCount; i++)
-                {
-                    byte[] hit = new byte[5];
-                    stream.Read(hit, 0, 5);
-                    hitsLastUpdate.Add(new HitData(hit));
-                }
-            }
-        }
-#endif
-
-        public void GetFromMessage(NetIncomingMessage msg)
-        {
             playerName = msg.ReadString();
             playerId = msg.ReadUInt64();
 
@@ -272,6 +229,44 @@ namespace BeatSaberMultiplayer.Data
                 hitsLastUpdate.Add(new HitData(msg));
             }
         }
+
+#if DEBUG
+        public PlayerInfo(byte[] data)
+        {
+            playerState = (PlayerState)data[0];
+
+            playerScore = BitConverter.ToUInt32(data, 1);
+            playerCutBlocks = BitConverter.ToUInt32(data, 5);
+            playerComboBlocks = BitConverter.ToUInt32(data, 9);
+            playerTotalBlocks = BitConverter.ToUInt32(data, 13);
+            playerEnergy = BitConverter.ToSingle(data, 17);
+            playerProgress = BitConverter.ToSingle(data, 21);
+
+            rightHandPos = new Vector3(BitConverter.ToSingle(data, 25), BitConverter.ToSingle(data, 29), BitConverter.ToSingle(data, 33));
+            leftHandPos = new Vector3(BitConverter.ToSingle(data, 37), BitConverter.ToSingle(data, 41), BitConverter.ToSingle(data, 45));
+            headPos = new Vector3(BitConverter.ToSingle(data, 49), BitConverter.ToSingle(data, 53), BitConverter.ToSingle(data, 57));
+
+            rightHandRot = new Quaternion(BitConverter.ToSingle(data, 61), BitConverter.ToSingle(data, 65), BitConverter.ToSingle(data, 69), BitConverter.ToSingle(data, 73));
+            leftHandRot = new Quaternion(BitConverter.ToSingle(data, 77), BitConverter.ToSingle(data, 81), BitConverter.ToSingle(data, 85), BitConverter.ToSingle(data, 89));
+            headRot = new Quaternion(BitConverter.ToSingle(data, 93), BitConverter.ToSingle(data, 97), BitConverter.ToSingle(data, 101), BitConverter.ToSingle(data, 105));
+
+            hitsLastUpdate.Clear();
+
+            byte hitsCount = data[109];
+
+            if (hitsCount > 0)
+            {
+                MemoryStream stream = new MemoryStream(data, 110, hitsCount * 5);
+
+                for (int i = 0; i < hitsCount; i++)
+                {
+                    byte[] hit = new byte[5];
+                    stream.Read(hit, 0, 5);
+                    hitsLastUpdate.Add(new HitData(hit));
+                }
+            }
+        }
+#endif
 
         public void AddToMessage(NetOutgoingMessage msg)
         {

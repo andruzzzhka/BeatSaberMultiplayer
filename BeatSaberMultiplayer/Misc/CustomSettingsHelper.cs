@@ -27,7 +27,9 @@ namespace BeatSaberMultiplayer.Misc
             UnityEngine.Object.DestroyImmediate(volume);
             UnityEngine.Object.DestroyImmediate(newSettingsObject.GetComponentInChildren<LocalizedTextMeshProUGUI>());
 
-            newSettingsObject.GetComponentInChildren<TMP_Text>().text = name;
+            TMP_Text nameText = newSettingsObject.GetComponentsInChildren<TMP_Text>().First(x => x.name == "NameText");
+            UnityEngine.Object.Destroy(nameText.gameObject.GetComponent<LocalizedTextMeshProUGUI>());
+            nameText.text = name;
 
             (newListSettingsController.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
             (newListSettingsController.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
@@ -52,7 +54,12 @@ namespace BeatSaberMultiplayer.Misc
             T newListSettingsController = volume.gameObject.AddComponent<T>();
             UnityEngine.Object.DestroyImmediate(volume);
 
-            newSettingsObject.GetComponentInChildren<TMP_Text>().text = name;
+            foreach (var text in newSettingsObject.GetComponentsInChildren<TMP_Text>())
+                Plugin.log.Info($"Text name: {text.name}, Text value: {text.text}");
+
+            TMP_Text nameText = newSettingsObject.GetComponentsInChildren<TMP_Text>().First(x => x.name == "NameText");
+            UnityEngine.Object.Destroy(nameText.gameObject.GetComponent<LocalizedTextMeshProUGUI>());
+            nameText.text = name;
 
             return newListSettingsController;
         }
