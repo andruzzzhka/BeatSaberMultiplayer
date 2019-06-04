@@ -457,12 +457,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 #endif
 
                 PracticeSettings practiceSettings = new PracticeSettings(PracticeSettings.defaultPracticeSettings);
+                
+                practiceSettings.startSongTime = startTime + 1.5f;
                 practiceSettings.songSpeedMul = modifiers.songSpeedMul;
-
-                if (startTime > 1.5f)
-                {
-                    practiceSettings.startSongTime = startTime + 1.5f;
-                }
+                practiceSettings.startInAdvanceAndClearNotes = true;
 
                 Client.Instance.MessageReceived -= MessageReceived;
 
@@ -475,7 +473,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 }
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1.5f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, (practiceSettings != null)); });
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, (practiceSettings != null)); });
                 return;
             }
             else
