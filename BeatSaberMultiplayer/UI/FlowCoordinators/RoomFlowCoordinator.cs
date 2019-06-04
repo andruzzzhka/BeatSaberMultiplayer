@@ -644,6 +644,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 PracticeSettings practiceSettings = new PracticeSettings(PracticeSettings.defaultPracticeSettings);
                 practiceSettings.startSongTime = startTime + 1.5f;
                 practiceSettings.songSpeedMul = modifiers.songSpeedMul;
+                practiceSettings.startInAdvanceAndClearNotes = true;
 
                 menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, false); });
                 return;

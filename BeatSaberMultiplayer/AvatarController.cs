@@ -220,12 +220,12 @@ namespace BeatSaberMultiplayer
                     {
                         playerNameText.gameObject.SetActive(false);
                         playerSpeakerIcon.gameObject.SetActive(false);
-//#if !DEBUG
+#if !DEBUG
                         if (avatar != null)
                         {
                             Destroy(avatar.GameObject);
                         }
-//#endif
+#endif
                     }
                     else
                     {
@@ -239,9 +239,12 @@ namespace BeatSaberMultiplayer
                 {
                     return;
                 }
-                
+#if !DEBUG
                 if ((avatar == null || currentAvatarHash != playerInfo.avatarHash) && !isLocal)
-                {
+#else
+                if ((avatar == null || currentAvatarHash != playerInfo.avatarHash))
+#endif
+                    {
                     if (ModelSaberAPI.cachedAvatars.ContainsKey(playerInfo.avatarHash))
                     {
                         CustomAvatar.CustomAvatar cachedAvatar = ModelSaberAPI.cachedAvatars[playerInfo.avatarHash];
