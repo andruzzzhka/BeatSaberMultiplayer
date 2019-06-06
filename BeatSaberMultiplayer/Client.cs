@@ -235,7 +235,10 @@ namespace BeatSaberMultiplayer
                                     }
                                     catch (Exception e)
                                     {
-                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
+                                        if(nextDel != null)
+                                            Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
+                                        else
+                                            Plugin.log.Error($"Exception on update received event: {e}");
                                     }
                                 }
                                 lastPlayerHistoryUpdates.Position = 0;
@@ -263,7 +266,11 @@ namespace BeatSaberMultiplayer
                                 }
                                 catch (Exception e)
                                 {
-                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
+                                    if (nextDel != null)
+                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
+                                    else
+                                        Plugin.log.Error($"Exception on update received event: {e}");
+
                                 }
                             }
                             lastUpdate.Position = 0;
@@ -302,7 +309,10 @@ namespace BeatSaberMultiplayer
                                             }
                                             catch (Exception e)
                                             {
-                                                Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                                                if (nextDel != null)
+                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                                                else
+                                                    Plugin.log.Error($"Exception on message received event: {e}");
                                             }
                                         }
                                     }
@@ -332,7 +342,10 @@ namespace BeatSaberMultiplayer
                                             }
                                             catch (Exception e)
                                             {
-                                                Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                                                if (nextDel != null)
+                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                                                else
+                                                    Plugin.log.Error($"Exception on message received event: {e}");
                                             }
                                         }
 
@@ -354,7 +367,10 @@ namespace BeatSaberMultiplayer
                                             }
                                             catch (Exception e)
                                             {
-                                                Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on event message received event: {e}");
+                                                if (nextDel != null)
+                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on event message received event: {e}");
+                                                else
+                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on event message received event: {e}");
                                             }
                                         }
                                     }
@@ -370,7 +386,10 @@ namespace BeatSaberMultiplayer
                                                 }
                                                 catch (Exception e)
                                                 {
-                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                                                    if (nextDel != null)
+                                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                                                    else
+                                                        Plugin.log.Error($"Exception on message received event: {e}");
                                                 }
                                             }
                                     }
@@ -389,7 +408,10 @@ namespace BeatSaberMultiplayer
                                                 }
                                                 catch (Exception e)
                                                 {
-                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on client joined room event: {e}");
+                                                    if (nextDel != null)
+                                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on client joined room event: {e}");
+                                                    else
+                                                        Plugin.log.Error($"Exception on client joined room event: {e}");
                                                 }
                                             }
                                         }
@@ -420,7 +442,10 @@ namespace BeatSaberMultiplayer
                                                 }
                                                 catch (Exception e)
                                                 {
-                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on client level started event: {e}");
+                                                    if (nextDel != null)
+                                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on client level started event: {e}");
+                                                    else
+                                                        Plugin.log.Error($"Exception on client level started event: {e}");
                                                 }
                                             }
                                     }
@@ -470,7 +495,11 @@ namespace BeatSaberMultiplayer
                     }
                     catch (Exception e)
                     {
-                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                        if (nextDel != null)
+                            Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                        else
+                            Plugin.log.Error($"Exception on message received event: {e}");
+
                     }
                 }
             }

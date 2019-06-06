@@ -349,7 +349,7 @@ namespace BeatSaberMultiplayer
                     }
                 }
 
-                if (Input.GetKeyDown(KeyCode.KeypadMultiply))
+                if (Input.GetKeyDown(KeyCode.KeypadMultiply) && spectatedPlayer != null && spectatedPlayer.PlayerInfo != null)
                 {
                     int index = playerInfos.Keys.ToList().FindIndexInList(spectatedPlayer.PlayerInfo.playerId);
                     if (index >= playerInfos.Count - 1)
@@ -363,7 +363,7 @@ namespace BeatSaberMultiplayer
                     _spectatingText.text = "Spectating " + spectatedPlayer.PlayerInfo.playerName;
                 }
 
-                if (Input.GetKeyDown(KeyCode.KeypadDivide))
+                if (Input.GetKeyDown(KeyCode.KeypadDivide) && spectatedPlayer != null && spectatedPlayer.PlayerInfo != null)
                 {
                     int index = playerInfos.Keys.ToList().FindIndexInList(spectatedPlayer.PlayerInfo.playerId);
                     if (index <= 0)
@@ -393,6 +393,7 @@ namespace BeatSaberMultiplayer
                 {
                     float currentSongTime = Math.Max(0f, audioTimeSync.songTime);
                     int index = FindClosestIndex(playerInfos[spectatedPlayer.PlayerInfo.playerId], currentSongTime);
+                    index = Math.Max(index, 0);
                     (float, float) playerProgressMinMax = MinMax(playerInfos[spectatedPlayer.PlayerInfo.playerId]);
                     PlayerInfo lerpTo;
                     float lerpProgress;

@@ -263,6 +263,14 @@ namespace ServerHub.Hub
             if (Settings.Instance.TournamentMode.Enabled)
                 CreateTournamentRooms();
 
+            while (HubListener.Listen)
+            {
+                ServerHubShell();
+            }
+        }
+
+        static void ServerHubShell()
+        {
             if (Settings.Instance.Server.EnableInteractiveShell)
             {
                 Logger.Instance.Warning($"Use [Help] to display commands");
@@ -271,21 +279,37 @@ namespace ServerHub.Hub
 
                 while (HubListener.Listen)
                 {
-                    var x = ReadLine.Read(">>> ");
-                    if (x == string.Empty) continue;
+                    try
+                    {
+                        var x = ReadLine.Read(">>> ");
+                        if (x == string.Empty) continue;
 
-                    var parsedArgs = ParseLine(x);
+                        var parsedArgs = ParseLine(x);
 
-                    Logger.Instance.Log(ProcessCommand(parsedArgs[0].ToLower(), parsedArgs.Skip(1).ToArray()));
+                        Logger.Instance.Log(ProcessCommand(parsedArgs[0].ToLower(), parsedArgs.Skip(1).ToArray()));
+                    }
+                    catch (InvalidOperationException e)
+                    {
+                        if (e.Message.Contains("Console.Read"))
+                        {
+                            Logger.Instance.Exception(e.ToString());
+                            Logger.Instance.Error("Disabling interactive shell...");
+                            Settings.Instance.Server.EnableInteractiveShell = false;
+                            return;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Instance.Exception(e.ToString());
+                    }
                 }
             }
             else
             {
                 Logger.Instance.Warning($"Interactive shell is disabled");
-                
+
                 HighResolutionTimer.LoopTimer.thread.Join();
             }
-
         }
 
         static void ProgramLoop(object sender, HighResolutionTimerElapsedEventArgs e)

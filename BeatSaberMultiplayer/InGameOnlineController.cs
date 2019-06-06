@@ -489,7 +489,8 @@ namespace BeatSaberMultiplayer
                 if(_messageDisplayTime <= 0f)
                 {
                     _messageDisplayTime = 0f;
-                    _messageDisplayText.text = "";
+                    if(_messageDisplayText != null)
+                        _messageDisplayText.text = "";
                 }
             }
 
@@ -537,7 +538,11 @@ namespace BeatSaberMultiplayer
             {
                 isRecording = false;
             }
-            voiceChatListener.isListening = isRecording;
+
+            if (isVoiceChatActive && voiceChatListener != null)
+            {
+                voiceChatListener.isListening = isRecording;
+            }
 
             if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
             {

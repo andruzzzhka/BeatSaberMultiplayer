@@ -138,6 +138,8 @@ namespace BeatSaberMultiplayer.Misc
                 {
                     Plugin.log.Critical("Unable to download zip! Exception: " +e);
                     songInfo.songQueueState = SongQueueState.Error;
+                    if(zipStream != null)
+                        zipStream.Close();
                     yield break;
                 }
                 

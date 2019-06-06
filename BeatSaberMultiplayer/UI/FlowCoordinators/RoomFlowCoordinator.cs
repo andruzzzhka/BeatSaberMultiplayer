@@ -556,32 +556,35 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         
         private void UpdateLevelOptions()
         {
-            if (Client.Instance.isHost && _playerManagementViewController != null)
+            if (_playerManagementViewController != null)
             {
-                if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
+                if (Client.Instance.isHost)
                 {
-                    LevelOptionsInfo info = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
-                    Client.Instance.SetLevelOptions(info);
-                    roomInfo.startLevelInfo = info;
-                    Client.Instance.playerInfo.playerLevelOptions = info;
+                    if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
+                    {
+                        LevelOptionsInfo info = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
+                        Client.Instance.SetLevelOptions(info);
+                        roomInfo.startLevelInfo = info;
+                        Client.Instance.playerInfo.playerLevelOptions = info;
+                    }
+                    else
+                    {
+                        LevelOptionsInfo info = new LevelOptionsInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
+                        Client.Instance.SetLevelOptions(info);
+                        roomInfo.startLevelInfo = info;
+                        Client.Instance.playerInfo.playerLevelOptions = info;
+                    }
                 }
                 else
                 {
-                    LevelOptionsInfo info = new LevelOptionsInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
-                    Client.Instance.SetLevelOptions(info);
-                    roomInfo.startLevelInfo = info;
-                    Client.Instance.playerInfo.playerLevelOptions = info;
-                }
-            }
-            else
-            {
-                if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
-                {
-                    Client.Instance.playerInfo.playerLevelOptions = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
-                }
-                else
-                {
-                    Client.Instance.playerInfo.playerLevelOptions = new LevelOptionsInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
+                    if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
+                    {
+                        Client.Instance.playerInfo.playerLevelOptions = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
+                    }
+                    else
+                    {
+                        Client.Instance.playerInfo.playerLevelOptions = new LevelOptionsInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
+                    }
                 }
             }
         }

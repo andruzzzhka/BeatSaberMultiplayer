@@ -158,38 +158,27 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         private void _characteristicControl_didSelectCellEvent(int arg2)
         {
-            int errorCode = 0;
             try
             {
-                errorCode = 1;
                 selectedCharacteristic = _selectedSong.beatmapCharacteristics[arg2];
-
-                errorCode = 2;
+                
                 Dictionary<IDifficultyBeatmap, string> difficulties = _selectedSong.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps.ToDictionary(x => x, x => x.difficulty.ToString().Replace("Plus", "+"));
-
-                errorCode = 3;
+                
                 if (_selectedSong is CustomLevel)
                 {
-                    errorCode = 31;
                     CustomLevel customSelectedSong = _selectedSong as CustomLevel;
-                    errorCode = 32;
                     var songData = SongCore.Collections.RetrieveExtraSongData(customSelectedSong.levelID);
                     if (songData != null && songData.difficulties != null)
                     {
                         for (int i = 0; i < difficulties.Keys.Count; i++)
                         {
-                            errorCode = 33 + 100 * i;
                             var diffKey = difficulties.Keys.ElementAt(i);
-
-                            errorCode = 34 + 100 * i;
+                            
                             var difficultyLevel = songData.difficulties.FirstOrDefault(x => x.difficulty == diffKey.difficulty);
-                            errorCode = 35 + 100 * i;
                             if (difficultyLevel != null && !string.IsNullOrEmpty(difficultyLevel.difficultyLabel))
                             {
-                                errorCode = 36 + 100 * i;
                                 difficulties[diffKey] = difficultyLevel.difficultyLabel;
                                 Plugin.log.Info($"Found difficulty label \"{difficulties[diffKey]}\" for difficulty {diffKey.difficulty.ToString()}");
-                                errorCode = 37 + 100 * i;
                             }
                         }
                     }
@@ -198,17 +187,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                         Plugin.log.Warn($"Unable to retrieve extra song data for song with LevelID \"{customSelectedSong.levelID}\"!");
                     }
                 }
-                errorCode = 4;
 
                 _difficultyControl.SetTexts(difficulties.Values.ToArray());
-
-                errorCode = 5;
+                
                 int closestDifficultyIndex = CustomExtensions.GetClosestDifficultyIndex(difficulties.Keys.ToArray(), selectedDifficulty);
-
-                errorCode = 6;
+                
                 _difficultyControl.SelectCellWithNumber(closestDifficultyIndex);
-
-                errorCode = 7;
+                
                 if (!difficulties.Any(x => x.Key.difficulty == selectedDifficulty))
                 {
                     _difficultyControl_didSelectCellEvent(closestDifficultyIndex);
@@ -219,7 +204,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 }
             }catch(Exception e)
             {
-                Plugin.log.Critical($"Exception in char control did select event: Error Code: {errorCode}, Exception: {e}");
+                Plugin.log.Critical($"Exception in char control did select event: {e}");
 
             }
         }
