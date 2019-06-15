@@ -32,13 +32,8 @@ namespace BeatSaberMultiplayer
                 Application.targetFrameRate = 60;
             }
 #endif
-            
             instance = this;
-
-#if DEBUG
-            DebugForm.OnLoad();
-#endif
-
+            
             BSEvents.OnLoad();
             BSEvents.menuSceneLoadedFresh += MenuSceneLoadedFresh;
             BSEvents.menuSceneLoaded += MenuSceneLoaded;
@@ -81,9 +76,6 @@ namespace BeatSaberMultiplayer
             InGameOnlineController.OnLoad();
             SpectatingController.OnLoad();
             GetUserInfo.UpdateUserInfo();
-#if DEBUG
-            DebugForm.MenuLoaded();
-#endif
         }
 
         private void MenuSceneLoaded()
@@ -91,9 +83,6 @@ namespace BeatSaberMultiplayer
             InGameOnlineController.Instance?.MenuSceneLoaded();
             if (Config.Instance.SpectatorMode)
                 SpectatingController.Instance?.MenuSceneLoaded();
-#if DEBUG
-            DebugForm.MenuLoaded();
-#endif
         }
 
         private void GameSceneLoaded()
@@ -101,9 +90,6 @@ namespace BeatSaberMultiplayer
             InGameOnlineController.Instance?.GameSceneLoaded();
             if (Config.Instance.SpectatorMode)
                 SpectatingController.Instance?.GameSceneLoaded();
-#if DEBUG
-            DebugForm.GameLoaded();
-#endif
         }
 
         public void OnApplicationQuit()

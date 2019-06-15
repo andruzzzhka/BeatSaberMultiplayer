@@ -6,10 +6,9 @@ using BeatSaberMultiplayer.UI.ViewControllers;
 using BS_Utils.Gameplay;
 using CustomUI.BeatSaber;
 using CustomUI.Settings;
+using CustomUI.Utilities;
 using Polyglot;
 using SimpleJSON;
-using SongLoaderPlugin;
-using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -59,12 +58,12 @@ namespace BeatSaberMultiplayer.UI
                 DontDestroyOnLoad(this);
                 instance = this;
                 GetUserInfo.UpdateUserInfo();
-                SongLoader.SongsLoadedEvent += SongsLoaded;
+                SongCore.Loader.SongsLoadedEvent += SongsLoaded;
                 CreateUI();
             }
         }
 
-        public void SongsLoaded(SongLoader sender, List<CustomLevel> levels)
+        public void SongsLoaded(SongCore.Loader sender, Dictionary<string, CustomPreviewBeatmapLevel> levels)
         {
             if (_multiplayerButton != null)
             {
@@ -111,7 +110,7 @@ namespace BeatSaberMultiplayer.UI
                 }
 
                 CreateOnlineButton();
-                _multiplayerButton.interactable = SongLoader.AreSongsLoaded;
+                SongCore.Loader.SongsLoadedEvent += SongsLoaded;
 
                 StartCoroutine(CheckVersion());
 

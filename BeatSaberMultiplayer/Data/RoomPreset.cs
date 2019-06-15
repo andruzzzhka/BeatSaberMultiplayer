@@ -1,8 +1,6 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using Newtonsoft.Json;
 using SimpleJSON;
-using SongLoaderPlugin;
-using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections.Generic;
 using System.IO;

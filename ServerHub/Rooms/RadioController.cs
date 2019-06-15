@@ -122,18 +122,18 @@ namespace ServerHub.Rooms
 
                     if (!string.IsNullOrEmpty(song.hash))
                     {
-                        if (song.hash.Length >= 32)
+                        if (song.hash.Length >= 40)
                         {
-                            radioChannels[channelId].radioQueue.Enqueue(new SongInfo() { levelId = song.hash.ToUpper().Substring(0, 32), songName = song.songName, key = song.key });
+                            radioChannels[channelId].radioQueue.Enqueue(new SongInfo() { levelId = song.hash.ToUpper().Substring((song.hash.Length - 40), 40), songName = song.songName, key = song.key });
                             continue;
                         }
                     }
 
                     if (!string.IsNullOrEmpty(song.levelId))
                     {
-                        if (song.levelId.Length >= 32)
+                        if (song.levelId.Length >= 40)
                         {
-                            radioChannels[channelId].radioQueue.Enqueue(new SongInfo() { levelId = song.levelId.ToUpper().Substring(0, 32), songName = song.songName, key = song.key });
+                            radioChannels[channelId].radioQueue.Enqueue(new SongInfo() { levelId = song.levelId.ToUpper().Substring((song.hash.Length - 40), 40), songName = song.songName, key = song.key });
                             continue;
                         }
                     }

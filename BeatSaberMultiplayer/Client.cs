@@ -426,7 +426,7 @@ namespace BeatSaberMultiplayer
                                         SongInfo songInfo = new SongInfo(msg);
                                         List<byte> buffer = new List<byte>();
                                         buffer.AddRange(levelInfo.ToBytes());
-                                        buffer.AddRange(HexConverter.ConvertHexToBytesX(songInfo.levelId));
+                                        buffer.AddRange(HexConverter.ConvertHexToBytesX(songInfo.hash));
 
                                         Plugin.log.Info("LevelID: " + songInfo.levelId + ", Bytes: " + BitConverter.ToString(buffer.ToArray()));
 
@@ -718,14 +718,13 @@ namespace BeatSaberMultiplayer
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
-                Plugin.log.Info("Updating level options...");
                 Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers).Select(x => x.modifierName)));
 
 #endif
             }
         }
 
-        public void StartLevel(BeatmapLevelSO song, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, GameplayModifiers modifiers)
+        public void StartLevel(IPreviewBeatmapLevel song, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, GameplayModifiers modifiers)
         {
             if (connected && networkClient != null)
             {

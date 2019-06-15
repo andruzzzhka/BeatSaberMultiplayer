@@ -9,9 +9,8 @@ using UnityEngine;
 using VRUI;
 using UnityEngine.UI;
 using BeatSaberMultiplayer.Misc;
-using SongLoaderPlugin;
 using CustomUI.BeatSaber;
-using SongLoaderPlugin.OverrideClasses;
+using System.Threading;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 {
@@ -114,36 +113,29 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
             if (_currentSongCell != null)
             {
-                BeatmapLevelSO level = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(songInfo.levelId)) as BeatmapLevelSO;
+                IPreviewBeatmapLevel level = SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(songInfo.levelId));
                 if (level == null)
                 {
                     _currentSongCell.SetText(_currentSongInfo.songName);
                     _currentSongCell.SetSubText("Loading info...");
-                    SongDownloader.Instance.RequestSongByLevelID(_currentSongInfo.levelId, (song) =>
+                    SongDownloader.Instance.RequestSongByLevelID(_currentSongInfo.hash, (song) =>
                     {
                         _currentSongCell.SetText($"{song.songName} <size=80%>{song.songSubName}</size>");
-                        _currentSongCell.SetSubText(song.authorName);
-                        StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverUrl, (cover) => { _currentSongCell.SetIcon(cover); }));
+                        _currentSongCell.SetSubText(song.songAuthorName + " <size=80%>[" + song.levelAuthorName + "]</size>");
+                        StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverURL, (cover) => { _currentSongCell.SetIcon(cover); }));
                     }
                     );
                 }
                 else
                 {
                     _currentSongCell.SetText($"{level.songName} <size=80%>{level.songSubName}</size>");
-                    _currentSongCell.SetSubText(level.songAuthorName);
+                    _currentSongCell.SetSubText(level.songAuthorName + " <size=80%>[" + level.levelAuthorName + "]</size>");
 
-                    if (level is CustomLevel)
+                    level.GetCoverImageTexture2DAsync(new CancellationTokenSource().Token).ContinueWith((tex) =>
                     {
-                        CustomLevel customLevel = level as CustomLevel;
-                        if (customLevel.coverImageTexture2D == CustomExtensions.songLoaderDefaultImage.texture)
-                        {
-                            StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
-                                (level as CustomLevel).SetCoverImage(sprite);
-                                _currentSongCell.SetIcon(sprite);
-                            }));
-                        }
-                    }
-                    _currentSongCell.SetIcon(level.coverImageTexture2D);
+                        if (!tex.IsFaulted)
+                            _currentSongCell.SetIcon(tex.Result);
+                    }).ConfigureAwait(false);
                 }
 
             }

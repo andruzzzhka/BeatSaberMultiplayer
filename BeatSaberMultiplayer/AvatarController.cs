@@ -163,7 +163,7 @@ namespace BeatSaberMultiplayer
                 if (playerNameText != null)
                 {
                     if (IPA.Loader.PluginManager.AllPlugins.Select(x => x.Metadata.Name) //BSIPA Plugins
-                        .Concat(IPA.Loader.PluginManager.Plugins.Select(x => x.Name))    //Old IPA Plugins
+                        .Concat(IPA.Loader.PluginManager.Plugins.Select(x => x.Name))    //Old IPA Plugins 
                         .Any(x => x == "CameraPlus") && (_camera == null || !_camera.isActiveAndEnabled))
                     {
                         _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => (x.name.StartsWith("CamPlus_") || x.name.Contains("cameraplus")) && x.isActiveAndEnabled);

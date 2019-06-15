@@ -28,7 +28,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ChannelSelectionScreen
 
         Button _joinButton;
 
-        Image _channelCover;
+        RawImage _channelCover;
 
         TextMeshProUGUI _channelNameText;
         TextMeshProUGUI _playerCountText;
@@ -59,7 +59,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ChannelSelectionScreen
                 _joinButton.ToggleWordWrapping(false);
                 _joinButton.transform.SetParent(_container.transform, true);
 
-                _channelCover = new GameObject("CustomUIImage").AddComponent<Image>();
+                _channelCover = new GameObject("CustomUIImage").AddComponent<RawImage>();
                 
                 _channelCover.material = Sprites.NoGlowMat;
                 _channelCover.rectTransform.SetParent(rectTransform, false);
@@ -67,7 +67,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ChannelSelectionScreen
                 _channelCover.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
                 _channelCover.rectTransform.anchoredPosition = new Vector2(4.5f, 4.5f);
                 _channelCover.rectTransform.sizeDelta = new Vector2(32f, 32f);
-                _channelCover.sprite = UIUtilities.BlankSprite;
+                _channelCover.texture = UIUtilities.BlankSprite.texture;
                 _channelCover.rectTransform.SetParent(_container.transform, true);
 
                 _channelNameText = BeatSaberUI.CreateText(rectTransform, "CHANNEL NAME", new Vector2(4.5f, 35.50f));
@@ -106,14 +106,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ChannelSelectionScreen
                 StartCoroutine(LoadScripts.LoadSpriteCoroutine(channelInfo.iconUrl, (image) => 
                 {
                     _loadingIndicator.SetActive(false);
-                    _channelCover.sprite = image;
+                    _channelCover.texture = image;
                 }));
                 Plugin.log.Info("Loading icon from URL: \""+channelInfo.iconUrl+"\"");
             }
             else
             {
                 Plugin.log.Info("Icon URL is empty!");
-                _channelCover.sprite = Sprites.radioIcon;
+                _channelCover.texture = Sprites.radioIcon.texture;
             }
 
             _channelNameText.text = channelInfo.name;

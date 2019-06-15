@@ -820,13 +820,13 @@ namespace BeatSaberMultiplayer
 
         public void SongFinished(StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers, bool practice)
         {
-            /*
             if(Client.Instance.inRadioMode)
             {
                 PluginUI.instance.radioFlowCoordinator.lastDifficulty = difficultyBeatmap;
                 PluginUI.instance.radioFlowCoordinator.lastResults = levelCompletionResults;
             }
 
+            /*
             if (Config.Instance.SpectatorMode || Client.disableScoreSubmission || ScoreSubmission.Disabled || ScoreSubmission.ProlongedDisabled)
             {
                 List<string> reasons = new List<string>();

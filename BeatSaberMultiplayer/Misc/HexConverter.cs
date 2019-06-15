@@ -34,9 +34,9 @@ namespace BeatSaberMultiplayer.Misc
 
         public static byte[] GetStringHashBytes(string input)
         {
-            MD5 md5 = MD5.Create();
+            SHA1 sha5 = SHA1.Create();
             byte[] inputBytes = Encoding.UTF8.GetBytes(input);
-            return md5.ComputeHash(inputBytes);
+            return sha5.ComputeHash(inputBytes);
         }
 
         private static int HexToInt(char c)

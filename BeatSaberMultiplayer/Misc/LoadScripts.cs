@@ -13,15 +13,15 @@ namespace BeatSaberMultiplayer.Misc
 {
     class LoadScripts
     {
-        static public Dictionary<string, Sprite> _cachedSprites = new Dictionary<string, Sprite>();
+        static public Dictionary<string, Texture2D> _cachedTextures = new Dictionary<string, Texture2D>();
 
-        static public IEnumerator LoadSpriteCoroutine(string spritePath, Action<Sprite> done)
+        static public IEnumerator LoadSpriteCoroutine(string spritePath, Action<Texture2D> done)
         {
             Texture2D tex;
 
-            if (_cachedSprites.ContainsKey(spritePath))
+            if (_cachedTextures.ContainsKey(spritePath))
             {
-                done?.Invoke(_cachedSprites[spritePath]);
+                done?.Invoke(_cachedTextures[spritePath]);
                 yield break;
             }
 
@@ -36,9 +36,8 @@ namespace BeatSaberMultiplayer.Misc
                 else
                 {
                     tex = DownloadHandlerTexture.GetContent(www);
-                    var newSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), Vector2.one * 0.5f, 100, 1);
-                    _cachedSprites.Add(spritePath, newSprite);
-                    done?.Invoke(newSprite);
+                    _cachedTextures.Add(spritePath, tex);
+                    done?.Invoke(tex);
                 }
             }
         }

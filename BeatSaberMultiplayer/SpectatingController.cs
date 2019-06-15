@@ -162,8 +162,8 @@ namespace BeatSaberMultiplayer
             position += 2;
 
             byte[] levelIdBytes = new byte[16];
-            stream.Read(levelIdBytes, 0, 16);
-            position += 16;
+            stream.Read(levelIdBytes, 0, 20);
+            position += 20;
 
             while (length - position > 79)
             {

@@ -29,7 +29,7 @@ namespace ServerHub.Data
             songSubName = msg.ReadString();
             authorName = msg.ReadString();
             key = msg.ReadString();
-            levelId = BitConverter.ToString(msg.ReadBytes(16)).Replace("-", "");
+            levelId = BitConverter.ToString(msg.ReadBytes(20)).Replace("-", "");
             songDuration = msg.ReadFloat();
 
             if (string.IsNullOrEmpty(key))

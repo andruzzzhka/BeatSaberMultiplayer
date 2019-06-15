@@ -1,6 +1,5 @@
-﻿using SimpleJSON;
-using SongLoaderPlugin;
-using SongLoaderPlugin.OverrideClasses;
+﻿using Newtonsoft.Json.Linq;
+using SimpleJSON;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -41,30 +40,41 @@ namespace BeatSaberMultiplayer.Misc
         public void Awake()
         {
             DontDestroyOnLoad(gameObject);
-            if (!SongLoader.AreSongsLoaded)
+
+            if (!SongCore.Loader.AreSongsLoaded)
             {
-                SongLoader.SongsLoadedEvent += SongLoader_SongsLoadedEvent;
+                SongCore.Loader.SongsLoadedEvent += SongLoader_SongsLoadedEvent;
             }
             else
             {
-                SongLoader_SongsLoadedEvent(null, SongLoader.CustomLevels);
+                SongLoader_SongsLoadedEvent(null, SongCore.Loader.CustomLevels);
             }
+
         }
 
-        private void SongLoader_SongsLoadedEvent(SongLoader sender, List<CustomLevel> levels)
+        private void SongLoader_SongsLoadedEvent(SongCore.Loader sender, Dictionary<string, CustomPreviewBeatmapLevel> levels)
         {
-            _alreadyDownloadedSongs = levels.Select(x => new Song(x)).ToList();
+            _alreadyDownloadedSongs = levels.Values.Select(x => new Song(x)).ToList();
         }
 
-        public void DownloadSong(Song songInfo, string subFolder, Action callback, Action<float> progressChanged = null)
+        public void DownloadSong(Song songInfo, Action<bool> downloadedCallback, Action<float> progressChangedCallback)
         {
-            StartCoroutine(DownloadSongCoroutine(songInfo, subFolder, callback, progressChanged));
+            StartCoroutine(DownloadSongCoroutine(songInfo, downloadedCallback, progressChangedCallback));
         }
 
-        public IEnumerator DownloadSongCoroutine(Song songInfo, string subFolder, Action callback, Action<float> progressChanged = null, CancellationTokenSource cancelToken = null)
+        public IEnumerator DownloadSongCoroutine(Song songInfo, Action<bool> downloadedCallback, Action<float> progressChangedCallback)
         {
             songInfo.songQueueState = SongQueueState.Downloading;
 
+            if (SongCore.Collections.songWithHashPresent(songInfo.hash.ToUpper()))
+            {
+                songInfo.downloadingProgress = 1f;
+                yield return new WaitForSeconds(0.1f);
+                songInfo.songQueueState = SongQueueState.Downloaded;
+                songDownloaded?.Invoke(songInfo);
+                downloadedCallback?.Invoke(true);
+                yield break; 
+            }
             UnityWebRequest www;
             bool timeout = false;
             float time = 0f;
@@ -72,7 +82,7 @@ namespace BeatSaberMultiplayer.Misc
 
             try
             {
-                www = UnityWebRequest.Get(songInfo.downloadUrl);
+                www = UnityWebRequest.Get(songInfo.downloadURL);
 
                 asyncRequest = www.SendWebRequest();
             }
@@ -81,7 +91,7 @@ namespace BeatSaberMultiplayer.Misc
                 Plugin.log.Error(e);
                 songInfo.songQueueState = SongQueueState.Error;
                 songInfo.downloadingProgress = 1f;
-
+                downloadedCallback?.Invoke(false);
                 yield break;
             }
 
@@ -95,26 +105,25 @@ namespace BeatSaberMultiplayer.Misc
                 {
                     www.Abort();
                     timeout = true;
-                    Plugin.log.Error("Download aborted!");
+                    Plugin.log.Error("Connection timed out!");
                 }
 
                 songInfo.downloadingProgress = asyncRequest.progress;
-                progressChanged?.Invoke(asyncRequest.progress);
+                progressChangedCallback?.Invoke(asyncRequest.progress);
             }
 
-            if(songInfo.songQueueState == SongQueueState.Error && (!asyncRequest.isDone || songInfo.downloadingProgress < 1f))
+            if (songInfo.songQueueState == SongQueueState.Error && (!asyncRequest.isDone || songInfo.downloadingProgress < 1f))
                 www.Abort();
 
             if (www.isNetworkError || www.isHttpError || timeout || songInfo.songQueueState == SongQueueState.Error)
             {
                 songInfo.songQueueState = SongQueueState.Error;
                 Plugin.log.Error("Unable to download song! " + (www.isNetworkError ? $"Network error: {www.error}" : (www.isHttpError ? $"HTTP error: {www.error}" : "Unknown error")));
+                downloadedCallback?.Invoke(false);
             }
             else
             {
                 Plugin.log.Info("Received response from BeatSaver.com...");
-
-                string docPath = "";
                 string customSongsPath = "";
 
                 byte[] data = www.downloadHandler.data;
@@ -123,10 +132,7 @@ namespace BeatSaberMultiplayer.Misc
 
                 try
                 {
-                    docPath = Application.dataPath;
-                    docPath = docPath.Substring(0, docPath.Length - 5);
-                    docPath = docPath.Substring(0, docPath.LastIndexOf("/"));
-                    customSongsPath = docPath + "/CustomSongs/"+subFolder+"/" + songInfo.id + "/";
+                    customSongsPath = CustomLevelPathHelper.customLevelsDirectoryPath;
                     if (!Directory.Exists(customSongsPath))
                     {
                         Directory.CreateDirectory(customSongsPath);
@@ -136,36 +142,18 @@ namespace BeatSaberMultiplayer.Misc
                 }
                 catch (Exception e)
                 {
-                    Plugin.log.Critical("Unable to download zip! Exception: " +e);
+                    Plugin.log.Critical(e);
                     songInfo.songQueueState = SongQueueState.Error;
-                    if(zipStream != null)
-                        zipStream.Close();
+                    downloadedCallback?.Invoke(false);
                     yield break;
                 }
-                
+
                 yield return new WaitWhile(() => _extractingZip); //because extracting several songs at once sometimes hangs the game
 
                 Task extract = ExtractZipAsync(songInfo, zipStream, customSongsPath);
                 yield return new WaitWhile(() => !extract.IsCompleted);
-                zipStream.Close();
-
                 songDownloaded?.Invoke(songInfo);
-                callback?.Invoke();
-
-                try
-                {
-                    string dirName = customSongsPath.Substring(customSongsPath.LastIndexOf("CustomSongs") + 12);
-#if DEBUG
-                    Plugin.log.Info("Original path: " + customSongsPath);
-                    Plugin.log.Info("Folder name: " + dirName);
-#endif
-
-                    SongLoader.Instance.RetrieveNewSong(dirName);
-                }
-                catch (Exception e)
-                {
-                    Plugin.log.Critical("Unable to load song! Exception: " + e);
-                }
+                downloadedCallback?.Invoke(true);
             }
         }
 
@@ -176,9 +164,20 @@ namespace BeatSaberMultiplayer.Misc
                 Plugin.log.Info("Extracting...");
                 _extractingZip = true;
                 ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Read);
-                await Task.Run(() => archive.ExtractToDirectory(customSongsPath)).ConfigureAwait(false);
+                string basePath = songInfo.key + " (" + songInfo.songName + " - " + songInfo.levelAuthorName + ")";
+                basePath = string.Join("", basePath.Split((Path.GetInvalidFileNameChars().Concat(Path.GetInvalidPathChars()).ToArray())));
+                string path = customSongsPath + "/" + basePath;
+
+                if (Directory.Exists(path))
+                {
+                    int pathNum = 1;
+                    while (Directory.Exists(path + $" ({pathNum})")) ++pathNum;
+                    path += $" ({pathNum})";
+                }
+                Plugin.log.Info(path);
+                await Task.Run(() => archive.ExtractToDirectory(path)).ConfigureAwait(false);
                 archive.Dispose();
-                zipStream.Close();
+                songInfo.path = path;
             }
             catch (Exception e)
             {
@@ -187,8 +186,7 @@ namespace BeatSaberMultiplayer.Misc
                 _extractingZip = false;
                 return;
             }
-
-            songInfo.path = Directory.GetDirectories(customSongsPath).FirstOrDefault();
+            zipStream.Close();
 
             if (string.IsNullOrEmpty(songInfo.path))
             {
@@ -199,117 +197,27 @@ namespace BeatSaberMultiplayer.Misc
             songInfo.songQueueState = SongQueueState.Downloaded;
             _alreadyDownloadedSongs.Add(songInfo);
             Plugin.log.Info($"Extracted {songInfo.songName} {songInfo.songSubName}!");
-        }
 
-        public bool DeleteSong(Song song)
-        {
-            bool zippedSong = false;
-            string path = "";
-
-            CustomLevel level = SongLoader.CustomLevels.FirstOrDefault(x => x.levelID.StartsWith(song.hash));
-
-            if (string.IsNullOrEmpty(song.path))
-            {
-                if (level != null)
-                    path = level.customSongInfo.path;
-            }
-            else
-            {
-                path = song.path;
-            }
-
-            if (string.IsNullOrEmpty(path))
-                return false;
-            if (!Directory.Exists(path))
-                return false;
-
-            if (path.Contains("/.cache/"))
-                zippedSong = true;
-
-            if (zippedSong)
-            {
-                Plugin.log.Info("Deleting \"" + path.Substring(path.LastIndexOf('/')) + "\"...");
-                Directory.Delete(path, true);
-
-                string songHash = Directory.GetParent(path).Name;
-
-                try
-                {
-                    if (Directory.GetFileSystemEntries(path.Substring(0, path.LastIndexOf('/'))).Length == 0)
-                    {
-                        Plugin.log.Info("Deleting empty folder \"" + path.Substring(0, path.LastIndexOf('/')) + "\"...");
-                        Directory.Delete(path.Substring(0, path.LastIndexOf('/')), false);
-                    }
-                }
-                catch
-                {
-                    Plugin.log.Warn("Can't find or delete empty folder!");
-                }
-
-                string docPath = Application.dataPath;
-                docPath = docPath.Substring(0, docPath.Length - 5);
-                docPath = docPath.Substring(0, docPath.LastIndexOf("/"));
-                string customSongsPath = docPath + "/CustomSongs/";
-
-                string hash = "";
-
-                foreach (string file in Directory.GetFiles(customSongsPath, "*.zip"))
-                {
-                    if (CreateMD5FromFile(file, out hash))
-                    {
-                        if (hash == songHash)
-                        {
-                            File.Delete(file);
-                            break;
-                        }
-                    }
-                }
-
-            }
-            else
-            {
-                Plugin.log.Info("Deleting \"" + path.Substring(path.LastIndexOf('/')) + "\"...");
-                Directory.Delete(path, true);
-
-                try
-                {
-                    if (Directory.GetFileSystemEntries(path.Substring(0, path.LastIndexOf('/'))).Length == 0)
-                    {
-                        Plugin.log.Info("Deleting empty folder \"" + path.Substring(0, path.LastIndexOf('/')) + "\"...");
-                        Directory.Delete(path.Substring(0, path.LastIndexOf('/')), false);
-                    }
-                }
-                catch
-                {
-                    Plugin.log.Warn("Unable to delete empty folder!");
-                }
-            }
-
-            if (level != null)
-                SongLoader.Instance.RemoveSongWithLevelID(level.levelID);
-            Plugin.log.Info($"{_alreadyDownloadedSongs.RemoveAll(x => x.Compare(song))} song removed");
-            return true;
         }
 
         public bool IsSongDownloaded(Song song)
         {
-            if (SongLoader.AreSongsLoaded)
-            {
+            if (SongCore.Loader.AreSongsLoaded)
                 return _alreadyDownloadedSongs.Any(x => x.Compare(song));
-            }
             else
                 return false;
         }
 
         public static string GetLevelID(Song song)
         {
-            string[] values = new string[] { song.hash, song.songName, song.songSubName, song.authorName, song.beatsPerMinute };
+            Console.WriteLine("LevelID for: " + song.path);
+            string[] values = new string[] { song.hash, song.songName, song.songSubName, song.levelAuthorName, song.bpm.ToString() };
             return string.Join("∎", values) + "∎";
         }
 
-        public static BeatmapLevelSO GetLevel(string levelId)
+        public static CustomPreviewBeatmapLevel GetLevel(string levelId)
         {
-            return SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID == levelId) as BeatmapLevelSO;
+            return SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID == levelId) as CustomPreviewBeatmapLevel;
         }
 
         public static bool CreateMD5FromFile(string path, out string hash)
@@ -341,7 +249,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public IEnumerator RequestSongByLevelIDCoroutine(string levelId, Action<Song> callback)
         {
-            UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/songs/search/hash/" + levelId);
+            UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/maps/by-hash/" + levelId);
             wwwId.timeout = 10;
 
             yield return wwwId.SendWebRequest();
@@ -353,19 +261,15 @@ namespace BeatSaberMultiplayer.Misc
             }
             else
             {
-#if DEBUG
-                Plugin.log.Info("Received response from BeatSaver...");
-#endif
-                JSONNode node = JSON.Parse(wwwId.downloadHandler.text);
-
-                if (node["songs"].Count == 0)
+                JObject jNode = JObject.Parse(wwwId.downloadHandler.text);
+                if (jNode.Children().Count() == 0)
                 {
                     Plugin.log.Error($"Song {levelId} doesn't exist on BeatSaver!");
                     callback?.Invoke(null);
                     yield break;
                 }
 
-                Song _tempSong = Song.FromSearchNode(node["songs"][0]);
+                Song _tempSong = Song.FromSearchNode((JObject)jNode);
                 callback?.Invoke(_tempSong);
             }
         }
@@ -377,7 +281,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public IEnumerator RequestSongByKeyCoroutine(string key, Action<Song> callback)
         {
-            UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/songs/detail/" + key);
+            UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/maps/detail/" + key);
             wwwId.timeout = 10;
 
             yield return wwwId.SendWebRequest();
@@ -389,12 +293,9 @@ namespace BeatSaberMultiplayer.Misc
             }
             else
             {
-#if DEBUG
-                Plugin.log.Info("Received response from BeatSaver...");
-#endif
-                JSONNode node = JSON.Parse(wwwId.downloadHandler.text);
-                
-                Song _tempSong = new Song(node["song"]);
+                JObject node = JObject.Parse(wwwId.downloadHandler.text);
+
+                Song _tempSong = new Song((JObject)node, false);
                 callback?.Invoke(_tempSong);
             }
         }

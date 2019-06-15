@@ -9,7 +9,6 @@ using UnityEngine;
 using VRUI;
 using UnityEngine.UI;
 using BeatSaberMultiplayer.Misc;
-using SongLoaderPlugin;
 using CustomUI.BeatSaber;
 using System.Globalization;
 using UnityEngine.Networking;

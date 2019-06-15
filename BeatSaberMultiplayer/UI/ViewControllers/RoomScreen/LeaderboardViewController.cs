@@ -3,13 +3,12 @@ using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using CustomUI.BeatSaber;
 using HMUI;
-using SongLoaderPlugin;
-using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -34,7 +33,7 @@ namespace BeatSaberMultiplayer
         List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
         List<LeaderboardTableCell> _tableCells = new List<LeaderboardTableCell>();
 
-        public BeatmapLevelSO _selectedSong;
+        public IPreviewBeatmapLevel _selectedSong;
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
@@ -172,36 +171,28 @@ namespace BeatSaberMultiplayer
             if (_songTableCell == null)
                 return;
             
-            _selectedSong = SongLoader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(info.levelId)) as BeatmapLevelSO;
+            _selectedSong = SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(info.levelId));
 
             if (_selectedSong != null)
             {
                 _songTableCell.SetText(_selectedSong.songName + " <size=80%>" + _selectedSong.songSubName + "</size>");
-                _songTableCell.SetSubText(_selectedSong.songAuthorName);
+                _songTableCell.SetSubText(_selectedSong.songAuthorName + " <size=80%>[" + _selectedSong.levelAuthorName + "]</size>");
 
-                if (_selectedSong is CustomLevel)
+                _selectedSong.GetCoverImageTexture2DAsync(new CancellationTokenSource().Token).ContinueWith((tex) =>
                 {
-                    CustomLevel customLevel = _selectedSong as CustomLevel;
-                    if (customLevel.coverImageTexture2D == CustomExtensions.songLoaderDefaultImage.texture)
-                    {
-                        StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
-                            (_selectedSong as CustomLevel).SetCoverImage(sprite);
-                            _songTableCell.SetIcon(sprite);
-                        }));
-                    }
-                }
-
-                _songTableCell.SetIcon(_selectedSong.coverImageTexture2D);
+                    if (!tex.IsFaulted)
+                        _songTableCell.SetIcon(tex.Result);
+                }).ConfigureAwait(false);
             }
             else
             {
                 _songTableCell.SetText(info.songName);
                 _songTableCell.SetSubText("Loading info...");
-                SongDownloader.Instance.RequestSongByLevelID(info.levelId, (song) =>
+                SongDownloader.Instance.RequestSongByLevelID(info.hash, (song) =>
                 {
                     _songTableCell.SetText( $"{song.songName} <size=80%>{song.songSubName}</size>");
-                    _songTableCell.SetSubText(song.authorName);
-                    StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverUrl, (cover) => { _songTableCell.SetIcon(cover); }));
+                    _songTableCell.SetSubText(song.songAuthorName + " <size=80%>[" + song.levelAuthorName + "]</size>");
+                    StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverURL, (cover) => { _songTableCell.SetIcon(cover); }));
 
                 });
             }

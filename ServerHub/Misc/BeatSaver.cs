@@ -11,7 +11,7 @@ namespace ServerHub.Misc
 {
     public static class BeatSaver
     {
-        static readonly string BeatSaverAPI = "https://beatsaver.com/api/songs";
+        static readonly string BeatSaverAPI = "https://beatsaver.com/api/maps";
 
         public class JsonResponseDetails
         {
@@ -26,10 +26,9 @@ namespace ServerHub.Misc
 
         public class Song
         {
-            public int Id { get; set; }
             public string Key { get; set; }
             public string Name { get; set; }
-            public string HashMD5 { get; set; }
+            public string Hash { get; set; }
         }
 
         public static async Task<Song> FetchByID (string id)
@@ -64,7 +63,7 @@ namespace ServerHub.Misc
             if (song == null)
                 return null;
 
-            SongInfo info = new SongInfo() { levelId = song.HashMD5.ToUpper(), songName = song.Name, key = song.Key };
+            SongInfo info = new SongInfo() { levelId = song.Hash.ToUpper(), songName = song.Name, key = song.Key };
             return info;
         }
 
@@ -74,7 +73,7 @@ namespace ServerHub.Misc
             if (song == null)
                 return null;
 
-            SongInfo info = new SongInfo() { levelId = song.HashMD5.ToUpper(), songName = song.Name, key = song.Key };
+            SongInfo info = new SongInfo() { levelId = song.Hash.ToUpper(), songName = song.Name, key = song.Key };
             return info;
         }
 
@@ -98,18 +97,18 @@ namespace ServerHub.Misc
                 int maxId = 11000;
                 try
                 {
-                    string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/new");
+                    string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/maps/latest");
                     JsonResponseSearch json = JsonConvert.DeserializeObject<JsonResponseSearch>(response);
                     if (json.Total > 0)
                     {
-                        maxId = json.Songs[0].Id;
+                        maxId = Convert.ToInt32(json.Songs[0].Key, 16);
                     }
 
                     bool found = false;
                     do {
                         try
                         {
-                            response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/detail/{rand.Next(1, maxId)}");
+                            response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/detail/{rand.Next(1, maxId).ToString("X")}");
                             found = true;
                         }
                         catch (WebException wex)
@@ -122,7 +121,7 @@ namespace ServerHub.Misc
                     } while (!found);
 
                     JsonResponseDetails jsonDetails = JsonConvert.DeserializeObject<JsonResponseDetails>(response);
-                    return new SongInfo() { levelId = jsonDetails.Song.HashMD5.ToUpper(), songName = jsonDetails.Song.Name, key = jsonDetails.Song.Key };  
+                    return new SongInfo() { levelId = jsonDetails.Song.Hash.ToUpper(), songName = jsonDetails.Song.Name, key = jsonDetails.Song.Key };  
                 }
                 catch (Exception e)
                 {
@@ -140,7 +139,7 @@ namespace ServerHub.Misc
             {
                 try
                 {
-                    string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/search/hash/{hash}");
+                    string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/by-hash/{hash}");
                     JsonResponseSearch json = JsonConvert.DeserializeObject<JsonResponseSearch>(response);
                     if (json.Total > 0)
                     {

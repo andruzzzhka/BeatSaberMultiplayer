@@ -109,14 +109,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
             PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
         }
-        
-        public void ReturnToRoom()
-        {
-            PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
-            PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
-            PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
-            PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
-        }
 
         private void RoomFlowCoordinator_didFinishEvent()
         {

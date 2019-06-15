@@ -3,7 +3,6 @@ using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen;
 using CustomUI.BeatSaber;
 using Lidgren.Network;
-using SongLoaderPlugin;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,7 +1,6 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using CustomUI.BeatSaber;
 using HMUI;
-using SongLoaderPlugin.OverrideClasses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +13,7 @@ using Image = UnityEngine.UI.Image;
 using VRUI;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BS_Utils.Utilities;
+using System.Threading;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
@@ -21,7 +21,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
     class SongSelectionViewController : VRUIViewController, TableView.IDataSource
     {
-        public event Action<BeatmapLevelSO> SongSelected;
+        public event Action<IPreviewBeatmapLevel> SongSelected;
         public event Action SearchPressed;
         public event Action<SortMode> SortPressed;
 
@@ -42,7 +42,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         TableView _songsTableView;
         LevelListTableCell _songTableCellInstance;
-        List<BeatmapLevelSO> availableSongs = new List<BeatmapLevelSO>();
+        List<IPreviewBeatmapLevel> availableSongs = new List<IPreviewBeatmapLevel>();
         private BeatmapCharacteristicSO[] _beatmapCharacteristics;
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
@@ -192,7 +192,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             SongSelected?.Invoke(availableSongs[row]);
         }
 
-        public void SetSongs(List<BeatmapLevelSO> levels)
+        public void SetSongs(List<IPreviewBeatmapLevel> levels)
         {
             availableSongs = levels;
 
@@ -319,23 +319,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             LevelListTableCell cell = Instantiate(_songTableCellInstance);
 
-            BeatmapLevelSO song = availableSongs[row];
+            IPreviewBeatmapLevel song = availableSongs[row];
+            
+            song.GetCoverImageTexture2DAsync(new CancellationToken()).ContinueWith((tex) => {
+                if(!tex.IsFaulted)
+                    cell.SetIcon(tex.Result);
+            }).ConfigureAwait(false);
 
-            if (song is CustomLevel)
-            {
-                CustomLevel customLevel = song as CustomLevel;
-                if (customLevel.coverImageTexture2D == CustomExtensions.songLoaderDefaultImage.texture)
-                {
-                    StartCoroutine(LoadScripts.LoadSpriteCoroutine(customLevel.customSongInfo.path + "/" + customLevel.customSongInfo.coverImagePath, (sprite) => {
-                        (song as CustomLevel).SetCoverImage(sprite);
-                        cell.SetIcon(sprite);
-                    }));
-                }
-            }
-
-            cell.SetIcon(song.coverImageTexture2D);
             cell.SetText($"{song.songName} <size=80%>{song.songSubName}</size>");
-            cell.SetSubText(song.songAuthorName);
+            cell.SetSubText(song.songAuthorName + " <size=80%>[" + song.levelAuthorName + "]</size>");
 
             cell.reuseIdentifier = "SongCell";
 
