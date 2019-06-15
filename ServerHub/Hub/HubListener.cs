@@ -97,7 +97,11 @@ namespace ServerHub.Hub
             ListenerServer.Shutdown(string.IsNullOrEmpty(reason) ? "Server is shutting down..." : reason);
             Listen = false;
             WebSocketListener.Stop((reason == "ServerHub exception occured!" ? WebSocketSharp.CloseStatusCode.ServerError : WebSocketSharp.CloseStatusCode.Away) , reason);
-            hubClients.ForEach(x => x.KickClient(string.IsNullOrEmpty(reason) ? "Server is shutting down..." : reason));
+            for (int i = 0; i < hubClients.Count; i++)
+            {
+                if(hubClients.Count > i)
+                    hubClients[i].KickClient(string.IsNullOrEmpty(reason) ? "Server is shutting down..." : reason);
+            }
             RadioController.StopRadio(string.IsNullOrEmpty(reason) ? "Server is shutting down..." : reason);
         }
 

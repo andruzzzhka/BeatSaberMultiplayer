@@ -37,7 +37,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         Button _cancelButton;
         Button _playButton;
-        
+        UnityEngine.UI.Image _playBtnGlow;
+
         TextMeshProUGUI _playersReadyText;
                 
         private RectTransform _progressBarRect;
@@ -92,9 +93,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _playButton.ToggleWordWrapping(false);
                 _playButton.SetButtonTextSize(5.5f);
                 _playButton.onClick.AddListener(delegate () { playPressed?.Invoke(_selectedSong, selectedCharacteristic, selectedDifficulty); });
-                var playGlow = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "PlayButton").GetComponentsInChildren<RectTransform>().First(x => x.name == "GlowContainer"), _playButton.transform); //Let's add some glow!
-                playGlow.transform.SetAsFirstSibling();
-                playGlow.GetComponentInChildren<UnityEngine.UI.Image>().color = new Color(0f, 0.7058824f, 1f, 0.7843137f);
+                var playGlowContainer = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "PlayButton").GetComponentsInChildren<RectTransform>().First(x => x.name == "GlowContainer"), _playButton.transform); //Let's add some glow!
+                playGlowContainer.transform.SetAsFirstSibling();
+                _playBtnGlow = playGlowContainer.GetComponentInChildren<UnityEngine.UI.Image>();
+                _playBtnGlow.color = new Color(0f, 0.7058824f, 1f, 0.7843137f);
                 _playButton.gameObject.SetActive(isHost);
 
                 _characteristicControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 34f), new Vector2(110f, 7f), _characteristicControl_didSelectCellEvent);
@@ -244,6 +246,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             _selectedSongCell.SetText(info.songName);
             _selectedSongCell.SetSubText("Loading info...");
+
+            _playButton.SetButtonText("PLAY");
+            _playBtnGlow.color = new Color(0f, 0.7058824f, 1f, 0.7843137f);
+
             SongDownloader.Instance.RequestSongByLevelID(info.hash, (song) =>
             {
                 _selectedSongCell.SetText($"{song.songName} <size=80%>{song.songSubName}</size>");
@@ -260,6 +266,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _selectedSongCell.SetText(_selectedSong.songName + " <size=80%>" + _selectedSong.songSubName + "</size>");
             _selectedSongCell.SetSubText(_selectedSong.songAuthorName + " <size=80%>[" + _selectedSong.levelAuthorName + "]</size>");
 
+            _playButton.SetButtonText("PLAY");
+            _playBtnGlow.color = new Color(0f, 0.7058824f, 1f, 0.7843137f);
+
             _selectedSong.GetCoverImageTexture2DAsync(new CancellationToken()).ContinueWith((tex) => {
                 if (!tex.IsFaulted)
                     _selectedSongCell.SetIcon(tex.Result);
@@ -269,6 +278,27 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             int standardCharacteristicIndex = Array.FindIndex(_selectedSong.beatmapCharacteristics.Distinct().ToArray(), x => x.serializedName == "Standard");
             
+            _characteristicControl.SelectCellWithNumber((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
+            _characteristicControl_didSelectCellEvent((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
+        }
+
+        public void SetSelectedSong(IPreviewBeatmapLevel level)
+        {
+            _selectedSongCell.SetText(level.songName + " <size=80%>" + level.songSubName + "</size>");
+            _selectedSongCell.SetSubText(level.songAuthorName + " <size=80%>[" + level.levelAuthorName + "]</size>");
+
+            _playButton.SetButtonText("NOT BOUGHT");
+            _playBtnGlow.color = Color.red;
+
+            level.GetCoverImageTexture2DAsync(new CancellationToken()).ContinueWith((tex) => {
+                if (!tex.IsFaulted)
+                    _selectedSongCell.SetIcon(tex.Result);
+            }).ConfigureAwait(false);
+
+            _characteristicControl.SetTexts(level.beatmapCharacteristics.Distinct().Select(x => x.characteristicNameLocalized).ToArray());
+
+            int standardCharacteristicIndex = Array.FindIndex(level.beatmapCharacteristics.Distinct().ToArray(), x => x.serializedName == "Standard");
+
             _characteristicControl.SelectCellWithNumber((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
             _characteristicControl_didSelectCellEvent((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
         }

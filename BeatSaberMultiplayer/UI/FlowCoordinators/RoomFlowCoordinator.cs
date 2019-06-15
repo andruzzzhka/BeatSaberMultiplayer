@@ -42,6 +42,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             private set { _songPreviewPlayer = value; }
         }
 
+        AdditionalContentModelSO _contentModelSO;
         BeatmapLevelsModelSO _beatmapLevelsModel;
 
         CustomKeyboardViewController _passwordKeyboard;
@@ -85,6 +86,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
             _standardCharacteristic = _beatmapCharacteristics.First(x => x.serializedName == "Standard");
             _beatmapLevelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModelSO>().FirstOrDefault();
+            _contentModelSO = Resources.FindObjectsOfTypeAll<AdditionalContentModelSO>().FirstOrDefault();
 
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
@@ -423,7 +425,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 else
                                 {
                                     LoadBeatmapLevelAsync(level,
-                                        (success, beatmapLevel) =>
+                                        (status, success, beatmapLevel) =>
                                         {
                                             if (roomInfo.perPlayerDifficulty && _difficultySelectionViewController != null)
                                             {
@@ -848,23 +850,30 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             
             _difficultySelectionViewController.UpdateViewController(Client.Instance.isHost, roomInfo.perPlayerDifficulty);
 
-            IPreviewBeatmapLevel selectedLevel = null;
+            IPreviewBeatmapLevel selectedLevel = SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID == song.levelId);
 
-            foreach (var pack in SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks)
-            {
-                selectedLevel = pack.beatmapLevelCollection.beatmapLevels.FirstOrDefault(x => x.levelID.StartsWith(song.levelId));
-                if (selectedLevel != null)
-                    break;
-            }
-            
             if (selectedLevel != null)
             {
                 _difficultySelectionViewController.SetPlayButtonInteractable(false);
-                
+
                 LoadBeatmapLevelAsync(selectedLevel,
-                    (success, level) =>
+                    (status, success, level) =>
                     {
-                        if (success)
+                        if(status == AdditionalContentModelSO.EntitlementStatus.NotOwned)
+                        {
+                            selectedLevel.GetPreviewAudioClipAsync(new CancellationToken()).ContinueWith(
+                                (res) =>
+                                {
+                                    if (!res.IsFaulted)
+                                        PreviewPlayer.CrossfadeTo(res.Result, selectedLevel.previewStartTime, (res.Result.length - selectedLevel.previewStartTime));
+                                });
+
+                            _difficultySelectionViewController.SetSelectedSong(selectedLevel);
+                            Client.Instance.SendPlayerReady(false);
+                            Client.Instance.playerInfo.playerState = PlayerState.DownloadingSongs;
+                            Client.Instance.playerInfo.playerProgress = 0f;
+                        }
+                        else if (success)
                         {
                             PreviewPlayer.CrossfadeTo(level.beatmapLevelData.audioClip, selectedLevel.previewStartTime, (level.beatmapLevelData.audioClip.length - selectedLevel.previewStartTime), 1f);
 
@@ -907,7 +916,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             if (selectedLevel != null)
                             {
                                 LoadBeatmapLevelAsync(selectedLevel,
-                                    (loaded, level) =>
+                                    (status, loaded, level) =>
                                 {
                                     PreviewPlayer.CrossfadeTo(level.beatmapLevelData.audioClip, level.previewStartTime, (level.beatmapLevelData.audioClip.length - level.previewStartTime));
                                 });
@@ -919,8 +928,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 Client.Instance.playerInfo.playerState = PlayerState.Room;
                             }
                         };
-
                         SongCore.Loader.SongsLoadedEvent += onLoaded;
+
+                        SongCore.Loader.Instance.RefreshSongs(false);
                         songToDownload = null;
                     },
                     (progress) =>
@@ -933,11 +943,22 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        private async void LoadBeatmapLevelAsync(IPreviewBeatmapLevel selectedLevel, Action<bool, IBeatmapLevel> callback)
+        private async void LoadBeatmapLevelAsync(IPreviewBeatmapLevel selectedLevel, Action<AdditionalContentModelSO.EntitlementStatus, bool, IBeatmapLevel> callback)
         {
-            BeatmapLevelsModelSO.GetBeatmapLevelResult getBeatmapLevelResult = await _beatmapLevelsModel.GetBeatmapLevelAsync(selectedLevel.levelID, new CancellationTokenSource().Token);
+            var token = new CancellationTokenSource();
 
-            callback?.Invoke(!getBeatmapLevelResult.isError, getBeatmapLevelResult.beatmapLevel);
+            var entitlementStatus  = await _contentModelSO.GetLevelEntitlementStatusAsync(selectedLevel.levelID, token.Token);
+
+            if (entitlementStatus == AdditionalContentModelSO.EntitlementStatus.Owned)
+            {
+                BeatmapLevelsModelSO.GetBeatmapLevelResult getBeatmapLevelResult = await _beatmapLevelsModel.GetBeatmapLevelAsync(selectedLevel.levelID, token.Token);
+
+                callback?.Invoke(entitlementStatus, !getBeatmapLevelResult.isError, getBeatmapLevelResult.beatmapLevel);
+            }
+            else
+            {
+                callback?.Invoke(entitlementStatus, false, null);
+            }
         }
 
         private void PlayPressed(IPreviewBeatmapLevel song, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, GameplayModifiers modifiers)
@@ -978,7 +999,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (level != null)
             {
                 LoadBeatmapLevelAsync(level,
-                    (success, beatmapLevel) =>
+                    (status, success, beatmapLevel) =>
                     {
                         PreviewPlayer.CrossfadeTo(beatmapLevel.beatmapLevelData.audioClip, beatmapLevel.previewStartTime, (beatmapLevel.beatmapLevelData.audioClip.length - beatmapLevel.previewStartTime), 1f);
                     });
@@ -1040,7 +1061,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             else
             {
                 LoadBeatmapLevelAsync(level, 
-                    (success, beatmapLevel) =>
+                    (status, success, beatmapLevel) =>
                     {
 
                         _leaderboardViewController.SetProgressBarState(false, 0f);

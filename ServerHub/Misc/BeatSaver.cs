@@ -13,22 +13,30 @@ namespace ServerHub.Misc
     {
         static readonly string BeatSaverAPI = "https://beatsaver.com/api/maps";
 
-        public class JsonResponseDetails
-        {
-            public Song Song { get; set; }
-        }
-
         public class JsonResponseSearch
         {
-            public List<Song> Songs { get; set; }
-            public int Total { get; set; }
+            [JsonProperty("docs")]
+            public Song[] Songs { get; set; }
+            [JsonProperty("totalDocs")]
+            public long TotalDocs { get; set; }
         }
 
         public class Song
         {
+            [JsonProperty("description")]
+            public string Description { get; set; }
+            [JsonProperty("_id")]
+            public string Id { get; set; }
+            [JsonProperty("key")]
             public string Key { get; set; }
+            [JsonProperty("name")]
             public string Name { get; set; }
+            [JsonProperty("hash")]
             public string Hash { get; set; }
+            [JsonProperty("downloadURL")]
+            public string DownloadUrl { get; set; }
+            [JsonProperty("coverURL")]
+            public string CoverUrl { get; set; }
         }
 
         public static async Task<Song> FetchByID (string id)
@@ -38,8 +46,8 @@ namespace ServerHub.Misc
                 try
                 {
                     string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/detail/{id}");
-                    JsonResponseDetails json = JsonConvert.DeserializeObject<JsonResponseDetails>(response);
-                    return json.Song;
+                    Song json = JsonConvert.DeserializeObject<Song>(response);
+                    return json;
                     
                 }
                 catch(WebException e)
@@ -97,9 +105,9 @@ namespace ServerHub.Misc
                 int maxId = 11000;
                 try
                 {
-                    string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/maps/latest");
+                    string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/latest");
                     JsonResponseSearch json = JsonConvert.DeserializeObject<JsonResponseSearch>(response);
-                    if (json.Total > 0)
+                    if (json.Songs.Length > 0)
                     {
                         maxId = Convert.ToInt32(json.Songs[0].Key, 16);
                     }
@@ -108,7 +116,7 @@ namespace ServerHub.Misc
                     do {
                         try
                         {
-                            response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/detail/{rand.Next(1, maxId).ToString("X")}");
+                            response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/detail/{rand.Next(1, maxId).ToString("x")}");
                             found = true;
                         }
                         catch (WebException wex)
@@ -120,8 +128,8 @@ namespace ServerHub.Misc
                         }
                     } while (!found);
 
-                    JsonResponseDetails jsonDetails = JsonConvert.DeserializeObject<JsonResponseDetails>(response);
-                    return new SongInfo() { levelId = jsonDetails.Song.Hash.ToUpper(), songName = jsonDetails.Song.Name, key = jsonDetails.Song.Key };  
+                    Song jsonSong = JsonConvert.DeserializeObject<Song>(response);
+                    return new SongInfo() { levelId = jsonSong.Hash.ToUpper(), songName = jsonSong.Name, key = jsonSong.Key };  
                 }
                 catch (Exception e)
                 {
@@ -139,17 +147,29 @@ namespace ServerHub.Misc
             {
                 try
                 {
-                    string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/by-hash/{hash}");
+                    string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/by-hash/{hash.ToLower()}");
                     JsonResponseSearch json = JsonConvert.DeserializeObject<JsonResponseSearch>(response);
-                    if (json.Total > 0)
+                    if (json.Songs.Length > 0)
                     {
                         return json.Songs[0];
                     }
                     else
                     {
-                        Logger.Instance.Log($"Song wih hash {hash} not found!");
+                        Logger.Instance.Log($"Song with hash {hash} not found!");
                         return null;
                     }
+                }
+                catch (WebException wex)
+                {
+                    if (((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                    {
+                        Logger.Instance.Log($"Song with hash {hash} not found!");
+                    }
+                    else
+                    {
+                        Logger.Instance.Exception($"Unable to fetch song by hash! Status code: {(int)((HttpWebResponse)wex.Response).StatusCode}({((HttpWebResponse)wex.Response).StatusCode})");
+                    }
+                    return null;
                 }
                 catch (Exception e)
                 {

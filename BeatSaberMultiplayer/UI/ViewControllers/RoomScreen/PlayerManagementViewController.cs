@@ -241,7 +241,21 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                         {
                             buffer = _tableCells[i];
                             buffer.playerName = _playersList[i].playerName;
-                            buffer.progress = state == RoomState.Preparing ? (_playersList[i].playerState == PlayerState.DownloadingSongs ? (_playersList[i].playerProgress/100f) : 1f) : -1f;
+                            if (state == RoomState.Preparing)
+                            {
+                                if (_playersList[i].playerState == PlayerState.DownloadingSongs)
+                                {
+                                    buffer.progress = _playersList[i].playerProgress / 100f;
+                                }
+                                else
+                                {
+                                    buffer.progress = 1f;
+                                }
+                            }
+                            else
+                            {
+                                buffer.progress = -1f;
+                            }
                             buffer.IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(_playersList[i].playerId);
                             buffer.NameColor = _playersList[i].playerNameColor;
                             buffer.playerInfo = _playersList[i];

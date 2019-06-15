@@ -392,8 +392,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                                         PreviewPlayer.CrossfadeTo(beatmapLevel.beatmapLevelData.audioClip, beatmapLevel.previewStartTime, Math.Max(totalTime - currentTime, beatmapLevel.previewDuration));
                                                     });
                                         };
-
                                         SongCore.Loader.SongsLoadedEvent += onLoaded;
+                                        SongCore.Loader.Instance.RefreshSongs(false);
+
                                     }
                                 },
                                 (progress) =>

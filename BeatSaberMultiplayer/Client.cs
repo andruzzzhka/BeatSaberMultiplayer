@@ -718,7 +718,7 @@ namespace BeatSaberMultiplayer
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
-                Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers).Select(x => x.modifierName)));
+                Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers).Select(x => x.localizedModifierName)));
 
 #endif
             }

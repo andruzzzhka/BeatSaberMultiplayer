@@ -208,13 +208,6 @@ namespace BeatSaberMultiplayer.Misc
                 return false;
         }
 
-        public static string GetLevelID(Song song)
-        {
-            Console.WriteLine("LevelID for: " + song.path);
-            string[] values = new string[] { song.hash, song.songName, song.songSubName, song.levelAuthorName, song.bpm.ToString() };
-            return string.Join("∎", values) + "∎";
-        }
-
         public static CustomPreviewBeatmapLevel GetLevel(string levelId)
         {
             return SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID == levelId) as CustomPreviewBeatmapLevel;
@@ -249,7 +242,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public IEnumerator RequestSongByLevelIDCoroutine(string levelId, Action<Song> callback)
         {
-            UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/maps/by-hash/" + levelId);
+            UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/maps/by-hash/" + levelId.ToLower());
             wwwId.timeout = 10;
 
             yield return wwwId.SendWebRequest();
@@ -257,7 +250,7 @@ namespace BeatSaberMultiplayer.Misc
 
             if (wwwId.isNetworkError || wwwId.isHttpError)
             {
-                Plugin.log.Error(wwwId.error);
+                Plugin.log.Error($"Unable to fetch song by hash! {wwwId.error}\nURL:" + $"{Config.Instance.BeatSaverURL}/api/maps/by-hash/" + levelId.ToLower());
             }
             else
             {
@@ -281,7 +274,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public IEnumerator RequestSongByKeyCoroutine(string key, Action<Song> callback)
         {
-            UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/maps/detail/" + key);
+            UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/maps/detail/" + key.ToLower());
             wwwId.timeout = 10;
 
             yield return wwwId.SendWebRequest();

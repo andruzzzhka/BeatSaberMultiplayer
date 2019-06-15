@@ -163,7 +163,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             
             if (room.usePassword)
             {
-                cell.SetIcon(Sprites.lockedRoomIcon);
+                cell.SetIcon(Sprites.lockedRoomIcon.texture);
             }
             else
             {

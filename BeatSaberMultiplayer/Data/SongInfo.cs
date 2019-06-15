@@ -2,6 +2,7 @@
 using Lidgren.Network;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -43,16 +44,16 @@ namespace BeatSaberMultiplayer.Data
             authorName = level.levelAuthorName;
             
             key = "";
-            //TODO: Uncomment and fix key detection
-            //if (level is CustomLevel)
-            //{
-            //    Regex keyMatch = new Regex("\\d+-\\d+");
-            //    var matches = keyMatch.Matches((level as CustomLevel).customSongInfo.path);
-            //    if (matches.Count > 0)
-            //    {
-            //        key = matches[matches.Count - 1].Value;
-            //    }
-            //}
+            if (level is CustomPreviewBeatmapLevel)
+            {
+                string path = Path.GetFileName((level as CustomPreviewBeatmapLevel).customLevelPath);
+
+                Regex keyMatch = new Regex(@"[0-9a-fA-F]+ \(.*\)");
+                if (keyMatch.IsMatch(path))
+                {
+                    key = path.Substring(0, path.IndexOf(' '));
+                }
+            }
 
             levelId = level.levelID;
 
@@ -91,8 +92,11 @@ namespace BeatSaberMultiplayer.Data
                 }
                 else
                 {
-                    levelId = SongCore.Collections.levelIDsForHash(hash).First();
+                    levelId = SongCore.Collections.levelIDsForHash(hash).FirstOrDefault();
                 }
+
+                if (string.IsNullOrEmpty(levelId))
+                    levelId = hash;
 
                 songDuration = msg.ReadFloat();
             }
@@ -106,39 +110,7 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(key);
             msg.Write(HexConverter.ConvertHexToBytesX(hash));
             msg.Write(songDuration);
-        }
-
-        public string GetSongKey()
-        {
-            //TODO: Uncomment and fix key detection
-            //if (levelId.Length >= 32) {
-            //    CustomLevel level = SongLoader.CustomLevels.FirstOrDefault(x => x.levelID.Contains(levelId));
-            //    if (level != null)
-            //    {
-            //        Regex expression = new Regex(@"\d{1,}-\d{1,}");
-            //        string match = expression.Match(level.customSongInfo.path).Value;
-            //        if (string.IsNullOrEmpty(match))
-            //        {
-            //            Plugin.log.Warn("Unable to retrieve BeatSaver ID of the song from the path! Are you sure you are using the correct folder structure?");
-            //            return "0-0";
-            //        }
-            //        else
-            //        {
-            //            return match;
-            //        }
-            //    }
-            //    else
-            //    {
-            //        Plugin.log.Warn("Song with ID " +levelId+" not found!");
-            //        return "0-0";
-            //    }
-            //}
-            //else
-            //{
-            //    return "0-0";
-            //}
-            return "0-0";
-        }
+        }        
 
         public override bool Equals(object obj)
         {
