@@ -34,7 +34,7 @@ namespace BeatSaberMultiplayer.VOIP
             }
             set
             {
-                if (!_isListening && value)
+                if (!_isListening && value && recordingBuffer != null)
                 {
                     index += 3;
                     lastPos = Math.Max(Microphone.GetPosition(null) - recordingBuffer.Length, 0);

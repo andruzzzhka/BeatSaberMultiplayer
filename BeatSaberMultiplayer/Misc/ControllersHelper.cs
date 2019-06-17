@@ -87,7 +87,6 @@ namespace BeatSaberMultiplayer.Misc
             if (_leftControllerIndex == -1)
             {
                 _leftControllerIndex = SteamVR_Controller.GetDeviceIndex(SteamVR_Controller.DeviceRelation.Leftmost);
-                Plugin.log.Info("Leftmost controller index: " + _leftControllerIndex);
             }
 
             return SteamVR_Controller.Input(_leftControllerIndex).GetPress(SteamVR_Controller.ButtonMask.Grip);
@@ -100,7 +99,6 @@ namespace BeatSaberMultiplayer.Misc
                 if (_leftControllerIndex == -1)
                 {
                     _leftControllerIndex = SteamVR_Controller.GetDeviceIndex(SteamVR_Controller.DeviceRelation.Leftmost);
-                    Plugin.log.Info("Leftmost controller index: " + _leftControllerIndex);
                 }
 
                 return SteamVR_Controller.Input(_leftControllerIndex).GetPress(SteamVR_Controller.ButtonMask.Grip);
@@ -112,7 +110,6 @@ namespace BeatSaberMultiplayer.Misc
             if (_rightControllerIndex == -1)
             {
                 _rightControllerIndex = SteamVR_Controller.GetDeviceIndex(SteamVR_Controller.DeviceRelation.Rightmost);
-                Plugin.log.Info("Rightmost controller index: " + _rightControllerIndex);
             }
 
             return SteamVR_Controller.Input(_rightControllerIndex).GetPress(SteamVR_Controller.ButtonMask.Grip);
@@ -125,7 +122,6 @@ namespace BeatSaberMultiplayer.Misc
                 if (_rightControllerIndex == -1)
                 {
                     _rightControllerIndex = SteamVR_Controller.GetDeviceIndex(SteamVR_Controller.DeviceRelation.Rightmost);
-                    Plugin.log.Info("Rightmost controller index: " + _rightControllerIndex);
                 }
 
                 return SteamVR_Controller.Input(_rightControllerIndex).GetPress(SteamVR_Controller.ButtonMask.Grip);

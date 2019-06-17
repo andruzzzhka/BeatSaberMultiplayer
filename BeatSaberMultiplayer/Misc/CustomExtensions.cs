@@ -28,20 +28,6 @@ namespace BeatSaberMultiplayer.Misc
             }
         }
         
-        //public static Sprite songLoaderDefaultImage {
-        //    get
-        //    {
-        //        if (_songLoaderDefaultImage == null) {
-        //            Type type = typeof(SongCore..SongLoader);
-        //            FieldInfo info = type.GetField("CustomSongsIcon", BindingFlags.NonPublic | BindingFlags.Static);
-        //            _songLoaderDefaultImage = (Sprite)info.GetValue(null);
-        //        }
-
-        //        return _songLoaderDefaultImage ?? Sprites.whitePixel;
-        //    }
-        //}
-        //private static Sprite _songLoaderDefaultImage;
-
         public static void SetButtonStrokeColor(this Button btn, Color color)
         {
             btn.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").color = color;
@@ -49,56 +35,38 @@ namespace BeatSaberMultiplayer.Misc
 
         public static IDifficultyBeatmap GetDifficultyBeatmap(this IBeatmapLevel level, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, bool strictDifficulty = false)
         {
-            int errorCode = 0;
-            try
+            IDifficultyBeatmapSet difficultySet = null;
+            if (characteristic == null)
             {
-                IDifficultyBeatmapSet difficultySet = null;
-                errorCode = 1;
-                if (characteristic == null)
-                {
-                    difficultySet = level.beatmapLevelData.difficultyBeatmapSets.FirstOrDefault();
-                }
+                difficultySet = level.beatmapLevelData.difficultyBeatmapSets.FirstOrDefault();
+            }
+            else
+            {
+                difficultySet = level.beatmapLevelData.difficultyBeatmapSets.FirstOrDefault(x => x.beatmapCharacteristic == characteristic);
+            }
+
+            if (difficultySet == null)
+            {
+                Plugin.log.Error("Unable to find any difficulty set!");
+                return null;
+            }
+
+            IDifficultyBeatmap beatmap = difficultySet.difficultyBeatmaps.FirstOrDefault(x => x.difficulty == difficulty);
+
+            if (beatmap == null && !strictDifficulty)
+            {
+                int index = GetClosestDifficultyIndex(difficultySet.difficultyBeatmaps, difficulty);
+                if (index >= 0)
+                    return difficultySet.difficultyBeatmaps[index];
                 else
                 {
-                    errorCode = 20;
-                    Plugin.log.Info($"level: {level != null}");
-                    Plugin.log.Info($"beatmapLevelData: {level.beatmapLevelData != null}");
-                    Plugin.log.Info($"difficultySets: {level.beatmapLevelData.difficultyBeatmapSets != null}");
-                    difficultySet = level.beatmapLevelData.difficultyBeatmapSets.FirstOrDefault(x => x.beatmapCharacteristic == characteristic);
-                }
-
-                errorCode = 2;
-                if (difficultySet == null)
-                {
-                    Plugin.log.Error("Unable to find any difficulty set!");
+                    Plugin.log.Error("Unable to find difficulty!");
                     return null;
                 }
-
-                errorCode = 3;
-                IDifficultyBeatmap beatmap = difficultySet.difficultyBeatmaps.FirstOrDefault(x => x.difficulty == difficulty);
-
-                errorCode = 4;
-                if (beatmap == null && !strictDifficulty)
-                {
-                    errorCode = 5;
-                    int index = GetClosestDifficultyIndex(difficultySet.difficultyBeatmaps, difficulty);
-                    if (index >= 0)
-                        return difficultySet.difficultyBeatmaps[index];
-                    else
-                    {
-                        Plugin.log.Error("Unable to find difficulty!");
-                        return null;
-                    }
-                }
-                else
-                {
-                    return beatmap;
-                }
-            }catch(Exception e)
+            }
+            else
             {
-                Plugin.log.Error($"Unable to find difficulty! Error code: {errorCode}, Exception: {e}");
-
-                return null;
+                return beatmap;
             }
         }
 
