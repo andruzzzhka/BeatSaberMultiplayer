@@ -135,6 +135,16 @@ namespace BeatSaberMultiplayer
             _bufferingText.transform.position = new Vector3(0f, 2f, 8f);
             _bufferingText.gameObject.SetActive(false);
 
+            if (playerInfos != null)
+                playerInfos.Clear();
+            else
+                playerInfos = new Dictionary<ulong, List<PlayerInfo>>();
+
+            if (playersHits != null)
+                playersHits.Clear();
+            else
+                playersHits = new Dictionary<ulong, List<HitData>>();
+
 #if DEBUG  && LOCALREPLAY
             string replayPath = Path.GetFullPath("MPDumps\\BootyBounce.mpdmp");
 
@@ -243,7 +253,7 @@ namespace BeatSaberMultiplayer
         {
             if(spectatedPlayer != null)
             {
-                HitData hit = playersHits[spectatedPlayer.PlayerInfo.playerId].FirstOrDefault(x => Mathf.Abs(x.objectTime - arg1.time) < float.Epsilon);
+                HitData hit = playersHits[spectatedPlayer.PlayerInfo.playerId].FirstOrDefault(x => x.objectId == arg1.id);
                 bool allIsOKExpected = hit.noteWasCut && hit.speedOK && hit.saberTypeOK && hit.directionOK && !hit.wasCutTooSoon;
 
                 if(allIsOKExpected != arg2.allIsOK)
@@ -257,7 +267,7 @@ namespace BeatSaberMultiplayer
         {
             if (spectatedPlayer != null)
             {
-                HitData hit = playersHits[spectatedPlayer.PlayerInfo.playerId].FirstOrDefault(x => Mathf.Abs(x.objectTime - arg1.time) < float.Epsilon);
+                HitData hit = playersHits[spectatedPlayer.PlayerInfo.playerId].FirstOrDefault(x => x.objectId == arg1.id);
 
                 if (hit.noteWasCut)
                 {
@@ -293,11 +303,6 @@ namespace BeatSaberMultiplayer
 
                                         if (index > -1)
                                             playerInfos[player.playerId].RemoveRange(0, index + 1);
-
-                                        index = playersHits[player.playerId].FindIndex(x => x.objectTime < audioTimeSync.songTime - 3f);
-
-                                        if (index > -1)
-                                            playersHits[player.playerId].RemoveRange(0, index + 1);
                                     }
                                     playerInfos[player.playerId].Add(player);
                                     playersHits[player.playerId].AddRange(player.hitsLastUpdate);

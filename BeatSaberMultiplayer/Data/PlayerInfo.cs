@@ -16,7 +16,7 @@ namespace BeatSaberMultiplayer.Data
 
     public struct HitData
     {
-        public float objectTime;
+        public int objectId;
 
         public bool noteWasCut;
         public bool speedOK;
@@ -29,7 +29,7 @@ namespace BeatSaberMultiplayer.Data
 
         public HitData(NoteData data, bool noteWasCut, NoteCutInfo info = null)
         {
-            objectTime = data.time;
+            objectId = data.id;
 
             this.noteWasCut = noteWasCut;
 
@@ -55,7 +55,7 @@ namespace BeatSaberMultiplayer.Data
 
         public HitData(NetIncomingMessage msg)
         {
-            objectTime = msg.ReadFloat();
+            objectId = msg.ReadInt32();
 
             noteWasCut = msg.ReadBoolean();
             isSaberA = msg.ReadBoolean();
@@ -70,7 +70,7 @@ namespace BeatSaberMultiplayer.Data
 #if DEBUG
         public HitData(byte[] data)
         {
-            objectTime = BitConverter.ToSingle(data, 0);
+            objectId = BitConverter.ToInt32(data, 0);
             
             BitArray bits = new BitArray(new byte[] { data[4] });
 
@@ -87,7 +87,7 @@ namespace BeatSaberMultiplayer.Data
 
         public void AddToMessage(NetOutgoingMessage msg)
         {
-            msg.Write(objectTime);
+            msg.Write(objectId);
 
             msg.Write(noteWasCut);
             msg.Write(isSaberA);

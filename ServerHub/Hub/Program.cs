@@ -702,7 +702,7 @@ namespace ServerHub.Hub
             availableCommands.Add(new Command()
             {
                 name = "colors",
-                help = "colors [playerId] [r: 0-255] [g: 0-255] [b: 0-255] - changes tickrate of ServerHub",
+                help = "colors [playerId] [r: 0-255] [g: 0-255] [b: 0-255] - changes color of the player",
                 function = (comArgs) => {
                     ulong playerId;
                     byte r;

@@ -48,7 +48,7 @@ namespace BeatSaberMultiplayer.VOIP
             encoder.VBR = true;
             encoder.Quality = 4;
 
-            dataSize = encoder.FrameSize * ( mode == BandMode.Narrow ? 8 : mode == BandMode.Wide ? 4 : 2 );
+            dataSize = encoder.FrameSize * ( mode == BandMode.Narrow ? 8 : mode == BandMode.Wide ? 8 : 2 );
 
             encodingBuffer = new short[dataSize];
             encodedBuffer = new byte[dataSize];

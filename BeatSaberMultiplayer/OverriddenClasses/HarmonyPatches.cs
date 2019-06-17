@@ -24,7 +24,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
                     if (SpectatingController.Instance.playersHits.ContainsKey(playerId) && SpectatingController.Instance.playersHits[playerId].Count > 0)
                     {
-                        HitData hit = SpectatingController.Instance.playersHits[playerId].FirstOrDefault(x => Mathf.Abs(x.objectTime - noteController.noteData.time) < float.Epsilon);
+                        HitData hit = SpectatingController.Instance.playersHits[playerId].FirstOrDefault(x => x.objectId == noteController.noteData.id);
                         bool allIsOKExpected = hit.noteWasCut && hit.speedOK && hit.saberTypeOK && hit.directionOK && !hit.wasCutTooSoon;
 
                         if (hit.noteWasCut)
@@ -96,7 +96,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
                     if (SpectatingController.Instance.playersHits.ContainsKey(playerId) && SpectatingController.Instance.playersHits[playerId].Count > 0)
                     {
-                        HitData hit = SpectatingController.Instance.playersHits[playerId].FirstOrDefault(x => Mathf.Abs(x.objectTime - noteController.noteData.time) < float.Epsilon);
+                        HitData hit = SpectatingController.Instance.playersHits[playerId].FirstOrDefault(x => x.objectId == noteController.noteData.id);
 
                         if (hit.noteWasCut)
                         {

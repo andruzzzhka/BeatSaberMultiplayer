@@ -54,9 +54,6 @@ namespace BeatSaberMultiplayer.Misc
             T newListSettingsController = volume.gameObject.AddComponent<T>();
             UnityEngine.Object.DestroyImmediate(volume);
 
-            foreach (var text in newSettingsObject.GetComponentsInChildren<TMP_Text>())
-                Plugin.log.Info($"Text name: {text.name}, Text value: {text.text}");
-
             TMP_Text nameText = newSettingsObject.GetComponentsInChildren<TMP_Text>().First(x => x.name == "NameText");
             UnityEngine.Object.Destroy(nameText.gameObject.GetComponent<LocalizedTextMeshProUGUI>());
             nameText.text = name;

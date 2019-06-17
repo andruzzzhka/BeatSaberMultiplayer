@@ -797,7 +797,7 @@ namespace BeatSaberMultiplayer
                     {
                         byte[] hitData = new byte[5];
 
-                        Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.hitsLastUpdate[i].objectTime), 0, hitData, 0, 4);
+                        Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.hitsLastUpdate[i].objectId), 0, hitData, 0, 4);
 
                         BitArray bits = new BitArray(8);
                         bits[0] = playerInfo.hitsLastUpdate[i].noteWasCut;

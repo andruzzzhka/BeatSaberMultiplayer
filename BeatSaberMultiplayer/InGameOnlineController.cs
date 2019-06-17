@@ -427,6 +427,7 @@ namespace BeatSaberMultiplayer
                                     if (speexDec == null || speexDec.mode != data.mode)
                                     {
                                         speexDec = SpeexCodex.Create(data.mode);
+                                        Plugin.log.Info("New Speex decoder created!");
                                     }
                                     _players.FirstOrDefault(x => x.PlayerInfo.playerId == data.playerId)?.PlayVoIPFragment(speexDec.Decode(data.data), data.index);
                                 }
