@@ -911,20 +911,31 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         {
                             SongCore.Loader.SongsLoadedEvent -= onLoaded;
                             Client.Instance.playerInfo.playerState = PlayerState.Room;
-                            selectedLevel = songs.FirstOrDefault(x => x.Value.levelID.StartsWith(roomInfo.selectedSong.levelId)).Value;
+                            roomInfo.selectedSong.UpdateLevelId();
+                            selectedLevel = songs.FirstOrDefault(x => x.Value.levelID == roomInfo.selectedSong.levelId).Value;
                             if (selectedLevel != null)
                             {
                                 LoadBeatmapLevelAsync(selectedLevel,
                                     (status, loaded, level) =>
-                                {
-                                    PreviewPlayer.CrossfadeTo(level.beatmapLevelData.audioClip, level.previewStartTime, (level.beatmapLevelData.audioClip.length - level.previewStartTime));
+                                    {
+                                        if (loaded)
+                                        {
+                                            PreviewPlayer.CrossfadeTo(level.beatmapLevelData.audioClip, level.previewStartTime, (level.beatmapLevelData.audioClip.length - level.previewStartTime));
+                                            _difficultySelectionViewController.SetSelectedSong(level);
+                                            _difficultySelectionViewController.SetPlayButtonInteractable(true);
+                                            _difficultySelectionViewController.SetProgressBarState(false, 1f);
+                                            Client.Instance.SendPlayerReady(true);
+                                            Client.Instance.playerInfo.playerState = PlayerState.Room;
+                                        }
+                                        else
+                                        {
+                                            Plugin.log.Error($"Unable to load level!");
+                                        }
                                 });
-
-                                _difficultySelectionViewController.SetSelectedSong(song);
-                                _difficultySelectionViewController.SetPlayButtonInteractable(true);
-                                _difficultySelectionViewController.SetProgressBarState(false, 1f);
-                                Client.Instance.SendPlayerReady(true);
-                                Client.Instance.playerInfo.playerState = PlayerState.Room;
+                            }
+                            else
+                            {
+                                Plugin.log.Error($"Level with ID {roomInfo.selectedSong.levelId} not found!");
                             }
                         };
                         SongCore.Loader.SongsLoadedEvent += onLoaded;

@@ -162,62 +162,55 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         private void _characteristicControl_didSelectCellEvent(int arg2)
         {
-            try
+            selectedCharacteristic = _selectedSong.beatmapCharacteristics[arg2];
+
+            if (_selectedSong.beatmapLevelData != null)
             {
-                    selectedCharacteristic = _selectedSong.beatmapCharacteristics[arg2];
+                Dictionary<IDifficultyBeatmap, string> difficulties = _selectedSong.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps.ToDictionary(x => x, x => x.difficulty.ToString().Replace("Plus", "+"));
 
-                if (_selectedSong.beatmapLevelData != null)
+                if (_selectedSong is CustomPreviewBeatmapLevel)
                 {
-                    Dictionary<IDifficultyBeatmap, string> difficulties = _selectedSong.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps.ToDictionary(x => x, x => x.difficulty.ToString().Replace("Plus", "+"));
-
-                    if (_selectedSong is CustomPreviewBeatmapLevel)
+                    var songData = SongCore.Collections.RetrieveExtraSongData(_selectedSong.levelID);
+                    if (songData != null && songData._difficulties != null)
                     {
-                        var songData = SongCore.Collections.RetrieveExtraSongData(_selectedSong.levelID);
-                        if (songData != null && songData._difficulties != null)
+                        for (int i = 0; i < difficulties.Keys.Count; i++)
                         {
-                            for (int i = 0; i < difficulties.Keys.Count; i++)
-                            {
-                                var diffKey = difficulties.Keys.ElementAt(i);
+                            var diffKey = difficulties.Keys.ElementAt(i);
 
-                                var difficultyLevel = songData._difficulties.FirstOrDefault(x => x._difficulty == diffKey.difficulty);
-                                if (difficultyLevel != null && !string.IsNullOrEmpty(difficultyLevel._difficultyLabel))
-                                {
-                                    difficulties[diffKey] = difficultyLevel._difficultyLabel;
-                                    Plugin.log.Info($"Found difficulty label \"{difficulties[diffKey]}\" for difficulty {diffKey.difficulty.ToString()}");
-                                }
+                            var difficultyLevel = songData._difficulties.FirstOrDefault(x => x._difficulty == diffKey.difficulty);
+                            if (difficultyLevel != null && !string.IsNullOrEmpty(difficultyLevel._difficultyLabel))
+                            {
+                                difficulties[diffKey] = difficultyLevel._difficultyLabel;
+                                Plugin.log.Info($"Found difficulty label \"{difficulties[diffKey]}\" for difficulty {diffKey.difficulty.ToString()}");
                             }
                         }
-                        else
-                        {
-                            Plugin.log.Warn($"Unable to retrieve extra song data for song with LevelID \"{_selectedSong.levelID}\"!");
-                        }
-                    }
-
-                    _difficultyControl.SetTexts(difficulties.Values.ToArray());
-
-                    int closestDifficultyIndex = CustomExtensions.GetClosestDifficultyIndex(difficulties.Keys.ToArray(), selectedDifficulty);
-
-                    _difficultyControl.SelectCellWithNumber(closestDifficultyIndex);
-
-                    if (!difficulties.Any(x => x.Key.difficulty == selectedDifficulty))
-                    {
-                        _difficultyControl_didSelectCellEvent(closestDifficultyIndex);
                     }
                     else
                     {
-                        levelOptionsChanged?.Invoke();
+                        Plugin.log.Warn($"Unable to retrieve extra song data for song with LevelID \"{_selectedSong.levelID}\"!");
                     }
                 }
-            }catch(Exception e)
-            {
-                Plugin.log.Critical($"Exception in char control did select event: {e}");
 
+                _difficultyControl.SetTexts(difficulties.Values.ToArray());
+
+                int closestDifficultyIndex = CustomExtensions.GetClosestDifficultyIndex(difficulties.Keys.ToArray(), selectedDifficulty);
+
+                _difficultyControl.SelectCellWithNumber(closestDifficultyIndex);
+
+                if (!difficulties.Any(x => x.Key.difficulty == selectedDifficulty))
+                {
+                    _difficultyControl_didSelectCellEvent(closestDifficultyIndex);
+                }
+                else
+                {
+                    levelOptionsChanged?.Invoke();
+                }
             }
         }
 
         private void _difficultyControl_didSelectCellEvent(int arg2)
         {
-            if (_selectedSong.beatmapLevelData != null)
+            if (_selectedSong.beatmapLevelData != null && _selectedSong.beatmapLevelData.difficultyBeatmapSets != null)
             {
                 selectedDifficulty = _selectedSong.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps[arg2].difficulty;
 

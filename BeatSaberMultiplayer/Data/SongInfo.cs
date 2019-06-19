@@ -110,7 +110,18 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(key);
             msg.Write(HexConverter.ConvertHexToBytesX(hash));
             msg.Write(songDuration);
-        }        
+        }    
+        
+        public void UpdateLevelId()
+        {
+            if (!string.IsNullOrEmpty(hash))
+            {
+                levelId = SongCore.Collections.levelIDsForHash(hash).FirstOrDefault();
+
+                if (string.IsNullOrEmpty(levelId))
+                    levelId = hash;
+            }
+        }
 
         public override bool Equals(object obj)
         {
