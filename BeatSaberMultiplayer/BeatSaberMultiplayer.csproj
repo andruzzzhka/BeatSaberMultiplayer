@@ -272,6 +272,7 @@ if not exist $(SolutionDir)Output\$(ConfigurationName)\ mkdir $(SolutionDir)Outp
 if not exist Final\ mkdir Final\
 if not exist Final\Plugins\ mkdir Final\Plugins\
 xcopy /y $(TargetDir)BeatSaberMultiplayer.dll  "Final\Plugins\"
-powershell Compress-Archive -Path '$(TargetDir)Final\*' -DestinationPath '$(SolutionDir)Output\$(ConfigurationName)\BeatSaberMultiplayer.zip' -Force</PostBuildEvent>
+del "$(SolutionDir)Output\$(ConfigurationName)\BeatSaberMultiplayer.zip"
+winrar a -afzip -r -ep1 -ibck "$(SolutionDir)Output\$(ConfigurationName)\BeatSaberMultiplayer.zip" "$(TargetDir)Final\*"</PostBuildEvent>
   </PropertyGroup>
 </Project>

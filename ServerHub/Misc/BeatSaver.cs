@@ -148,10 +148,10 @@ namespace ServerHub.Misc
                 try
                 {
                     string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/by-hash/{hash.ToLower()}");
-                    JsonResponseSearch json = JsonConvert.DeserializeObject<JsonResponseSearch>(response);
-                    if (json.Songs.Length > 0)
+                    Song json = JsonConvert.DeserializeObject<Song>(response);
+                    if (json != null)
                     {
-                        return json.Songs[0];
+                        return json;
                     }
                     else
                     {

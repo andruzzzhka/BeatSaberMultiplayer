@@ -570,7 +570,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
                     {
-                        Plugin.log.Info($"selectedCharacteristic: {_difficultySelectionViewController.selectedCharacteristic != null}");
                         LevelOptionsInfo info = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
                         Client.Instance.SetLevelOptions(info);
                         roomInfo.startLevelInfo = info;
