@@ -17,7 +17,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         {
             BeatmapObjectCallbackController original = FindObjectsOfType<BeatmapObjectCallbackController>().First(x => !(x is OnlineBeatmapCallbackController));
 
-            foreach (FieldInfo info in original.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Default).Where(x => !x.Name.ToLower().Contains("event")))
+            foreach (FieldInfo info in original.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic).Where(x => !x.Name.ToLower().Contains("event")))
             {
                 info.SetValue(this, info.GetValue(original));
             }
@@ -48,31 +48,45 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             {
                 return;
             }
-            for (int i = 0; i < _beatmapObjectCallbackData.Count; i++)
+            for (int i = 0; i < _beatmapEarlyEventCallbackData.Count; i++)
+            {
+                BeatmapEventCallbackData beatmapEventCallbackData = _beatmapEarlyEventCallbackData[i];
+                while (beatmapEventCallbackData.nextEventIndex < beatmapData.beatmapEventData.Length)
+                {
+                    BeatmapEventData beatmapEventData = beatmapData.beatmapEventData[beatmapEventCallbackData.nextEventIndex];
+                    if (beatmapEventData.time - beatmapEventCallbackData.aheadTime >= owner.PlayerInfo.playerProgress)
+                    {
+                        break;
+                    }
+                    beatmapEventCallbackData.callback(beatmapEventData);
+                    beatmapEventCallbackData.nextEventIndex++;
+                }
+            }
+            for (int j = 0; j < _beatmapObjectCallbackData.Count; j++)
             {
                 _beatmapObjectDataCallbackCacheList.Clear();
-                BeatmapObjectCallbackData beatmapObjectCallbackData = _beatmapObjectCallbackData[i];
-                for (int j = 0; j < beatmapData.beatmapLinesData.Length; j++)
+                BeatmapObjectCallbackData beatmapObjectCallbackData = _beatmapObjectCallbackData[j];
+                for (int k = 0; k < beatmapData.beatmapLinesData.Length; k++)
                 {
-                    while (beatmapObjectCallbackData.nextObjectIndexInLine[j] < beatmapData.beatmapLinesData[j].beatmapObjectsData.Length)
+                    while (beatmapObjectCallbackData.nextObjectIndexInLine[k] < beatmapData.beatmapLinesData[k].beatmapObjectsData.Length)
                     {
-                        BeatmapObjectData beatmapObjectData = beatmapData.beatmapLinesData[j].beatmapObjectsData[beatmapObjectCallbackData.nextObjectIndexInLine[j]];
+                        BeatmapObjectData beatmapObjectData = beatmapData.beatmapLinesData[k].beatmapObjectsData[beatmapObjectCallbackData.nextObjectIndexInLine[k]];
                         if (beatmapObjectData.time - beatmapObjectCallbackData.aheadTime >= owner.PlayerInfo.playerProgress)
                         {
                             break;
                         }
                         if (beatmapObjectData.time >= startSongTime)
                         {
-                            for (int k = _beatmapObjectDataCallbackCacheList.Count; k >= 0; k--)
+                            for (int l = _beatmapObjectDataCallbackCacheList.Count; l >= 0; l--)
                             {
-                                if (k == 0 || _beatmapObjectDataCallbackCacheList[k - 1].time <= beatmapObjectData.time)
+                                if (l == 0 || _beatmapObjectDataCallbackCacheList[l - 1].time <= beatmapObjectData.time)
                                 {
-                                    _beatmapObjectDataCallbackCacheList.Insert(k, beatmapObjectData);
+                                    _beatmapObjectDataCallbackCacheList.Insert(l, beatmapObjectData);
                                     break;
                                 }
                             }
                         }
-                        beatmapObjectCallbackData.nextObjectIndexInLine[j]++;
+                        beatmapObjectCallbackData.nextObjectIndexInLine[k]++;
                     }
                 }
                 foreach (BeatmapObjectData noteData in _beatmapObjectDataCallbackCacheList)
@@ -80,17 +94,30 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     beatmapObjectCallbackData.callback(noteData);
                 }
             }
+            for (int m = 0; m < _beatmapLateEventCallbackData.Count; m++)
+            {
+                BeatmapEventCallbackData beatmapEventCallbackData2 = _beatmapLateEventCallbackData[m];
+                while (beatmapEventCallbackData2.nextEventIndex < beatmapData.beatmapEventData.Length)
+                {
+                    BeatmapEventData beatmapEventData2 = beatmapData.beatmapEventData[beatmapEventCallbackData2.nextEventIndex];
+                    if (beatmapEventData2.time - beatmapEventCallbackData2.aheadTime >= owner.PlayerInfo.playerProgress)
+                    {
+                        break;
+                    }
+                    beatmapEventCallbackData2.callback(beatmapEventData2);
+                    beatmapEventCallbackData2.nextEventIndex++;
+                }
+            }
             while (_nextEventIndex < beatmapData.beatmapEventData.Length)
             {
-                BeatmapEventData beatmapEventData = beatmapData.beatmapEventData[_nextEventIndex];
-                if (beatmapEventData.time >= owner.PlayerInfo.playerProgress)
+                BeatmapEventData beatmapEventData3 = beatmapData.beatmapEventData[_nextEventIndex];
+                if (beatmapEventData3.time >= owner.PlayerInfo.playerProgress)
                 {
                     break;
                 }
-                SendBeatmapEventDidTriggerEvent(beatmapEventData);
+                SendBeatmapEventDidTriggerEvent(beatmapEventData3);
                 _nextEventIndex++;
             }
         }
-
     }
 }

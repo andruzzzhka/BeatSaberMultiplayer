@@ -6,13 +6,13 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using Zenject;
 
 namespace BeatSaberMultiplayer.OverriddenClasses
 {
     public class OnlineBeatmapSpawnController : BeatmapObjectSpawnController
     {
         public OnlinePlayerController owner;
-        public OnlineBeatmapCallbackController onlineCallbackController;
         public OnlineAudioTimeController onlineSyncController;
 
         private PlayerController _localPlayer;
@@ -23,14 +23,15 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
         public void Init(OnlinePlayerController newOwner, OnlineBeatmapCallbackController callbackController, OnlineAudioTimeController syncController)
         {
-            BeatmapObjectSpawnController original = FindObjectsOfType<BeatmapObjectSpawnController>().First(x => !x.name.StartsWith("Online"));
+            BeatmapObjectSpawnController original = FindObjectsOfType<BeatmapObjectSpawnController>().First(x => !(x is OnlineBeatmapSpawnController));
 
-            foreach (FieldInfo info in original.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Default).Where(x => !x.Name.ToLower().Contains("event")))
+            foreach (FieldInfo info in original.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic).Where(x => !x.Name.ToLower().Contains("event")))
             {
                 info.SetValue(this, info.GetValue(original));
             }
 
             owner = newOwner;
+
 
             try
             {
@@ -39,20 +40,41 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     LevelOptionsInfo levelInfo = owner.PlayerInfo.playerLevelOptions;
                     IDifficultyBeatmap diffBeatmap = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.level.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic.serializedName == owner.PlayerInfo.playerLevelOptions.characteristicName).difficultyBeatmaps.First(x => x.difficulty == owner.PlayerInfo.playerLevelOptions.difficulty);
                     
-                    Init(diffBeatmap.level.beatsPerMinute, diffBeatmap.beatmapData.beatmapLinesData.Length, diffBeatmap.noteJumpMovementSpeed, diffBeatmap.noteJumpStartBeatOffset, levelInfo.modifiers.disappearingArrows, levelInfo.modifiers.ghostNotes);
+                    _beatsPerMinute = diffBeatmap.level.beatsPerMinute;
+                    _noteLinesCount = (float)diffBeatmap.beatmapData.beatmapLinesData.Length;
+                    _noteJumpMovementSpeed = diffBeatmap.noteJumpMovementSpeed;
+                    _disappearingArrows = levelInfo.modifiers.disappearingArrows;
+                    _ghostNotes = levelInfo.modifiers.ghostNotes;
+                    float num = 60f / _beatsPerMinute;
+                    _moveDistance = _moveSpeed * num * _moveDurationInBeats;
+                    while (_noteJumpMovementSpeed * num * _halfJumpDurationInBeats > _maxHalfJumpDistance)
+                    {
+                        _halfJumpDurationInBeats /= 2f;
+                    }
+                    _halfJumpDurationInBeats += diffBeatmap.noteJumpStartBeatOffset;
+                    if (_halfJumpDurationInBeats < 1f)
+                    {
+                        _halfJumpDurationInBeats = 1f;
+                    }
+                    _jumpDistance = _noteJumpMovementSpeed * num * _halfJumpDurationInBeats * 2f;
+                    _spawnAheadTime = _moveDistance / _moveSpeed + _jumpDistance * 0.5f / _noteJumpMovementSpeed;
                 }
             }catch(Exception e)
             {
                 Plugin.log.Warn("Unable to update beatmap data! Exception: "+e);
             }
 
-            onlineCallbackController = callbackController;
-            _beatmapObjectCallbackController = onlineCallbackController;
+            _beatmapObjectCallbackController = callbackController;
             onlineSyncController = syncController;
 
-            if (onlineCallbackController != null)
+            if (_beatmapObjectCallbackId != -1)
             {
-                _beatmapObjectCallbackId = onlineCallbackController.AddBeatmapObjectCallback(new BeatmapObjectCallbackController.BeatmapObjectCallback(BeatmapObjectSpawnCallback), _spawnAheadTime);
+                _beatmapObjectCallbackController.RemoveBeatmapObjectCallback(_beatmapObjectCallbackId);
+            }
+
+            if (_beatmapObjectCallbackController != null)
+            {
+                _beatmapObjectCallbackId = _beatmapObjectCallbackController.AddBeatmapObjectCallback(new BeatmapObjectCallbackController.BeatmapObjectCallback(BeatmapObjectSpawnCallback), _spawnAheadTime);
             }
 
             _localPlayer = FindObjectsOfType<PlayerController>().First(x => !(x is OnlinePlayerController));
@@ -83,17 +105,19 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 Vector3 a2 = a - forward * _moveDistance;
                 Vector3 a3 = a - forward * (_moveDistance + _jumpDistance);
                 Vector3 noteOffset = GetNoteOffset(beatmapObjectData.lineIndex, NoteLineLayer.Base);
-                noteOffset.y = ((obstacleData.obstacleType != ObstacleType.Top) ? _verticalObstaclePosY : (_topObstaclePosY + _globalYJumpOffset));
-                ObstacleController.Pool pool = (obstacleData.obstacleType != ObstacleType.Top) ? _fullHeightObstaclePool : _topObstaclePool;
-                ObstacleController obstacleController = pool.Spawn();
+                noteOffset.y = ((obstacleData.obstacleType == ObstacleType.Top) ? (_topObstaclePosY + _globalYJumpOffset) : _verticalObstaclePosY);
+                ObstacleController obstacleController = ((obstacleData.obstacleType == ObstacleType.Top) ? _topObstaclePool : _fullHeightObstaclePool).Spawn();
                 SetObstacleEventCallbacks(obstacleController);
                 obstacleController.transform.SetPositionAndRotation(a + noteOffset, Quaternion.identity);
                 obstacleController.Init(obstacleData, a + noteOffset, a2 + noteOffset, a3 + noteOffset, num, num2, beatmapObjectData.time - _spawnAheadTime, _noteLinesDistance);
+
                 obstacleController.SetPrivateField("_playerController", owner);
                 obstacleController.SetPrivateField("_audioTimeSyncController", onlineSyncController);
                 obstacleController.finishedMovementEvent += ResetControllers;
                 obstacleController.didDissolveEvent += ResetControllers;
                 _activeObstacles.Add(obstacleController);
+
+                this.GetPrivateField<Action<BeatmapObjectSpawnController, ObstacleController>>("obstacleDiStartMovementEvent")?.Invoke(this, obstacleController);
             }
             else
             {
@@ -111,46 +135,61 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 float jumpGravity = JumpGravityForLineLayer(noteData.noteLineLayer, noteData.startNoteLineLayer);
                 if (noteData.noteType == NoteType.Bomb)
                 {
-                    NoteController bombNoteController = _bombNotePool.Spawn();
-                    SetNoteControllerEventCallbacks(bombNoteController);
-                    bombNoteController.transform.SetPositionAndRotation(a4 + noteOffset2, Quaternion.identity);
-                    bombNoteController.Init(noteData, a4 + noteOffset2, a5 + noteOffset2, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity);
-                    var noteJump = bombNoteController.GetComponent<NoteJump>();
+                    NoteController noteController = _bombNotePool.Spawn();
+                    SetNoteControllerEventCallbacks(noteController);
+                    noteController.transform.SetPositionAndRotation(a4 + noteOffset2, Quaternion.identity);
+                    noteController.Init(noteData, a4 + noteOffset2, a5 + noteOffset2, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity);
+
+                    var noteJump = noteController.GetComponent<NoteJump>();
                     noteJump.SetPrivateField("_playerController", owner);
                     noteJump.SetPrivateField("_audioTimeSyncController", onlineSyncController);
-                    bombNoteController.GetComponent<NoteFloorMovement>().SetPrivateField("_audioTimeSyncController", onlineSyncController);
-                    bombNoteController.noteDidFinishJumpEvent += ResetControllers;
-                    bombNoteController.noteWasCutEvent += ResetControllersNoteWasCut;
-                    bombNoteController.noteDidDissolveEvent += ResetControllers;
-                    _activeNotes.Add(bombNoteController);
+                    noteController.GetComponent<NoteFloorMovement>().SetPrivateField("_audioTimeSyncController", onlineSyncController);
+                    noteController.noteDidFinishJumpEvent += ResetControllers;
+                    noteController.noteWasCutEvent += ResetControllersNoteWasCut;
+                    noteController.noteDidDissolveEvent += ResetControllers;
+                    _activeNotes.Add(noteController);
                 }
                 else if (noteData.noteType.IsBasicNote())
                 {
-                    NoteController.Pool pool2 = (noteData.noteType != NoteType.NoteA) ? _noteBPool : _noteAPool;
-                    NoteController basicNoteController = pool2.Spawn();
-                    SetNoteControllerEventCallbacks(basicNoteController);
+                    MemoryPool<NoteController> memoryPool = (noteData.noteType == NoteType.NoteA) ? _noteAPool : _noteBPool;
+                    if (_numberOfSpawnedBasicNotes == 0)
+                    {
+                        _firstBasicNoteTime = noteData.time;
+                    }
+                    bool flag = _firstBasicNoteTime == noteData.time;
+                    NoteController noteController2 = memoryPool.Spawn();
+                    SetNoteControllerEventCallbacks(noteController2);
                     Vector3 noteOffset3 = GetNoteOffset(noteData.flipLineIndex, noteData.startNoteLineLayer);
-                    basicNoteController.transform.SetPositionAndRotation(a4 + noteOffset3, Quaternion.identity);
-                    GameNoteController gameNoteController = basicNoteController as GameNoteController;
+                    noteController2.transform.SetPositionAndRotation(a4 + noteOffset3, Quaternion.identity);
+                    GameNoteController gameNoteController = noteController2 as GameNoteController;
                     if (gameNoteController != null)
                     {
-                        gameNoteController.Init(noteData, a4 + noteOffset3, a5 + noteOffset3, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity, _disappearingArrows, _ghostNotes);
+                        gameNoteController.Init(noteData, a4 + noteOffset3, a5 + noteOffset3, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity, _disappearingArrows, _ghostNotes && !flag);
                     }
                     else
                     {
-                        basicNoteController.Init(noteData, a4 + noteOffset3, a5 + noteOffset3, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity);
+                        noteController2.Init(noteData, a4 + noteOffset3, a5 + noteOffset3, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity);
                     }
-                    var noteJump = basicNoteController.GetComponent<NoteJump>();
+
+                    var noteJump = noteController2.GetComponent<NoteJump>();
                     noteJump.SetPrivateField("_playerController", owner);
                     noteJump.SetPrivateField("_audioTimeSyncController", onlineSyncController);
-                    basicNoteController.GetComponent<NoteFloorMovement>().SetPrivateField("_audioTimeSyncController", onlineSyncController);
-                    basicNoteController.noteDidFinishJumpEvent += ResetControllers;
-                    basicNoteController.noteWasCutEvent += ResetControllersNoteWasCut;
-                    basicNoteController.noteDidDissolveEvent += ResetControllers;
-                    _prevSpawnedNormalNoteController = basicNoteController;
-                    _activeNotes.Add(basicNoteController);
+                    noteController2.GetComponent<NoteFloorMovement>().SetPrivateField("_audioTimeSyncController", onlineSyncController);
+                    noteController2.noteDidFinishJumpEvent += ResetControllers;
+                    noteController2.noteWasCutEvent += ResetControllersNoteWasCut;
+                    noteController2.noteDidDissolveEvent += ResetControllers;
+
+                    _activeNotes.Add(noteController2);
+                    _numberOfSpawnedBasicNotes++;
+                    if (_prevSpawnedNormalNoteController != null)
+                    {
+                        float time = _prevSpawnedNormalNoteController.noteData.time;
+                        float time2 = noteController2.noteData.time;
+                    }
+                    _prevSpawnedNormalNoteController = noteController2;
                 }
             }
+            this.GetPrivateField<Action<BeatmapObjectSpawnController, BeatmapObjectData, float, float>>("beatmapObjectWasSpawnedEvent")?.Invoke(this, beatmapObjectData, num, num2);
         }
 
         public override Vector3 GetNoteOffset(int noteLineIndex, NoteLineLayer noteLineLayer)
@@ -196,16 +235,34 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         {
             base.OnDestroy();
 
-            Plugin.log.Info("Spawn controller is destroyed! Dissolving notes...");
+            Plugin.log.Info("Spawn controller is destroyed! Despawning notes...");
 
-            foreach (NoteController controller in _activeNotes)
+            _disableSpawning = true;
+
+            for (int i = 0; i<  _noteAPool.activeItems.Count; i++)
             {
-                controller.Dissolve(1f);
+                if(_noteAPool.activeItems.Count > i)
+                    Despawn(_noteAPool.activeItems.ElementAt(i));
             }
-
-            foreach (ObstacleController controller in _activeObstacles)
+            for (int i = 0; i < _noteBPool.activeItems.Count; i++)
             {
-                controller.Dissolve(1f);
+                if (_noteBPool.activeItems.Count > i)
+                    Despawn(_noteBPool.activeItems.ElementAt(i));
+            }
+            for (int i = 0; i < _bombNotePool.activeItems.Count; i++)
+            {
+                if (_bombNotePool.activeItems.Count > i)
+                    Despawn(((BombNoteController)_bombNotePool.activeItems.ElementAt(i)));
+            }
+            for (int i = 0; i < _fullHeightObstaclePool.activeItems.Count; i++)
+            {
+                if (_fullHeightObstaclePool.activeItems.Count > i)
+                    Despawn(_fullHeightObstaclePool.activeItems.ElementAt(i));
+            }
+            for (int i = 0; i < _topObstaclePool.activeItems.Count; i++)
+            {
+                if (_topObstaclePool.activeItems.Count > i)
+                    Despawn(_topObstaclePool.activeItems.ElementAt(i));
             }
         }
     }

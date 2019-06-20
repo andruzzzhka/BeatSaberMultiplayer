@@ -29,14 +29,21 @@ namespace BeatSaberMultiplayer
                 if (_info != null && value != null)
                 {
                     _info.playerName = value.playerName;
-                    _info.playerName = value.playerName;
-                    _info.avatarHash = value.avatarHash;
-                    _info.playerComboBlocks = value.playerComboBlocks;
-                    _info.playerCutBlocks = value.playerCutBlocks;
-                    _info.playerEnergy = value.playerEnergy;
-                    _info.playerScore = value.playerScore;
+                    _info.playerId = value.playerId;
+
+                    _info.playerNameColor = value.playerNameColor;
                     _info.playerState = value.playerState;
+
+                    _info.fullBodyTracking = value.fullBodyTracking;
+                    _info.playerScore = value.playerScore;
+                    _info.playerCutBlocks = value.playerCutBlocks;
+                    _info.playerComboBlocks = value.playerComboBlocks;
                     _info.playerTotalBlocks = value.playerTotalBlocks;
+                    _info.playerEnergy = value.playerEnergy;
+                    _info.playerLevelOptions = value.playerLevelOptions;
+
+                    _info.avatarHash = value.avatarHash;
+                    _info.hitsLastUpdate = value.hitsLastUpdate;
                 }
                 else
                 {
@@ -106,7 +113,7 @@ namespace BeatSaberMultiplayer
             Plugin.log.Info("Created beatmap callback controller!");
             beatmapCallbackController.Init(this);
             Plugin.log.Info("Initialized beatmap callback controller!");
-            
+
             audioTimeController = new GameObject("OnlineAudioTimeController").AddComponent<OnlineAudioTimeController>();
             Plugin.log.Info("Created audio time controller!");
             audioTimeController.Init(this);
@@ -121,7 +128,7 @@ namespace BeatSaberMultiplayer
         void SpawnSabers()
         {
             Plugin.log.Info("Spawning left saber...");
-            _leftSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "LeftSaber"), transform, false);//.gameObject.AddComponent<OnlineSaber>();
+            _leftSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "LeftSaber"), transform, false);
             _leftSaber.gameObject.name = "CustomLeftSaber";
             var leftController = _leftSaber.gameObject.AddComponent<OnlineVRController>();
             leftController.owner = this;
@@ -133,7 +140,7 @@ namespace BeatSaberMultiplayer
             leftTrail.SetPrivateField("_saberTypeObject", leftController.GetComponentInChildren<SaberTypeObject>());
 
             Plugin.log.Info("Spawning right saber...");
-            _rightSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "RightSaber"), transform, false);//.gameObject.AddComponent<OnlineSaber>();
+            _rightSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "RightSaber"), transform, false);
             _rightSaber.gameObject.name = "CustomRightSaber";
             var rightController = _rightSaber.gameObject.AddComponent<OnlineVRController>();
             rightController.owner = this;
@@ -207,16 +214,21 @@ namespace BeatSaberMultiplayer
                     _info.headPos = Vector3.Lerp(syncStartInfo.headPos, syncEndInfo.headPos, lerpProgress);
                     _info.leftHandPos = Vector3.Lerp(syncStartInfo.leftHandPos, syncEndInfo.leftHandPos, lerpProgress);
                     _info.rightHandPos = Vector3.Lerp(syncStartInfo.rightHandPos, syncEndInfo.rightHandPos, lerpProgress);
-                    _info.leftLegPos = Vector3.Lerp(syncStartInfo.leftLegPos, syncEndInfo.leftLegPos, lerpProgress);
-                    _info.rightLegPos = Vector3.Lerp(syncStartInfo.rightLegPos, syncEndInfo.rightLegPos, lerpProgress);
-                    _info.pelvisPos = Vector3.Lerp(syncStartInfo.pelvisPos, syncEndInfo.pelvisPos, lerpProgress);
 
                     _info.headRot = Quaternion.Lerp(syncStartInfo.headRot, syncEndInfo.headRot, lerpProgress);
                     _info.leftHandRot = Quaternion.Lerp(syncStartInfo.leftHandRot, syncEndInfo.leftHandRot, lerpProgress);
                     _info.rightHandRot = Quaternion.Lerp(syncStartInfo.rightHandRot, syncEndInfo.rightHandRot, lerpProgress);
-                    _info.leftLegRot = Quaternion.Lerp(syncStartInfo.leftLegRot, syncEndInfo.leftLegRot, lerpProgress);
-                    _info.rightLegRot = Quaternion.Lerp(syncStartInfo.rightLegRot, syncEndInfo.rightLegRot, lerpProgress);
-                    _info.pelvisRot = Quaternion.Lerp(syncStartInfo.pelvisRot, syncEndInfo.pelvisRot, lerpProgress);
+
+                    if (syncStartInfo.fullBodyTracking)
+                    {
+                        _info.leftLegPos = Vector3.Lerp(syncStartInfo.leftLegPos, syncEndInfo.leftLegPos, lerpProgress);
+                        _info.rightLegPos = Vector3.Lerp(syncStartInfo.rightLegPos, syncEndInfo.rightLegPos, lerpProgress);
+                        _info.pelvisPos = Vector3.Lerp(syncStartInfo.pelvisPos, syncEndInfo.pelvisPos, lerpProgress);
+
+                        _info.leftLegRot = Quaternion.Lerp(syncStartInfo.leftLegRot, syncEndInfo.leftLegRot, lerpProgress);
+                        _info.rightLegRot = Quaternion.Lerp(syncStartInfo.rightLegRot, syncEndInfo.rightLegRot, lerpProgress);
+                        _info.pelvisRot = Quaternion.Lerp(syncStartInfo.pelvisRot, syncEndInfo.pelvisRot, lerpProgress);
+                    }
 
                     float lerpedPlayerProgress = Mathf.Lerp(syncStartInfo.playerProgress, syncEndInfo.playerProgress, lerpProgress);
 

@@ -179,8 +179,8 @@ namespace BeatSaberMultiplayer
                     }
                     else
                     {
-                        playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
-                        playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - InGameOnlineController.GetXRNodeWorldPosRot(XRNode.Head).Position);
+                        playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput.HeadPosRot.Position);
+                        playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput.HeadPosRot.Position);
                     }
                 }
             }
@@ -234,8 +234,7 @@ namespace BeatSaberMultiplayer
                         playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(playerInfo.playerId));
                     }
                 }
-                
-                if (playerNameText == null || playerSpeakerIcon == null)
+                else
                 {
                     return;
                 }

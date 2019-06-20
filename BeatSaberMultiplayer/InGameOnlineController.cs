@@ -48,6 +48,8 @@ namespace BeatSaberMultiplayer
         private PauseMenuManager _pauseMenuManager;
         private VRPlatformHelper _vrPlatformHelper;
 
+        private PlayerAvatarInput _avatarInput;
+
         private List<OnlinePlayerController> _players = new List<OnlinePlayerController>();
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
         private GameObject _scoreScreen;
@@ -640,51 +642,32 @@ namespace BeatSaberMultiplayer
 #endif
             }
 
-            Client.Instance.playerInfo.headPos = GetXRNodeWorldPosRot(XRNode.Head).Position;
-            Client.Instance.playerInfo.headRot = GetXRNodeWorldPosRot(XRNode.Head).Rotation;
+            if(_avatarInput == null)
+            {
+                _avatarInput = CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput;
+            }
 
-            Client.Instance.playerInfo.leftHandPos = GetXRNodeWorldPosRot(XRNode.LeftHand).Position;
-            Client.Instance.playerInfo.leftHandRot = GetXRNodeWorldPosRot(XRNode.LeftHand).Rotation;
+            Client.Instance.playerInfo.headPos = _avatarInput.HeadPosRot.Position;
+            Client.Instance.playerInfo.headRot = _avatarInput.HeadPosRot.Rotation;
 
-            Client.Instance.playerInfo.rightHandPos = GetXRNodeWorldPosRot(XRNode.RightHand).Position;
-            Client.Instance.playerInfo.rightHandRot = GetXRNodeWorldPosRot(XRNode.RightHand).Rotation;
+            Client.Instance.playerInfo.leftHandPos = _avatarInput.LeftPosRot.Position;
+            Client.Instance.playerInfo.leftHandRot = _avatarInput.LeftPosRot.Rotation;
+
+            Client.Instance.playerInfo.rightHandPos = _avatarInput.RightPosRot.Position;
+            Client.Instance.playerInfo.rightHandRot = _avatarInput.RightPosRot.Rotation;
 
             if (CustomAvatar.Plugin.IsFullBodyTracking)
             {
                 Client.Instance.playerInfo.fullBodyTracking = true;
-                
-                if (CustomAvatar.Plugin.FullBodyTrackingType == CustomAvatar.Plugin.TrackingType.Hips && CustomAvatar.Plugin.Trackers.Count >= 1)
-                {
-                    Client.Instance.playerInfo.pelvisPos = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[0]).Position;
-                    Client.Instance.playerInfo.pelvisRot = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[0]).Rotation;
-                }
-                else if (CustomAvatar.Plugin.FullBodyTrackingType == CustomAvatar.Plugin.TrackingType.Full && CustomAvatar.Plugin.Trackers.Count >= 3)
-                {
-                    Client.Instance.playerInfo.pelvisPos = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[2]).Position;
-                    Client.Instance.playerInfo.pelvisRot = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[2]).Rotation;
-                }
-                else
-                {
-                    Client.Instance.playerInfo.pelvisPos = new Vector3();
-                    Client.Instance.playerInfo.pelvisRot = new Quaternion();
-                }
 
-                if (CustomAvatar.Plugin.FullBodyTrackingType >= CustomAvatar.Plugin.TrackingType.Feet && CustomAvatar.Plugin.Trackers.Count >= 2)
-                {
-                    Client.Instance.playerInfo.leftLegPos = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[0]).Position;
-                    Client.Instance.playerInfo.leftLegRot = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[0]).Rotation;
+                Client.Instance.playerInfo.pelvisPos = _avatarInput.PelvisPosRot.Position;
+                Client.Instance.playerInfo.pelvisRot = _avatarInput.PelvisPosRot.Rotation;
 
-                    Client.Instance.playerInfo.rightLegPos = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[1]).Position;
-                    Client.Instance.playerInfo.rightLegRot = GetTrackerWorldPosRot(CustomAvatar.Plugin.Trackers[1]).Rotation;
-                }
-                else
-                {
-                    Client.Instance.playerInfo.leftLegPos = new Vector3();
-                    Client.Instance.playerInfo.leftLegRot = new Quaternion();
+                Client.Instance.playerInfo.leftLegPos = _avatarInput.LeftLegPosRot.Position;
+                Client.Instance.playerInfo.leftLegRot = _avatarInput.LeftLegPosRot.Rotation;
 
-                    Client.Instance.playerInfo.rightLegPos = new Vector3();
-                    Client.Instance.playerInfo.rightLegRot = new Quaternion();
-                }
+                Client.Instance.playerInfo.rightLegPos = _avatarInput.RightLegPosRot.Position;
+                Client.Instance.playerInfo.rightLegRot = _avatarInput.RightLegPosRot.Rotation;
             }
             else
             {
@@ -699,16 +682,16 @@ namespace BeatSaberMultiplayer
             if (_vrPlatformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
             {
                 Client.Instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
-                Client.Instance.playerInfo.leftHandPos += Client.Instance.playerInfo.leftHandRot * oculusTouchPosOffset;
+                Client.Instance.playerInfo.leftHandPos += oculusTouchPosOffset;
                 Client.Instance.playerInfo.rightHandRot *= oculusTouchRotOffset;
-                Client.Instance.playerInfo.rightHandPos += Client.Instance.playerInfo.rightHandRot * oculusTouchPosOffset;
+                Client.Instance.playerInfo.rightHandPos += oculusTouchPosOffset;
             }
             else if (_vrPlatformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
             {
                 Client.Instance.playerInfo.leftHandRot *= openVrRotOffset;
-                Client.Instance.playerInfo.leftHandPos += Client.Instance.playerInfo.leftHandRot * openVrPosOffset;
+                Client.Instance.playerInfo.leftHandPos += openVrPosOffset;
                 Client.Instance.playerInfo.rightHandRot *= openVrRotOffset;
-                Client.Instance.playerInfo.rightHandPos += Client.Instance.playerInfo.rightHandRot * openVrPosOffset;
+                Client.Instance.playerInfo.rightHandPos += openVrPosOffset;
             }
 
             if (_currentScene == "GameCore" && _loaded)
@@ -739,49 +722,6 @@ namespace BeatSaberMultiplayer
         private bool ShowAvatarsInRoom()
         {
             return Config.Instance.ShowAvatarsInRoom && _currentScene == "MenuCore";
-        }
-
-        public static PosRot GetXRNodeWorldPosRot(XRNode node)
-        {
-            var pos = InputTracking.GetLocalPosition(node);
-            var rot = InputTracking.GetLocalRotation(node);
-
-            var roomCenter = BeatSaberUtil.GetRoomCenter();
-            var roomRotation = BeatSaberUtil.GetRoomRotation();
-
-            pos = roomRotation * pos;
-            pos += roomCenter;
-            rot = roomRotation * rot;
-            return new PosRot(pos, rot);
-        }
-
-        public static PosRot GetTrackerWorldPosRot(XRNodeState tracker)
-        {
-            Vector3 pos = new Vector3();
-            Quaternion rot = new Quaternion();
-            try
-            {
-                var notes = new List<XRNodeState>();
-                InputTracking.GetNodeStates(notes);
-                foreach (XRNodeState note in notes)
-                {
-                    if (note.uniqueID != tracker.uniqueID)
-                        continue;
-                    if (note.TryGetPosition(out pos) && note.TryGetRotation(out rot))
-                    {
-                        var roomCenter = BeatSaberUtil.GetRoomCenter();
-                        var roomRotation = BeatSaberUtil.GetRoomRotation();
-                        pos = roomRotation * pos;
-                        pos += roomCenter;
-                        rot = roomRotation * rot;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Plugin.log.Error("Unable to get tracker position and rotation! Exception: "+e.Message + "\n" + e.StackTrace);
-            }
-            return new PosRot(pos, rot);
         }
 
         public void DestroyPlayerControllers()
