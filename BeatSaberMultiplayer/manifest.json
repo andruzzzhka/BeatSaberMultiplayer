@@ -2,11 +2,11 @@
   "$schema": "https://github.com/nike4613/BSIPA-MetadataFileSchema/master/Schema.json",
   "author": "andruzzzhka",
   "description": "Allows you to play with friends online!",
-  "gameVersion": "1.0.1",
+  "gameVersion": "1.1.0",
   "icon": "BeatSaberMultiplayer.Assets.OnlineIcon.png",
   "id": "BeatSaberMultiplayer",
   "name": "Beat Saber Multiplayer",
-  "version": "0.6.4.0",
+  "version": "0.6.4.1",
   "dependsOn": {
     "BS Utils": "^1.3.3",
     "CustomUI": "^1.5.8",
