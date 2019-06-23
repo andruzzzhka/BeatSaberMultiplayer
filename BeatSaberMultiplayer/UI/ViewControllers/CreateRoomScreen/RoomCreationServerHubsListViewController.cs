@@ -79,13 +79,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     _serverHubsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
                     tableGameObject.SetActive(true);
 
-                    RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _serverHubsTableView.transform, false);
+                    RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(x => x.name != "CustomTableView"), _serverHubsTableView.transform, false);
                     viewportMask.transform.DetachChildren();
                     _serverHubsTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 
                     (_serverHubsTableView.transform as RectTransform).anchorMin = new Vector2(0.3f, 0.5f);
                     (_serverHubsTableView.transform as RectTransform).anchorMax = new Vector2(0.7f, 0.5f);
-                    (_serverHubsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 60f);
+                    (_serverHubsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 64f);
                     (_serverHubsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
 
                     ReflectionUtil.SetPrivateField(_serverHubsTableView, "_pageUpButton", _pageUpButton);

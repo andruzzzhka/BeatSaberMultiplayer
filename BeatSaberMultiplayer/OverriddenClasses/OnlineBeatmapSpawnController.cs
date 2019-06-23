@@ -231,38 +231,20 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 _activeObstacles.Remove(controller);
         }
 
-        public override void OnDestroy()
+        public void PrepareForDestroy()
         {
             base.OnDestroy();
 
-            Plugin.log.Info("Spawn controller is destroyed! Despawning notes...");
+            Plugin.log.Info("Spawn controller is destroyed! Dissolving notes and obstacles...");
 
-            _disableSpawning = true;
+            for (int i = 0; i < _activeNotes.Count; i++)
+            {
+                _activeNotes[i].Dissolve(1.4f);
+            }
 
-            for (int i = 0; i<  _noteAPool.activeItems.Count; i++)
+            for (int i = 0; i < _activeObstacles.Count; i++)
             {
-                if(_noteAPool.activeItems.Count > i)
-                    Despawn(_noteAPool.activeItems.ElementAt(i));
-            }
-            for (int i = 0; i < _noteBPool.activeItems.Count; i++)
-            {
-                if (_noteBPool.activeItems.Count > i)
-                    Despawn(_noteBPool.activeItems.ElementAt(i));
-            }
-            for (int i = 0; i < _bombNotePool.activeItems.Count; i++)
-            {
-                if (_bombNotePool.activeItems.Count > i)
-                    Despawn(((BombNoteController)_bombNotePool.activeItems.ElementAt(i)));
-            }
-            for (int i = 0; i < _fullHeightObstaclePool.activeItems.Count; i++)
-            {
-                if (_fullHeightObstaclePool.activeItems.Count > i)
-                    Despawn(_fullHeightObstaclePool.activeItems.ElementAt(i));
-            }
-            for (int i = 0; i < _topObstaclePool.activeItems.Count; i++)
-            {
-                if (_topObstaclePool.activeItems.Count > i)
-                    Despawn(_topObstaclePool.activeItems.ElementAt(i));
+                _activeObstacles[i].Dissolve(1.4f);
             }
         }
     }

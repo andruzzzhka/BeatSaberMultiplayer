@@ -99,7 +99,7 @@ namespace BeatSaberMultiplayer
                 _leaderboardTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
                 tableGameObject.SetActive(true);
 
-                RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(), _leaderboardTableView.transform, false);
+                RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(x => x.name != "CustomTableView"), _leaderboardTableView.transform, false);
                 viewportMask.transform.DetachChildren();
                 _leaderboardTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
 

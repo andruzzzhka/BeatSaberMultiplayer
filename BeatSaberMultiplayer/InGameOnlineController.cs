@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
+using BeatSaberMultiplayer.OverriddenClasses;
 using BeatSaberMultiplayer.UI;
 using BeatSaberMultiplayer.VOIP;
 using BS_Utils.Gameplay;
@@ -27,6 +28,8 @@ namespace BeatSaberMultiplayer
 
     public class InGameOnlineController : MonoBehaviour
     {
+        private const float _PTTReleaseDelay = 0.2f;
+
         public static Quaternion oculusTouchRotOffset = Quaternion.Euler(-40f, 0f, 0f);
         public static Vector3 oculusTouchPosOffset = new Vector3(0f, 0f, 0.055f);
         public static Quaternion openVrRotOffset = Quaternion.Euler(-4.3f, 0f, 0f);
@@ -38,6 +41,9 @@ namespace BeatSaberMultiplayer
 
         public bool isVoiceChatActive;
         public bool isRecording;
+
+        private float _PTTReleaseTime;
+        private bool _waitingForRecordingDelay;
 
         public List<ulong> mutedPlayers = new List<ulong>();
 
@@ -135,7 +141,7 @@ namespace BeatSaberMultiplayer
 
         private void ProcesVoiceFragment(VoipFragment fragment)
         {
-            if (isRecording)
+            if (voiceChatListener.isListening)
             {
                 fragment.playerId = Client.Instance.playerInfo.playerId;
                 Client.Instance.SendVoIPData(fragment);
@@ -412,6 +418,12 @@ namespace BeatSaberMultiplayer
                         if (!Config.Instance.EnableVoiceChat)
                             return;
 
+                        for(int i = 0; i < _players.Count; i++)
+                        {
+                            if(_players.Count > i)
+                                _players[i].VoIPUpdate();
+                        }
+
                         int playersCount = msg.ReadInt32();
 
                         for (int j = 0; j < playersCount; j++)
@@ -544,7 +556,20 @@ namespace BeatSaberMultiplayer
 
             if (isVoiceChatActive && voiceChatListener != null)
             {
-                voiceChatListener.isListening = isRecording;
+                if (!isRecording && voiceChatListener.isListening && !_waitingForRecordingDelay)
+                {
+                    _PTTReleaseTime = Time.time;
+                    _waitingForRecordingDelay = true;
+                }
+                else if(!isRecording && voiceChatListener.isListening && Time.time - _PTTReleaseTime < _PTTReleaseDelay)
+                {
+                    //Do nothing
+                }
+                else
+                {
+                    voiceChatListener.isListening = isRecording;
+                    _waitingForRecordingDelay = false;
+                }
             }
 
             if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
@@ -698,7 +723,7 @@ namespace BeatSaberMultiplayer
             {
                 Client.Instance.playerInfo.playerProgress = audioTimeSync.songTime;
             }
-            else if(Client.Instance.playerInfo.playerState != PlayerState.DownloadingSongs)
+            else if(Client.Instance.playerInfo.playerState != PlayerState.DownloadingSongs && Client.Instance.playerInfo.playerState != PlayerState.Game)
             {
                 Client.Instance.playerInfo.playerProgress = 0;
             }
@@ -866,7 +891,7 @@ namespace BeatSaberMultiplayer
             Plugin.log.Info("Found energy controller");
 #endif
 
-            audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
+            audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault(x => !(x is OnlineAudioTimeController));
 
             _pauseMenuManager = FindObjectsOfType<PauseMenuManager>().First();
             

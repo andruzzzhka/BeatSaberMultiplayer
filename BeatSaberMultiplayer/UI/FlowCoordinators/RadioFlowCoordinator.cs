@@ -384,7 +384,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                         {
                                             SongCore.Loader.SongsLoadedEvent -= onLoaded;
                                             Client.Instance.playerInfo.playerState = PlayerState.Room;
-                                            level = songs.FirstOrDefault(x => x.Value.levelID.StartsWith(channelInfo.currentSong.levelId)).Value;
+                                            channelInfo.currentSong.UpdateLevelId();
+                                            level = songs.FirstOrDefault(x => x.Value.levelID == channelInfo.currentSong.levelId).Value;
                                             if (level != null)
                                                 LoadBeatmapLevelAsync(level,
                                                     (loaded, beatmapLevel) =>
@@ -523,6 +524,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         private void PlayNow_SongsLoaded(SongCore.Loader arg1, Dictionary<string, CustomPreviewBeatmapLevel> arg2)
         {
             SongCore.Loader.SongsLoadedEvent -= PlayNow_SongsLoaded;
+            channelInfo.currentSong.UpdateLevelId();
             PlayNow_Pressed();
         }
         

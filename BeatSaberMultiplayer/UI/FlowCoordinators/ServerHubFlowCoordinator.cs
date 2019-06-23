@@ -248,7 +248,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 while ((msg = NetworkClient.ReadMessage()) != null)
                 {
                     if (NetworkClient.Connections.FirstOrDefault() != null) {
-                        ping = NetworkClient.Connections.First().AverageRoundtripTime;
+                        ping = Math.Abs(NetworkClient.Connections.First().AverageRoundtripTime);
                     }
                     switch (msg.MessageType)
                     {

@@ -16,6 +16,8 @@ namespace BeatSaberMultiplayer
 {
     public class OnlinePlayerController : PlayerController
     {
+        private const int _voipDelay = 1;
+
         public PlayerInfo PlayerInfo {
 
             get
@@ -66,8 +68,9 @@ namespace BeatSaberMultiplayer
         private PlayerInfo _info;
         private AudioClip _voipClip;
         private int _lastVoipFragIndex;
-        private int _voipFrames;
+        private int _voipWritePos;
         private int _silentFrames;
+        private int _voipDelayCounter;
 
         public float syncDelay = 0f;
         private float lastSynchronizationTime = 0f;
@@ -169,18 +172,14 @@ namespace BeatSaberMultiplayer
 
             if (voipSource != null)
             {
-                if(voipSource.timeSamples > _voipFrames && !(voipSource.timeSamples > _voipClip.samples / 2 && _voipFrames < _voipClip.samples / 2))
+                if(voipSource.timeSamples > _voipWritePos && !(voipSource.timeSamples > _voipClip.samples / 2 && _voipWritePos < _voipClip.samples / 2))
                 {
                     voipSource.Stop();
                     Plugin.log.Warn("We read past received data!");
                     voipSource.timeSamples = 0;
                 }
 
-                if (!voipSource.isPlaying)
-                {
-                    _silentFrames++;
-                }
-                else
+                if (voipSource.isPlaying)
                 {
                     _silentFrames = 0;
                 }
@@ -236,6 +235,10 @@ namespace BeatSaberMultiplayer
                     {
                         _info.playerProgress = lerpedPlayerProgress;
                     }
+                    else
+                    {
+                        _info.playerProgress = syncStartInfo.playerProgress;
+                    }
                 }
 
                 _overrideHeadPos = true;
@@ -260,10 +263,12 @@ namespace BeatSaberMultiplayer
                 Destroy(avatar.gameObject);
             }
 
-            if (beatmapCallbackController != null && beatmapSpawnController != null)
+            if (beatmapCallbackController != null && beatmapSpawnController != null && audioTimeController != null)
             {
-                Destroy(beatmapCallbackController.gameObject);
-                Destroy(beatmapSpawnController.gameObject);
+                Destroy(beatmapCallbackController.gameObject, 2f);
+                Destroy(audioTimeController.gameObject, 2f);
+                Destroy(beatmapSpawnController.gameObject, 2f);
+                beatmapSpawnController.PrepareForDestroy();
             }
         }
 
@@ -333,6 +338,11 @@ namespace BeatSaberMultiplayer
             }
         }
 
+        public void VoIPUpdate()
+        {
+            _silentFrames++;
+        }
+
 #if DEBUG && VERBOSE
         int lastPlayPos;
         int lastFrame;
@@ -342,7 +352,7 @@ namespace BeatSaberMultiplayer
         {
             if(voipSource != null && !InGameOnlineController.Instance.mutedPlayers.Contains(_info.playerId))
             {
-                if ((_lastVoipFragIndex + 1) != fragIndex || _silentFrames > 20)
+                if ((_lastVoipFragIndex + 1) != fragIndex || _silentFrames > 15)
                 {
 #if DEBUG && VERBOSE
                     Plugin.log.Info($"Starting from scratch! ((_lastVoipFragIndex + 1) != fragIndex): {(_lastVoipFragIndex + 1) != fragIndex}, (_silentFrames > 20): {_silentFrames > 20}, _lastVoipFragIndex: {_lastVoipFragIndex}, fragIndex: {fragIndex}");
@@ -351,24 +361,22 @@ namespace BeatSaberMultiplayer
                     _lastVoipFragIndex = fragIndex;
 
                     _voipClip.SetData(data, 0);
-                    _voipFrames = data.Length;
+                    _voipWritePos = data.Length;
 
-                    voipSource.PlayDelayed(1 / 15);
                     _silentFrames = 0;
-
+                    _voipDelayCounter = 0;
                 }
                 else
                 {
-
                     _lastVoipFragIndex = fragIndex;
                     
-                    if (_voipFrames + data.Length > _voipClip.samples)
+                    if (_voipWritePos + data.Length > _voipClip.samples)
                     {
-                        if (_voipFrames < _voipClip.samples)
+                        if (_voipWritePos < _voipClip.samples)
                         {
-                            _voipClip.SetData(data, _voipFrames);
+                            _voipClip.SetData(data, _voipWritePos);
 
-                            int remaining = data.Length - (_voipClip.samples - _voipFrames);
+                            int remaining = data.Length - (_voipClip.samples - _voipWritePos);
 
                             float[] buffer = new float[remaining];
 
@@ -376,22 +384,22 @@ namespace BeatSaberMultiplayer
 
                             _voipClip.SetData(buffer, 0);
 
-                            _voipFrames = remaining;
+                            _voipWritePos = remaining;
                         }
                         else
                         {
                             _voipClip.SetData(data, 0);
-                            _voipFrames = data.Length;
+                            _voipWritePos = data.Length;
                         }
                     }
                     else
                     {
-                        if (voipSource.timeSamples > _voipFrames - 256 && !(voipSource.timeSamples > _voipClip.samples / 2 && _voipFrames < _voipClip.samples / 2))
+                        if (voipSource.timeSamples > _voipWritePos - 256 && !(voipSource.timeSamples > _voipClip.samples / 2 && _voipWritePos < _voipClip.samples / 2))
                         {
-                            voipSource.timeSamples = _voipFrames - (_voipClip.frequency / 15);
+                            voipSource.timeSamples = _voipWritePos - (_voipClip.frequency / 15);
                         }
-                        _voipClip.SetData(data, _voipFrames);
-                        _voipFrames += data.Length;
+                        _voipClip.SetData(data, _voipWritePos);
+                        _voipWritePos += data.Length;
 
                     }
 
@@ -402,10 +410,12 @@ namespace BeatSaberMultiplayer
                     lastFrame = Time.frameCount;
 #endif
 
-                    if (!voipSource.isPlaying)
+                    _voipDelayCounter++;
+
+                    if (!voipSource.isPlaying && _voipDelayCounter >= _voipDelay)
                     {
+                        voipSource.timeSamples = 0;
                         voipSource.Play();
-                        voipSource.timeSamples = _voipFrames - (_voipClip.frequency / 15);
                     }
                     _silentFrames = 0;
                 }

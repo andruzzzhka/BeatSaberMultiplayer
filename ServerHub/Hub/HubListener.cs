@@ -126,7 +126,7 @@ namespace ServerHub.Hub
             List<Client> allClients = hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioChannels.SelectMany(x => x.radioClients)).ToList();
 
             NetIncomingMessage msg;
-            while ((msg = ListenerServer.ReadMessage()) != null)
+            while (ListenerServer.ReadMessage(out msg))
             {
                 try
                 {
