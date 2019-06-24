@@ -24,46 +24,48 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
                     if (SpectatingController.Instance.playersHits.ContainsKey(playerId) && SpectatingController.Instance.playersHits[playerId].Count > 0)
                     {
-                        HitData hit = SpectatingController.Instance.playersHits[playerId].FirstOrDefault(x => x.objectId == noteController.noteData.id);
-                        bool allIsOKExpected = hit.noteWasCut && hit.speedOK && hit.saberTypeOK && hit.directionOK && !hit.wasCutTooSoon;
-
-                        if (hit.noteWasCut)
+                        if (SpectatingController.Instance.playersHits[playerId].TryGetValue(noteController.noteData.id, out HitData hit))
                         {
-                            if (noteCutInfo.allIsOK == allIsOKExpected)
+                            bool allIsOKExpected = hit.noteWasCut && hit.speedOK && hit.saberTypeOK && hit.directionOK && !hit.wasCutTooSoon;
+
+                            if (hit.noteWasCut)
                             {
-                                return true;
-                            }
-                            else if (!noteCutInfo.allIsOK && allIsOKExpected)
-                            {
+                                if (noteCutInfo.allIsOK == allIsOKExpected)
+                                {
+                                    return true;
+                                }
+                                else if (!noteCutInfo.allIsOK && allIsOKExpected)
+                                {
 #if DEBUG
                                 Plugin.log.Warn("Oopsie, we missed it, let's forget about that");
 #endif
-                                __instance.Despawn(noteController);
+                                    __instance.Despawn(noteController);
 
-                                return false;
-                            }
-                            else if (noteCutInfo.allIsOK && !allIsOKExpected)
-                            {
+                                    return false;
+                                }
+                                else if (noteCutInfo.allIsOK && !allIsOKExpected)
+                                {
 #if DEBUG
                                 Plugin.log.Warn("We cut the note, but the player cut it wrong");
 #endif
 
-                                noteCutInfo.SetPrivateProperty("wasCutTooSoon", hit.wasCutTooSoon);
-                                noteCutInfo.SetPrivateProperty("directionOK", hit.directionOK);
-                                noteCutInfo.SetPrivateProperty("saberTypeOK", hit.saberTypeOK);
-                                noteCutInfo.SetPrivateProperty("speedOK", hit.speedOK);
+                                    noteCutInfo.SetPrivateProperty("wasCutTooSoon", hit.wasCutTooSoon);
+                                    noteCutInfo.SetPrivateProperty("directionOK", hit.directionOK);
+                                    noteCutInfo.SetPrivateProperty("saberTypeOK", hit.saberTypeOK);
+                                    noteCutInfo.SetPrivateProperty("speedOK", hit.speedOK);
 
-                                return true;
+                                    return true;
+                                }
                             }
-                        }
-                        else
-                        {
+                            else
+                            {
 #if DEBUG
                             Plugin.log.Warn("We cut the note, but the player missed it");
 #endif
-                            __instance.HandleNoteWasMissed(noteController);
+                                __instance.HandleNoteWasMissed(noteController);
 
-                            return false;
+                                return false;
+                            }
                         }
                     }
 
@@ -96,19 +98,20 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
                     if (SpectatingController.Instance.playersHits.ContainsKey(playerId) && SpectatingController.Instance.playersHits[playerId].Count > 0)
                     {
-                        HitData hit = SpectatingController.Instance.playersHits[playerId].FirstOrDefault(x => x.objectId == noteController.noteData.id);
-
-                        if (hit.noteWasCut)
+                        if (SpectatingController.Instance.playersHits[playerId].TryGetValue(noteController.noteData.id, out HitData hit))
                         {
+                            if (hit.noteWasCut)
+                            {
 #if DEBUG
                             Plugin.log.Warn("We missed the note, but the player cut it");
 #endif
-                            __instance.Despawn(noteController);
-                            return false;
-                        }
-                        else
-                        {
-                            return true;
+                                __instance.Despawn(noteController);
+                                return false;
+                            }
+                            else
+                            {
+                                return true;
+                            }
                         }
                     }
 

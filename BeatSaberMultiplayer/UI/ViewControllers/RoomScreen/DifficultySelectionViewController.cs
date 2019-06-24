@@ -24,13 +24,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public BeatmapCharacteristicSO selectedCharacteristic { get; private set; }
         public BeatmapDifficulty selectedDifficulty { get; private set; }
 
-        BeatmapLevelsModelSO _levelsModelSO;
-
         LevelListTableCell _selectedSongCell;
 
         IBeatmapLevel _selectedSong;
         BeatmapCharacteristicSO[] _beatmapCharacteristics;
-        BeatmapCharacteristicSO _standardCharacteristic;
 
         TextSegmentedControl _characteristicControl;
         TextSegmentedControl _difficultyControl;
@@ -45,6 +42,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         private UnityEngine.UI.Image _progressBackground;
         private UnityEngine.UI.Image _progressBarImage;
         private TextMeshProUGUI _progressText;
+        private GameObject _loadingSpinner;
 
         private RectTransform _characteristicControlBlocker;
         private RectTransform _difficultyControlBlocker;
@@ -54,8 +52,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             if(firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
                 _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
-                _standardCharacteristic = _beatmapCharacteristics.First(x => x.serializedName == "Standard");
-                _levelsModelSO = Resources.FindObjectsOfTypeAll<BeatmapLevelsModelSO>().FirstOrDefault();
 
                 bool isHost = Client.Instance.isHost;
 
@@ -155,6 +151,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 _progressText = BeatSaberUI.CreateText(rectTransform, "0.0%", new Vector2(55f, -10f));
                 _progressText.rectTransform.SetParent(_progressBarRect, true);
+
+                _loadingSpinner = this.CreateLoadingSpinner();
             }
             _playButton.interactable = false;
             _progressBarRect.gameObject.SetActive(false);
@@ -237,6 +235,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetSelectedSong(SongInfo info)
         {
+            SetLoadingState(false);
+
             _selectedSongCell.SetText(info.songName);
             _selectedSongCell.SetSubText("Loading info...");
 
@@ -254,6 +254,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetSelectedSong(IBeatmapLevel level)
         {
+            SetLoadingState(false);
+
             _selectedSong = level;
 
             _selectedSongCell.SetText(_selectedSong.songName + " <size=80%>" + _selectedSong.songSubName + "</size>");
@@ -277,6 +279,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetSelectedSong(IPreviewBeatmapLevel level)
         {
+            SetLoadingState(false);
+
             _selectedSongCell.SetText(level.songName + " <size=80%>" + level.songSubName + "</size>");
             _selectedSongCell.SetSubText(level.songAuthorName + " <size=80%>[" + level.levelAuthorName + "]</size>");
 
@@ -294,6 +298,17 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             _characteristicControl.SelectCellWithNumber((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
             _characteristicControl_didSelectCellEvent((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
+        }
+
+        public void SetLoadingState(bool loading)
+        {
+            _loadingSpinner.SetActive(loading);
+            _selectedSongCell.gameObject.SetActive(!loading);
+            _playersReadyText.gameObject.SetActive(!loading);
+            _cancelButton.gameObject.SetActive(!loading);
+            _playButton.gameObject.SetActive(!loading);
+            _characteristicControl.gameObject.SetActive(!loading);
+            _difficultyControl.gameObject.SetActive(!loading);
         }
 
         public void SetBeatmapCharacteristic(BeatmapCharacteristicSO characteristic)

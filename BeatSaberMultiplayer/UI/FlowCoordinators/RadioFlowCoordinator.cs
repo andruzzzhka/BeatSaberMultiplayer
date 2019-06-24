@@ -294,31 +294,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                             UpdateNextSongScreen();
                                             break;
                                         case ChannelState.Results:
-                                            {
-                                                UpdateResultsScreen();
-
-                                                int playersCount = msg.ReadInt32();
-
-                                                List<PlayerInfo> playerInfos = new List<PlayerInfo>();
-
-                                                try
-                                                {
-                                                    for (int j = 0; j < playersCount; j++)
-                                                    {
-
-                                                        playerInfos.Add(new PlayerInfo(msg));
-                                                    }
-                                                }
-                                                catch (Exception e)
-                                                {
-#if DEBUG
-                                                    Plugin.log.Critical($"Unable to parse PlayerInfo! Excpetion: {e}");
-#endif
-                                                    return;
-                                                }
-
-                                                playerInfos = playerInfos.Where(x => x.playerScore > 0 && (x.playerState == PlayerState.Game || x.playerState == PlayerState.Room)).ToList();
-                                            }
+                                            UpdateResultsScreen();
                                             break;
                                     }
                                 }

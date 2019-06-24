@@ -484,13 +484,23 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     switch (roomInfo.roomState)
                                     {
                                         case RoomState.InGame:
-                                            playerInfos = playerInfos.Where(x => x.playerScore > 0 && x.playerState == PlayerState.Game).ToList();
-                                            UpdateLeaderboard(playerInfos, currentTime, totalTime, false);
+                                            List<PlayerInfo> sortedInGame = new List<PlayerInfo>(playerInfos.Count);
+                                            for(int i = 0; i < playerInfos.Count; i++)
+                                            {
+                                                if(playerInfos[i].playerScore > 0 && playerInfos[i].playerState == PlayerState.Game)
+                                                    sortedInGame.Add(playerInfos[i]);
+                                            }
+                                            UpdateLeaderboard(sortedInGame, currentTime, totalTime, false);
                                             break;
 
                                         case RoomState.Results:
-                                            playerInfos = playerInfos.Where(x => x.playerScore > 0 && (x.playerState == PlayerState.Game || x.playerState == PlayerState.Room)).ToList();
-                                            UpdateLeaderboard(playerInfos, currentTime, totalTime, true);
+                                            List<PlayerInfo> sortedResults = new List<PlayerInfo>(playerInfos.Count);
+                                            for (int i = 0; i < playerInfos.Count; i++)
+                                            {
+                                                if (playerInfos[i].playerScore > 0 && (playerInfos[i].playerState == PlayerState.Game || playerInfos[i].playerState == PlayerState.Room))
+                                                    sortedResults.Add(playerInfos[i]);
+                                            }
+                                            UpdateLeaderboard(sortedResults, currentTime, totalTime, true);
                                             break;
                                     }
 
@@ -863,6 +873,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (selectedLevel != null)
             {
                 _difficultySelectionViewController.SetPlayButtonInteractable(false);
+                _difficultySelectionViewController.SetLoadingState(true);
 
                 LoadBeatmapLevelAsync(selectedLevel,
                     (status, success, level) =>

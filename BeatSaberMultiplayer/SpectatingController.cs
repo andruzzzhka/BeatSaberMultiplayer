@@ -27,7 +27,7 @@ namespace BeatSaberMultiplayer
         public static bool active = false;
 
         public Dictionary<ulong, List<PlayerInfo>> playerInfos  = new Dictionary<ulong, List<PlayerInfo>>();
-        public Dictionary<ulong, List<HitData>> playersHits     = new Dictionary<ulong, List<HitData>>();
+        public Dictionary<ulong, Dictionary<int, HitData>> playersHits = new Dictionary<ulong, Dictionary<int, HitData>>();
 
         public OnlinePlayerController spectatedPlayer;
         public AudioTimeSyncController audioTimeSync;
@@ -143,7 +143,7 @@ namespace BeatSaberMultiplayer
             if (playersHits != null)
                 playersHits.Clear();
             else
-                playersHits = new Dictionary<ulong, List<HitData>>();
+                playersHits = new Dictionary<ulong, Dictionary<int, HitData>>();
 
 #if DEBUG  && LOCALREPLAY
             string replayPath = Path.GetFullPath("MPDumps\\BootyBounce.mpdmp");
@@ -305,12 +305,19 @@ namespace BeatSaberMultiplayer
                                             playerInfos[player.playerId].RemoveRange(0, index + 1);
                                     }
                                     playerInfos[player.playerId].Add(player);
-                                    playersHits[player.playerId].AddRange(player.hitsLastUpdate);
+
+                                    foreach(HitData hit in player.hitsLastUpdate)
+                                    {
+                                        playersHits[player.playerId].Add(hit.objectId, hit);
+                                    }
                                 }
                                 else
                                 {
                                     playerInfos.Add(player.playerId, new List<PlayerInfo>() { player });
-                                    playersHits.Add(player.playerId, player.hitsLastUpdate);
+                                    foreach (HitData hit in player.hitsLastUpdate)
+                                    {
+                                        playersHits[player.playerId].Add(hit.objectId, hit);
+                                    }
                                 }
                             }
                         }
