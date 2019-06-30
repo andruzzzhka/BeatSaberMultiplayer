@@ -265,6 +265,10 @@
   <ItemGroup>
     <EmbeddedResource Include="Assets\RefreshIcon.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\RatingIcon.png" />
+    <EmbeddedResource Include="Assets\StarIcon.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y $(TargetDir)BeatSaberMultiplayer.dll  "C:\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins"

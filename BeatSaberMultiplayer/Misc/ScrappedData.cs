@@ -17,10 +17,15 @@ namespace BeatSaberMultiplayer.Misc
         public string Hash { get; set; }
         public string SongName { get; set; }
         public string SongSubName { get; set; }
-        public string AuthorName { get; set; }
+        public string LevelAuthorName { get; set; }
+        public string SongAuthorName { get; set; }
         public List<DifficultyStats> Diffs { get; set; }
         public long Bpm { get; set; }
         public long PlayedCount { get; set; }
+        public long Upvotes { get; set; }
+        public long Downvotes { get; set; }
+        public double Heat { get; set; }
+        public double Rating { get; set; }
     }
 
     public class DifficultyStats

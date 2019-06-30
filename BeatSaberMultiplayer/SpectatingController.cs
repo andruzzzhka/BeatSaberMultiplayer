@@ -34,7 +34,6 @@ namespace BeatSaberMultiplayer
 
         private ScoreController _scoreController;
         private GameEnergyCounter _energyCounter;
-        private AudioSource _songAudioSource;
 
         private string _currentScene;
 
@@ -43,8 +42,6 @@ namespace BeatSaberMultiplayer
 
         private Saber _leftSaber;
         private Saber _rightSaber;
-        
-        private Camera _mainCamera;
 
         private TextMeshPro _spectatingText;
         private TextMeshPro _bufferingText;
@@ -222,7 +219,6 @@ namespace BeatSaberMultiplayer
                 return;
             
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
-            _songAudioSource = audioTimeSync.GetPrivateField<AudioSource>("_audioSource");
 
             _leftSaber = Resources.FindObjectsOfTypeAll<Saber>().First(x => x.saberType == Saber.SaberType.SaberB);
             _leftController = _leftSaber.GetPrivateField<VRController>("_vrController").gameObject.AddComponent<OnlineVRController>();

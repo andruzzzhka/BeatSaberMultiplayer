@@ -832,8 +832,7 @@ namespace BeatSaberMultiplayer
                 PluginUI.instance.radioFlowCoordinator.lastResults = levelCompletionResults;
             }
 
-            /*
-            if (Config.Instance.SpectatorMode || Client.disableScoreSubmission || ScoreSubmission.Disabled || ScoreSubmission.ProlongedDisabled)
+            if (Config.Instance.SpectatorMode || Client.disableScoreSubmission || ScoreSubmission.Disabled || ScoreSubmission.ProlongedDisabled || practice)
             {
                 List<string> reasons = new List<string>();
 
@@ -841,36 +840,34 @@ namespace BeatSaberMultiplayer
                 if (Client.disableScoreSubmission) reasons.Add("Multiplayer score submission disabled by another mod");
                 if (ScoreSubmission.Disabled) reasons.Add("Score submission is disabled by "+ ScoreSubmission.ModString);
                 if (ScoreSubmission.ProlongedDisabled) reasons.Add("Score submission is disabled for a prolonged time by " + ScoreSubmission.ProlongedModString);
+                if (practice) reasons.Add("Practice mode");
 
                 Plugin.log.Warn("\nScore submission is disabled! Reason:\n" +string.Join(",\n", reasons));
                 return;
             }
 
-            PlayerDataModelSO _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+            AchievementsEvaluationHandler achievementsHandler = Resources.FindObjectsOfTypeAll<AchievementsEvaluationHandler>().First();
+            achievementsHandler.ProcessLevelFinishData(difficultyBeatmap, levelCompletionResults);
+            achievementsHandler.ProcessSoloFreePlayLevelFinishData(difficultyBeatmap, levelCompletionResults);
+
+            SoloFreePlayFlowCoordinator freePlayCoordinator = Resources.FindObjectsOfTypeAll<SoloFreePlayFlowCoordinator>().First();
             
-            _playerDataModel.currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
-            _playerDataModel.Save();
-            if (levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Failed && levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Cleared)
-            {
-                return;
-            }
-            
-            PlayerDataModelSO.LocalPlayer currentLocalPlayer = _playerDataModel.currentLocalPlayer;
-            bool cleared = levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared;
+            PlayerDataModelSO.LocalPlayer currentLocalPlayer = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel").currentLocalPlayer;
+
+            currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
+
             string levelID = difficultyBeatmap.level.levelID;
             BeatmapDifficulty difficulty = difficultyBeatmap.difficulty;
             BeatmapCharacteristicSO beatmapCharacteristic = difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic;
             PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(levelID, difficulty, beatmapCharacteristic);
-            bool newHighScore = playerLevelStatsData.highScore < levelCompletionResults.modifiedScore;
             playerLevelStatsData.IncreaseNumberOfGameplays();
-            if (cleared)
+            if (levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared)
             {
                 Plugin.log.Info("Submitting score...");
                 playerLevelStatsData.UpdateScoreData(levelCompletionResults.modifiedScore, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
-                Resources.FindObjectsOfTypeAll<PlatformLeaderboardsModel>().First().AddScore(difficultyBeatmap, levelCompletionResults.rawScore, gameplayModifiers);
+                freePlayCoordinator.GetPrivateField<PlatformLeaderboardsModel>("_platformLeaderboardsModel").AddScore(difficultyBeatmap, levelCompletionResults.rawScore, levelCompletionResults.modifiedScore, gameplayModifiers);
                 Plugin.log.Info("Score submitted!");
             }
-            */ //TODO: Ask Umbra why score submission doesn't work
         }
 
         IEnumerator WaitForControllers()

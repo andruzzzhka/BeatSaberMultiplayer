@@ -46,6 +46,7 @@ namespace BeatSaberMultiplayer
         public static Sprite removeFromFavorites;
         public static Sprite whitePixel;
         public static Sprite doubleArrow;
+        public static Sprite starIcon;
 
         //by elliotttate#9942
         public static Sprite roomsIcon;
@@ -58,6 +59,8 @@ namespace BeatSaberMultiplayer
 
         //https://www.flaticon.com/free-icon/dislike-thumb_70485
         public static Sprite thumbDown;
+
+        public static Sprite ratingIcon;
 
         //https://www.flaticon.com/free-icon/speaker-filled-audio-tool_59284
         public static Sprite speakerIcon;
@@ -79,6 +82,8 @@ namespace BeatSaberMultiplayer
             thumbDown =             CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.ThumbDown.png");
             speakerIcon =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.SpeakerIcon.png");
             refreshIcon =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RefreshIcon.png");
+            starIcon =              CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.StarIcon.png");
+            ratingIcon =            CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RatingIcon.png");
         }
     }
 }

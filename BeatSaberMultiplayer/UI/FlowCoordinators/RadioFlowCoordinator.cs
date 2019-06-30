@@ -60,12 +60,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         BeatmapLevelsModelSO _beatmapLevelsModel;
 
         BeatmapCharacteristicSO[] _beatmapCharacteristics;
-        BeatmapCharacteristicSO _standardCharacteristics;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
             _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
-            _standardCharacteristics = _beatmapCharacteristics.First(x => x.serializedName == "Standard");
             _beatmapLevelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModelSO>().FirstOrDefault();
 
             if (firstActivation)
@@ -355,8 +353,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 {
                                     if (success)
                                     {
-                                        Action<SongCore.Loader, Dictionary<string, CustomPreviewBeatmapLevel>> onLoaded = null;
-                                        onLoaded = (sender, songs) =>
+                                        void onLoaded(SongCore.Loader sender, Dictionary<string, CustomPreviewBeatmapLevel> songs)
                                         {
                                             SongCore.Loader.SongsLoadedEvent -= onLoaded;
                                             Client.Instance.playerInfo.playerState = PlayerState.Room;
@@ -368,7 +365,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                                     {
                                                         PreviewPlayer.CrossfadeTo(beatmapLevel.beatmapLevelData.audioClip, beatmapLevel.previewStartTime, Math.Max(totalTime - currentTime, beatmapLevel.previewDuration));
                                                     });
-                                        };
+                                        }
+
                                         SongCore.Loader.SongsLoadedEvent += onLoaded;
                                         SongCore.Loader.Instance.RefreshSongs(false);
 
@@ -453,8 +451,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 }
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, (practiceSettings != null)); });
-                return;
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, (startTime > 1f)); });
             }
             else
             {
