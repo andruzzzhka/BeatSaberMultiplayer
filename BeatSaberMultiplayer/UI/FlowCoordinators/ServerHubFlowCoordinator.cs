@@ -77,11 +77,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void CreateRoomPressed()
         {
-            PresentFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, false, false);
-            PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients);
+            if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
+            {
+                PresentFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, false, false);
+                PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients);
 
-            PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent -= RoomCreationFlowCoordinator_didFinishEvent;
-            PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent += RoomCreationFlowCoordinator_didFinishEvent;
+                PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent -= RoomCreationFlowCoordinator_didFinishEvent;
+                PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent += RoomCreationFlowCoordinator_didFinishEvent;
+            }
         }
 
         private void RoomCreationFlowCoordinator_didFinishEvent(bool immediately)
@@ -103,11 +106,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void JoinRoom(string ip, int port, uint roomId, bool usePassword, string pass = "")
         {
-            PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
-            PluginUI.instance.roomFlowCoordinator.JoinRoom(ip, port, roomId, usePassword, pass);
-            Client.Instance.inRadioMode = false;
-            PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
-            PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
+            if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
+            {
+                PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
+                PluginUI.instance.roomFlowCoordinator.JoinRoom(ip, port, roomId, usePassword, pass);
+                Client.Instance.inRadioMode = false;
+                PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
+                PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
+            }
         }
 
         private void RoomFlowCoordinator_didFinishEvent()

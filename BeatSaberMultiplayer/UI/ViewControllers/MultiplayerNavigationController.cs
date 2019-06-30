@@ -24,7 +24,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                 if (activationType == ActivationType.AddedToHierarchy)
                 {
                     _backButton = BeatSaberUI.CreateBackButton(rectTransform);
-                    _backButton.onClick.AddListener(delegate () { didFinishEvent?.Invoke(); });
+                    _backButton.onClick.AddListener(delegate () { if(!_isInTransition && !_parentViewController.GetPrivateField<bool>("_isInTransition")) didFinishEvent?.Invoke(); });
 
                     _loadingIndicator = BeatSaberUI.CreateLoadingSpinner(rectTransform);
                     _loadingIndicator.SetActive(false);

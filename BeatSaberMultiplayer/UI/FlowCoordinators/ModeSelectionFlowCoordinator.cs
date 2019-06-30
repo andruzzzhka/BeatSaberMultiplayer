@@ -29,10 +29,18 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
                     mainFlow.InvokeMethod("DismissFlowCoordinator", this, null, false);
                 };
-                
+
                 _selectionViewController = BeatSaberUI.CreateViewController<ModeSelectionViewController>();
-                _selectionViewController.didSelectRooms += () => { PresentFlowCoordinator(PluginUI.instance.serverHubFlowCoordinator);  };
-                _selectionViewController.didSelectRadio += () => { PresentFlowCoordinator(PluginUI.instance.channelSelectionFlowCoordinator); };
+                _selectionViewController.didSelectRooms += () =>
+                {
+                    if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
+                    { PresentFlowCoordinator(PluginUI.instance.serverHubFlowCoordinator); }
+                };
+                _selectionViewController.didSelectRadio += () =>
+                {
+                    if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
+                    { PresentFlowCoordinator(PluginUI.instance.channelSelectionFlowCoordinator); }
+                };
 
             }
             

@@ -64,7 +64,7 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                Plugin.log.Info("Unable to patch assembly! Exception: " + e);
+                Plugin.log.Error("Unable to patch assembly! Exception: " + e);
             }
 
         }

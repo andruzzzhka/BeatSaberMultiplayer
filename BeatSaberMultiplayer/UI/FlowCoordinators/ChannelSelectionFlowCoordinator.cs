@@ -51,10 +51,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 };
                 channelSelectionViewController.joinPressedEvent += (channel) => 
                 {
-                    PresentFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false, false);
-                    PluginUI.instance.radioFlowCoordinator.JoinChannel(channel.ip, channel.port, channel.channelId);
-                    PluginUI.instance.radioFlowCoordinator.didFinishEvent -= DismissRadio;
-                    PluginUI.instance.radioFlowCoordinator.didFinishEvent += DismissRadio;
+                    if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
+                    {
+                        PresentFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false, false);
+                        PluginUI.instance.radioFlowCoordinator.JoinChannel(channel.ip, channel.port, channel.channelId);
+                        PluginUI.instance.radioFlowCoordinator.didFinishEvent -= DismissRadio;
+                        PluginUI.instance.radioFlowCoordinator.didFinishEvent += DismissRadio;
+                    }
                 };
 
             }
