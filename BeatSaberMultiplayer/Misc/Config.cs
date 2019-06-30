@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using BeatSaberMultiplayer.Misc;
 using IPA.Config;
@@ -10,6 +12,7 @@ namespace BeatSaberMultiplayer {
     [Serializable]
     public class Config {
 
+        [SerializeField] private string _modVersion;
         [SerializeField] private string[] _serverHubIPs;
         [SerializeField] private int[] _serverHubPorts;
         [SerializeField] private bool _showAvatarsInGame;
@@ -34,6 +37,14 @@ namespace BeatSaberMultiplayer {
 
         private static FileInfo FileLocation { get; } = new FileInfo($"./UserData/{Assembly.GetExecutingAssembly().GetName().Name}.json");
 
+        private static readonly Dictionary<string, string[]> newServerHubs = new Dictionary<string, string[]>()
+        {
+            {
+                "0.6.4.3",
+                new string[] { "127.0.0.1", "hub.assistant.moe", "hub.auros.red", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.just-skill.ru", "hub.tgcfabian.tk", "hub.traber-info.de" }
+            }
+        };
+
         public static bool Load()
         {
             if (_instance != null) return false;
@@ -42,6 +53,9 @@ namespace BeatSaberMultiplayer {
                 FileLocation.Directory.Create();
                 Plugin.log.Info($"Attempting to load JSON @ {FileLocation.FullName}");
                 _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
+
+                UpdateServerHubs(_instance);
+
                 _instance.MarkDirty();
                 _instance.Save();
             }
@@ -70,10 +84,45 @@ namespace BeatSaberMultiplayer {
             return true;
         }
 
+        public static void UpdateServerHubs(Config _instance)
+        {
+            if (string.IsNullOrEmpty(_instance.ModVersion) || new SemVer.Range($">{_instance.ModVersion}", true).IsSatisfied(IPA.Loader.PluginManager.GetPluginFromId("BeatSaberMultiplayer").Metadata.Version))
+            {
+                List<string> newVersions = null;
+                if (string.IsNullOrEmpty(_instance.ModVersion))
+                {
+                    newVersions = newServerHubs.Keys.ToList();
+                }
+                else
+                {
+                    newVersions = new SemVer.Range($">{_instance.ModVersion}").Satisfying(newServerHubs.Keys, true).ToList();
+                }
+
+                if (newVersions.Count > 0)
+                {
+                    List<string> hubs = new List<string>();
+
+                    foreach (string version in newVersions)
+                    {
+                        hubs.AddRange(newServerHubs[version].Where(x => !_instance.ServerHubIPs.Contains(x)));
+                    }
+
+                    _instance.ServerHubIPs = _instance.ServerHubIPs.Concat(hubs).ToArray();
+                    _instance.ServerHubPorts = _instance.ServerHubPorts.Concat(Enumerable.Repeat(3700, hubs.Count)).ToArray();
+
+                    Plugin.log.Info($"Added {hubs.Count} new ServerHubs to config!");
+                }
+            }
+            _instance.ModVersion = IPA.Loader.PluginManager.GetPluginFromId("BeatSaberMultiplayer").Metadata.Version.ToString();
+        }
+
         public static Config Instance {
             get {
                 if (_instance == null)
+                {
                     _instance = new Config();
+                    UpdateServerHubs(_instance);
+                }
                 return _instance;
             }
         }
@@ -83,9 +132,24 @@ namespace BeatSaberMultiplayer {
         /// <summary>
         /// Remember to Save after changing the value
         /// </summary>
-        public string[] ServerHubIPs {
+        public string ModVersion
+        {
+            get { return _modVersion; }
+            set
+            {
+                _modVersion = value;
+                MarkDirty();
+            }
+        }
+        
+        /// <summary>
+         /// Remember to Save after changing the value
+         /// </summary>
+        public string[] ServerHubIPs
+        {
             get { return _serverHubIPs; }
-            set {
+            set
+            {
                 _serverHubIPs = value;
                 MarkDirty();
             }
@@ -260,8 +324,9 @@ namespace BeatSaberMultiplayer {
 
         Config()
         {
-            _serverHubIPs = new string[] { "127.0.0.1", "soupwhale.com", "hub.assistant.moe", "hub.n3s.co", "hub.auros.red", "beige.space", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.ligma.site", "hub.jogi-server.de", "beatsaberhub.freddi.xyz", "hub.just-skill.ru" };
-            _serverHubPorts = new int[] { 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700, 3700 };
+            _modVersion = string.Empty;
+            _serverHubIPs = new string[0];
+            _serverHubPorts = new int[0];
             _showAvatarsInGame = false;
             _showOtherPlayersBlocks = false;
             _showAvatarsInRoom = true;
