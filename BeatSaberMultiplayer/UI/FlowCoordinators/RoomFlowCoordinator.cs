@@ -376,7 +376,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                 _playerManagementViewController.SetGameplayModifiers(roomInfo.startLevelInfo.modifiers);
 
-                                if (roomInfo.roomState == RoomState.SelectingSong)
+                                if (roomInfo.roomState == RoomState.Preparing)
                                 {
                                     _difficultySelectionViewController.SetBeatmapCharacteristic(_beatmapCharacteristics.First(x => x.serializedName == roomInfo.startLevelInfo.characteristicName));
 

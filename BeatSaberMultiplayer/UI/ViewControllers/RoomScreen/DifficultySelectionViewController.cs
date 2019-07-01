@@ -30,7 +30,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         TextMeshProUGUI _bpmParamText;
         TextMeshProUGUI _blocksParamText;
         TextMeshProUGUI _obstaclesParamText;
-        TextMeshProUGUI _bombsParamText;
         TextMeshProUGUI _starsParamText;
         TextMeshProUGUI _ratingParamText;
 
