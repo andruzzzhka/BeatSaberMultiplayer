@@ -11,11 +11,22 @@ namespace BeatSaberMultiplayer.Misc
     {
         private static bool initialized = false;
         private static bool rumbleEnahncerInstalled = false;
+        private static int platform = -1;
 
         public static void Init()
         {
             rumbleEnahncerInstalled = IPA.Loader.PluginManager.AllPlugins.Any(x => x.Metadata.Id == "rumbleenhancer");
             Plugin.log.Info("Rumble Enahncer installed: "+ rumbleEnahncerInstalled);
+
+            if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
+                platform = 0;
+            else if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
+                platform = 1;
+            else if (Environment.CommandLine.Contains("fpfc") && VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Unknown)
+                platform = 2;
+            else
+                platform = -1;
+
             initialized = true;
         }
 
@@ -26,21 +37,16 @@ namespace BeatSaberMultiplayer.Misc
                 Init();
             }
 
-            if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
+            switch (platform)
             {
-                return rumbleEnahncerInstalled ? OpenVRRightGripWithLock() : OpenVRRightGrip();
-            }
-            else if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
-            {
-                return OculusRightGrip();
-            }
-            else if (Environment.CommandLine.Contains("fpfc") && VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Unknown)
-            {
-                return Input.GetKey(KeyCode.H);
-            }
-            else
-            {
-                return false;
+                case 0:
+                    return rumbleEnahncerInstalled ? OpenVRRightGripWithLock() : OpenVRRightGrip();
+                case 1:
+                    return OculusRightGrip();
+                case 2:
+                    return Input.GetKey(KeyCode.H);
+                default:
+                    return false;
             }
         }
 
@@ -51,21 +57,16 @@ namespace BeatSaberMultiplayer.Misc
                 Init();
             }
 
-            if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
+            switch (platform)
             {
-                return rumbleEnahncerInstalled ? OpenVRLeftGripWithLock() : OpenVRLeftGrip();
-            }
-            else if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
-            {
-                return OculusLeftGrip();
-            }
-            else if (Environment.CommandLine.Contains("fpfc") && VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Unknown)
-            {
-                return Input.GetKey(KeyCode.H);
-            }
-            else
-            {
-                return false;
+                case 0:
+                    return rumbleEnahncerInstalled ? OpenVRLeftGripWithLock() : OpenVRLeftGrip();
+                case 1:
+                    return OculusLeftGrip();
+                case 2:
+                    return Input.GetKey(KeyCode.H);
+                default:
+                    return false;
             }
         }
 

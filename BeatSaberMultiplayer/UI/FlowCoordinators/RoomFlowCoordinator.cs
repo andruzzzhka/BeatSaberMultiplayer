@@ -884,12 +884,20 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         }
                         else if (success)
                         {
-                            PreviewPlayer.CrossfadeTo(level.beatmapLevelData.audioClip, selectedLevel.previewStartTime, (level.beatmapLevelData.audioClip.length - selectedLevel.previewStartTime), 1f);
-
                             _difficultySelectionViewController.SetSelectedSong(level);
-                            _difficultySelectionViewController.SetPlayButtonInteractable(true);
 
-                            Client.Instance.SendPlayerReady(true);
+                            if (level.beatmapLevelData.audioClip != null)
+                            {
+                                PreviewPlayer.CrossfadeTo(level.beatmapLevelData.audioClip, selectedLevel.previewStartTime, (level.beatmapLevelData.audioClip.length - selectedLevel.previewStartTime), 1f);
+                                _difficultySelectionViewController.SetPlayButtonInteractable(true);
+                                Client.Instance.SendPlayerReady(true);
+                            }
+                            else
+                            {
+                                _difficultySelectionViewController.SetPlayButtonInteractable(false);
+                                Client.Instance.SendPlayerReady(false);
+                            }
+
                             Client.Instance.playerInfo.playerState = PlayerState.Room;
 
                         }

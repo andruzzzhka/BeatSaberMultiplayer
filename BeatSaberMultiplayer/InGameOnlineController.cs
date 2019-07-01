@@ -7,6 +7,7 @@ using BS_Utils.Gameplay;
 using CustomAvatar;
 using CustomUI.BeatSaber;
 using Lidgren.Network;
+using SongCore.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -68,7 +69,11 @@ namespace BeatSaberMultiplayer
         private int _sendRateCounter;
         private int _fixedSendRate = 0;
         private bool _spectatorInRoom;
-        
+
+        private HSBColor _color;
+        private float _colorCounter;
+        private bool _colorChanger;
+
         SpeexCodex speexDec;
         private VoipListener voiceChatListener;
         
@@ -549,44 +554,58 @@ namespace BeatSaberMultiplayer
                 }
             }
 
-            if (Config.Instance.EnableVoiceChat && Config.Instance.MicEnabled)
+            if (Config.Instance.EnableVoiceChat)
             {
-                if (!Config.Instance.PushToTalk)
+                if (Config.Instance.MicEnabled)
+                    if (!Config.Instance.PushToTalk)
+                        isRecording = true;
+                    else
+                        switch (Config.Instance.PushToTalkButton)
+                        {
+                            case 0:
+                                isRecording = ControllersHelper.GetLeftGrip();
+                                break;
+                            case 1:
+                                isRecording = ControllersHelper.GetRightGrip();
+                                break;
+                            case 2:
+                                isRecording = VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                break;
+                            case 3:
+                                isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f;
+                                break;
+                            case 4:
+                                isRecording = ControllersHelper.GetLeftGrip() && ControllersHelper.GetRightGrip();
+                                break;
+                            case 5:
+                                isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f && VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                break;
+                            case 6:
+                                isRecording = ControllersHelper.GetLeftGrip() || ControllersHelper.GetRightGrip();
+                                break;
+                            case 7:
+                                isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f || VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                break;
+                            default:
+                                isRecording = Input.anyKey;
+                                break;
+                        }
+                else
+                    isRecording = false;
+
+                if (VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.GetRightGrip() && VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.GetLeftGrip())
                 {
-                    isRecording = true;
+                    _colorCounter += Time.deltaTime;
+                    if (_colorCounter > 7.5f)
+                    {
+                        _color = new HSBColor(0f, 1f, 1f);
+                        _colorChanger = !_colorChanger;
+                        _colorCounter = 0f;
+                    }
                 }
                 else
                 {
-                    switch (Config.Instance.PushToTalkButton)
-                    {
-                        case 0:
-                            isRecording = ControllersHelper.GetLeftGrip();
-                            break;
-                        case 1:
-                            isRecording = ControllersHelper.GetRightGrip();
-                            break;
-                        case 2:
-                            isRecording = VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
-                            break;
-                        case 3:
-                            isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f;
-                            break;
-                        case 4:
-                            isRecording = ControllersHelper.GetLeftGrip() && ControllersHelper.GetRightGrip();
-                            break;
-                        case 5:
-                            isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f && VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
-                            break;
-                        case 6:
-                            isRecording = ControllersHelper.GetLeftGrip() || ControllersHelper.GetRightGrip();
-                            break;
-                        case 7:
-                            isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f || VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
-                            break;
-                        default:
-                            isRecording = Input.anyKey;
-                            break;
-                    }
+                    _colorCounter = 0f;
                 }
             }
             else
@@ -638,6 +657,15 @@ namespace BeatSaberMultiplayer
 
             if (needToSendUpdates)
             {
+                if (_colorChanger)
+                {
+                    Client.Instance.playerInfo.playerNameColor = HSBColor.ToColor(_color);
+                    _color.h += 0.001388f;
+                    if(_color.h >= 1f)
+                    {
+                        _color.h = 0f;
+                    }
+                }
                 if (_fixedSendRate == 1 || (_fixedSendRate == 0 && Client.Instance.tickrate > (1f / Time.deltaTime / 3f * 2f + 5f)) || _spectatorInRoom)
                 {
                     _sendRateCounter = 0;
