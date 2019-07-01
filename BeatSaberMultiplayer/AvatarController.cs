@@ -162,19 +162,24 @@ namespace BeatSaberMultiplayer
             {
                 if (playerNameText != null)
                 {
-                    if (IPA.Loader.PluginManager.AllPlugins.Select(x => x.Metadata.Name) //BSIPA Plugins
-                        .Concat(IPA.Loader.PluginManager.Plugins.Select(x => x.Name))    //Old IPA Plugins 
-                        .Any(x => x == "CameraPlus") && (_camera == null || !_camera.isActiveAndEnabled))
+                    if (Config.Instance.SpectatorMode)
                     {
-                        _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => (x.name.StartsWith("CamPlus_") || x.name.Contains("cameraplus")) && x.isActiveAndEnabled);
-                    }
+                        if (IPA.Loader.PluginManager.AllPlugins.Select(x => x.Metadata.Name) //BSIPA Plugins
+                            .Concat(IPA.Loader.PluginManager.Plugins.Select(x => x.Name))    //Old IPA Plugins 
+                            .Any(x => x == "CameraPlus") && (_camera == null || !_camera.isActiveAndEnabled))
+                        {
+                            _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => (x.name.StartsWith("CamPlus_") || x.name.Contains("cameraplus")) && x.isActiveAndEnabled);
+                        }
 
-                    if (_camera != null)
-                    {
-                        if (Config.Instance.SpectatorMode)
+                        if (_camera != null)
                         {
                             playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
                             playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - _camera.transform.position);
+                        }
+                        else
+                        {
+                            playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput.HeadPosRot.Position);
+                            playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput.HeadPosRot.Position);
                         }
                     }
                     else
