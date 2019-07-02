@@ -84,6 +84,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 spectatorMode.ValueChanged += (value) => { Config.Instance.SpectatorMode = value; };
                 _generalSettings.Add(spectatorMode.gameObject);
 
+
+                var submitScoresOption = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>(rectTransform, "Submit Scores", new Vector2(0f, 22.5f + -8f * generalSettingsIndex++));
+                submitScoresOption.OnEnable();
+                submitScoresOption.ValueChanged += (e) => { Config.Instance.SubmitScores = e; };
+                submitScoresOption.maxValue = 2;
+                submitScoresOption.textForValues = new string[] { "NEVER", "RANKED", "ALWAYS" };
+                submitScoresOption.Value = Config.Instance.SubmitScores;
+                _generalSettings.Add(submitScoresOption.gameObject);
+
                 #endregion
 
                 #region Voice Settings

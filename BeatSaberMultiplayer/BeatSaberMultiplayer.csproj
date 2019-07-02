@@ -179,6 +179,7 @@
     <Compile Include="InGameOnlineController.cs" />
     <Compile Include="Misc\ControllersHelper.cs" />
     <Compile Include="Misc\ScrappedData.cs" />
+    <Compile Include="Misc\ScrappedSong.cs" />
     <Compile Include="Misc\Sprites.cs" />
     <Compile Include="Misc\Config.cs" />
     <Compile Include="Misc\CustomExtensions.cs" />

@@ -22,6 +22,7 @@ namespace BeatSaberMultiplayer {
         [SerializeField] private bool _separateAvatarForMultiplayer;
         [SerializeField] private string _publicAvatarHash;
         [SerializeField] private bool _spectatorMode;
+        [SerializeField] private int _submitScores;
         [SerializeField] private int _maxSimultaneousDownloads;
         [SerializeField] private string _beatSaverURL;
 
@@ -242,6 +243,16 @@ namespace BeatSaberMultiplayer {
             }
         }
 
+        public int SubmitScores
+        {
+            get { return _submitScores; }
+            set
+            {
+                _submitScores = value;
+                MarkDirty();
+            }
+        }
+
         public int MaxSimultaneousDownloads
         {
             get { return _maxSimultaneousDownloads; }
@@ -334,6 +345,7 @@ namespace BeatSaberMultiplayer {
             _spectatorMode = false;
             _separateAvatarForMultiplayer = false;
             _publicAvatarHash = Data.PlayerInfo.avatarHashPlaceholder;
+            _submitScores = 2;
             _maxSimultaneousDownloads = 3;
             _beatSaverURL = "https://beatsaver.com";
 

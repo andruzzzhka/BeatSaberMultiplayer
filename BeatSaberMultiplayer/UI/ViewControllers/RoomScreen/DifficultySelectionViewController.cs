@@ -33,6 +33,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         TextMeshProUGUI _starsParamText;
         TextMeshProUGUI _ratingParamText;
 
+        TextMeshProUGUI _rankedText;
+
         IBeatmapLevel _selectedSong;
         BeatmapCharacteristicSO[] _beatmapCharacteristics;
 
@@ -56,122 +58,132 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
-            if(firstActivation && activationType == ActivationType.AddedToHierarchy)
+            try
             {
-                _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
-
-                bool isHost = Client.Instance.isHost;
-
-                _selectedSongCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")), rectTransform, false);
-                (_selectedSongCell.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
-                (_selectedSongCell.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
-                (_selectedSongCell.transform as RectTransform).anchoredPosition = new Vector2(-25f, 17.5f);
-                _selectedSongCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
-                _selectedSongCell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
-                _selectedSongCell.SetPrivateField("_bought", true);
-                foreach (var icon in _selectedSongCell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
+                if (firstActivation && activationType == ActivationType.AddedToHierarchy)
                 {
-                    Destroy(icon.gameObject);
+                    _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
+
+                    bool isHost = Client.Instance.isHost;
+
+                    _selectedSongCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")), rectTransform, false);
+                    (_selectedSongCell.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
+                    (_selectedSongCell.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
+                    (_selectedSongCell.transform as RectTransform).anchoredPosition = new Vector2(-25f, 17.5f);
+                    _selectedSongCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
+                    _selectedSongCell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
+                    _selectedSongCell.SetPrivateField("_bought", true);
+                    foreach (var icon in _selectedSongCell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
+                    {
+                        Destroy(icon.gameObject);
+                    }
+
+                    _rankedText = this.CreateText("LOADING...", new Vector2(-1f, -25.5f));
+                    _rankedText.alignment = TextAlignmentOptions.Center;
+
+                    Sprite[] sprites = Resources.FindObjectsOfTypeAll<Sprite>();
+
+                    _timeParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(62f, 42.5f), "--", sprites.FirstOrDefault(x => x.name == "ClockIcon"), "");
+                    _bpmParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(102f, 42.5f), "--", sprites.FirstOrDefault(x => x.name == "MetronomeIcon"), "");
+                    _blocksParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(62f, 35f), "--", sprites.FirstOrDefault(x => x.name == "GameNoteIcon"), "");
+                    _obstaclesParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(102f, 35f), "--", sprites.FirstOrDefault(x => x.name == "ObstacleIcon"), "");
+                    _starsParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(62f, 27.5f), "--", Sprites.starIcon, "");
+                    _ratingParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(102f, 27.5f), "--", Sprites.ratingIcon, "");
+
+                    _playersReadyText = BeatSaberUI.CreateText(rectTransform, "0/0 players ready", new Vector2(0f, 5f));
+                    _playersReadyText.rectTransform.anchorMin = new Vector2(0.5f, 0f);
+                    _playersReadyText.rectTransform.anchorMax = new Vector2(0.5f, 0f);
+                    _playersReadyText.alignment = TextAlignmentOptions.Center;
+                    _playersReadyText.fontSize = 5.5f;
+
+                    _cancelButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
+                    (_cancelButton.transform as RectTransform).anchoredPosition = new Vector2(-30f, -25f);
+                    (_cancelButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
+                    _cancelButton.SetButtonText("CANCEL");
+                    _cancelButton.ToggleWordWrapping(false);
+                    _cancelButton.SetButtonTextSize(5.5f);
+                    _cancelButton.onClick.AddListener(delegate () { discardPressed?.Invoke(); });
+                    _cancelButton.gameObject.SetActive(isHost);
+
+                    _playButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
+                    (_playButton.transform as RectTransform).anchoredPosition = new Vector2(30f, -25f);
+                    (_playButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
+                    _playButton.SetButtonText("PLAY");
+                    _playButton.ToggleWordWrapping(false);
+                    _playButton.SetButtonTextSize(5.5f);
+                    _playButton.onClick.AddListener(delegate () { playPressed?.Invoke(_selectedSong, selectedCharacteristic, selectedDifficulty); });
+                    var playGlowContainer = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "PlayButton").GetComponentsInChildren<RectTransform>().First(x => x.name == "GlowContainer"), _playButton.transform); //Let's add some glow!
+                    playGlowContainer.transform.SetAsFirstSibling();
+                    _playBtnGlow = playGlowContainer.GetComponentInChildren<UnityEngine.UI.Image>();
+                    _playBtnGlow.color = new Color(0f, 0.7058824f, 1f, 0.7843137f);
+                    _playButton.gameObject.SetActive(isHost);
+
+                    _characteristicControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 34f), new Vector2(110f, 7f), _characteristicControl_didSelectCellEvent);
+                    _characteristicControl.SetTexts(new string[] { "Standard", "No Arrows", "One Saber" });
+
+                    _characteristicControlBlocker = new GameObject("CharacteristicControlBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
+                    _characteristicControlBlocker.SetParent(rectTransform, false);
+                    _characteristicControlBlocker.gameObject.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
+                    _characteristicControlBlocker.anchorMin = new Vector2(0f, 1f);
+                    _characteristicControlBlocker.anchorMax = new Vector2(1f, 1f);
+                    _characteristicControlBlocker.sizeDelta = new Vector2(-30f, 7f);
+                    _characteristicControlBlocker.anchoredPosition = new Vector2(0f, -6f);
+
+                    _difficultyControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 24f), new Vector2(110f, 7f), _difficultyControl_didSelectCellEvent);
+                    _difficultyControl.SetTexts(new string[] { "Easy", "Normal", "Hard", "Expert", "Expert+" });
+
+                    _difficultyControlBlocker = new GameObject("DifficultyControlBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
+                    _difficultyControlBlocker.SetParent(rectTransform, false);
+                    _difficultyControlBlocker.gameObject.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
+                    _difficultyControlBlocker.anchorMin = new Vector2(0f, 1f);
+                    _difficultyControlBlocker.anchorMax = new Vector2(1f, 1f);
+                    _difficultyControlBlocker.sizeDelta = new Vector2(-30f, 7f);
+                    _difficultyControlBlocker.anchoredPosition = new Vector2(0f, -16f);
+
+                    _progressBarRect = new GameObject("ProgressBar", typeof(RectTransform)).GetComponent<RectTransform>();
+
+                    _progressBarRect.SetParent(rectTransform, false);
+                    _progressBarRect.anchorMin = new Vector2(0.5f, 0.5f);
+                    _progressBarRect.anchorMax = new Vector2(0.5f, 0.5f);
+                    _progressBarRect.anchoredPosition = new Vector2(0f, -7.5f);
+                    _progressBarRect.sizeDelta = new Vector2(46f, 5f);
+
+                    _progressBackground = new GameObject("Background", typeof(RectTransform), typeof(UnityEngine.UI.Image)).GetComponent<UnityEngine.UI.Image>();
+                    _progressBackground.rectTransform.SetParent(_progressBarRect, false);
+                    _progressBackground.rectTransform.anchorMin = new Vector2(0f, 0f);
+                    _progressBackground.rectTransform.anchorMax = new Vector2(1f, 1f);
+                    _progressBackground.rectTransform.anchoredPosition = new Vector2(0f, 0f);
+                    _progressBackground.rectTransform.sizeDelta = new Vector2(0f, 0f);
+
+                    _progressBackground.sprite = Sprites.whitePixel;
+                    _progressBackground.material = Sprites.NoGlowMat;
+                    _progressBackground.color = new Color(1f, 1f, 1f, 0.075f);
+
+                    _progressBarImage = new GameObject("ProgressImage", typeof(RectTransform), typeof(UnityEngine.UI.Image)).GetComponent<UnityEngine.UI.Image>();
+                    _progressBarImage.rectTransform.SetParent(_progressBarRect, false);
+                    _progressBarImage.rectTransform.anchorMin = new Vector2(0f, 0f);
+                    _progressBarImage.rectTransform.anchorMax = new Vector2(1f, 1f);
+                    _progressBarImage.rectTransform.anchoredPosition = new Vector2(0f, 0f);
+                    _progressBarImage.rectTransform.sizeDelta = new Vector2(0f, 0f);
+
+                    _progressBarImage.sprite = Sprites.whitePixel;
+                    _progressBarImage.material = Sprites.NoGlowMat;
+                    _progressBarImage.type = UnityEngine.UI.Image.Type.Filled;
+                    _progressBarImage.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
+                    _progressBarImage.fillAmount = 0.5f;
+
+                    _progressText = BeatSaberUI.CreateText(rectTransform, "0.0%", new Vector2(55f, -10f));
+                    _progressText.rectTransform.SetParent(_progressBarRect, true);
+
+                    _loadingSpinner = this.CreateLoadingSpinner();
                 }
-
-                Sprite[] sprites = Resources.FindObjectsOfTypeAll<Sprite>();
-
-                _timeParamText      = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(62f, 42.5f), "--", sprites.FirstOrDefault(x => x.name == "ClockIcon"), "");
-                _bpmParamText       = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(102f, 42.5f), "--", sprites.FirstOrDefault(x => x.name == "MetronomeIcon"), "");
-                _blocksParamText    = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(62f, 35f), "--", sprites.FirstOrDefault(x => x.name == "GameNoteIcon"), "");
-                _obstaclesParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(102f, 35f), "--", sprites.FirstOrDefault(x => x.name == "ObstacleIcon"), "");
-                _starsParamText     = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(62f, 27.5f), "--", Sprites.starIcon, "");
-                _ratingParamText    = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(102f, 27.5f), "--", Sprites.ratingIcon, "");
-
-                _playersReadyText = BeatSaberUI.CreateText(rectTransform, "0/0 players ready", new Vector2(0f, 5f));
-                _playersReadyText.rectTransform.anchorMin = new Vector2(0.5f, 0f);
-                _playersReadyText.rectTransform.anchorMax = new Vector2(0.5f, 0f);
-                _playersReadyText.alignment = TextAlignmentOptions.Center;
-                _playersReadyText.fontSize = 5.5f;
-
-                _cancelButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
-                (_cancelButton.transform as RectTransform).anchoredPosition = new Vector2(-30f, -25f);
-                (_cancelButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
-                _cancelButton.SetButtonText("CANCEL");
-                _cancelButton.ToggleWordWrapping(false);
-                _cancelButton.SetButtonTextSize(5.5f);
-                _cancelButton.onClick.AddListener(delegate () { discardPressed?.Invoke(); });
-                _cancelButton.gameObject.SetActive(isHost);
-
-                _playButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
-                (_playButton.transform as RectTransform).anchoredPosition = new Vector2(30f, -25f);
-                (_playButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
-                _playButton.SetButtonText("PLAY");
-                _playButton.ToggleWordWrapping(false);
-                _playButton.SetButtonTextSize(5.5f);
-                _playButton.onClick.AddListener(delegate () { playPressed?.Invoke(_selectedSong, selectedCharacteristic, selectedDifficulty); });
-                var playGlowContainer = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "PlayButton").GetComponentsInChildren<RectTransform>().First(x => x.name == "GlowContainer"), _playButton.transform); //Let's add some glow!
-                playGlowContainer.transform.SetAsFirstSibling();
-                _playBtnGlow = playGlowContainer.GetComponentInChildren<UnityEngine.UI.Image>();
-                _playBtnGlow.color = new Color(0f, 0.7058824f, 1f, 0.7843137f);
-                _playButton.gameObject.SetActive(isHost);
-
-                _characteristicControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 34f), new Vector2(110f, 7f), _characteristicControl_didSelectCellEvent);
-                _characteristicControl.SetTexts(new string[] { "Standard", "No Arrows", "One Saber" });
-
-                _characteristicControlBlocker = new GameObject("CharacteristicControlBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
-                _characteristicControlBlocker.SetParent(rectTransform, false);
-                _characteristicControlBlocker.gameObject.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
-                _characteristicControlBlocker.anchorMin = new Vector2(0f, 1f);
-                _characteristicControlBlocker.anchorMax = new Vector2(1f, 1f);
-                _characteristicControlBlocker.sizeDelta = new Vector2(-30f, 7f);
-                _characteristicControlBlocker.anchoredPosition = new Vector2(0f, -6f);
-
-                _difficultyControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 24f), new Vector2(110f, 7f), _difficultyControl_didSelectCellEvent);
-                _difficultyControl.SetTexts(new string[] { "Easy", "Normal", "Hard", "Expert", "Expert+" });
-                
-                _difficultyControlBlocker = new GameObject("DifficultyControlBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
-                _difficultyControlBlocker.SetParent(rectTransform, false);
-                _difficultyControlBlocker.gameObject.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
-                _difficultyControlBlocker.anchorMin = new Vector2(0f, 1f);
-                _difficultyControlBlocker.anchorMax = new Vector2(1f, 1f);
-                _difficultyControlBlocker.sizeDelta = new Vector2(-30f, 7f);
-                _difficultyControlBlocker.anchoredPosition = new Vector2(0f, -16f);
-                
-                _progressBarRect = new GameObject("ProgressBar", typeof(RectTransform)).GetComponent<RectTransform>();
-
-                _progressBarRect.SetParent(rectTransform, false);
-                _progressBarRect.anchorMin = new Vector2(0.5f, 0.5f);
-                _progressBarRect.anchorMax = new Vector2(0.5f, 0.5f);
-                _progressBarRect.anchoredPosition = new Vector2(0f, -7.5f);
-                _progressBarRect.sizeDelta = new Vector2(46f, 5f);
-
-                _progressBackground = new GameObject("Background", typeof(RectTransform), typeof(UnityEngine.UI.Image)).GetComponent<UnityEngine.UI.Image>();
-                _progressBackground.rectTransform.SetParent(_progressBarRect, false);
-                _progressBackground.rectTransform.anchorMin = new Vector2(0f, 0f);
-                _progressBackground.rectTransform.anchorMax = new Vector2(1f, 1f);
-                _progressBackground.rectTransform.anchoredPosition = new Vector2(0f, 0f);
-                _progressBackground.rectTransform.sizeDelta = new Vector2(0f, 0f);
-
-                _progressBackground.sprite = Sprites.whitePixel;
-                _progressBackground.material = Sprites.NoGlowMat;
-                _progressBackground.color = new Color(1f, 1f, 1f, 0.075f);
-
-                _progressBarImage = new GameObject("ProgressImage", typeof(RectTransform), typeof(UnityEngine.UI.Image)).GetComponent<UnityEngine.UI.Image>();
-                _progressBarImage.rectTransform.SetParent(_progressBarRect, false);
-                _progressBarImage.rectTransform.anchorMin = new Vector2(0f, 0f);
-                _progressBarImage.rectTransform.anchorMax = new Vector2(1f, 1f);
-                _progressBarImage.rectTransform.anchoredPosition = new Vector2(0f, 0f);
-                _progressBarImage.rectTransform.sizeDelta = new Vector2(0f, 0f);
-
-                _progressBarImage.sprite = Sprites.whitePixel;
-                _progressBarImage.material = Sprites.NoGlowMat;
-                _progressBarImage.type = UnityEngine.UI.Image.Type.Filled;
-                _progressBarImage.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
-                _progressBarImage.fillAmount = 0.5f;
-
-                _progressText = BeatSaberUI.CreateText(rectTransform, "0.0%", new Vector2(55f, -10f));
-                _progressText.rectTransform.SetParent(_progressBarRect, true);
-
-                _loadingSpinner = this.CreateLoadingSpinner();
+                _playButton.interactable = false;
+                _progressBarRect.gameObject.SetActive(false);
             }
-            _playButton.interactable = false;
-            _progressBarRect.gameObject.SetActive(false);
+            catch (Exception e)
+            {
+                Plugin.log.Critical($"Exception in DifficultySelectionViewController.DidActivate: {e}");
+            }
         }
 
         private void _characteristicControl_didSelectCellEvent(int arg2)
@@ -231,13 +243,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 if (ScrappedData.Downloaded)
                 {
                     ScrappedSong scrappedSong = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(_selectedSong.levelID));
-                    if (scrappedSong != null) {
+                    if (scrappedSong != default) {
                         if (scrappedSong.Diffs.Any(x => x.Diff == selectedDifficulty.ToString().Replace("+", "Plus")))
                             _starsParamText.text = scrappedSong.Diffs.First(x => x.Diff == selectedDifficulty.ToString().Replace("+", "Plus")).Stars.ToString();
                         else
                             _starsParamText.text = "--";
                         long votes = scrappedSong.Upvotes - scrappedSong.Downvotes;
                         _ratingParamText.text = (votes < 0 ? votes.ToString() : $"+{votes}");
+                        _rankedText.text = $"<color={(scrappedSong.Ranked == 0 ? "red" : "green")}>{(scrappedSong.Ranked == 0 ? "UNRANKED" : "RANKED")}</color>";
                     }
                     else
                     {
@@ -299,6 +312,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _starsParamText.transform.parent.gameObject.SetActive(false);
             _ratingParamText.transform.parent.gameObject.SetActive(false);
 
+            _rankedText.gameObject.SetActive(false);
+
             _characteristicControl.SetTexts(new string[] { "None" });
             _characteristicControl.SelectCellWithNumber(0);
             _difficultyControl.SetTexts(new string[] { "None" });
@@ -329,12 +344,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _starsParamText.transform.parent.gameObject.SetActive(true);
             _ratingParamText.transform.parent.gameObject.SetActive(true);
 
+            _rankedText.gameObject.SetActive(true);
+            _rankedText.alignment = TextAlignmentOptions.Center;
+
             _timeParamText.text = EssentialHelpers.MinSecDurationText(level.beatmapLevelData.audioClip.length);
             _bpmParamText.text = level.beatsPerMinute.ToString();
             _blocksParamText.text = "--";
             _obstaclesParamText.text = "--";
             _starsParamText.text = "--";
             _ratingParamText.text = "--";
+            _rankedText.text = "LOADING...";
 
             _characteristicControl.SetTexts(_selectedSong.beatmapCharacteristics.Distinct().Select(x => x.characteristicNameLocalized).ToArray());
 
@@ -368,12 +387,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _starsParamText.transform.parent.gameObject.SetActive(true);
             _ratingParamText.transform.parent.gameObject.SetActive(true);
 
+            _rankedText.gameObject.SetActive(true);
+            _rankedText.alignment = TextAlignmentOptions.Center;
+
             _timeParamText.text = EssentialHelpers.MinSecDurationText(level.songDuration);
             _bpmParamText.text = level.beatsPerMinute.ToString();
             _blocksParamText.text = "--";
             _obstaclesParamText.text = "--";
             _starsParamText.text = "--";
             _ratingParamText.text = "--";
+            _rankedText.text = "LOADING...";
 
             _characteristicControl.SetTexts(new string[] { "None" });
             _characteristicControl.SelectCellWithNumber(0);
@@ -402,6 +425,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _obstaclesParamText.transform.parent.gameObject.SetActive(!loading);
             _starsParamText.transform.parent.gameObject.SetActive(!loading);
             _ratingParamText.transform.parent.gameObject.SetActive(!loading);
+            _rankedText.gameObject.SetActive(!loading);
+            _rankedText.alignment = TextAlignmentOptions.Center;
         }
 
         public void SetBeatmapCharacteristic(BeatmapCharacteristicSO characteristic)

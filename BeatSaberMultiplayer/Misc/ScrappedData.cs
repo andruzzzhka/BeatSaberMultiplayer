@@ -11,30 +11,6 @@ using UnityEngine.Networking;
 
 namespace BeatSaberMultiplayer.Misc
 {
-    public class ScrappedSong
-    {
-        public string Key { get; set; }
-        public string Hash { get; set; }
-        public string SongName { get; set; }
-        public string SongSubName { get; set; }
-        public string LevelAuthorName { get; set; }
-        public string SongAuthorName { get; set; }
-        public List<DifficultyStats> Diffs { get; set; }
-        public long Bpm { get; set; }
-        public long PlayedCount { get; set; }
-        public long Upvotes { get; set; }
-        public long Downvotes { get; set; }
-        public double Heat { get; set; }
-        public double Rating { get; set; }
-    }
-
-    public class DifficultyStats
-    {
-        public string Diff { get; set; }
-        public long Scores { get; set; }
-        public double Stars { get; set; }
-    }
-
     public class ScrappedData : MonoBehaviour
     {
         private static ScrappedData _instance = null;

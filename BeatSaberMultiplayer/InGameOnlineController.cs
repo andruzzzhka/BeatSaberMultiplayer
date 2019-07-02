@@ -874,6 +874,28 @@ namespace BeatSaberMultiplayer
                 return;
             }
 
+            if (Config.Instance.SubmitScores == 0)
+            {
+                Plugin.log.Warn("Score submission is disabled!");
+                return;
+            }
+            else if (Config.Instance.SubmitScores == 1)
+            {
+                if (ScrappedData.Downloaded)
+                {
+                    ScrappedSong song = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(difficultyBeatmap.level.levelID));
+                    if (song != default && song.Ranked == 0)
+                    {
+                        Plugin.log.Warn("Score submission is disabled because song is unranked!");
+                        return;
+                    }
+                }
+                else
+                {
+                    Plugin.log.Warn("Scrapped data is not downloaded! Submitting score...");
+                }
+            } 
+
             AchievementsEvaluationHandler achievementsHandler = Resources.FindObjectsOfTypeAll<AchievementsEvaluationHandler>().First();
             achievementsHandler.ProcessLevelFinishData(difficultyBeatmap, levelCompletionResults);
             achievementsHandler.ProcessSoloFreePlayLevelFinishData(difficultyBeatmap, levelCompletionResults);

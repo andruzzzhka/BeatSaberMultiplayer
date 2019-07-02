@@ -107,6 +107,8 @@ namespace BeatSaberMultiplayer.Misc
         {
             RectTransform copy = (RectTransform)GameObject.Instantiate(Resources.FindObjectsOfTypeAll<LevelParamsPanel>().First().transform.GetChild(0), parent);
 
+            copy.anchorMin = new Vector2(0f, 0f);
+            copy.anchorMax = new Vector2(0f, 0f);
             copy.anchoredPosition = position;
 
             TextMeshProUGUI paramText = copy.GetComponentInChildren<TextMeshProUGUI>();

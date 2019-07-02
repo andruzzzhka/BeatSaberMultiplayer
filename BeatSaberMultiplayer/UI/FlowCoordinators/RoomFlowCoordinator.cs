@@ -778,7 +778,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case SortMode.Newest: { levels = SortLevelsByCreationTime(levels); }; break;
                         case SortMode.Difficulty:
                             {
-                                levels = levels.AsParallel().OrderByDescending(x => { double? stars = ScrappedData.Songs.FirstOrDefault(y => x.levelID.Contains(y.Hash))?.Diffs.Max(y => y.Stars); return (stars == null ? -1 : stars); }).ToList();
+                                levels = levels.AsParallel().OrderByDescending(x => { double? stars = ScrappedData.Songs.FirstOrDefault(y => x.levelID.Contains(y.Hash)).Diffs?.Max(y => y.Stars); return (stars == null ? -1 : stars); }).ToList();
                             }; break;
                     }
                 }

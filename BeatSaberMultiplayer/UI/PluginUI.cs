@@ -213,7 +213,14 @@ namespace BeatSaberMultiplayer.UI
             spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
             spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
 
-
+            var submitScores = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>((RectTransform)onlineSubMenu.transform, "Submit Scores");
+            submitScores.OnEnable();
+            submitScores.ValueChanged += (e) => { Config.Instance.SubmitScores = e; };
+            submitScores.maxValue = 2;
+            submitScores.textForValues = new string[] { "NEVER", "RANKED", "ALWAYS" };
+            submitScores.Value = Config.Instance.SubmitScores;
+            submitScores.UpdateText();
+            onlineSubMenu.viewController.AddSubmenuOption(submitScores.gameObject);
 
             var voiceSubMenu = SettingsUI.CreateSubMenu("Multiplayer | Voice");
 

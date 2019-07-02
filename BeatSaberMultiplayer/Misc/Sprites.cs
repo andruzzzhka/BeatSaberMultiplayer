@@ -71,19 +71,45 @@ namespace BeatSaberMultiplayer
         public static void ConvertSprites()
         {
             onlineIcon =            CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.OnlineIcon.png");
+            onlineIcon.texture.wrapMode = TextureWrapMode.Clamp;
+
             lockedRoomIcon =        CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.LockedRoom.png");
+            lockedRoomIcon.texture.wrapMode = TextureWrapMode.Clamp;
+
             roomsIcon =             CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RoomsIcon.png");
+            roomsIcon.texture.wrapMode = TextureWrapMode.Clamp;
+
             radioIcon =             CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RadioIcon.png");
+            radioIcon.texture.wrapMode = TextureWrapMode.Clamp;
+
             whitePixel =            CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.WhitePixel.png");
+
             doubleArrow =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.DoubleArrowIcon.png");
+            doubleArrow.texture.wrapMode = TextureWrapMode.Clamp;
+
             addToFavorites =        CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.AddToFavorites.png");
+            addToFavorites.texture.wrapMode = TextureWrapMode.Clamp;
+
             removeFromFavorites =   CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RemoveFromFavorites.png");
+            removeFromFavorites.texture.wrapMode = TextureWrapMode.Clamp;
+
             thumbUp =               CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.ThumbUp.png");
+            thumbUp.texture.wrapMode = TextureWrapMode.Clamp;
+
             thumbDown =             CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.ThumbDown.png");
+            thumbDown.texture.wrapMode = TextureWrapMode.Clamp;
+
             speakerIcon =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.SpeakerIcon.png");
+            speakerIcon.texture.wrapMode = TextureWrapMode.Clamp;
+
             refreshIcon =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RefreshIcon.png");
+            refreshIcon.texture.wrapMode = TextureWrapMode.Clamp;
+
             starIcon =              CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.StarIcon.png");
+            starIcon.texture.wrapMode = TextureWrapMode.Clamp;
+
             ratingIcon =            CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RatingIcon.png");
+            ratingIcon.texture.wrapMode = TextureWrapMode.Clamp;
         }
     }
 }
