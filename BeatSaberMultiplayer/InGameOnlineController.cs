@@ -666,7 +666,7 @@ namespace BeatSaberMultiplayer
                         _color.h = 0f;
                     }
                 }
-                if (_fixedSendRate == 1 || (_fixedSendRate == 0 && Client.Instance.tickrate > (1f / Time.deltaTime / 3f * 2f + 5f)) || _spectatorInRoom)
+                if (_fixedSendRate == 1 || (_fixedSendRate == 0 && Client.Instance.tickrate > (2f / (3f * Time.deltaTime) + 5f)) || _spectatorInRoom)
                 {
                     _sendRateCounter = 0;
                     UpdatePlayerInfo();
@@ -674,7 +674,7 @@ namespace BeatSaberMultiplayer
                     Plugin.log.Info($"Full send rate! FPS: {(1f / Time.deltaTime).ToString("0.0")}, TPS: {Client.Instance.Tickrate.ToString("0.0")}, Trigger: TPS>{1f / Time.deltaTime / 3f * 2f + 5f}");
 #endif
                 }
-                else if (_fixedSendRate == 2 || (_fixedSendRate == 0 && Client.Instance.tickrate > (1f / Time.deltaTime / 3f + 5f)))
+                else if (_fixedSendRate == 2 || (_fixedSendRate == 0 && Client.Instance.tickrate > (1f / (3f * Time.deltaTime) + 5f)))
                 {
                     _sendRateCounter++;
                     if (_sendRateCounter >= 1)
@@ -686,7 +686,7 @@ namespace BeatSaberMultiplayer
 #endif
                     }
                 }
-                else if (_fixedSendRate == 3 || (_fixedSendRate == 0 && Client.Instance.tickrate <= (1f / Time.deltaTime / 3f + 5f)))
+                else if (_fixedSendRate == 3 || (_fixedSendRate == 0 && Client.Instance.tickrate <= (1f / (3f * Time.deltaTime) + 5f)))
                 {
                     _sendRateCounter++;
                     if (_sendRateCounter >= 2)

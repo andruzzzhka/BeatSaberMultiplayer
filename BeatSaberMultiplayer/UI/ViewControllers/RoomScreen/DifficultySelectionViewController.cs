@@ -256,12 +256,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     {
                         _starsParamText.text = "--";
                         _ratingParamText.text = "--";
+                        _rankedText.text = "<color=yellow>SONG NOT FOUND</color>";
                     }
                 }
                 else
                 {
                     _starsParamText.text = "--";
                     _ratingParamText.text = "--";
+                    _rankedText.text = "<color=yellow>SONG NOT FOUND</color>";
                 }
 
                 levelOptionsChanged?.Invoke();

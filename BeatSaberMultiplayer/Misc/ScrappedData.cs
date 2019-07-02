@@ -81,9 +81,9 @@ namespace BeatSaberMultiplayer.Misc
             }
             else
             {
-                Plugin.log.Info("Received response from github.com...");
+                Plugin.log.Info("Received response from github.com!");
 
-                Task parsing = new Task( () => { Songs = JsonConvert.DeserializeObject<List<ScrappedSong>>(www.downloadHandler.text).OrderByDescending(x => x.Diffs.Count > 0 ? x.Diffs.Max(y => y.Stars) : 0).ToList(); });
+                Task parsing = new Task( () => { Songs = JsonConvert.DeserializeObject<List<ScrappedSong>>(www.downloadHandler.text); });
                 parsing.ConfigureAwait(false);
 
                 Plugin.log.Info("Parsing scrapped data...");

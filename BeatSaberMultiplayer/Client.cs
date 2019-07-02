@@ -127,8 +127,9 @@ namespace BeatSaberMultiplayer
 
         public float tickrate;
 
-        private DateTime _lastPacketTime;
-        private List<float> _averagePacketTimes = new List<float>();
+        private float _lastPacketTime;
+        private float _averagePacketTime;
+        private int _packets;
         
         private List<NetIncomingMessage> _receivedMessages = new List<NetIncomingMessage>();
         
@@ -201,68 +202,42 @@ namespace BeatSaberMultiplayer
 
         public void Update()
         {
+            _receivedMessages.Clear();
             if (networkClient.ReadMessages(_receivedMessages) > 0)
             {
-                try
+                for (int i = _receivedMessages.Count - 1; i >= 0; i--)
                 {
-                    if (_receivedMessages.Any(x => x.PeekByte() != (byte)CommandType.UpdateVoIPData))
+                    if (_receivedMessages[i].MessageType == NetIncomingMessageType.Data && _receivedMessages[i].PeekByte() == (byte)CommandType.UpdatePlayerInfo)
                     {
-                        float packetTime = (float)DateTime.UtcNow.Subtract(_lastPacketTime).TotalMilliseconds;
-                        if (packetTime > 2f)
+                        if (_packets > 150)
                         {
-                            _averagePacketTimes.Add(packetTime);
-
-                            if (_averagePacketTimes.Count > 150)
-                                _averagePacketTimes.RemoveAt(0);
-
-                            tickrate = (float)Math.Round(1000f / _averagePacketTimes.Where(x => x > 2f).Average(), 2);
+                            _averagePacketTime = 0f;
+                            _packets = 0;
                         }
-                        _lastPacketTime = DateTime.UtcNow;
-                    }
 
-                    try
-                    {
-                        if (Config.Instance.SpectatorMode)
+                        if (Time.realtimeSinceStartup - _lastPacketTime < 0.2f)
                         {
-                            foreach (var lastPlayerHistoryUpdates in _receivedMessages.Where(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.GetPlayerUpdates))
-                            {
-                                foreach (Action<NetIncomingMessage> nextDel in PlayerInfoUpdateReceived.GetInvocationList())
-                                {
-                                    try
-                                    {
-                                        lastPlayerHistoryUpdates.Position = 0;
-                                        nextDel?.Invoke(lastPlayerHistoryUpdates);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        if(nextDel != null)
-                                            Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
-                                        else
-                                            Plugin.log.Error($"Exception on update received event: {e}");
-                                    }
-                                }
-                                lastPlayerHistoryUpdates.Position = 0;
-                            }
+                            _averagePacketTime += Time.realtimeSinceStartup - _lastPacketTime;
+                            _packets++;
+
+                            if (_averagePacketTime != 0f && _packets != 0)
+                                tickrate = 1f / (_averagePacketTime / _packets);
                         }
-                    }catch(Exception e)
-                    {
-                        Plugin.log.Error("Unable to parse GetPlayerUpdates message! Exception: "+e);
-                    }
-                    
-                    try
-                    {
-                        NetIncomingMessage lastUpdate = _receivedMessages.LastOrDefault(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
-                        
-                        if (lastUpdate != null)
+                        else
                         {
-                            _receivedMessages.RemoveAll(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.UpdatePlayerInfo);
-                            
+                            _averagePacketTime = 0f;
+                            _packets = 0;
+                        }
+                        _lastPacketTime = Time.realtimeSinceStartup;
+
+                        try
+                        {
                             foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
                             {
                                 try
                                 {
-                                    lastUpdate.Position = 0;
-                                    nextDel?.Invoke(lastUpdate);
+                                    _receivedMessages[i].Position = 0;
+                                    nextDel?.Invoke(_receivedMessages[i]);
                                 }
                                 catch (Exception e)
                                 {
@@ -273,210 +248,222 @@ namespace BeatSaberMultiplayer
 
                                 }
                             }
-                            lastUpdate.Position = 0;
                         }
-                    }catch(Exception e)
-                    {
-                        Plugin.log.Error("Unable to parse UpdatePlayerInfo message! Exception: "+e);
-                    }
-                    
-                    foreach (NetIncomingMessage msg in _receivedMessages)
-                    {
-                        switch (msg.MessageType)
+                        catch (Exception e)
                         {
-                            case NetIncomingMessageType.StatusChanged:
-                                {
-                                    NetConnectionStatus status = (NetConnectionStatus)msg.ReadByte();
+                            Plugin.log.Error("Unable to parse UpdatePlayerInfo message! Exception: " + e);
+                        }
+                        _receivedMessages[i].Position = 0;
 
-                                    if (status == NetConnectionStatus.Connected && !connected)
-                                    {
-                                        connected = true;
-                                        ConnectedToServerHub?.Invoke();
-                                    }
-                                    else if(status == NetConnectionStatus.Disconnected && connected)
-                                    {
+                        break;
+                    }
+                }
+
+                if (Config.Instance.SpectatorMode)
+                {
+                    try
+                    {
+
+                        foreach (var lastPlayerHistoryUpdates in _receivedMessages.Where(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.GetPlayerUpdates))
+                        {
+                            foreach (Action<NetIncomingMessage> nextDel in PlayerInfoUpdateReceived.GetInvocationList())
+                            {
+                                try
+                                {
+                                    lastPlayerHistoryUpdates.Position = 0;
+                                    nextDel?.Invoke(lastPlayerHistoryUpdates);
+                                }
+                                catch (Exception e)
+                                {
+                                    if (nextDel != null)
+                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
+                                    else
+                                        Plugin.log.Error($"Exception on update received event: {e}");
+                                }
+                            }
+                            lastPlayerHistoryUpdates.Position = 0;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Plugin.log.Error("Unable to parse GetPlayerUpdates message! Exception: " + e);
+                    }
+                }
+                    
+                foreach (NetIncomingMessage msg in _receivedMessages)
+                {
+                    switch (msg.MessageType)
+                    {
+                        case NetIncomingMessageType.StatusChanged:
+                            {
+                                NetConnectionStatus status = (NetConnectionStatus)msg.ReadByte();
+
+                                if (status == NetConnectionStatus.Connected && !connected)
+                                {
+                                    connected = true;
+                                    ConnectedToServerHub?.Invoke();
+                                }
+                                else if(status == NetConnectionStatus.Disconnected && connected)
+                                {
 
 #if DEBUG
-                                        Plugin.log.Info("Disconnecting...");
+                                    Plugin.log.Info("Disconnecting...");
 #endif
-                                        Disconnect();
+                                    Disconnect();
 
-                                        foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
-                                        {
-                                            try
-                                            {
-                                                nextDel?.Invoke(null);
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                if (nextDel != null)
-                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
-                                                else
-                                                    Plugin.log.Error($"Exception on message received event: {e}");
-                                            }
-                                        }
-                                    }
-                                    else if(status == NetConnectionStatus.Disconnected && !connected)
+                                    foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
                                     {
-                                        Plugin.log.Error("ServerHub refused connection! Reason: " + msg.ReadString());
+                                        try
+                                        {
+                                            nextDel?.Invoke(null);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            if (nextDel != null)
+                                                Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                                            else
+                                                Plugin.log.Error($"Exception on message received event: {e}");
+                                        }
                                     }
                                 }
-                                break;
-                            case NetIncomingMessageType.Data:
+                                else if(status == NetConnectionStatus.Disconnected && !connected)
                                 {
-                                    CommandType commandType = (CommandType)msg.PeekByte();
+                                    Plugin.log.Error("ServerHub refused connection! Reason: " + msg.ReadString());
+                                }
+                            }
+                            break;
+                        case NetIncomingMessageType.Data:
+                            {
+                                CommandType commandType = (CommandType)msg.PeekByte();
 
-                                    if (commandType == CommandType.Disconnect)
-                                    {
-#if DEBUG
-                                        Plugin.log.Info("Disconnecting...");
-#endif
-                                        Disconnect();
-
-                                        foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                                switch (commandType)
+                                {
+                                    case CommandType.Disconnect:
                                         {
-                                            try
-                                            {
-                                                msg.Position = 0;
-                                                nextDel?.Invoke(msg);
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                if (nextDel != null)
-                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
-                                                else
-                                                    Plugin.log.Error($"Exception on message received event: {e}");
-                                            }
-                                        }
+#if DEBUG
+                                            Plugin.log.Info("Disconnecting...");
+#endif
+                                            Disconnect();
 
-                                        return;
-                                    }
-                                    else if (commandType == CommandType.SendEventMessage)
-                                    {
-                                        string header = msg.ReadString();
-                                        string data = msg.ReadString();
+                                            InvokeMessageReceived(msg);
+                                        }
+                                        break;
+                                    case CommandType.SendEventMessage:
+                                        {
+                                            string header = msg.ReadString();
+                                            string data = msg.ReadString();
 
 #if DEBUG
-                                        Plugin.log.Info($"Received event message! Header=\"{header}\", Data=\"{data}\"");
+                                            Plugin.log.Info($"Received event message! Header=\"{header}\", Data=\"{data}\"");
 #endif
-                                        foreach (Action<string, string> nextDel in EventMessageReceived.GetInvocationList())
-                                        {
-                                            try
-                                            {
-                                                nextDel?.Invoke(header, data);
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                if (nextDel != null)
-                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on event message received event: {e}");
-                                                else
-                                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on event message received event: {e}");
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (MessageReceived != null)
-                                            foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                                            foreach (Action<string, string> nextDel in EventMessageReceived.GetInvocationList())
                                             {
                                                 try
                                                 {
-                                                    msg.Position = 0;
-                                                    nextDel?.Invoke(msg);
+                                                    nextDel?.Invoke(header, data);
                                                 }
                                                 catch (Exception e)
                                                 {
                                                     if (nextDel != null)
-                                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on event message received event: {e}");
                                                     else
-                                                        Plugin.log.Error($"Exception on message received event: {e}");
-                                                }
-                                            }
-                                    }
-
-
-                                    if (commandType == CommandType.JoinRoom)
-                                    {
-                                        msg.Position = 8;
-                                        if (msg.PeekByte() == 0 && ClientJoinedRoom != null)
-                                        {
-                                            foreach (Action nextDel in ClientJoinedRoom.GetInvocationList())
-                                            {
-                                                try
-                                                {
-                                                    nextDel?.Invoke();
-                                                }
-                                                catch (Exception e)
-                                                {
-                                                    if (nextDel != null)
-                                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on client joined room event: {e}");
-                                                    else
-                                                        Plugin.log.Error($"Exception on client joined room event: {e}");
+                                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on event message received event: {e}");
                                                 }
                                             }
                                         }
-                                    }
-                                    else if (commandType == CommandType.StartLevel)
-                                    {
-#if DEBUG
-                                        startNewDump = true;
-                                        packetsBuffer.Clear();
-                                        msg.Position = 8;
-                                        LevelOptionsInfo levelInfo = new LevelOptionsInfo(msg);
-                                        SongInfo songInfo = new SongInfo(msg);
-                                        List<byte> buffer = new List<byte>();
-                                        buffer.AddRange(levelInfo.ToBytes());
-                                        buffer.AddRange(HexConverter.ConvertHexToBytesX(songInfo.hash));
-
-                                        Plugin.log.Info("LevelID: " + songInfo.levelId + ", Bytes: " + BitConverter.ToString(buffer.ToArray()));
-
-                                        packetsBuffer.Enqueue(buffer.ToArray());
-                                        msg.Position = 0;                                        
-#endif
-                                        if (playerInfo.playerState == PlayerState.Room)
-                                            foreach (Action nextDel in ClientLevelStarted.GetInvocationList())
+                                        break;
+                                    case CommandType.JoinRoom:
+                                        {
+                                            msg.Position = 8;
+                                            if (msg.PeekByte() == 0 && ClientJoinedRoom != null)
                                             {
-                                                try
+                                                foreach (Action nextDel in ClientJoinedRoom.GetInvocationList())
                                                 {
-                                                    nextDel?.Invoke();
-                                                }
-                                                catch (Exception e)
-                                                {
-                                                    if (nextDel != null)
-                                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on client level started event: {e}");
-                                                    else
-                                                        Plugin.log.Error($"Exception on client level started event: {e}");
+                                                    try
+                                                    {
+                                                        nextDel?.Invoke();
+                                                    }
+                                                    catch (Exception e)
+                                                    {
+                                                        if (nextDel != null)
+                                                            Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on client joined room event: {e}");
+                                                        else
+                                                            Plugin.log.Error($"Exception on client joined room event: {e}");
+                                                    }
                                                 }
                                             }
-                                    }
-                                };
-                                break;
 
-                            case NetIncomingMessageType.WarningMessage:
-                                Plugin.log.Warn(msg.ReadString());
-                                break;
-                            case NetIncomingMessageType.ErrorMessage:
-                                Plugin.log.Error(msg.ReadString());
-                                break;
+                                            InvokeMessageReceived(msg);
+                                        }
+                                        break;
+                                    case CommandType.StartLevel:
+                                        {
 #if DEBUG
-                            case NetIncomingMessageType.VerboseDebugMessage:
-                            case NetIncomingMessageType.DebugMessage:
-                                Plugin.log.Info(msg.ReadString());
-                                break;
-                            default:
-                                Plugin.log.Info("Unhandled message type: " + msg.MessageType);
-                                break;
+                                            startNewDump = true;
+                                            packetsBuffer.Clear();
+                                            msg.Position = 8;
+                                            LevelOptionsInfo levelInfo = new LevelOptionsInfo(msg);
+                                            SongInfo songInfo = new SongInfo(msg);
+                                            List<byte> buffer = new List<byte>();
+                                            buffer.AddRange(levelInfo.ToBytes());
+                                            buffer.AddRange(HexConverter.ConvertHexToBytesX(songInfo.hash));
+
+                                            Plugin.log.Info("LevelID: " + songInfo.levelId + ", Bytes: " + BitConverter.ToString(buffer.ToArray()));
+
+                                            packetsBuffer.Enqueue(buffer.ToArray());
+                                            msg.Position = 0;                                        
 #endif
-                        }
-                        networkClient.Recycle(msg);
+                                            if (playerInfo != null && playerInfo.playerState == PlayerState.Room && ClientLevelStarted != null)
+                                            {
+                                                foreach (Action nextDel in ClientLevelStarted.GetInvocationList())
+                                                {
+                                                    try
+                                                    {
+                                                        nextDel?.Invoke();
+                                                    }
+                                                    catch (Exception e)
+                                                    {
+                                                        if (nextDel != null)
+                                                            Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on client level started event: {e}");
+                                                        else
+                                                            Plugin.log.Error($"Exception on client level started event: {e}");
+                                                    }
+                                                }
+                                            }
+
+                                            InvokeMessageReceived(msg);
+                                        }
+                                        break;
+                                    case CommandType.UpdatePlayerInfo:
+                                            break; //Just ignore updates at this point
+
+                                    default:
+                                        {
+                                            InvokeMessageReceived(msg);
+                                        }
+                                        break;
+                                }
+                            };
+                            break;
+
+                        case NetIncomingMessageType.WarningMessage:
+                            Plugin.log.Warn(msg.ReadString());
+                            break;
+                        case NetIncomingMessageType.ErrorMessage:
+                            Plugin.log.Error(msg.ReadString());
+                            break;
+#if DEBUG
+                        case NetIncomingMessageType.VerboseDebugMessage:
+                        case NetIncomingMessageType.DebugMessage:
+                            Plugin.log.Info(msg.ReadString());
+                            break;
+                        default:
+                            Plugin.log.Info("Unhandled message type: " + msg.MessageType);
+                            break;
+#endif
                     }
-                }catch(Exception e)
-                {
-#if DEBUG
-                    Plugin.log.Critical($"Exception on message received event: {e}");
-#endif
+                    networkClient.Recycle(msg);
                 }
-                _receivedMessages.Clear();
             }
 
             if(connected && networkClient.ConnectionsCount == 0)
@@ -503,6 +490,26 @@ namespace BeatSaberMultiplayer
                     }
                 }
             }
+        }
+
+        private void InvokeMessageReceived(NetIncomingMessage msg)
+        {
+            if (MessageReceived != null)
+                foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                {
+                    try
+                    {
+                        msg.Position = 0;
+                        nextDel?.Invoke(msg);
+                    }
+                    catch (Exception e)
+                    {
+                        if (nextDel != null)
+                            Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
+                        else
+                            Plugin.log.Error($"Exception on message received event: {e}");
+                    }
+                }
         }
 
         public void LateUpdate()
