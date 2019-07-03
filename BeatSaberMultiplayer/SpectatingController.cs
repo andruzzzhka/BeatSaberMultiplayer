@@ -249,7 +249,7 @@ namespace BeatSaberMultiplayer
         {
             if(spectatedPlayer != null)
             {
-                HitData hit = playersHits[spectatedPlayer.PlayerInfo.playerId].FirstOrDefault(x => x.objectId == arg1.id);
+                HitData hit = playersHits[spectatedPlayer.PlayerInfo.playerId].FirstOrDefault(x => x.Key == arg1.id).Value;
                 bool allIsOKExpected = hit.noteWasCut && hit.speedOK && hit.saberTypeOK && hit.directionOK && !hit.wasCutTooSoon;
 
                 if(allIsOKExpected != arg2.allIsOK)
@@ -263,7 +263,7 @@ namespace BeatSaberMultiplayer
         {
             if (spectatedPlayer != null)
             {
-                HitData hit = playersHits[spectatedPlayer.PlayerInfo.playerId].FirstOrDefault(x => x.objectId == arg1.id);
+                HitData hit = playersHits[spectatedPlayer.PlayerInfo.playerId].FirstOrDefault(x => x.Key == arg1.id).Value;
 
                 if (hit.noteWasCut)
                 {
@@ -475,19 +475,7 @@ namespace BeatSaberMultiplayer
                     spectatedPlayer.PlayerInfo.leftHandPos = Vector3.Lerp(spectatedPlayer.PlayerInfo.leftHandPos, lerpTo.leftHandPos, lerpProgress);
                     spectatedPlayer.PlayerInfo.rightHandPos = Vector3.Lerp(spectatedPlayer.PlayerInfo.rightHandPos, lerpTo.rightHandPos, lerpProgress);
                     spectatedPlayer.PlayerInfo.headPos = Vector3.Lerp(spectatedPlayer.PlayerInfo.headPos, lerpTo.headPos, lerpProgress);
-
-#if DEBUG
-                    if (Environment.CommandLine.ToLower().Contains("fpfc"))
-                    {
-                        if (_mainCamera == null)
-                        {
-                            _mainCamera = Camera.main;
-                            XRSettings.showDeviceView = false;
-                        }
-                        _mainCamera.transform.position = spectatedPlayer.PlayerInfo.headPos;
-                    }
-#endif
-
+                    
                     spectatedPlayer.PlayerInfo.leftHandRot = Quaternion.Lerp(spectatedPlayer.PlayerInfo.leftHandRot, lerpTo.leftHandRot, lerpProgress);
                     spectatedPlayer.PlayerInfo.rightHandRot = Quaternion.Lerp(spectatedPlayer.PlayerInfo.rightHandRot, lerpTo.rightHandRot, lerpProgress);
                     spectatedPlayer.PlayerInfo.headRot = Quaternion.Lerp(spectatedPlayer.PlayerInfo.headRot, lerpTo.headRot, lerpProgress);
