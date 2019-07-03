@@ -176,8 +176,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     _progressText.rectTransform.SetParent(_progressBarRect, true);
 
                     _loadingSpinner = this.CreateLoadingSpinner();
+                    _playButton.interactable = false;
+                    _progressBarRect.gameObject.SetActive(false);
                 }
-                _playButton.interactable = false;
                 _progressBarRect.gameObject.SetActive(false);
             }
             catch (Exception e)
@@ -244,24 +245,32 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 {
                     ScrappedSong scrappedSong = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(_selectedSong.levelID));
                     if (scrappedSong != default) {
-                        if (scrappedSong.Diffs.Any(x => x.Diff == selectedDifficulty.ToString().Replace("+", "Plus")))
-                            _starsParamText.text = scrappedSong.Diffs.First(x => x.Diff == selectedDifficulty.ToString().Replace("+", "Plus")).Stars.ToString();
+                        DifficultyStats stats = scrappedSong.Diffs.FirstOrDefault(x => x.Diff == selectedDifficulty.ToString().Replace("+", "Plus"));
+                        if (stats != default)
+                        {
+                            _starsParamText.text = stats.Stars.ToString();
+                            _rankedText.text = $"<color={(stats.Ranked == 0 ? "red" : "green")}>{(stats.Ranked == 0 ? "UNRANKED" : "RANKED")}</color>";
+                        }
                         else
+                        {
                             _starsParamText.text = "--";
+                            _rankedText.text = $"<color=red>UNRANKED</color>";
+                        }
                         long votes = scrappedSong.Upvotes - scrappedSong.Downvotes;
                         _ratingParamText.text = (votes < 0 ? votes.ToString() : $"+{votes}");
-                        _rankedText.text = $"<color={(scrappedSong.Ranked == 0 ? "red" : "green")}>{(scrappedSong.Ranked == 0 ? "UNRANKED" : "RANKED")}</color>";
                     }
                     else
                     {
                         _starsParamText.text = "--";
                         _ratingParamText.text = "--";
+                        _rankedText.text = "<color=yellow>SONG NOT FOUND</color>";
                     }
                 }
                 else
                 {
                     _starsParamText.text = "--";
                     _ratingParamText.text = "--";
+                    _rankedText.text = "<color=yellow>SONG NOT FOUND</color>";
                 }
 
                 levelOptionsChanged?.Invoke();
@@ -442,12 +451,17 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetBeatmapDifficulty(BeatmapDifficulty difficulty)
         {
-            if (_selectedSong != null && _selectedSong.beatmapLevelData != null && _selectedSong.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps.Any(x => x.difficulty == difficulty))
+            if (_selectedSong != null && _selectedSong.beatmapLevelData != null)
             {
-                int diffIndex = Array.IndexOf(_selectedSong.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps, difficulty);
+                IDifficultyBeatmap[] difficulties = _selectedSong.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps;
 
-                _difficultyControl.SelectCellWithNumber(diffIndex);
-                _difficultyControl_didSelectCellEvent(diffIndex);
+                if (difficulties.Any(x => x.difficulty == difficulty))
+                {
+                    int diffIndex = Array.IndexOf(difficulties, difficulties.First(x => x.difficulty == difficulty));
+
+                    _difficultyControl.SelectCellWithNumber(diffIndex);
+                    _difficultyControl_didSelectCellEvent(diffIndex);
+                }
             }
         }
 

@@ -29,6 +29,7 @@ namespace BeatSaberMultiplayer.UI
         
         private MainMenuViewController _mainMenuViewController;
         private RectTransform _mainMenuRectTransform;
+        private SimpleDialogPromptViewController _noUserInfoWarning;
 
         public ServerHubFlowCoordinator serverHubFlowCoordinator;
         public RoomCreationFlowCoordinator roomCreationFlowCoordinator;
@@ -136,10 +137,10 @@ namespace BeatSaberMultiplayer.UI
                 (item.transform as RectTransform).sizeDelta = new Vector2(35f, 30f);
             }
 
-            _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "CampaignButton");
+            _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "SoloFreePlayButton");
             Destroy(_multiplayerButton.GetComponentInChildren<LocalizedTextMeshProUGUI>());
             Destroy(_multiplayerButton.GetComponentInChildren<HoverHint>());
-            _multiplayerButton.transform.SetParent(mainButtons.First(x => x.name == "CampaignButton").transform.parent);
+            _multiplayerButton.transform.SetParent(mainButtons.First(x => x.name == "SoloFreePlayButton").transform.parent);
             _multiplayerButton.transform.SetAsLastSibling();
 
             _multiplayerButton.SetButtonText("Online");
@@ -152,7 +153,31 @@ namespace BeatSaberMultiplayer.UI
                 {
                     MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
 
-                    mainFlow.InvokeMethod("PresentFlowCoordinator", modeSelectionFlowCoordinator, null, false, false);
+                    if (_noUserInfoWarning == null)
+                    {
+                        var dialogOrig = ReflectionUtil.GetPrivateField<SimpleDialogPromptViewController>(mainFlow, "_simpleDialogPromptViewController");
+                        _noUserInfoWarning = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
+                    }
+
+                    if (GetUserInfo.GetUserID() == 0 && string.IsNullOrWhiteSpace(GetUserInfo.GetUserName()) || GetUserInfo.GetUserID() == 0)
+                    {
+                        _noUserInfoWarning.Init("Invalid username and ID", $"Your username and ID are invalid\nMake sure you are logged in", "Go back", "Continue anyway",
+                           (selectedButton) =>
+                           {
+                               mainFlow.InvokeMethod("DismissViewController", _noUserInfoWarning, null, selectedButton == 1);
+                               if (selectedButton == 1)
+                               {
+                                   mainFlow.InvokeMethod("PresentFlowCoordinator", modeSelectionFlowCoordinator, null, true, false);
+                               }
+                           });
+
+                        mainFlow.InvokeMethod("PresentViewController", _noUserInfoWarning, null, false);
+
+                    }
+                    else
+                    {
+                        mainFlow.InvokeMethod("PresentFlowCoordinator", modeSelectionFlowCoordinator, null, false, false);
+                    }
                 }
                 catch (Exception e)
                 {

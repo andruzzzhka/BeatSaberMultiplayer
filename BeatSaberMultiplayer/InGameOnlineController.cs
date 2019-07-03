@@ -881,18 +881,35 @@ namespace BeatSaberMultiplayer
             }
             else if (Config.Instance.SubmitScores == 1)
             {
+                bool submitScore = false;
                 if (ScrappedData.Downloaded)
                 {
                     ScrappedSong song = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(difficultyBeatmap.level.levelID));
-                    if (song != default && song.Ranked == 0)
+                    if (song != default)
                     {
-                        Plugin.log.Warn("Score submission is disabled because song is unranked!");
-                        return;
+                        DifficultyStats stats = song.Diffs.FirstOrDefault(x => x.Diff == difficultyBeatmap.difficulty.ToString().Replace("+", "Plus"));
+                        if (stats != default)
+                        {
+                            if (stats.Ranked != 0)
+                            {
+                                submitScore = true;
+                            }
+                            else
+                                Plugin.log.Warn("Song is unrakned!");
+                        }
+                        else
+                            Plugin.log.Warn("Difficulty not found!");
                     }
+                    else
+                        Plugin.log.Warn("Song not found!");
                 }
                 else
+                    Plugin.log.Warn("Scrapped data is not downloaded!");
+
+                if (!submitScore)
                 {
-                    Plugin.log.Warn("Scrapped data is not downloaded! Submitting score...");
+                    Plugin.log.Warn("Score submission is disabled!");
+                    return;
                 }
             } 
 

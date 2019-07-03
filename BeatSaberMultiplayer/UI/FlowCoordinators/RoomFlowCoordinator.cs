@@ -80,7 +80,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         float roomInfoRequestTime;
 
         bool joined = false;
-        private SimpleDialogPromptViewController _simpleDialog;
+        private SimpleDialogPromptViewController _passHostDialog;
+        private SimpleDialogPromptViewController _hostLeaveDialog;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -94,9 +95,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _playerManagementViewController.gameplayModifiersChanged += UpdateLevelOptions;
                 _playerManagementViewController.transferHostButtonPressed += TransferHostConfirmation;
 
-                _simpleDialog = ReflectionUtil.GetPrivateField<SimpleDialogPromptViewController>(FindObjectOfType<MainFlowCoordinator>(), "_simpleDialogPromptViewController");
-                _simpleDialog = Instantiate(_simpleDialog.gameObject, _simpleDialog.transform.parent).GetComponent<SimpleDialogPromptViewController>();
-                
+                var dialogOrig = ReflectionUtil.GetPrivateField<SimpleDialogPromptViewController>(FindObjectOfType<MainFlowCoordinator>(), "_simpleDialogPromptViewController");
+                _passHostDialog = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
+                _hostLeaveDialog = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
+
                 _quickSettingsViewController = BeatSaberUI.CreateViewController<QuickSettingsViewController>();
 
                 _roomNavigationController = BeatSaberUI.CreateViewController<RoomNavigationController>();
@@ -157,8 +159,23 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        public void LeaveRoom()
+        public void LeaveRoom(bool force = false)
         {
+            if(Client.Instance != null && Client.Instance.isHost && !force )
+            {
+                _hostLeaveDialog.Init("Leave room?", $"You're the host, are you sure you want to leave the room?", "Leave", "Cancel",
+                (selectedButton) =>
+                {
+                    DismissViewController(_hostLeaveDialog);
+                    if (selectedButton == 0)
+                    {
+                        LeaveRoom(true);
+                    }
+                });
+                PresentViewController(_hostLeaveDialog);
+                return;
+            }
+
             try
             {
                 if (joined)
@@ -194,7 +211,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _lastSearchRequest = "";
             Client.Instance.inRoom = false;
             PopAllViewControllers();
-            if(leftScreenViewController == _simpleDialog)
+            if(leftScreenViewController == _passHostDialog)
             {
                 SetLeftScreenViewController(_playerManagementViewController);
             }
@@ -608,7 +625,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void TransferHostConfirmation(PlayerInfo newHost)
         {
-            _simpleDialog.Init("Pass host?", $"Are you sure yo want to pass host to <b>{newHost.playerName}</b>?", "Pass host", "Cancel",
+            _passHostDialog.Init("Pass host?", $"Are you sure you want to pass host to <b>{newHost.playerName}</b>?", "Pass host", "Cancel",
                 (selectedButton) =>
                 {
                     SetLeftScreenViewController(_playerManagementViewController);
@@ -617,7 +634,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         Client.Instance.TransferHost(newHost);
                     }
                 });
-            SetLeftScreenViewController(_simpleDialog);
+            SetLeftScreenViewController(_passHostDialog);
         }
 
         public void StartLevel(IBeatmapLevel level, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, GameplayModifiers modifiers, float startTime = 0f)
@@ -778,7 +795,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case SortMode.Newest: { levels = SortLevelsByCreationTime(levels); }; break;
                         case SortMode.Difficulty:
                             {
-                                levels = levels.AsParallel().OrderByDescending(x => { double? stars = ScrappedData.Songs.FirstOrDefault(y => x.levelID.Contains(y.Hash)).Diffs?.Max(y => y.Stars); return (stars == null ? -1 : stars); }).ToList();
+                                levels = levels.AsParallel().OrderByDescending(x =>
+                                {
+                                    var diffs = ScrappedData.Songs.FirstOrDefault(y => x.levelID.Contains(y.Hash)).Diffs;
+                                    if (diffs != null && diffs.Count > 0)
+                                        return diffs.Max(y => y.Stars);
+                                    else
+                                        return -1;
+                                }).ToList();
                             }; break;
                     }
                 }
@@ -869,6 +893,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         if(status == AdditionalContentModelSO.EntitlementStatus.NotOwned)
                         {
                             _difficultySelectionViewController.SetSelectedSong(selectedLevel);
+                            _difficultySelectionViewController.SetPlayButtonInteractable(false);
                             Client.Instance.SendPlayerReady(false);
                             Client.Instance.playerInfo.playerState = PlayerState.DownloadingSongs;
                             Client.Instance.playerInfo.playerProgress = 0f; selectedLevel.GetPreviewAudioClipAsync(new CancellationToken()).ContinueWith(
@@ -904,6 +929,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         else
                         {
                             _difficultySelectionViewController.SetSelectedSong(song);
+                            _difficultySelectionViewController.SetPlayButtonInteractable(false);
                             Client.Instance.SendPlayerReady(false);
                             Client.Instance.playerInfo.playerState = PlayerState.Room;
                         }

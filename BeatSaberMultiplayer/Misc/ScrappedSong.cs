@@ -17,7 +17,6 @@ namespace BeatSaberMultiplayer.Misc
         public int Downvotes { get; set; }
         public float Heat { get; set; }
         public float Rating { get; set; }
-        public byte Ranked { get; set; }
 
         public override bool Equals(object obj)
         {
@@ -34,8 +33,7 @@ namespace BeatSaberMultiplayer.Misc
                    Upvotes == song.Upvotes &&
                    Downvotes == song.Downvotes &&
                    Heat == song.Heat &&
-                   Rating == song.Rating &&
-                   Ranked == song.Ranked;
+                   Rating == song.Rating;
         }
 
         public override int GetHashCode()
@@ -54,7 +52,6 @@ namespace BeatSaberMultiplayer.Misc
             hashCode = hashCode * -1521134295 + Downvotes.GetHashCode();
             hashCode = hashCode * -1521134295 + Heat.GetHashCode();
             hashCode = hashCode * -1521134295 + Rating.GetHashCode();
-            hashCode = hashCode * -1521134295 + Ranked.GetHashCode();
             return hashCode;
         }
 
@@ -74,5 +71,35 @@ namespace BeatSaberMultiplayer.Misc
         public string Diff { get; set; }
         public int Scores { get; set; }
         public float Stars { get; set; }
+        public byte Ranked { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return obj is DifficultyStats stats &&
+                   Diff == stats.Diff &&
+                   Scores == stats.Scores &&
+                   Stars == stats.Stars &&
+                   Ranked == stats.Ranked;
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = 342751480;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Diff);
+            hashCode = hashCode * -1521134295 + Scores.GetHashCode();
+            hashCode = hashCode * -1521134295 + Stars.GetHashCode();
+            hashCode = hashCode * -1521134295 + Ranked.GetHashCode();
+            return hashCode;
+        }
+
+        public static bool operator ==(DifficultyStats c1, DifficultyStats c2)
+        {
+            return c1.Equals(c2);
+        }
+
+        public static bool operator !=(DifficultyStats c1, DifficultyStats c2)
+        {
+            return !c1.Equals(c2);
+        }
     }
 }
