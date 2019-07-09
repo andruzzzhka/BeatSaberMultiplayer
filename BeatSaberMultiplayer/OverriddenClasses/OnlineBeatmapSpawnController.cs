@@ -37,8 +37,8 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             {
                 if (BS_Utils.Plugin.LevelData.IsSet)
                 {
-                    LevelOptionsInfo levelInfo = owner.PlayerInfo.playerLevelOptions;
-                    IDifficultyBeatmap diffBeatmap = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.level.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic.serializedName == owner.PlayerInfo.playerLevelOptions.characteristicName).difficultyBeatmaps.First(x => x.difficulty == owner.PlayerInfo.playerLevelOptions.difficulty);
+                    LevelOptionsInfo levelInfo = owner.playerInfo.updateInfo.playerLevelOptions;
+                    IDifficultyBeatmap diffBeatmap = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.level.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic.serializedName == owner.playerInfo.updateInfo.playerLevelOptions.characteristicName).difficultyBeatmaps.First(x => x.difficulty == owner.playerInfo.updateInfo.playerLevelOptions.difficulty);
                     
                     _beatsPerMinute = diffBeatmap.level.beatsPerMinute;
                     _noteLinesCount = (float)diffBeatmap.beatmapData.beatmapLinesData.Length;

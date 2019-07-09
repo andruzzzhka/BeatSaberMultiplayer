@@ -41,8 +41,8 @@ namespace BeatSaberMultiplayer
             {
                 if (owner != null)
                 {
-                    targetPos = (_node == XRNode.LeftHand ? owner.PlayerInfo.leftHandPos : owner.PlayerInfo.rightHandPos);
-                    targetRot = (_node == XRNode.LeftHand ? owner.PlayerInfo.leftHandRot : owner.PlayerInfo.rightHandRot);
+                    targetPos = (_node == XRNode.LeftHand ? owner.playerInfo.updateInfo.leftHandPos : owner.playerInfo.updateInfo.rightHandPos);
+                    targetRot = (_node == XRNode.LeftHand ? owner.playerInfo.updateInfo.leftHandRot : owner.playerInfo.updateInfo.rightHandRot);
 
                     transform.position = targetPos + Vector3.right * owner.avatarOffset;
                     transform.rotation = targetRot;

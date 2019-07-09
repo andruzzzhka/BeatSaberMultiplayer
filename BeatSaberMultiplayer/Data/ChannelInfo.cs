@@ -44,7 +44,7 @@ namespace BeatSaberMultiplayer.Data
                 if (currentSong.songName == "Selecting song..." && currentSong.levelId == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
                 {
                     currentSong = null;
-                    currentLevelOptions = null;
+                    currentLevelOptions = default;
                 }
             }
             playerCount = msg.ReadInt32();

@@ -56,7 +56,7 @@ namespace BeatSaberMultiplayer.Data
                 }
                 else
                 {
-                    startLevelInfo = null;
+                    startLevelInfo = default;
                     selectedSong = null;
                 }
             }

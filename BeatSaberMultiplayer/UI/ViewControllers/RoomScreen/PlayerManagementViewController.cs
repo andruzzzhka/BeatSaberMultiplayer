@@ -42,7 +42,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         TableView _playersTableView;
 
-        List<PlayerInfo> _playersList = new List<PlayerInfo>();
         LeaderboardTableCell _downloadListTableCellInstance;
         List<PlayerListTableCell> _tableCells = new List<PlayerListTableCell>();
 
@@ -177,7 +176,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     Destroy(_tableCells[i].gameObject);
                 }
                 _tableCells.Clear();
-                _playersList.Clear();
                 _playersTableView.ReloadData();
             }
 
@@ -195,12 +193,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void Update()
         {
-
-            if(_pingText != null && Client.Instance.networkClient != null && Client.Instance.networkClient.Connections.Count > 0)
-            {
-                _pingText.text = "PING: "+ Math.Round(Client.Instance.networkClient.Connections[0].AverageRoundtripTime*1000, 2);
-            }
-
+            if(_pingText != null && Client.Instance.networkClient != null && Client.Instance.networkClient.Connections.Count > 0 && Time.frameCount % 45 == 0)
+                _pingText.text = "PING: "+ Math.Round(Client.Instance.networkClient.Connections[0].AverageRoundtripTime*1000, 2).ToString();
         }
 
         public void UpdateViewController(bool isHost, bool modifiersInteractable)
@@ -208,18 +202,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _modifiersPanelBlocker.gameObject.SetActive(!isHost || !modifiersInteractable);
         }
 
-        public void UpdatePlayerList(List<PlayerInfo> players, RoomState state)
+        public void UpdatePlayerList(RoomState state)
         {
             try
             {
-                int prevCount = _playersList.Count;
-                _playersList.Clear();
-                if (players != null)
-                {
-                    _playersList.AddRange(players.OrderBy(x => x.playerId));
-                }
+                var players = InGameOnlineController.Instance.players;
                 
-                if (prevCount != _playersList.Count)
+                if (players.Count != _tableCells.Count)
                 {
                     for (int i = 0; i < _tableCells.Count; i++)
                     {
@@ -227,42 +216,42 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     }
                     _tableCells.Clear();
                     _playersTableView.RefreshTable(false);
-                    if(prevCount == 0 && _playersList.Count > 0)
-                    {
-                        StartCoroutine(ScrollWithDelay());
-                    }
+                    //if(prevCount == 0 && _playersList.Count > 0)
+                    //{
+                    //    StartCoroutine(ScrollWithDelay());
+                    //}
                 }
-                else
+
+                PlayerListTableCell buffer;
+                int index = 0;
+                foreach (var player in players)
                 {
-                    PlayerListTableCell buffer;
-                    for (int i = 0; i < _playersList.Count; i++)
+                    if (_tableCells.Count > index)
                     {
-                        if (_tableCells.Count > i)
+                        buffer = _tableCells[index];
+                        buffer.playerName = player.Value.playerInfo.playerName;
+                        buffer.playerInfo = player.Value.playerInfo;
+                        if (state == RoomState.Preparing)
                         {
-                            buffer = _tableCells[i];
-                            buffer.playerName = _playersList[i].playerName;
-                            if (state == RoomState.Preparing)
+                            if (player.Value.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
                             {
-                                if (_playersList[i].playerState == PlayerState.DownloadingSongs)
-                                {
-                                    buffer.progress = _playersList[i].playerProgress / 100f;
-                                }
-                                else
-                                {
-                                    buffer.progress = 1f;
-                                }
+                                buffer.progress = player.Value.playerInfo.updateInfo.playerProgress / 100f;
                             }
                             else
                             {
-                                buffer.progress = -1f;
+                                buffer.progress = 1f;
                             }
-                            buffer.IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(_playersList[i].playerId);
-                            buffer.NameColor = _playersList[i].playerNameColor;
-                            buffer.playerInfo = _playersList[i];
-                            buffer.buttonsInterface = this;
-                            buffer.Update();
                         }
+                        else
+                        {
+                            buffer.progress = -1f;
+                        }
+                        buffer.IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(player.Key);
+                        buffer.NameColor = player.Value.playerInfo.updateInfo.playerNameColor;
+                        buffer.buttonsInterface = this;
+                        buffer.Update();
                     }
+                    index++;
                 }
             }
             catch (Exception e)
@@ -303,7 +292,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public int NumberOfCells()
         {
-            return _playersList.Count;
+            return InGameOnlineController.Instance.players.Count;
         }
 
         public TableCell CellForIdx(int row)
@@ -316,11 +305,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             _tableCell.rank = 0;
             _tableCell.showFullCombo = false;
-            _tableCell.playerName = _playersList[row].playerName;
-            _tableCell.progress = (_playersList[row].playerState == PlayerState.DownloadingSongs ? (_playersList[row].playerProgress/100f) : 1f);
-            _tableCell.IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(_playersList[row].playerId);
-            _tableCell.NameColor = _playersList[row].playerNameColor;
-            _tableCell.playerInfo = _playersList[row];
+            _tableCell.playerName = string.Empty;
+            _tableCell.progress = 0f;
+            _tableCell.IsTalking = false;
+            _tableCell.NameColor = new Color32(255,255,255,255);
+            _tableCell.playerInfo = null;
             _tableCell.buttonsInterface = this;
             _tableCell.Update();
 
@@ -330,6 +319,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void MuteButtonWasPressed(PlayerInfo player)
         {
+            if (player == null)
+                return;
+
             if (InGameOnlineController.Instance.mutedPlayers.Contains(player.playerId))
             {
                 InGameOnlineController.Instance.mutedPlayers.Remove(player.playerId);
@@ -342,6 +334,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void TransferHostButtonWasPressed(PlayerInfo player)
         {
+            if (player == null)
+                return;
+
             if (Client.Instance.connected && Client.Instance.isHost)
             {
                 transferHostButtonPressed?.Invoke(player);

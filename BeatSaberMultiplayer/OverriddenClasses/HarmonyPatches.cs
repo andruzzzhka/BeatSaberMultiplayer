@@ -20,11 +20,11 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             {
                 if (Config.Instance.SpectatorMode && SpectatingController.Instance != null && SpectatingController.active && Client.Instance != null && Client.Instance.connected)
                 {
-                    ulong playerId = SpectatingController.Instance.spectatedPlayer.PlayerInfo.playerId;
+                    ulong playerId = SpectatingController.Instance.spectatedPlayer.playerInfo.playerId;
 
-                    if (SpectatingController.Instance.playersHits.ContainsKey(playerId) && SpectatingController.Instance.playersHits[playerId].Count > 0)
+                    if (SpectatingController.Instance.playerUpdates.ContainsKey(playerId) && SpectatingController.Instance.playerUpdates[playerId].hits.Count > 0)
                     {
-                        if (SpectatingController.Instance.playersHits[playerId].TryGetValue(noteController.noteData.id, out HitData hit))
+                        if (SpectatingController.Instance.playerUpdates[playerId].hits.TryGetValue(noteController.noteData.id, out HitData hit))
                         {
                             bool allIsOKExpected = hit.noteWasCut && hit.speedOK && hit.saberTypeOK && hit.directionOK && !hit.wasCutTooSoon;
 
@@ -94,11 +94,11 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             {
                 if (Config.Instance.SpectatorMode && SpectatingController.Instance != null && SpectatingController.active && Client.Instance != null && Client.Instance.connected)
                 {
-                    ulong playerId = SpectatingController.Instance.spectatedPlayer.PlayerInfo.playerId;
+                    ulong playerId = SpectatingController.Instance.spectatedPlayer.playerInfo.playerId;
 
-                    if (SpectatingController.Instance.playersHits.ContainsKey(playerId) && SpectatingController.Instance.playersHits[playerId].Count > 0)
+                    if (SpectatingController.Instance.playerUpdates.ContainsKey(playerId) && SpectatingController.Instance.playerUpdates[playerId].hits.Count > 0)
                     {
-                        if (SpectatingController.Instance.playersHits[playerId].TryGetValue(noteController.noteData.id, out HitData hit))
+                        if (SpectatingController.Instance.playerUpdates[playerId].hits.TryGetValue(noteController.noteData.id, out HitData hit))
                         {
                             if (hit.noteWasCut)
                             {
@@ -141,7 +141,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             {
                 if (Config.Instance.SpectatorMode && SpectatingController.Instance != null && SpectatingController.active && Client.Instance != null && Client.Instance.connected)
                 {
-                    if (__instance.energy + value <= 1E-05f && SpectatingController.Instance.spectatedPlayer.PlayerInfo.playerEnergy > 1E-04f)
+                    if (__instance.energy + value <= 1E-05f && SpectatingController.Instance.spectatedPlayer.playerInfo.updateInfo.playerEnergy > 1E-04f)
                     {
                         return false;
                     }

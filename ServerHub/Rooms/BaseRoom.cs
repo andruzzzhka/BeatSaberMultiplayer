@@ -132,7 +132,7 @@ namespace ServerHub.Rooms
                 case RoomState.InGame:
                     {
                         if ((DateTime.Now.Subtract(_songStartTime).TotalSeconds >= selectedSong.songDuration) ||
-                            (DateTime.Now.Subtract(_songStartTime).TotalSeconds >= 10f && roomClients.All(x => x.playerInfo.playerState != PlayerState.Game)))
+                            (DateTime.Now.Subtract(_songStartTime).TotalSeconds >= 10f && roomClients.All(x => x.playerInfo.updateInfo.playerState != PlayerState.Game)))
                         {
                             roomState = RoomState.Results;
                             _resultsStartTime = DateTime.Now;
@@ -220,56 +220,88 @@ namespace ServerHub.Rooms
                     break;
             }
 
-            outMsg.Write(roomClients.Count);
 
-            for(int i = 0; i < roomClients.Count; i++)
-            {
+            bool fullUpdate = false;
+
+            int i = 0;
+
+            for (i = 0; i < roomClients.Count; i++)
                 if(i < roomClients.Count)
-                {
                     if (roomClients[i] != null)
                     {
-                        if (roomClients[i].playerInfo.Equals(roomHost) && roomClients[i].playerInfo.playerNameColor.Equals(Color32.defaultColor))
-                        {
-                            roomClients[i].playerInfo.playerNameColor = Color32.roomHostColor;
-                        }
-                        roomClients[i].playerInfo.AddToMessage(outMsg);
+                        if (roomClients[i].playerInfo.Equals(roomHost) && roomClients[i].playerInfo.updateInfo.playerNameColor.Equals(Color32.defaultColor))
+                            roomClients[i].playerInfo.updateInfo.playerNameColor = Color32.roomHostColor;
+                        fullUpdate |= roomClients[i].fullUpdate;
                     }
-                } 
-            }
+
+            outMsg.Write(fullUpdate ? (byte)1 : (byte)0);
+
+            outMsg.Write(roomClients.Count);
+
+            if (fullUpdate)
+                for (i = 0; i < roomClients.Count; i++)
+                {
+                    if (i < roomClients.Count)
+                        if (roomClients[i] != null)
+                            outMsg.Write(roomClients[i].playerInfo.playerId);
+                            roomClients[i].playerInfo.AddToMessage(outMsg);
+                }
+            else
+                for (i = 0; i < roomClients.Count; i++)
+                    if (i < roomClients.Count)
+                        if (roomClients[i] != null)
+                        {
+                            outMsg.Write(roomClients[i].playerInfo.playerId);
+                            roomClients[i].playerInfo.updateInfo.AddToMessage(outMsg);
+                            outMsg.Write((byte)roomClients[i].playerHitsHistory.Count);
+                            foreach (var hit in roomClients[i].playerHitsHistory)
+                                hit.AddToMessage(outMsg);
+                        }
 
             BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
 
             if (roomClients.Count > 0)
                 BroadcastWebSocket(CommandType.UpdatePlayerInfo, roomClients.Select(x => x.playerInfo).ToArray());
 
-            int spectatorsCount = roomClients.Count(x => x.playerInfo.playerState == PlayerState.Spectating);
+            int spectatorsCount = roomClients.Count(x => x.playerInfo.updateInfo.playerState == PlayerState.Spectating);
             if (spectatorsCount > 0)
             {
                 outMsg = HubListener.ListenerServer.CreateMessage();
 
                 outMsg.Write((byte)CommandType.GetPlayerUpdates);
 
-                outMsg.Write(roomClients.Count(x => x.playerInfo.playerState == PlayerState.Game && x.playerInfoHistory.Count > 0));
+                outMsg.Write(roomClients.Count(x => x.playerInfo.updateInfo.playerState == PlayerState.Game && x.playerUpdateHistory.Count > 0));
 
-                for (int i = 0; i < roomClients.Count; i++)
+                for (i = 0; i < roomClients.Count; i++)
                 {
                     if (i < roomClients.Count)
                     {
-                        if (roomClients[i] != null && roomClients[i].playerInfo.playerState == PlayerState.Game && roomClients[i].playerInfoHistory.Count > 0)
+                        if (roomClients[i] != null && roomClients[i].playerInfo.updateInfo.playerState == PlayerState.Game && roomClients[i].playerUpdateHistory.Count > 0)
                         {
-                            int historyLength = roomClients[i].playerInfoHistory.Count;
-                            outMsg.Write(historyLength);
-                            
-                            for(int j = 0; j < historyLength; j++)
+                            outMsg.Write(roomClients[i].playerInfo.playerId);
+
+                            int historyLength = roomClients[i].playerUpdateHistory.Count;
+                            outMsg.Write((byte)historyLength);
+
+                            for (int j = 0; j < historyLength; j++)
                             {
-                                roomClients[i].playerInfoHistory.Dequeue().AddToMessage(outMsg);
+                                roomClients[i].playerUpdateHistory.Dequeue().AddToMessage(outMsg);
                             }
-                            roomClients[i].playerInfoHistory.Clear();
+                            roomClients[i].playerUpdateHistory.Clear();
+
+                            int hitCount = roomClients[i].playerHitsHistory.Count;
+                            outMsg.Write((byte)hitCount);
+
+                            for (int j = 0; j < hitCount; j++)
+                            {
+                                roomClients[i].playerHitsHistory[i].AddToMessage(outMsg);
+                            }
+                            roomClients[i].playerHitsHistory.Clear();
                         }
                     }
                 }
 
-                BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced, 2, roomClients.Where(x => x.playerInfo.playerState != PlayerState.Spectating).ToList());
+                BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced, 2, roomClients.Where(x => x.playerInfo.updateInfo.playerState != PlayerState.Spectating).ToList());
             }
         }
 

@@ -180,7 +180,7 @@ namespace ServerHub.Hub
                                 msg.SenderConnection.Approve();
 
                                 Client client = new Client(msg.SenderConnection, playerInfo);
-                                client.playerInfo.playerState = PlayerState.Lobby;
+                                client.playerInfo.updateInfo.playerState = PlayerState.Lobby;
 
                                 client.ClientDisconnected += ClientDisconnected;
 
@@ -208,10 +208,10 @@ namespace ServerHub.Hub
                                         {
                                             if (client != null)
                                             {
-                                                client.UpdatePlayerInfo(new PlayerInfo(msg));
+                                                client.UpdatePlayerInfo(msg);
                                                 if (Settings.Instance.Misc.PlayerColors.ContainsKey(client.playerInfo.playerId))
                                                 {
-                                                    client.playerInfo.playerNameColor = Settings.Instance.Misc.PlayerColors[client.playerInfo.playerId];
+                                                    client.playerInfo.updateInfo.playerNameColor = Settings.Instance.Misc.PlayerColors[client.playerInfo.playerId];
                                                 }
                                             }
                                         }
@@ -271,7 +271,7 @@ namespace ServerHub.Hub
                                             {
                                                 RoomsController.ClientLeftRoom(client);
                                                 client.joinedRoomID = 0;
-                                                client.playerInfo.playerState = PlayerState.Lobby;
+                                                client.playerInfo.updateInfo.playerState = PlayerState.Lobby;
                                                 if (!hubClients.Contains(client))
                                                     hubClients.Add(client);
                                             }
@@ -579,7 +579,7 @@ namespace ServerHub.Hub
                         if (allClients[i].playerConnection.Status == NetConnectionStatus.Disconnected)
                         {
                             ClientDisconnected(allClients[i]);
-                        }else if(allClients[i].playerInfo.playerState == PlayerState.Lobby && DateTime.Now.Subtract(allClients[i].joinTime).TotalSeconds >= 30)
+                        }else if(allClients[i].playerInfo.updateInfo.playerState == PlayerState.Lobby && DateTime.Now.Subtract(allClients[i].joinTime).TotalSeconds >= 30)
                         {
                             allClients[i].playerConnection.Disconnect("");
                             ClientDisconnected(allClients[i]);

@@ -25,7 +25,10 @@ namespace ServerHub.Data
         public PlayerInfo playerInfo;
         public DateTime joinTime;
 
-        public Queue<PlayerInfo> playerInfoHistory = new Queue<PlayerInfo>();
+        public bool fullUpdate;
+
+        public Queue<PlayerUpdate> playerUpdateHistory = new Queue<PlayerUpdate>(10);
+        public List<HitData> playerHitsHistory = new List<HitData>(30);
         public Queue<UnityVOIP.VoipFragment> playerVoIPQueue = new Queue<UnityVOIP.VoipFragment>();
 
         public uint joinedRoomID;
@@ -41,14 +44,36 @@ namespace ServerHub.Data
             joinTime = DateTime.Now;
         }
 
-        public void UpdatePlayerInfo(PlayerInfo playerInfo)
+        public void UpdatePlayerInfo(NetIncomingMessage msg)
         {
-            this.playerInfo = playerInfo;
-            playerInfoHistory.Enqueue(playerInfo);
-
-            while (playerInfoHistory.Count > 180)
+            if(msg.ReadByte() == 0)
             {
-                playerInfoHistory.Dequeue();
+                playerInfo.updateInfo = new PlayerUpdate(msg);
+                byte hitCount = msg.ReadByte();
+
+                for(int i = 0; i < hitCount; i++)
+                {
+                    playerInfo.hitsLastUpdate.Add(new HitData(msg));
+                }
+            }
+            else
+            {
+                playerInfo = new PlayerInfo(msg);
+                fullUpdate = true;
+            }
+
+            playerUpdateHistory.Enqueue(playerInfo.updateInfo);
+
+            while (playerUpdateHistory.Count >= 10)
+            {
+                playerUpdateHistory.Dequeue();
+            }
+
+            playerHitsHistory.AddRange(playerInfo.hitsLastUpdate);
+
+            if(playerHitsHistory.Count > 30)
+            {
+                playerHitsHistory.RemoveRange(0, playerHitsHistory.Count - 30);
             }
         }
 

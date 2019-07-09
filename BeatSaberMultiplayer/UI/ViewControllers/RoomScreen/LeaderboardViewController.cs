@@ -30,7 +30,6 @@ namespace BeatSaberMultiplayer
 
         LevelListTableCell _songTableCell;
 
-        List<PlayerInfo> _playerInfos = new List<PlayerInfo>();
         List<LeaderboardTableCell> _tableCells = new List<LeaderboardTableCell>();
 
         public IPreviewBeatmapLevel _selectedSong;
@@ -121,16 +120,15 @@ namespace BeatSaberMultiplayer
 
         }
 
-        public void SetLeaderboard(List<PlayerInfo> players)
+        public void SetLeaderboard()
         {
-            int prevCount = _playerInfos.Count;
-            _playerInfos.Clear();
-            if (players != null)
-            {
-                _playerInfos.AddRange(players.Where(x => x.playerState == PlayerState.Game || (x.playerState == PlayerState.Room && x.playerScore > 0)).OrderByDescending(x => x.playerScore));
-            }
+
+            var scores = InGameOnlineController.Instance.playerScores;
+
+            if (scores == null)
+                return;
             
-            if (prevCount != _playerInfos.Count)
+            if (scores.Length != _tableCells.Count)
             {
                 for (int i = 0; i < _tableCells.Count; i++)
                 {
@@ -138,19 +136,19 @@ namespace BeatSaberMultiplayer
                 }
                 _tableCells.Clear();
                 _leaderboardTableView.RefreshTable(false);
-                if (prevCount == 0 && _playerInfos.Count > 0)
-                {
-                    StartCoroutine(ScrollWithDelay());
-                }
+                //if (prevCount == 0 && _playerInfos.Count > 0)
+                //{
+                //    StartCoroutine(ScrollWithDelay());
+                //}
             }
             else
             {
-                for (int i = 0; i < _playerInfos.Count; i++)
+                for (int i = 0; i < scores.Length; i++)
                 {
                     if (_tableCells.Count > i)
                     {
-                        _tableCells[i].playerName = _playerInfos[i].playerName;
-                        _tableCells[i].score = (int)_playerInfos[i].playerScore;
+                        _tableCells[i].playerName = scores[i].name;
+                        _tableCells[i].score = (int)scores[i].score;
                         _tableCells[i].rank = i + 1;
                         _tableCells[i].showFullCombo = false;
                     }
@@ -210,7 +208,7 @@ namespace BeatSaberMultiplayer
             if (_timerText == null || _playNowButton == null)
                 return;
 
-            _timerText.text = results ? $"RESULTS {(int)time}" : SecondsToString(time);
+            _timerText.text = results ? $"RESULTS {((int)time).ToString()}" : SecondsToString(time);
             _playNowButton.interactable = (time > 15f);
         }
 
@@ -218,7 +216,7 @@ namespace BeatSaberMultiplayer
         {
             int minutes = (int)(time / 60f);
             int seconds = (int)(time - minutes * 60);
-            return minutes.ToString() + ":" + string.Format("{0:00}", seconds);
+            return minutes.ToString() + ":" + string.Format("{0:00}", seconds.ToString());
         }
 
         public TableCell CellForIdx(int row)
@@ -227,8 +225,8 @@ namespace BeatSaberMultiplayer
 
             cell.reuseIdentifier = "ResultsCell";
 
-            cell.playerName = _playerInfos[row].playerName;
-            cell.score = (int)_playerInfos[row].playerScore;
+            cell.playerName = InGameOnlineController.Instance.playerScores[row].name;
+            cell.score = (int)InGameOnlineController.Instance.playerScores[row].score;
             cell.rank = row + 1;
             cell.showFullCombo = false;
 
@@ -238,7 +236,7 @@ namespace BeatSaberMultiplayer
 
         public int NumberOfCells()
         {
-            return _playerInfos.Count;
+            return InGameOnlineController.Instance.playerScores.Length;
         }
 
         public float CellSize()

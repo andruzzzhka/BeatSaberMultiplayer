@@ -61,7 +61,7 @@ namespace ServerHub.Data
                 }
                 else
                 {
-                    startLevelInfo = null;
+                    startLevelInfo = default;
                     selectedSong = null;
                 }
             }

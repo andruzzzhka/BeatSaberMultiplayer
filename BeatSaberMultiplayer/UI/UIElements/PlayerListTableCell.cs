@@ -21,6 +21,9 @@ namespace BeatSaberMultiplayer.UI.UIElements
         {
             set
             {
+                if (playerInfo == null)
+                    return;
+
                 if (value < 0f)
                 {
                     _scoreText.text = "";
@@ -105,6 +108,8 @@ namespace BeatSaberMultiplayer.UI.UIElements
         public PlayerInfo playerInfo;
         public IPlayerManagementButtons buttonsInterface;
 
+        private Sprite _buttonStrokeSprite;
+
         private Image _playerSpeakerIcon;
         private Button _transferHostButton;
         private Button _muteButton;
@@ -131,6 +136,11 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
             reuseIdentifier = "PlayerCell";
 
+            if(_buttonStrokeSprite == null)
+            {
+                _buttonStrokeSprite = Resources.FindObjectsOfTypeAll<Sprite>().First(x => x.name == "RoundRectSmallStroke");
+            }
+
             _playerNameText.rectTransform.anchoredPosition = new Vector2(12f, 0f);
 
             _playerSpeakerIcon = new GameObject("Player Speaker Icon", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();
@@ -149,7 +159,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
             _transferHostButton.ToggleWordWrapping(false);
             _transferHostButton.SetButtonTextSize(3.25f);
-            _transferHostButton.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").sprite = Resources.FindObjectsOfTypeAll<Sprite>().First(x => x.name == "RoundRectSmallStroke");
+            _transferHostButton.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").sprite = _buttonStrokeSprite;
             _transferHostButtonEnabled = true;
 
             _muteButton = BeatSaberUI.CreateUIButton(transform as RectTransform, "CancelButton", new Vector2(30f, 0f), new Vector2(14f, 6f), () => {
@@ -159,7 +169,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
             _isMuted = false;
 
             _muteButton.ToggleWordWrapping(false);
-            _muteButton.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").sprite = Resources.FindObjectsOfTypeAll<Sprite>().First(x => x.name == "RoundRectSmallStroke");
+            _muteButton.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").sprite = _buttonStrokeSprite;
             _muteButtonEnabled = true;
 
             _scoreText.overflowMode = TextOverflowModes.Overflow;
@@ -168,7 +178,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         public void Update()
         {
-            if (_muteButton != null)
+            if (_muteButton != null && playerInfo != null)
             {
                 if (_isMuted && !InGameOnlineController.Instance.mutedPlayers.Contains(playerInfo.playerId))
                 {

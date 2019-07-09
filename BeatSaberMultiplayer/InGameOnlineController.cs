@@ -57,9 +57,14 @@ namespace BeatSaberMultiplayer
 
         private PlayerAvatarInput _avatarInput;
 
-        private Dictionary<ulong, OnlinePlayerController> _players = new Dictionary<ulong, OnlinePlayerController>();
+        public Dictionary<ulong, OnlinePlayerController> players = new Dictionary<ulong, OnlinePlayerController>();
+        public PlayerScore[] playerScores;
+        private ulong[] _playerIds;
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
         private GameObject _scoreScreen;
+
+        private bool _avatarChanged;
+        private string _prevAvatarHash;
 
         private TextMeshPro _messageDisplayText;
         private float _messageDisplayTime;
@@ -167,9 +172,9 @@ namespace BeatSaberMultiplayer
 
         public void VoiceChatVolumeChanged(float volume)
         {
-            if (_players != null)
+            if (players != null)
             {
-                foreach (var player in _players.Values.Where(x => x != null && !x.destroyed)) {
+                foreach (var player in players.Values.Where(x => x != null && !x.destroyed)) {
                     player.SetVoIPVolume(volume);
                 }
             }
@@ -177,9 +182,9 @@ namespace BeatSaberMultiplayer
 
         public void VoiceChatSpatialAudioChanged(bool enabled)
         {
-            if (_players != null)
+            if (players != null)
             {
-                foreach (var player in _players.Values.Where(x => x != null && !x.destroyed))
+                foreach (var player in players.Values.Where(x => x != null && !x.destroyed))
                 {
                     player.SetSpatialAudioState(enabled);
                 }
@@ -188,11 +193,11 @@ namespace BeatSaberMultiplayer
 
         public bool VoiceChatIsTalking(ulong playerId)
         {
-            if(Config.Instance.EnableVoiceChat && _players != null)
+            if(Config.Instance.EnableVoiceChat && players != null)
                 if (playerId == Client.Instance.playerInfo.playerId)
                     return isRecording;
                 else
-                    if (_players.TryGetValue(playerId, out OnlinePlayerController player))
+                    if (players.TryGetValue(playerId, out OnlinePlayerController player))
                         if (player != null && !player.destroyed)
                             return player.IsTalking();
                         else
@@ -237,6 +242,18 @@ namespace BeatSaberMultiplayer
             {
                 Client.Instance.playerInfo.avatarHash = Config.Instance.PublicAvatarHash;
             }
+        }
+
+        public bool IsPlayerVisible(ulong playerId)
+        {
+            if(players.TryGetValue(playerId, out OnlinePlayerController player))
+            {
+                return  (player.playerInfo.updateInfo.playerState == PlayerState.Game && _currentScene == "GameCore") ||
+                        (player.playerInfo.updateInfo.playerState == PlayerState.Room && _currentScene == "MenuCore") ||
+                        (player.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs && _currentScene == "MenuCore");
+            }
+            else
+                return false;
         }
 
         public void MenuSceneLoaded()
@@ -291,118 +308,131 @@ namespace BeatSaberMultiplayer
                         float currentTime = msg.ReadFloat();
                         float totalTime = msg.ReadFloat();
 
+                        bool fullUpdate = (msg.ReadByte() == 1);
+
                         int playersCount = msg.ReadInt32();
-                        List<PlayerInfo> playerInfos = new List<PlayerInfo>(playersCount);
-                        try
-                        {
-                            PlayerInfo newPlayer;
-                            _spectatorInRoom = false;
 
-                            for (int j = 0; j < playersCount; j++)
-                            {
-                                newPlayer = new PlayerInfo(msg);
-                                if( (newPlayer.playerState == PlayerState.Game && _currentScene == "GameCore") || 
-                                    (newPlayer.playerState == PlayerState.Room && _currentScene == "MenuCore") || 
-                                    (newPlayer.playerState == PlayerState.DownloadingSongs && _currentScene == "MenuCore"))
-                                    playerInfos.Add(newPlayer);
-                                _spectatorInRoom |= newPlayer.playerState == PlayerState.Spectating;
-                            }
-                        }
-                        catch (Exception e)
+                        if (_playerIds == null || _playerIds.Length != playersCount)
                         {
-#if DEBUG
-                            Plugin.log.Critical($"Unable to parse PlayerInfo! Player count={playersCount} Message size={msg.LengthBytes} Excpetion: {e}");
-#endif
-                            return;
+                            _playerIds = new ulong[playersCount];
+                        }
+                        if (playerScores == null || playerScores.Length != playersCount)
+                        {
+                            playerScores = new PlayerScore[playersCount];
                         }
 
-                        int localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
-                        
-                        try
+                        _spectatorInRoom = false;
+                        for (int i = 0; i < playersCount; i++)
                         {
-                            int index = 0;
-                            OnlinePlayerController player = null;
+                            ulong playerId = msg.ReadUInt64();
+                            _playerIds[i] = playerId;
 
-                            foreach (PlayerInfo info in playerInfos)
+                            if (players.TryGetValue(playerId, out OnlinePlayerController player))
                             {
-                                try
+                                if (player == null)
                                 {
-                                    if (_players.ContainsKey(info.playerId))
+                                    player = new GameObject("OnlinePlayerController").AddComponent<OnlinePlayerController>();
+                                    players[playerId] = player;
+                                }
+
+                                if (fullUpdate)
+                                {
+                                    PlayerInfo playerInfo = new PlayerInfo(msg);
+                                    player.playerInfo = playerInfo;
+                                    _spectatorInRoom |= playerInfo.updateInfo.playerState == PlayerState.Spectating;
+                                }
+                                else
+                                {
+                                    PlayerUpdate update = new PlayerUpdate(msg);
+                                    player.NewUpdateReceived(update);
+
+                                    byte hitCount = msg.ReadByte();
+
+                                    player.playerInfo.hitsLastUpdate.Clear();
+
+                                    for (int j = 0; j < hitCount; j++)
                                     {
-                                        player = _players[info.playerId];
-                                        if(player == null)
-                                        {
-                                            player = new GameObject("OnlinePlayerController").AddComponent<OnlinePlayerController>();
-                                            _players[info.playerId] = player;
-                                        }
-                                    }
-                                    else
-                                    { 
-                                        player = new GameObject("OnlinePlayerController").AddComponent<OnlinePlayerController>();
-                                        _players.Add(info.playerId, player);
+                                        player.playerInfo.hitsLastUpdate.Add(new HitData(msg));
                                     }
 
-                                    player.PlayerInfo = info;
-                                    player.avatarOffset = (index - localPlayerIndex) * (_currentScene == "GameCore" ? 5f : 0f);
-                                    player.SetAvatarState(((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && _loaded) || ShowAvatarsInRoom()) && !Client.Instance.inRadioMode);
-
-                                    index++;
-                                }
-                                catch(Exception e)
-                                {
-                                    Console.WriteLine($"PlayerController exception: {e}");
+                                    _spectatorInRoom |= update.playerState == PlayerState.Spectating;
                                 }
                             }
-
-
-                            
-
-
-
-                            if (_players.Count > playerInfos.Count)
+                            else
                             {
-                                Dictionary<ulong, OnlinePlayerController> FindMissing(Dictionary<ulong, OnlinePlayerController> players, List<PlayerInfo> infos)
+                                if (fullUpdate)
                                 {
-                                    Dictionary<ulong, OnlinePlayerController> missing = new Dictionary<ulong, OnlinePlayerController>();
-
-                                    HashSet<ulong> s = new HashSet<ulong>();
-                                    for (int i = 0; i < infos.Count; i++)
-                                        s.Add(infos[i].playerId);
-
-                                    foreach (var pair in players)
-                                        if (!s.Contains(pair.Key))
-                                            missing.Add(pair.Key, pair.Value);
-
-                                    return missing;
+                                    player = new GameObject("OnlinePlayerController").AddComponent<OnlinePlayerController>();
+                                    PlayerInfo playerInfo = new PlayerInfo(msg);
+                                    player.playerInfo = playerInfo;
+                                    _spectatorInRoom |= playerInfo.updateInfo.playerState == PlayerState.Spectating;
+                                    players.Add(playerId, player);
                                 }
-
-
-                                var playersToRemove = FindMissing(_players, playerInfos);
-
-                                foreach (var playerPair in playersToRemove)
+                                else
                                 {
-                                    if (playerPair.Value != null && !playerPair.Value.destroyed)
-                                    {
-                                        Destroy(playerPair.Value.gameObject);
-                                        _players.Remove(playerPair.Key);
-                                    }
+                                    Plugin.log.Error("Not enough info to create new player controller! Waiting for full update...");
+                                    new PlayerUpdate(msg);
+                                    byte hitCount = msg.ReadByte();
+                                    msg.ReadBytes(hitCount*5);
                                 }
                             }
+
+                            player.SetAvatarState(((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && _loaded) || ShowAvatarsInRoom()) && !Client.Instance.inRadioMode);
                         }
-                        catch (Exception e)
+
+                        Array.Sort(_playerIds);
+
+                        int localPlayerIndex = Array.IndexOf(_playerIds, Client.Instance.playerInfo.playerId);
+                        int counter = 0;
+                        bool playerRemoved = false;
+
+                        foreach (var pair in players)
                         {
-                            Console.WriteLine($"PlayerControllers exception: {e}");
+                            if (!_playerIds.Contains(pair.Key))
+                            {
+                                if (pair.Value != null && !pair.Value.destroyed)
+                                {
+                                    Destroy(pair.Value.gameObject);
+                                    playerRemoved = true;
+                                    players.Remove(pair.Key);
+                                }
+                            }
+                            else
+                            {
+                                pair.Value.avatarOffset = (counter - localPlayerIndex) * (_currentScene == "GameCore" ? 5f : 0f);
+                                playerScores[counter] = new PlayerScore(pair.Value);
+                                counter++;
+                            }
                         }
-                        
+
+                        if (playerRemoved)
+                        {
+                            List<ulong> removed = new List<ulong>();
+
+                            foreach (var pair in players)
+                                if(pair.Value == null || pair.Value.destroyed)
+                                    removed.Add(pair.Key);
+
+                            foreach(ulong key in removed)
+                                players.Remove(key);
+                        }
+
                         if (_currentScene == "GameCore" && _loaded)
                         {
-                            playerInfos = playerInfos.OrderByDescending(x => x.playerScore).ToList();
-                            localPlayerIndex = playerInfos.FindIndexInList(Client.Instance.playerInfo);
+                            Array.Sort(playerScores);
+                            localPlayerIndex = Array.FindIndex(playerScores, (x) => { return x.id == Client.Instance.playerInfo.playerId; });
+
                             if (_scoreDisplays.Count < 5)
                             {
-                                _scoreScreen = new GameObject("ScoreScreen");
-                                _scoreScreen.transform.position = new Vector3(0f, 4f, 12f);
-                                _scoreScreen.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+                                if (_scoreScreen == null)
+                                {
+                                    _scoreScreen = new GameObject("ScoreScreen");
+                                    _scoreScreen.transform.position = new Vector3(0f, 4f, 12f);
+                                    _scoreScreen.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+                                }
+
+                                foreach (var display in _scoreDisplays)
+                                    Destroy(display.gameObject);
 
                                 _scoreDisplays.Clear();
 
@@ -416,15 +446,15 @@ namespace BeatSaberMultiplayer
                                 }
                             }
 
-                            if (playerInfos.Count <= 5)
+                            if (playerScores.Length <= 5)
                             {
-                                for (int i = 0; i < playerInfos.Count; i++)
+                                for (int i = 0; i < playerScores.Length; i++)
                                 {
-                                    _scoreDisplays[i].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                    _scoreDisplays[i].UpdatePlayerInfo(playerScores[i], i);
                                 }
-                                for (int i = playerInfos.Count; i < _scoreDisplays.Count; i++)
+                                for (int i = playerScores.Length; i < _scoreDisplays.Count; i++)
                                 {
-                                    _scoreDisplays[i].UpdatePlayerInfo(null, 0);
+                                    _scoreDisplays[i].UpdatePlayerInfo(default, 0);
                                 }
                             }
                             else
@@ -433,21 +463,21 @@ namespace BeatSaberMultiplayer
                                 {
                                     for (int i = 0; i < 5; i++)
                                     {
-                                        _scoreDisplays[i].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                        _scoreDisplays[i].UpdatePlayerInfo(playerScores[i], i);
                                     }
                                 }
-                                else if (localPlayerIndex > playerInfos.Count - 3)
+                                else if (localPlayerIndex > playerScores.Length - 3)
                                 {
-                                    for (int i = playerInfos.Count - 5; i < playerInfos.Count; i++)
+                                    for (int i = playerScores.Length - 5; i < playerScores.Length; i++)
                                     {
-                                        _scoreDisplays[i - (playerInfos.Count - 5)].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                        _scoreDisplays[i - (playerScores.Length - 5)].UpdatePlayerInfo(playerScores[i], i);
                                     }
                                 }
                                 else
                                 {
                                     for (int i = localPlayerIndex - 2; i < localPlayerIndex + 3; i++)
                                     {
-                                        _scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(playerInfos[i], playerInfos.FindIndexInList(playerInfos[i]));
+                                        _scoreDisplays[i - (localPlayerIndex - 2)].UpdatePlayerInfo(playerScores[i], i);
                                     }
                                 }
 
@@ -460,7 +490,7 @@ namespace BeatSaberMultiplayer
                         if (!Config.Instance.EnableVoiceChat)
                             return;
 
-                        foreach (var playerPair in _players)
+                        foreach (var playerPair in players)
                         {
                             playerPair.Value.VoIPUpdate();
                         }
@@ -485,7 +515,7 @@ namespace BeatSaberMultiplayer
                                         Plugin.log.Info("New Speex decoder created!");
                                     }
 
-                                    if(_players.TryGetValue(data.playerId, out OnlinePlayerController player))
+                                    if(players.TryGetValue(data.playerId, out OnlinePlayerController player))
                                     {
                                         player?.PlayVoIPFragment(speexDec.Decode(data.data), data.index);
                                     }
@@ -659,7 +689,7 @@ namespace BeatSaberMultiplayer
             {
                 if (_colorChanger)
                 {
-                    Client.Instance.playerInfo.playerNameColor = HSBColor.ToColor(_color);
+                    Client.Instance.playerInfo.updateInfo.playerNameColor = HSBColor.ToColor(_color);
                     _color.h += 0.001388f;
                     if(_color.h >= 1f)
                     {
@@ -740,31 +770,31 @@ namespace BeatSaberMultiplayer
                 _avatarInput = CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput;
             }
 
-            Client.Instance.playerInfo.headPos = _avatarInput.HeadPosRot.Position;
-            Client.Instance.playerInfo.headRot = _avatarInput.HeadPosRot.Rotation;
+            Client.Instance.playerInfo.updateInfo.headPos = _avatarInput.HeadPosRot.Position;
+            Client.Instance.playerInfo.updateInfo.headRot = _avatarInput.HeadPosRot.Rotation;
 
-            Client.Instance.playerInfo.leftHandPos = _avatarInput.LeftPosRot.Position;
-            Client.Instance.playerInfo.leftHandRot = _avatarInput.LeftPosRot.Rotation;
+            Client.Instance.playerInfo.updateInfo.leftHandPos = _avatarInput.LeftPosRot.Position;
+            Client.Instance.playerInfo.updateInfo.leftHandRot = _avatarInput.LeftPosRot.Rotation;
 
-            Client.Instance.playerInfo.rightHandPos = _avatarInput.RightPosRot.Position;
-            Client.Instance.playerInfo.rightHandRot = _avatarInput.RightPosRot.Rotation;
+            Client.Instance.playerInfo.updateInfo.rightHandPos = _avatarInput.RightPosRot.Position;
+            Client.Instance.playerInfo.updateInfo.rightHandRot = _avatarInput.RightPosRot.Rotation;
 
             if (CustomAvatar.Plugin.IsFullBodyTracking)
             {
-                Client.Instance.playerInfo.fullBodyTracking = true;
+                Client.Instance.playerInfo.updateInfo.fullBodyTracking = true;
 
-                Client.Instance.playerInfo.pelvisPos = _avatarInput.PelvisPosRot.Position;
-                Client.Instance.playerInfo.pelvisRot = _avatarInput.PelvisPosRot.Rotation;
+                Client.Instance.playerInfo.updateInfo.pelvisPos = _avatarInput.PelvisPosRot.Position;
+                Client.Instance.playerInfo.updateInfo.pelvisRot = _avatarInput.PelvisPosRot.Rotation;
 
-                Client.Instance.playerInfo.leftLegPos = _avatarInput.LeftLegPosRot.Position;
-                Client.Instance.playerInfo.leftLegRot = _avatarInput.LeftLegPosRot.Rotation;
+                Client.Instance.playerInfo.updateInfo.leftLegPos = _avatarInput.LeftLegPosRot.Position;
+                Client.Instance.playerInfo.updateInfo.leftLegRot = _avatarInput.LeftLegPosRot.Rotation;
 
-                Client.Instance.playerInfo.rightLegPos = _avatarInput.RightLegPosRot.Position;
-                Client.Instance.playerInfo.rightLegRot = _avatarInput.RightLegPosRot.Rotation;
+                Client.Instance.playerInfo.updateInfo.rightLegPos = _avatarInput.RightLegPosRot.Position;
+                Client.Instance.playerInfo.updateInfo.rightLegRot = _avatarInput.RightLegPosRot.Rotation;
             }
             else
             {
-                Client.Instance.playerInfo.fullBodyTracking = false;
+                Client.Instance.playerInfo.updateInfo.fullBodyTracking = false;
             }
 
             if(_vrPlatformHelper == null)
@@ -774,37 +804,44 @@ namespace BeatSaberMultiplayer
 
             if (_vrPlatformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
             {
-                Client.Instance.playerInfo.leftHandRot *= oculusTouchRotOffset;
-                Client.Instance.playerInfo.leftHandPos += oculusTouchPosOffset;
-                Client.Instance.playerInfo.rightHandRot *= oculusTouchRotOffset;
-                Client.Instance.playerInfo.rightHandPos += oculusTouchPosOffset;
+                Client.Instance.playerInfo.updateInfo.leftHandRot *= oculusTouchRotOffset;
+                Client.Instance.playerInfo.updateInfo.leftHandPos += oculusTouchPosOffset;
+                Client.Instance.playerInfo.updateInfo.rightHandRot *= oculusTouchRotOffset;
+                Client.Instance.playerInfo.updateInfo.rightHandPos += oculusTouchPosOffset;
             }
             else if (_vrPlatformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
             {
-                Client.Instance.playerInfo.leftHandRot *= openVrRotOffset;
-                Client.Instance.playerInfo.leftHandPos += openVrPosOffset;
-                Client.Instance.playerInfo.rightHandRot *= openVrRotOffset;
-                Client.Instance.playerInfo.rightHandPos += openVrPosOffset;
+                Client.Instance.playerInfo.updateInfo.leftHandRot *= openVrRotOffset;
+                Client.Instance.playerInfo.updateInfo.leftHandPos += openVrPosOffset;
+                Client.Instance.playerInfo.updateInfo.rightHandRot *= openVrRotOffset;
+                Client.Instance.playerInfo.updateInfo.rightHandPos += openVrPosOffset;
             }
 
             if (_currentScene == "GameCore" && _loaded)
             {
-                Client.Instance.playerInfo.playerProgress = audioTimeSync.songTime;
+                Client.Instance.playerInfo.updateInfo.playerProgress = audioTimeSync.songTime;
             }
-            else if(Client.Instance.playerInfo.playerState != PlayerState.DownloadingSongs && Client.Instance.playerInfo.playerState != PlayerState.Game)
+            else if(Client.Instance.playerInfo.updateInfo.playerState != PlayerState.DownloadingSongs && Client.Instance.playerInfo.updateInfo.playerState != PlayerState.Game)
             {
-                Client.Instance.playerInfo.playerProgress = 0;
+                Client.Instance.playerInfo.updateInfo.playerProgress = 0;
             }
 
             if (Config.Instance.SpectatorMode)
             {
-                Client.Instance.playerInfo.playerScore = 0;
-                Client.Instance.playerInfo.playerEnergy = 0f;
-                Client.Instance.playerInfo.playerCutBlocks = 0;
-                Client.Instance.playerInfo.playerComboBlocks = 0;
+                Client.Instance.playerInfo.updateInfo.playerScore = 0;
+                Client.Instance.playerInfo.updateInfo.playerEnergy = 0f;
+                Client.Instance.playerInfo.updateInfo.playerCutBlocks = 0;
+                Client.Instance.playerInfo.updateInfo.playerComboBlocks = 0;
             }
 
-            Client.Instance.SendPlayerInfo();
+            if (Client.Instance.playerInfo.avatarHash != _prevAvatarHash)
+            {
+                _avatarChanged = true;
+                _prevAvatarHash = Client.Instance.playerInfo.avatarHash;
+            }
+
+            Client.Instance.SendPlayerInfo(_avatarChanged);
+            _avatarChanged = false;
         }
 
         private bool ShowAvatarsInGame()
@@ -821,12 +858,12 @@ namespace BeatSaberMultiplayer
         {
             try
             {
-                foreach(var playerPair in _players)
+                foreach(var playerPair in players)
                 {
                     if (playerPair.Value != null && !playerPair.Value.destroyed)
                         Destroy(playerPair.Value.gameObject);
                 }
-                _players.Clear();
+                players.Clear();
                 Plugin.log.Info("Destroyed player controllers!");
             }catch(Exception e)
             {
@@ -1035,12 +1072,12 @@ namespace BeatSaberMultiplayer
 
         private void EnergyDidChangeEvent(float energy)
         {
-            Client.Instance.playerInfo.playerEnergy = energy * 100;
+            Client.Instance.playerInfo.updateInfo.playerEnergy = energy * 100;
         }
 
         private void ComboDidChangeEvent(int obj)
         {
-            Client.Instance.playerInfo.playerComboBlocks = (uint)obj;
+            Client.Instance.playerInfo.updateInfo.playerComboBlocks = (uint)obj;
         }
 
         private void NoteWasCutEvent(NoteData arg1, NoteCutInfo arg2, int score)
@@ -1054,13 +1091,13 @@ namespace BeatSaberMultiplayer
                 if (arg2.allIsOK)
                 {
                     Client.Instance.playerInfo.hitsLastUpdate.Add(new HitData(arg1, true, arg2));
-                    Client.Instance.playerInfo.playerCutBlocks++;
-                    Client.Instance.playerInfo.playerTotalBlocks++;
+                    Client.Instance.playerInfo.updateInfo.playerCutBlocks++;
+                    Client.Instance.playerInfo.updateInfo.playerTotalBlocks++;
                 }
                 else
                 {
                     Client.Instance.playerInfo.hitsLastUpdate.Add(new HitData(arg1, true, arg2));
-                    Client.Instance.playerInfo.playerTotalBlocks++;
+                    Client.Instance.playerInfo.updateInfo.playerTotalBlocks++;
                 }
             }
         }
@@ -1068,12 +1105,12 @@ namespace BeatSaberMultiplayer
         private void NoteWasMissedEvent(NoteData arg1, int arg2)
         {
             Client.Instance.playerInfo.hitsLastUpdate.Add(new HitData(arg1, false));
-            Client.Instance.playerInfo.playerTotalBlocks++;
+            Client.Instance.playerInfo.updateInfo.playerTotalBlocks++;
         }
 
         private void ScoreChanged(int rawScore, int score)
         {
-            Client.Instance.playerInfo.playerScore = (uint)score;
+            Client.Instance.playerInfo.updateInfo.playerScore = (uint)score;
         }
     }
 

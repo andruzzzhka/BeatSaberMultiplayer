@@ -173,9 +173,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case 0:
                             {
 
-                                Client.Instance.playerInfo.playerState = PlayerState.Room;
+                                Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Room;
                                 Client.Instance.RequestChannelInfo(channelId);
-                                Client.Instance.SendPlayerInfo();
+                                Client.Instance.SendPlayerInfo(true);
                                 joined = true;
                                 InGameOnlineController.Instance.needToSendUpdates = true;
                             }
@@ -240,7 +240,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case CommandType.StartLevel:
                             {
 
-                                if (Client.Instance.playerInfo.playerState == PlayerState.DownloadingSongs)
+                                if (Client.Instance.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
                                     return;
 
                                 if (nextSongSkipped)
@@ -267,7 +267,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 LoadBeatmapLevelAsync(level,
                                     (success, beatmapLevel) =>
                                     {
-                                        StartLevel(beatmapLevel, characteristic, levelInfo.difficulty, levelInfo.modifiers);
+                                        StartLevel(beatmapLevel, characteristic, levelInfo.difficulty, levelInfo.modifiers.ToGameplayModifiers());
                                     });
                             }
                             break;
@@ -344,7 +344,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                         if (level == null)
                         {
-                            Client.Instance.playerInfo.playerState = PlayerState.DownloadingSongs;
+                            Client.Instance.playerInfo.updateInfo.playerState = PlayerState.DownloadingSongs;
                             SongDownloader.Instance.RequestSongByLevelID(channelInfo.currentSong.hash,
                             (song) =>
                             {
@@ -356,7 +356,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                         void onLoaded(SongCore.Loader sender, Dictionary<string, CustomPreviewBeatmapLevel> songs)
                                         {
                                             SongCore.Loader.SongsLoadedEvent -= onLoaded;
-                                            Client.Instance.playerInfo.playerState = PlayerState.Room;
+                                            Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Room;
                                             channelInfo.currentSong.UpdateLevelId();
                                             level = songs.FirstOrDefault(x => x.Value.levelID == channelInfo.currentSong.levelId).Value;
                                             if (level != null)
@@ -379,10 +379,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             });
                         }
 
-                        Client.Instance.playerInfo.playerScore = 0;
-                        Client.Instance.playerInfo.playerEnergy = 0f;
-                        Client.Instance.playerInfo.playerCutBlocks = 0;
-                        Client.Instance.playerInfo.playerComboBlocks = 0;
+                        Client.Instance.playerInfo.updateInfo.playerScore = 0;
+                        Client.Instance.playerInfo.updateInfo.playerEnergy = 0f;
+                        Client.Instance.playerInfo.updateInfo.playerCutBlocks = 0;
+                        Client.Instance.playerInfo.updateInfo.playerComboBlocks = 0;
                     }
                     break;
                 case ChannelState.InGame:
@@ -414,10 +414,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void StartLevel(IBeatmapLevel level, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, GameplayModifiers modifiers, float startTime = 0f)
         {
-            Client.Instance.playerInfo.playerComboBlocks = 0;
-            Client.Instance.playerInfo.playerCutBlocks = 0;
-            Client.Instance.playerInfo.playerEnergy = 0f;
-            Client.Instance.playerInfo.playerScore = 0;
+            Client.Instance.playerInfo.updateInfo.playerComboBlocks = 0;
+            Client.Instance.playerInfo.updateInfo.playerCutBlocks = 0;
+            Client.Instance.playerInfo.updateInfo.playerEnergy = 0f;
+            Client.Instance.playerInfo.updateInfo.playerScore = 0;
 
             MenuTransitionsHelperSO menuSceneSetupData = Resources.FindObjectsOfTypeAll<MenuTransitionsHelperSO>().FirstOrDefault();
 
@@ -426,7 +426,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().currentLocalPlayer.playerSpecificSettings;
 
                 channelInfo.state = ChannelState.InGame;
-                Client.Instance.playerInfo.playerState = PlayerState.Game;
+                Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Game;
 
                 IDifficultyBeatmap difficultyBeatmap = level.GetDifficultyBeatmap(characteristic, difficulty, false);
 
@@ -488,7 +488,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 LoadBeatmapLevelAsync(level, 
                     (success, beatmapLevel) =>
                     {
-                        StartLevel(beatmapLevel, _beatmapCharacteristics.First(x => x.serializedName == channelInfo.currentLevelOptions.characteristicName), channelInfo.currentLevelOptions.difficulty, channelInfo.currentLevelOptions.modifiers, currentTime);
+                        StartLevel(beatmapLevel, _beatmapCharacteristics.First(x => x.serializedName == channelInfo.currentLevelOptions.characteristicName), channelInfo.currentLevelOptions.difficulty, channelInfo.currentLevelOptions.modifiers.ToGameplayModifiers(), currentTime);
                     });
 
             }

@@ -30,11 +30,11 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             _beatmapDataModel = new GameObject("CustomBeatmapDataModel").AddComponent<BeatmapDataModel>();
             if (BS_Utils.Plugin.LevelData.IsSet)
             {
-                LevelOptionsInfo levelInfo = owner.PlayerInfo.playerLevelOptions;
-                IDifficultyBeatmap diffBeatmap = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.level.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic.serializedName == owner.PlayerInfo.playerLevelOptions.characteristicName).difficultyBeatmaps.First(x => x.difficulty == owner.PlayerInfo.playerLevelOptions.difficulty);
+                LevelOptionsInfo levelInfo = owner.playerInfo.updateInfo.playerLevelOptions;
+                IDifficultyBeatmap diffBeatmap = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.level.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic.serializedName == owner.playerInfo.updateInfo.playerLevelOptions.characteristicName).difficultyBeatmaps.First(x => x.difficulty == owner.playerInfo.updateInfo.playerLevelOptions.difficulty);
                 BeatmapData data = diffBeatmap.beatmapData;
 
-                _beatmapDataModel.beatmapData = BeatDataTransformHelper.CreateTransformedBeatmapData(data, levelInfo.modifiers, PracticeSettings.defaultPracticeSettings, PlayerSpecificSettings.defaultSettings);
+                _beatmapDataModel.beatmapData = BeatDataTransformHelper.CreateTransformedBeatmapData(data, levelInfo.modifiers.ToGameplayModifiers(), PracticeSettings.defaultPracticeSettings, PlayerSpecificSettings.defaultSettings);
                 HandleBeatmapDataModelDidChangeBeatmapData();
 
                 Plugin.log.Info($"Set custom BeatmapDataModel for difficulty {levelInfo.difficulty}");
@@ -44,7 +44,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         public override void LateUpdate()
         {
             BeatmapData beatmapData = _beatmapDataModel.beatmapData;
-            if (beatmapData == null || owner == null || owner.PlayerInfo == null)
+            if (beatmapData == null || owner == null || owner.playerInfo == null)
             {
                 return;
             }
@@ -54,7 +54,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 while (beatmapEventCallbackData.nextEventIndex < beatmapData.beatmapEventData.Length)
                 {
                     BeatmapEventData beatmapEventData = beatmapData.beatmapEventData[beatmapEventCallbackData.nextEventIndex];
-                    if (beatmapEventData.time - beatmapEventCallbackData.aheadTime >= owner.PlayerInfo.playerProgress)
+                    if (beatmapEventData.time - beatmapEventCallbackData.aheadTime >= owner.playerInfo.updateInfo.playerProgress)
                     {
                         break;
                     }
@@ -71,7 +71,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     while (beatmapObjectCallbackData.nextObjectIndexInLine[k] < beatmapData.beatmapLinesData[k].beatmapObjectsData.Length)
                     {
                         BeatmapObjectData beatmapObjectData = beatmapData.beatmapLinesData[k].beatmapObjectsData[beatmapObjectCallbackData.nextObjectIndexInLine[k]];
-                        if (beatmapObjectData.time - beatmapObjectCallbackData.aheadTime >= owner.PlayerInfo.playerProgress)
+                        if (beatmapObjectData.time - beatmapObjectCallbackData.aheadTime >= owner.playerInfo.updateInfo.playerProgress)
                         {
                             break;
                         }
@@ -100,7 +100,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 while (beatmapEventCallbackData2.nextEventIndex < beatmapData.beatmapEventData.Length)
                 {
                     BeatmapEventData beatmapEventData2 = beatmapData.beatmapEventData[beatmapEventCallbackData2.nextEventIndex];
-                    if (beatmapEventData2.time - beatmapEventCallbackData2.aheadTime >= owner.PlayerInfo.playerProgress)
+                    if (beatmapEventData2.time - beatmapEventCallbackData2.aheadTime >= owner.playerInfo.updateInfo.playerProgress)
                     {
                         break;
                     }
@@ -111,7 +111,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             while (_nextEventIndex < beatmapData.beatmapEventData.Length)
             {
                 BeatmapEventData beatmapEventData3 = beatmapData.beatmapEventData[_nextEventIndex];
-                if (beatmapEventData3.time >= owner.PlayerInfo.playerProgress)
+                if (beatmapEventData3.time >= owner.playerInfo.updateInfo.playerProgress)
                 {
                     break;
                 }

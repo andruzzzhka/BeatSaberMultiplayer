@@ -18,42 +18,7 @@ namespace BeatSaberMultiplayer
     {
         private const int _voipDelay = 1;
 
-        public PlayerInfo PlayerInfo {
-
-            get
-            {
-                return _info;
-            }
-
-            set
-            {
-                UpdatePrevPosRot(value);
-                if (_info != null && value != null)
-                {
-                    _info.playerName = value.playerName;
-                    _info.playerId = value.playerId;
-
-                    _info.playerNameColor = value.playerNameColor;
-                    _info.playerState = value.playerState;
-
-                    _info.fullBodyTracking = value.fullBodyTracking;
-                    _info.playerScore = value.playerScore;
-                    _info.playerCutBlocks = value.playerCutBlocks;
-                    _info.playerComboBlocks = value.playerComboBlocks;
-                    _info.playerTotalBlocks = value.playerTotalBlocks;
-                    _info.playerEnergy = value.playerEnergy;
-                    _info.playerLevelOptions = value.playerLevelOptions;
-
-                    _info.avatarHash = value.avatarHash;
-                    _info.hitsLastUpdate = value.hitsLastUpdate;
-                }
-                else
-                {
-                    _info = value;
-                }
-            }
-        }
-
+        public PlayerInfo playerInfo;
         public AvatarController avatar;
         public AudioSource voipSource;
 
@@ -64,8 +29,10 @@ namespace BeatSaberMultiplayer
         public float avatarOffset;
         public bool noInterpolation = false;
         public bool destroyed = false;
-        
-        private PlayerInfo _info;
+
+        private PlayerUpdate _syncStartInfo;
+        private PlayerUpdate _syncEndInfo;
+
         private AudioClip _voipClip;
         private int _lastVoipFragIndex;
         private int _voipWritePos;
@@ -76,9 +43,6 @@ namespace BeatSaberMultiplayer
         private float lastSynchronizationTime = 0f;
         private float syncTime = 0f;
         private float lerpProgress = 0f;
-
-        private PlayerInfo syncStartInfo;
-        private PlayerInfo syncEndInfo;
 
         public void Start()
         {
@@ -92,16 +56,16 @@ namespace BeatSaberMultiplayer
             voipSource.spatialize = Config.Instance.SpatialAudio;
             voipSource.loop = true;
 
-            if (_info != null)
+            if (playerInfo != null)
             {
 #if DEBUG
-                Plugin.log.Info($"Starting player controller for {_info.playerName}:{_info.playerId}...");
+                Plugin.log.Info($"Starting player controller for {playerInfo.playerName}:{playerInfo.playerId}...");
 #endif
-                syncStartInfo = _info;
-                syncEndInfo = _info;
+                _syncStartInfo = playerInfo.updateInfo;
+                _syncStartInfo = playerInfo.updateInfo;
             }
 
-            if (SceneManager.GetActiveScene().name == "GameCore" && Config.Instance.ShowOtherPlayersBlocks && !Client.Instance.playerInfo.Equals(PlayerInfo) && !Config.Instance.SpectatorMode)
+            if (SceneManager.GetActiveScene().name == "GameCore" && Config.Instance.ShowOtherPlayersBlocks && !Client.Instance.playerInfo.Equals(playerInfo) && !Config.Instance.SpectatorMode)
             {
                 SpawnBeatmapControllers();
                 SpawnSabers();
@@ -167,7 +131,7 @@ namespace BeatSaberMultiplayer
         {
             if (avatar != null)
             {
-                avatar.SetPlayerInfo(_info, avatarOffset, Client.Instance.playerInfo.Equals(_info));
+                avatar.SetPlayerInfo(playerInfo, avatarOffset, Client.Instance.playerInfo.Equals(playerInfo));
             }
 
             if (voipSource != null)
@@ -202,48 +166,48 @@ namespace BeatSaberMultiplayer
 
         public void FixedUpdate()
         {
-            if (_info != null)
+            if (playerInfo != null && playerInfo.updateInfo != default)
             {
-                if (syncStartInfo != null && syncEndInfo != null && !noInterpolation)
+                if (!noInterpolation)
                 {
                     syncTime += Time.fixedDeltaTime;
 
                     lerpProgress = syncTime / syncDelay;
 
-                    _info.headPos = Vector3.Lerp(syncStartInfo.headPos, syncEndInfo.headPos, lerpProgress);
-                    _info.leftHandPos = Vector3.Lerp(syncStartInfo.leftHandPos, syncEndInfo.leftHandPos, lerpProgress);
-                    _info.rightHandPos = Vector3.Lerp(syncStartInfo.rightHandPos, syncEndInfo.rightHandPos, lerpProgress);
+                    playerInfo.updateInfo.headPos = Vector3.Lerp(_syncStartInfo.headPos, _syncEndInfo.headPos, lerpProgress);
+                    playerInfo.updateInfo.leftHandPos = Vector3.Lerp(_syncStartInfo.leftHandPos, _syncEndInfo.leftHandPos, lerpProgress);
+                    playerInfo.updateInfo.rightHandPos = Vector3.Lerp(_syncStartInfo.rightHandPos, _syncEndInfo.rightHandPos, lerpProgress);
 
-                    _info.headRot = Quaternion.Lerp(syncStartInfo.headRot, syncEndInfo.headRot, lerpProgress);
-                    _info.leftHandRot = Quaternion.Lerp(syncStartInfo.leftHandRot, syncEndInfo.leftHandRot, lerpProgress);
-                    _info.rightHandRot = Quaternion.Lerp(syncStartInfo.rightHandRot, syncEndInfo.rightHandRot, lerpProgress);
+                    playerInfo.updateInfo.headRot = Quaternion.Lerp(_syncStartInfo.headRot, _syncEndInfo.headRot, lerpProgress);
+                    playerInfo.updateInfo.leftHandRot = Quaternion.Lerp(_syncStartInfo.leftHandRot, _syncEndInfo.leftHandRot, lerpProgress);
+                    playerInfo.updateInfo.rightHandRot = Quaternion.Lerp(_syncStartInfo.rightHandRot, _syncEndInfo.rightHandRot, lerpProgress);
 
-                    if (syncStartInfo.fullBodyTracking)
+                    if (_syncStartInfo.fullBodyTracking)
                     {
-                        _info.leftLegPos = Vector3.Lerp(syncStartInfo.leftLegPos, syncEndInfo.leftLegPos, lerpProgress);
-                        _info.rightLegPos = Vector3.Lerp(syncStartInfo.rightLegPos, syncEndInfo.rightLegPos, lerpProgress);
-                        _info.pelvisPos = Vector3.Lerp(syncStartInfo.pelvisPos, syncEndInfo.pelvisPos, lerpProgress);
+                        playerInfo.updateInfo.leftLegPos = Vector3.Lerp(_syncStartInfo.leftLegPos, _syncEndInfo.leftLegPos, lerpProgress);
+                        playerInfo.updateInfo.rightLegPos = Vector3.Lerp(_syncStartInfo.rightLegPos, _syncEndInfo.rightLegPos, lerpProgress);
+                        playerInfo.updateInfo.pelvisPos = Vector3.Lerp(_syncStartInfo.pelvisPos, _syncEndInfo.pelvisPos, lerpProgress);
 
-                        _info.leftLegRot = Quaternion.Lerp(syncStartInfo.leftLegRot, syncEndInfo.leftLegRot, lerpProgress);
-                        _info.rightLegRot = Quaternion.Lerp(syncStartInfo.rightLegRot, syncEndInfo.rightLegRot, lerpProgress);
-                        _info.pelvisRot = Quaternion.Lerp(syncStartInfo.pelvisRot, syncEndInfo.pelvisRot, lerpProgress);
+                        playerInfo.updateInfo.leftLegRot = Quaternion.Lerp(_syncStartInfo.leftLegRot, _syncEndInfo.leftLegRot, lerpProgress);
+                        playerInfo.updateInfo.rightLegRot = Quaternion.Lerp(_syncStartInfo.rightLegRot, _syncEndInfo.rightLegRot, lerpProgress);
+                        playerInfo.updateInfo.pelvisRot = Quaternion.Lerp(_syncStartInfo.pelvisRot, _syncEndInfo.pelvisRot, lerpProgress);
                     }
 
-                    float lerpedPlayerProgress = Mathf.Lerp(syncStartInfo.playerProgress, syncEndInfo.playerProgress, lerpProgress);
+                    float lerpedPlayerProgress = Mathf.Lerp(_syncStartInfo.playerProgress, _syncEndInfo.playerProgress, lerpProgress);
 
-                    if(_info.playerProgress < lerpedPlayerProgress && Mathf.Abs(_info.playerProgress - lerpedPlayerProgress) < 0.5f)
+                    if(playerInfo.updateInfo.playerProgress < lerpedPlayerProgress && Mathf.Abs(playerInfo.updateInfo.playerProgress - lerpedPlayerProgress) < 0.5f)
                     {
-                        _info.playerProgress = lerpedPlayerProgress;
+                        playerInfo.updateInfo.playerProgress = lerpedPlayerProgress;
                     }
                     else
                     {
-                        _info.playerProgress = syncStartInfo.playerProgress;
+                        playerInfo.updateInfo.playerProgress = _syncStartInfo.playerProgress;
                     }
                 }
 
                 _overrideHeadPos = true;
-                _overriddenHeadPos = _info.headPos;
-                _headPos = _info.headPos + Vector3.right * avatarOffset;
+                _overriddenHeadPos = playerInfo.updateInfo.headPos;
+                _headPos = playerInfo.updateInfo.headPos + Vector3.right * avatarOffset;
                 transform.position = _headPos;
             }
         }
@@ -251,10 +215,10 @@ namespace BeatSaberMultiplayer
         public void OnDestroy()
         {
 #if DEBUG
-            if(_info == null)
+            if(playerInfo == null)
                 Plugin.log.Info("Destroying player controller!");
             else
-                Plugin.log.Info($"Destroying player controller! Name: {_info.playerName}, ID: {_info.playerId}");
+                Plugin.log.Info($"Destroying player controller! Name: {playerInfo.playerName}, ID: {playerInfo.playerId}");
 #endif
             destroyed = true;
             
@@ -272,43 +236,43 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void UpdatePrevPosRot(PlayerInfo newPlayerInfo)
+        public void UpdateInfo(PlayerUpdate newInfo)
         {
-            if (newPlayerInfo == null || _info == null)
+            if (playerInfo == null)
                 return;
 
             if (noInterpolation)
             {
-                _info = newPlayerInfo;
+                playerInfo.updateInfo = newInfo;
                 return;
             }
             
-            syncStartInfo = new PlayerInfo(_info);
-            if (syncStartInfo.IsRotNaN())
+            _syncStartInfo = playerInfo.updateInfo;
+            if (_syncStartInfo.IsRotNaN())
             {
-                syncStartInfo.headRot = Quaternion.identity;
-                syncStartInfo.leftHandRot = Quaternion.identity;
-                syncStartInfo.rightHandRot = Quaternion.identity;
-                syncStartInfo.leftLegRot = Quaternion.identity;
-                syncStartInfo.rightLegRot = Quaternion.identity;
-                syncStartInfo.pelvisRot = Quaternion.identity;
+                _syncStartInfo.headRot = Quaternion.identity;
+                _syncStartInfo.leftHandRot = Quaternion.identity;
+                _syncStartInfo.rightHandRot = Quaternion.identity;
+                _syncStartInfo.leftLegRot = Quaternion.identity;
+                _syncStartInfo.rightLegRot = Quaternion.identity;
+                _syncStartInfo.pelvisRot = Quaternion.identity;
                 Plugin.log.Warn("Start rotation is NaN!");
             }
 
-            if (Mathf.Abs(_info.playerProgress - newPlayerInfo.playerProgress) > 0.1f)
+            if (Mathf.Abs(playerInfo.updateInfo.playerProgress - newInfo.playerProgress) > 0.1f)
             {
-                _info.playerProgress = newPlayerInfo.playerProgress;
+                playerInfo.updateInfo.playerProgress = newInfo.playerProgress;
             }
 
-            syncEndInfo = newPlayerInfo;
-            if (syncEndInfo.IsRotNaN())
+            _syncEndInfo = newInfo;
+            if (_syncEndInfo.IsRotNaN())
             {
-                syncEndInfo.headRot = Quaternion.identity;
-                syncEndInfo.leftHandRot = Quaternion.identity;
-                syncEndInfo.rightHandRot = Quaternion.identity;
-                syncEndInfo.leftLegRot = Quaternion.identity;
-                syncEndInfo.rightLegRot = Quaternion.identity;
-                syncEndInfo.pelvisRot = Quaternion.identity;
+                _syncEndInfo.headRot = Quaternion.identity;
+                _syncEndInfo.leftHandRot = Quaternion.identity;
+                _syncEndInfo.rightHandRot = Quaternion.identity;
+                _syncEndInfo.leftLegRot = Quaternion.identity;
+                _syncEndInfo.rightLegRot = Quaternion.identity;
+                _syncEndInfo.pelvisRot = Quaternion.identity;
                 Plugin.log.Warn("Target rotation is NaN!");
             }
             
@@ -321,7 +285,24 @@ namespace BeatSaberMultiplayer
             }
 
             lastSynchronizationTime = Time.time;
+        }
 
+        public void NewUpdateReceived(PlayerUpdate value)
+        {
+            UpdateInfo(value);
+            if (playerInfo != null)
+            {
+                playerInfo.updateInfo.playerNameColor = value.playerNameColor;
+                playerInfo.updateInfo.playerState = value.playerState;
+
+                playerInfo.updateInfo.fullBodyTracking = value.fullBodyTracking;
+                playerInfo.updateInfo.playerScore = value.playerScore;
+                playerInfo.updateInfo.playerCutBlocks = value.playerCutBlocks;
+                playerInfo.updateInfo.playerComboBlocks = value.playerComboBlocks;
+                playerInfo.updateInfo.playerTotalBlocks = value.playerTotalBlocks;
+                playerInfo.updateInfo.playerEnergy = value.playerEnergy;
+                playerInfo.updateInfo.playerLevelOptions = value.playerLevelOptions;
+            }
         }
 
         public void SetAvatarState(bool enabled)
@@ -329,7 +310,7 @@ namespace BeatSaberMultiplayer
             if(enabled && (object)avatar == null)
             {
                 avatar = new GameObject("AvatarController").AddComponent<AvatarController>();
-                avatar.SetPlayerInfo(_info, avatarOffset, Client.Instance.playerInfo.Equals(_info));
+                avatar.SetPlayerInfo(playerInfo, avatarOffset, Client.Instance.playerInfo.Equals(playerInfo));
             }
             else if(!enabled && avatar != null)
             {
@@ -350,7 +331,7 @@ namespace BeatSaberMultiplayer
 
         public void PlayVoIPFragment(float[] data, int fragIndex)
         {
-            if(voipSource != null && !InGameOnlineController.Instance.mutedPlayers.Contains(_info.playerId))
+            if(voipSource != null && !InGameOnlineController.Instance.mutedPlayers.Contains(playerInfo.playerId))
             {
                 if ((_lastVoipFragIndex + 1) != fragIndex || _silentFrames > 15)
                 {

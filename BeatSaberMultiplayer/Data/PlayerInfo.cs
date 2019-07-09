@@ -14,6 +14,61 @@ namespace BeatSaberMultiplayer.Data
 {
     public enum PlayerState: byte { Disconnected, Lobby, Room, Game, Spectating, DownloadingSongs }
 
+    public struct PlayerScore : IComparable<PlayerScore>, IEquatable<PlayerScore>
+    {
+        public ulong id;
+        public string name;
+        public Color32 color;
+        public uint score;
+
+        public PlayerScore(ulong id, string name, uint score, Color32 color)
+        {
+            this.id = id;
+            this.name = name;
+            this.score = score;
+            this.color = color;
+        }
+
+        public PlayerScore(PlayerInfo update)
+        {
+            id = update.playerId;
+            name = update.playerName;
+            score = update.updateInfo.playerScore;
+            color = update.updateInfo.playerNameColor;
+        }
+
+        public PlayerScore(OnlinePlayerController update)
+        {
+            id = update.playerInfo.playerId;
+            name = update.playerInfo.playerName;
+            score = update.playerInfo.updateInfo.playerScore;
+            color = update.playerInfo.updateInfo.playerNameColor;
+        }
+
+        public int CompareTo(PlayerScore other)
+        {
+            return score.CompareTo(other.score);
+        }
+
+        public bool Equals(PlayerScore other)
+        {
+            return id == other.id &&
+                    name == other.name &&
+                    score == other.score &&
+                    EqualityComparer<Color32>.Default.Equals(color, other.color);
+        }
+
+        public static bool operator ==(PlayerScore c1, PlayerScore c2)
+        {
+            return c1.Equals(c2);
+        }
+
+        public static bool operator !=(PlayerScore c1, PlayerScore c2)
+        {
+            return !c1.Equals(c2);
+        }
+    }
+
     public struct HitData
     {
         public int objectId;
@@ -24,8 +79,6 @@ namespace BeatSaberMultiplayer.Data
         public bool saberTypeOK;
         public bool wasCutTooSoon;
         public bool isSaberA;
-        public bool reserved1;
-        public bool reserved2;
 
         public HitData(NoteData data, bool noteWasCut, NoteCutInfo info = null)
         {
@@ -49,8 +102,6 @@ namespace BeatSaberMultiplayer.Data
                 saberTypeOK = false;
                 wasCutTooSoon = false;
             }
-
-            reserved1 = reserved2 = false;
         }
 
         public HitData(NetIncomingMessage msg)
@@ -63,8 +114,8 @@ namespace BeatSaberMultiplayer.Data
             directionOK = msg.ReadBoolean();
             saberTypeOK = msg.ReadBoolean();
             wasCutTooSoon = msg.ReadBoolean();
-            reserved1 = msg.ReadBoolean();
-            reserved2 = msg.ReadBoolean();
+            msg.ReadBoolean();
+            msg.ReadBoolean();
         }
 
 #if DEBUG
@@ -80,8 +131,6 @@ namespace BeatSaberMultiplayer.Data
             directionOK = bits[3];
             saberTypeOK = bits[4];
             wasCutTooSoon = bits[5];
-            reserved1 = bits[6];
-            reserved2 = bits[7];
         }
 #endif
 
@@ -95,8 +144,8 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(directionOK);
             msg.Write(saberTypeOK);
             msg.Write(wasCutTooSoon);
-            msg.Write(reserved1);
-            msg.Write(reserved2);
+            msg.Write(false);
+            msg.Write(false);
         }
 
         public NoteCutInfo GetCutInfo()
@@ -112,15 +161,9 @@ namespace BeatSaberMultiplayer.Data
         }
     }
 
-    public class PlayerInfo
+    public struct PlayerUpdate : IEquatable<PlayerUpdate>
     {
-        public const string avatarHashPlaceholder = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-
-        public string playerName;
-        public ulong playerId;
-
-        public Color32 playerNameColor = new Color32(255, 255, 255, 255);
-
+        public Color32 playerNameColor;
         public PlayerState playerState;
 
         public uint playerScore;
@@ -132,8 +175,6 @@ namespace BeatSaberMultiplayer.Data
         public float playerProgress;
 
         public LevelOptionsInfo playerLevelOptions;
-
-        public List<HitData> hitsLastUpdate = new List<HitData>();
 
         public bool fullBodyTracking;
 
@@ -150,50 +191,19 @@ namespace BeatSaberMultiplayer.Data
         public Quaternion rightLegRot;
         public Quaternion leftLegRot;
         public Quaternion pelvisRot;
-        
-        public string avatarHash;
 
-        public PlayerInfo(string _name, ulong _id)
+        public PlayerUpdate(NetIncomingMessage msg)
         {
-            playerName = _name;
-            playerId = _id;
-            avatarHash = avatarHashPlaceholder;
-        }
-
-        public PlayerInfo(PlayerInfo original)
-        {
-
-            var fields = typeof(PlayerInfo).GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (var field in fields)
-            {
-                if (field.FieldType.IsValueType)
-                {
-                    field.SetValue(this, field.GetValue(original));
-                }
-            }
-
-            playerLevelOptions = new LevelOptionsInfo(original.playerLevelOptions);
-            hitsLastUpdate = new List<HitData>(original.hitsLastUpdate);
-            playerName = original.playerName;
-            avatarHash = original.avatarHash;
-        }
-
-        public PlayerInfo(NetIncomingMessage msg)
-        {
-            playerName = msg.ReadString();
-            playerId = msg.ReadUInt64();
-
             playerNameColor = new Color32(msg.ReadByte(), msg.ReadByte(), msg.ReadByte(), 255);
 
             playerState = (PlayerState)msg.ReadByte();
 
-            fullBodyTracking = msg.ReadBoolean();
+            fullBodyTracking = (msg.ReadByte() == 1);
+
             playerScore = msg.ReadVariableUInt32();
             playerCutBlocks = msg.ReadVariableUInt32();
             playerComboBlocks = msg.ReadVariableUInt32();
             playerTotalBlocks = msg.ReadVariableUInt32();
-            msg.ReadPadBits();
             playerEnergy = msg.ReadFloat();
             playerProgress = msg.ReadFloat();
 
@@ -217,6 +227,197 @@ namespace BeatSaberMultiplayer.Data
                 leftLegRot = msg.ReadQuaternion();
                 rightLegRot = msg.ReadQuaternion();
             }
+            else
+            {
+                pelvisPos = Vector3.zero;
+                leftLegPos = Vector3.zero;
+                rightLegPos = Vector3.zero;
+
+                pelvisRot = Quaternion.identity;
+                leftLegRot = Quaternion.identity;
+                rightLegRot = Quaternion.identity;
+            }
+        }
+
+        public void AddToMessage(NetOutgoingMessage msg)
+        {
+            msg.Write(playerNameColor.r);
+            msg.Write(playerNameColor.g);
+            msg.Write(playerNameColor.b);
+
+            msg.Write((byte)playerState);
+
+            msg.Write(fullBodyTracking ? (byte)1 : (byte)0);
+            msg.WriteVariableUInt32(playerScore);
+            msg.WriteVariableUInt32(playerCutBlocks);
+            msg.WriteVariableUInt32(playerComboBlocks);
+            msg.WriteVariableUInt32(playerTotalBlocks);
+            msg.Write(playerEnergy);
+            msg.Write(playerProgress);
+
+            if (playerLevelOptions == default)
+                new LevelOptionsInfo(BeatmapDifficulty.Hard, GameplayModifiers.defaultModifiers, "Standard").AddToMessage(msg);
+            else
+                playerLevelOptions.AddToMessage(msg);
+
+            rightHandPos.AddToMessage(msg);
+            leftHandPos.AddToMessage(msg);
+            headPos.AddToMessage(msg);
+
+            rightHandRot.AddToMessage(msg);
+            leftHandRot.AddToMessage(msg);
+            headRot.AddToMessage(msg);
+
+            if (fullBodyTracking)
+            {
+                pelvisPos.AddToMessage(msg);
+                leftLegPos.AddToMessage(msg);
+                rightLegPos.AddToMessage(msg);
+
+                pelvisRot.AddToMessage(msg);
+                leftLegRot.AddToMessage(msg);
+                rightLegRot.AddToMessage(msg);
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is PlayerUpdate info &&
+                   EqualityComparer<Color32>.Default.Equals(playerNameColor, info.playerNameColor) &&
+                   playerState == info.playerState &&
+                   playerScore == info.playerScore &&
+                   playerCutBlocks == info.playerCutBlocks &&
+                   playerComboBlocks == info.playerComboBlocks &&
+                   playerTotalBlocks == info.playerTotalBlocks &&
+                   playerEnergy == info.playerEnergy &&
+                   playerProgress == info.playerProgress &&
+                   EqualityComparer<LevelOptionsInfo>.Default.Equals(playerLevelOptions, info.playerLevelOptions) &&
+                   fullBodyTracking == info.fullBodyTracking &&
+                   headPos.Equals(info.headPos) &&
+                   rightHandPos.Equals(info.rightHandPos) &&
+                   leftHandPos.Equals(info.leftHandPos) &&
+                   rightLegPos.Equals(info.rightLegPos) &&
+                   leftLegPos.Equals(info.leftLegPos) &&
+                   pelvisPos.Equals(info.pelvisPos) &&
+                   headRot.Equals(info.headRot) &&
+                   rightHandRot.Equals(info.rightHandRot) &&
+                   leftHandRot.Equals(info.leftHandRot) &&
+                   rightLegRot.Equals(info.rightLegRot) &&
+                   leftLegRot.Equals(info.leftLegRot) &&
+                   pelvisRot.Equals(info.pelvisRot);
+        }
+
+        public bool Equals(PlayerUpdate info)
+        {
+            return EqualityComparer<Color32>.Default.Equals(playerNameColor, info.playerNameColor) &&
+                   playerState == info.playerState &&
+                   playerScore == info.playerScore &&
+                   playerCutBlocks == info.playerCutBlocks &&
+                   playerComboBlocks == info.playerComboBlocks &&
+                   playerTotalBlocks == info.playerTotalBlocks &&
+                   playerEnergy == info.playerEnergy &&
+                   playerProgress == info.playerProgress &&
+                   EqualityComparer<LevelOptionsInfo>.Default.Equals(playerLevelOptions, info.playerLevelOptions) &&
+                   fullBodyTracking == info.fullBodyTracking &&
+                   headPos.Equals(info.headPos) &&
+                   rightHandPos.Equals(info.rightHandPos) &&
+                   leftHandPos.Equals(info.leftHandPos) &&
+                   rightLegPos.Equals(info.rightLegPos) &&
+                   leftLegPos.Equals(info.leftLegPos) &&
+                   pelvisPos.Equals(info.pelvisPos) &&
+                   headRot.Equals(info.headRot) &&
+                   rightHandRot.Equals(info.rightHandRot) &&
+                   leftHandRot.Equals(info.leftHandRot) &&
+                   rightLegRot.Equals(info.rightLegRot) &&
+                   leftLegRot.Equals(info.leftLegRot) &&
+                   pelvisRot.Equals(info.pelvisRot);
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = -277278763;
+            hashCode = hashCode * -1521134295 + EqualityComparer<Color32>.Default.GetHashCode(playerNameColor);
+            hashCode = hashCode * -1521134295 + playerScore.GetHashCode();
+            hashCode = hashCode * -1521134295 + playerCutBlocks.GetHashCode();
+            hashCode = hashCode * -1521134295 + playerComboBlocks.GetHashCode();
+            hashCode = hashCode * -1521134295 + playerTotalBlocks.GetHashCode();
+            hashCode = hashCode * -1521134295 + playerEnergy.GetHashCode();
+            hashCode = hashCode * -1521134295 + playerProgress.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<LevelOptionsInfo>.Default.GetHashCode(playerLevelOptions);
+            hashCode = hashCode * -1521134295 + fullBodyTracking.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<Vector3>.Default.GetHashCode(headPos);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Vector3>.Default.GetHashCode(rightHandPos);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Vector3>.Default.GetHashCode(leftHandPos);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Vector3>.Default.GetHashCode(rightLegPos);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Vector3>.Default.GetHashCode(leftLegPos);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Vector3>.Default.GetHashCode(pelvisPos);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Quaternion>.Default.GetHashCode(headRot);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Quaternion>.Default.GetHashCode(rightHandRot);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Quaternion>.Default.GetHashCode(leftHandRot);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Quaternion>.Default.GetHashCode(rightLegRot);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Quaternion>.Default.GetHashCode(leftLegRot);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Quaternion>.Default.GetHashCode(pelvisRot);
+            return hashCode;
+        }
+
+        public static bool operator ==(PlayerUpdate c1, PlayerUpdate c2)
+        {
+            return c1.Equals(c2);
+        }
+
+        public static bool operator !=(PlayerUpdate c1, PlayerUpdate c2)
+        {
+            return !c1.Equals(c2);
+        }
+    }
+
+    public class PlayerInfo : IComparable<PlayerInfo>
+    {
+        public const string avatarHashPlaceholder = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+
+        public string playerName;
+        public ulong playerId;
+
+        public string avatarHash;
+
+        public PlayerUpdate updateInfo;
+
+        public List<HitData> hitsLastUpdate = new List<HitData>(8);
+
+        public PlayerInfo(string _name, ulong _id)
+        {
+            playerName = _name;
+            playerId = _id;
+            avatarHash = avatarHashPlaceholder;
+
+            updateInfo = new PlayerUpdate() { playerNameColor = new Color32(255,255,255,255) };
+        }
+
+        public PlayerInfo(PlayerInfo original)
+        {
+
+            var fields = typeof(PlayerInfo).GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var field in fields)
+            {
+                if (field.FieldType.IsValueType)
+                {
+                    field.SetValue(this, field.GetValue(original));
+                }
+            }
+
+            updateInfo.playerLevelOptions = new LevelOptionsInfo(original.updateInfo.playerLevelOptions);
+            hitsLastUpdate = new List<HitData>(original.hitsLastUpdate);
+            playerName = original.playerName;
+            avatarHash = original.avatarHash;
+        }
+
+        public PlayerInfo(NetIncomingMessage msg)
+        {
+            playerName = msg.ReadString();
+            playerId = msg.ReadUInt64();
+
+            updateInfo = new PlayerUpdate(msg);
 
             avatarHash = BitConverter.ToString(msg.ReadBytes(16)).Replace("-", "");
 
@@ -233,22 +434,23 @@ namespace BeatSaberMultiplayer.Data
 #if DEBUG
         public PlayerInfo(byte[] data)
         {
-            playerState = (PlayerState)data[0];
+            updateInfo = new PlayerUpdate();
+            updateInfo.playerState = (PlayerState)data[0];
 
-            playerScore = BitConverter.ToUInt32(data, 1);
-            playerCutBlocks = BitConverter.ToUInt32(data, 5);
-            playerComboBlocks = BitConverter.ToUInt32(data, 9);
-            playerTotalBlocks = BitConverter.ToUInt32(data, 13);
-            playerEnergy = BitConverter.ToSingle(data, 17);
-            playerProgress = BitConverter.ToSingle(data, 21);
+            updateInfo.playerScore = BitConverter.ToUInt32(data, 1);
+            updateInfo.playerCutBlocks = BitConverter.ToUInt32(data, 5);
+            updateInfo.playerComboBlocks = BitConverter.ToUInt32(data, 9);
+            updateInfo.playerTotalBlocks = BitConverter.ToUInt32(data, 13);
+            updateInfo.playerEnergy = BitConverter.ToSingle(data, 17);
+            updateInfo.playerProgress = BitConverter.ToSingle(data, 21);
 
-            rightHandPos = new Vector3(BitConverter.ToSingle(data, 25), BitConverter.ToSingle(data, 29), BitConverter.ToSingle(data, 33));
-            leftHandPos = new Vector3(BitConverter.ToSingle(data, 37), BitConverter.ToSingle(data, 41), BitConverter.ToSingle(data, 45));
-            headPos = new Vector3(BitConverter.ToSingle(data, 49), BitConverter.ToSingle(data, 53), BitConverter.ToSingle(data, 57));
+            updateInfo.rightHandPos = new Vector3(BitConverter.ToSingle(data, 25), BitConverter.ToSingle(data, 29), BitConverter.ToSingle(data, 33));
+            updateInfo.leftHandPos = new Vector3(BitConverter.ToSingle(data, 37), BitConverter.ToSingle(data, 41), BitConverter.ToSingle(data, 45));
+            updateInfo.headPos = new Vector3(BitConverter.ToSingle(data, 49), BitConverter.ToSingle(data, 53), BitConverter.ToSingle(data, 57));
 
-            rightHandRot = new Quaternion(BitConverter.ToSingle(data, 61), BitConverter.ToSingle(data, 65), BitConverter.ToSingle(data, 69), BitConverter.ToSingle(data, 73));
-            leftHandRot = new Quaternion(BitConverter.ToSingle(data, 77), BitConverter.ToSingle(data, 81), BitConverter.ToSingle(data, 85), BitConverter.ToSingle(data, 89));
-            headRot = new Quaternion(BitConverter.ToSingle(data, 93), BitConverter.ToSingle(data, 97), BitConverter.ToSingle(data, 101), BitConverter.ToSingle(data, 105));
+            updateInfo.rightHandRot = new Quaternion(BitConverter.ToSingle(data, 61), BitConverter.ToSingle(data, 65), BitConverter.ToSingle(data, 69), BitConverter.ToSingle(data, 73));
+            updateInfo.leftHandRot = new Quaternion(BitConverter.ToSingle(data, 77), BitConverter.ToSingle(data, 81), BitConverter.ToSingle(data, 85), BitConverter.ToSingle(data, 89));
+            updateInfo.headRot = new Quaternion(BitConverter.ToSingle(data, 93), BitConverter.ToSingle(data, 97), BitConverter.ToSingle(data, 101), BitConverter.ToSingle(data, 105));
 
             hitsLastUpdate.Clear();
 
@@ -273,44 +475,7 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(playerName);
             msg.Write(playerId);
 
-            msg.Write(playerNameColor.r);
-            msg.Write(playerNameColor.g);
-            msg.Write(playerNameColor.b);
-
-            msg.Write((byte)playerState);
-
-            msg.Write(fullBodyTracking);
-            msg.WriteVariableUInt32(playerScore);
-            msg.WriteVariableUInt32(playerCutBlocks);
-            msg.WriteVariableUInt32(playerComboBlocks);
-            msg.WriteVariableUInt32(playerTotalBlocks);
-            msg.WritePadBits();
-            msg.Write(playerEnergy);
-            msg.Write(playerProgress);
-
-            if (playerLevelOptions == null)
-                new LevelOptionsInfo(BeatmapDifficulty.Hard, GameplayModifiers.defaultModifiers, "Standard").AddToMessage(msg);
-            else
-                playerLevelOptions.AddToMessage(msg);
-
-            rightHandPos.AddToMessage(msg);
-            leftHandPos.AddToMessage(msg);
-            headPos.AddToMessage(msg);
-
-            rightHandRot.AddToMessage(msg);
-            leftHandRot.AddToMessage(msg);
-            headRot.AddToMessage(msg);
-
-            if (fullBodyTracking)
-            {
-                pelvisPos.AddToMessage(msg);
-                leftLegPos.AddToMessage(msg);
-                rightLegPos.AddToMessage(msg);
-
-                pelvisRot.AddToMessage(msg);
-                leftLegRot.AddToMessage(msg);
-                rightLegRot.AddToMessage(msg);
-            }
+            updateInfo.AddToMessage(msg);
 
             msg.Write(HexConverter.ConvertHexToBytesX(avatarHash));
 
@@ -342,6 +507,11 @@ namespace BeatSaberMultiplayer.Data
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(playerName);
             hashCode = hashCode * -1521134295 + playerId.GetHashCode();
             return hashCode;
+        }
+
+        public int CompareTo(PlayerInfo other)
+        {
+            return playerId.CompareTo(other.playerId);
         }
     }
 }

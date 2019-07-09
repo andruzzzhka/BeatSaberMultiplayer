@@ -496,7 +496,7 @@ namespace ServerHub.Hub
                             foreach (var client in clients)
                             {
                                 IPEndPoint remote = (IPEndPoint)client.playerConnection.RemoteEndPoint;
-                                clientsStr += $"{Environment.NewLine}│ [{client.playerConnection.Status} | {client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
+                                clientsStr += $"{Environment.NewLine}│ [{client.playerConnection.Status} | {client.playerInfo.updateInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
                             }
                         }
 
@@ -513,7 +513,7 @@ namespace ServerHub.Hub
                                 foreach (var client in clients)
                                 {
                                     IPEndPoint remote = (IPEndPoint)client.playerConnection.RemoteEndPoint;
-                                    clientsStr += $"{Environment.NewLine}│ [{client.playerConnection.Status} | {client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
+                                    clientsStr += $"{Environment.NewLine}│ [{client.playerConnection.Status} | {client.playerInfo.updateInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
                                 }
                             }
                         }
@@ -533,7 +533,7 @@ namespace ServerHub.Hub
                                     foreach (var client in clients)
                                     {
                                         IPEndPoint remote = (IPEndPoint)client.playerConnection.RemoteEndPoint;
-                                        clientsStr += $"{Environment.NewLine}│ [{client.playerConnection.Status} | {client.playerInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
+                                        clientsStr += $"{Environment.NewLine}│ [{client.playerConnection.Status} | {client.playerInfo.updateInfo.playerState}] {client.playerInfo.playerName}({client.playerInfo.playerId}) @ {remote.Address}:{remote.Port}";
                                     }
                                 }
                             }

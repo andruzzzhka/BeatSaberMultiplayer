@@ -202,7 +202,12 @@ namespace BeatSaberMultiplayer
 
         public void Update()
         {
-            _receivedMessages.Clear();
+            if (_receivedMessages.Count > 0)
+            {
+                networkClient.Recycle(_receivedMessages);
+                _receivedMessages.Clear();
+            }
+
             if (networkClient.ReadMessages(_receivedMessages) > 0)
             {
                 for (int i = _receivedMessages.Count - 1; i >= 0; i--)
@@ -230,9 +235,36 @@ namespace BeatSaberMultiplayer
                         }
                         _lastPacketTime = Time.realtimeSinceStartup;
 
-                        try
+                        foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
                         {
-                            foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
+                            try
+                            {
+                                _receivedMessages[i].Position = 0;
+                                nextDel?.Invoke(_receivedMessages[i]);
+                            }
+                            catch (Exception e)
+                            {
+                                if (nextDel != null)
+                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
+                                else
+                                    Plugin.log.Error($"Exception on update received event: {e}");
+
+                            }
+                        }
+                        _receivedMessages[i].Position = 0;
+
+                        break;
+                    }
+                }
+
+                if (Config.Instance.SpectatorMode)
+                {
+
+                    for (int i = 0; i >= _receivedMessages.Count; i++)
+                    {
+                        if (_receivedMessages[i].MessageType == NetIncomingMessageType.Data && _receivedMessages[i].PeekByte() == (byte)CommandType.GetPlayerUpdates)
+                        {
+                            foreach (Action<NetIncomingMessage> nextDel in PlayerInfoUpdateReceived.GetInvocationList())
                             {
                                 try
                                 {
@@ -245,48 +277,11 @@ namespace BeatSaberMultiplayer
                                         Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
                                     else
                                         Plugin.log.Error($"Exception on update received event: {e}");
-
                                 }
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            Plugin.log.Error("Unable to parse UpdatePlayerInfo message! Exception: " + e);
-                        }
-                        _receivedMessages[i].Position = 0;
+                            _receivedMessages[i].Position = 0;
 
-                        break;
-                    }
-                }
-
-                if (Config.Instance.SpectatorMode)
-                {
-                    try
-                    {
-
-                        foreach (var lastPlayerHistoryUpdates in _receivedMessages.Where(x => x.MessageType == NetIncomingMessageType.Data && x.PeekByte() == (byte)CommandType.GetPlayerUpdates))
-                        {
-                            foreach (Action<NetIncomingMessage> nextDel in PlayerInfoUpdateReceived.GetInvocationList())
-                            {
-                                try
-                                {
-                                    lastPlayerHistoryUpdates.Position = 0;
-                                    nextDel?.Invoke(lastPlayerHistoryUpdates);
-                                }
-                                catch (Exception e)
-                                {
-                                    if (nextDel != null)
-                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
-                                    else
-                                        Plugin.log.Error($"Exception on update received event: {e}");
-                                }
-                            }
-                            lastPlayerHistoryUpdates.Position = 0;
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Plugin.log.Error("Unable to parse GetPlayerUpdates message! Exception: " + e);
                     }
                 }
                     
@@ -413,7 +408,7 @@ namespace BeatSaberMultiplayer
                                             packetsBuffer.Enqueue(buffer.ToArray());
                                             msg.Position = 0;                                        
 #endif
-                                            if (playerInfo != null && playerInfo.playerState == PlayerState.Room && ClientLevelStarted != null)
+                                            if (playerInfo != null && playerInfo.updateInfo.playerState == PlayerState.Room && ClientLevelStarted != null)
                                             {
                                                 foreach (Action nextDel in ClientLevelStarted.GetInvocationList())
                                                 {
@@ -435,7 +430,7 @@ namespace BeatSaberMultiplayer
                                         }
                                         break;
                                     case CommandType.UpdatePlayerInfo:
-                                            break; //Just ignore updates at this point
+                                            break;
 
                                     default:
                                         {
@@ -462,8 +457,10 @@ namespace BeatSaberMultiplayer
                             break;
 #endif
                     }
-                    networkClient.Recycle(msg);
                 }
+
+                networkClient.Recycle(_receivedMessages);
+                _receivedMessages.Clear();
             }
 
             if(connected && networkClient.ConnectionsCount == 0)
@@ -625,7 +622,7 @@ namespace BeatSaberMultiplayer
             }
             isHost = false;
             inRoom = false;
-            playerInfo.playerState = PlayerState.Lobby;
+            playerInfo.updateInfo.playerState = PlayerState.Lobby;
         }
 
 
@@ -643,7 +640,7 @@ namespace BeatSaberMultiplayer
 #endif
             }
             isHost = false;
-            playerInfo.playerState = PlayerState.Lobby;
+            playerInfo.updateInfo.playerState = PlayerState.Lobby;
         }
 
         public void RequestRoomInfo()
@@ -725,7 +722,7 @@ namespace BeatSaberMultiplayer
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
-                Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers).Select(x => x.localizedModifierName)));
+                Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers.ToGameplayModifiers()).Select(x => x.localizedModifierName)));
 
 #endif
             }
@@ -750,53 +747,57 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SendPlayerInfo()
+        public void SendPlayerInfo(bool sendFullUpdate)
         {
             if (connected && networkClient != null)
             {
                 NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.UpdatePlayerInfo);
+                outMsg.Write(sendFullUpdate ? (byte)1 : (byte)0);
+
+                if (sendFullUpdate)
+                    Plugin.log.Info("Sending full update!");
 
 #if DEBUG
-                if (playerInfo.playerState == PlayerState.Game)
+                if (playerInfo.updateInfo.playerState == PlayerState.Game)
                 {
                     List<byte> buffer = new List<byte>();
 
-                    buffer.Add((byte)playerInfo.playerState);
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerScore));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerCutBlocks));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerComboBlocks));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerTotalBlocks));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerEnergy));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.playerProgress));
+                    buffer.Add((byte)playerInfo.updateInfo.playerState);
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerScore));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerCutBlocks));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerComboBlocks));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerTotalBlocks));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerEnergy));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerProgress));
 
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandPos.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandPos.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandPos.z));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandPos.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandPos.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandPos.z));
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandPos.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandPos.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandPos.z));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandPos.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandPos.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandPos.z));
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headPos.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headPos.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headPos.z));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headPos.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headPos.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headPos.z));
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandRot.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandRot.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandRot.z));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.rightHandRot.w));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.z));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.w));
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandRot.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandRot.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandRot.z));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.leftHandRot.w));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.z));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.w));
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headRot.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headRot.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headRot.z));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.headRot.w));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headRot.x));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headRot.y));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headRot.z));
+                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headRot.w));
 
                     buffer.Add((byte)playerInfo.hitsLastUpdate.Count);
 
@@ -813,8 +814,6 @@ namespace BeatSaberMultiplayer
                         bits[3] = playerInfo.hitsLastUpdate[i].directionOK;
                         bits[4] = playerInfo.hitsLastUpdate[i].saberTypeOK;
                         bits[5] = playerInfo.hitsLastUpdate[i].wasCutTooSoon;
-                        bits[6] = playerInfo.hitsLastUpdate[i].reserved1;
-                        bits[7] = playerInfo.hitsLastUpdate[i].reserved2;
 
                         bits.CopyTo(hitData, 4);
 
@@ -826,7 +825,18 @@ namespace BeatSaberMultiplayer
                     packetsBuffer.Enqueue(buffer.ToArray());
                 }
 #endif
-                playerInfo.AddToMessage(outMsg);
+                if (sendFullUpdate)
+                    playerInfo.AddToMessage(outMsg);
+                else
+                {
+                    playerInfo.updateInfo.AddToMessage(outMsg);
+                    outMsg.Write((byte)playerInfo.hitsLastUpdate.Count);
+
+                    foreach(var hit in playerInfo.hitsLastUpdate)
+                    {
+                        hit.AddToMessage(outMsg);
+                    }
+                }
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
             }

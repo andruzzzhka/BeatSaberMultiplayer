@@ -13,7 +13,7 @@ namespace BeatSaberMultiplayer
 {
     public class PlayerInfoDisplay : MonoBehaviour
     {
-        private PlayerInfo _playerInfo;
+        private PlayerScore _playerScore;
 
         public TextMeshPro playerNameText;
         public TextMeshPro playerScoreText;
@@ -27,16 +27,12 @@ namespace BeatSaberMultiplayer
 
         void Update()
         {
-            if (_playerInfo != null)
+            if (_playerScore != default)
             {
                 progress += Time.deltaTime * Client.Instance.tickrate;
                 uint score = (uint)Mathf.Lerp(previousScore, currentScore, Mathf.Clamp01(progress));
 
-#if DEBUG
-                playerScoreText.text = string.Format("{0} {2} {3}", score, _playerInfo.playerEnergy, _playerInfo.playerCutBlocks, _playerInfo.playerComboBlocks);
-#else
-                playerScoreText.text = string.Format("{0}", score, _playerInfo.playerEnergy, _playerInfo.playerCutBlocks, _playerInfo.playerComboBlocks);
-#endif
+                playerScoreText.text = score.ToString();
             }
         }
 
@@ -63,18 +59,18 @@ namespace BeatSaberMultiplayer
             playerSpeakerIcon.sprite = Sprites.speakerIcon;
         }
 
-        public void UpdatePlayerInfo(PlayerInfo _info, int _index)
+        public void UpdatePlayerInfo(PlayerScore _info, int _index)
         {
-            _playerInfo = _info;
+            _playerScore = _info;
 
-            if (_playerInfo != null)
+            if (_playerScore != default)
             {
                 playerPlaceText.text = (_index + 1).ToString();
-                playerNameText.text = _playerInfo.playerName;
-                playerNameText.color = _info.playerNameColor;
+                playerNameText.text = _playerScore.name;
+                playerNameText.color = _playerScore.color;
                 previousScore = currentScore;
-                currentScore = _playerInfo.playerScore;
-                playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(_info.playerId));
+                currentScore = _playerScore.score;
+                playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(_playerScore.id));
                 progress = 0;
             }
             else

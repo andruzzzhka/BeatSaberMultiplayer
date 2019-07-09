@@ -5,7 +5,7 @@ using System.Text;
 namespace ServerHub.Misc
 {
     [Serializable]
-    public struct Color32
+    public struct Color32 : IEquatable<Color32>
     {
         public byte r;
         public byte g;
@@ -38,6 +38,11 @@ namespace ServerHub.Misc
             hashCode = hashCode * -1521134295 + g.GetHashCode();
             hashCode = hashCode * -1521134295 + b.GetHashCode();
             return hashCode;
+        }
+
+        public bool Equals(Color32 other)
+        {
+            return r == other.r && g == other.g && b == other.b;
         }
     }
 }

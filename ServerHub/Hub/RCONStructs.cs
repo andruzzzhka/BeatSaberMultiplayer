@@ -73,7 +73,7 @@ namespace ServerHub.Hub
             {
                 PlayerID = client.playerInfo.playerIdString;
                 DisplayName = client.playerInfo.playerName;
-                State = client.playerInfo.playerState.ToString();
+                State = client.playerInfo.updateInfo.playerState.ToString();
                 Address = client.playerConnection.RemoteEndPoint.ToString();
                 ConnectedSeconds = (float)DateTime.Now.Subtract(client.joinTime).TotalSeconds;
             }

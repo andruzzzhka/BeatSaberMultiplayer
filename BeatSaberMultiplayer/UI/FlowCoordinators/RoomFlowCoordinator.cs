@@ -200,7 +200,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if(songToDownload != null)
             {
                 songToDownload.songQueueState = SongQueueState.Error;
-                Client.Instance.playerInfo.playerState = PlayerState.Lobby;
+                Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Lobby;
             }
 
             InGameOnlineController.Instance.DestroyPlayerControllers();
@@ -294,10 +294,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case 0:
                             {
 
-                                Client.Instance.playerInfo.playerState = PlayerState.DownloadingSongs;
+                                Client.Instance.playerInfo.updateInfo.playerState = PlayerState.DownloadingSongs;
                                 Client.Instance.RequestRoomInfo();
                                 roomInfoRequestTime = Time.time;
-                                Client.Instance.SendPlayerInfo();
+                                Client.Instance.SendPlayerInfo(true);
                                 Client.Instance.inRoom = true;
                                 joined = true;
                                 InGameOnlineController.Instance.needToSendUpdates = true;
@@ -345,7 +345,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
                                 roomInfo = new RoomInfo(msg);
 
-                                Client.Instance.playerInfo.playerState = PlayerState.Room;
+                                Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Room;
 
                                 Client.Instance.isHost = Client.Instance.playerInfo.Equals(roomInfo.roomHost);
 
@@ -366,7 +366,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     if (songToDownload != null)
                                     {
                                         songToDownload.songQueueState = SongQueueState.Error;
-                                        Client.Instance.playerInfo.playerState = PlayerState.Room;
+                                        Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Room;
                                     }
                                 }
                                 else
@@ -391,7 +391,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
                                 roomInfo.startLevelInfo = new LevelOptionsInfo(msg);
 
-                                _playerManagementViewController.SetGameplayModifiers(roomInfo.startLevelInfo.modifiers);
+                                _playerManagementViewController.SetGameplayModifiers(roomInfo.startLevelInfo.modifiers.ToGameplayModifiers());
 
                                 if (roomInfo.roomState == RoomState.Preparing)
                                 {
@@ -416,7 +416,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 roomInfo.roomHost = new PlayerInfo(msg);
                                 Client.Instance.isHost = Client.Instance.playerInfo.Equals(roomInfo.roomHost);
 
-                                if (Client.Instance.playerInfo.playerState == PlayerState.DownloadingSongs)
+                                if (Client.Instance.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
                                     return;
 
                                 UpdateUI(roomInfo.roomState);
@@ -425,7 +425,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case CommandType.StartLevel:
                             {
 
-                                if (Client.Instance.playerInfo.playerState == PlayerState.DownloadingSongs)
+                                if (Client.Instance.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
                                     return;
 
                                 LevelOptionsInfo levelInfo = new LevelOptionsInfo(msg);
@@ -447,11 +447,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                             if (roomInfo.perPlayerDifficulty && _difficultySelectionViewController != null)
                                             {
 
-                                                StartLevel(beatmapLevel, characteristic, _difficultySelectionViewController.selectedDifficulty, levelInfo.modifiers);
+                                                StartLevel(beatmapLevel, characteristic, _difficultySelectionViewController.selectedDifficulty, levelInfo.modifiers.ToGameplayModifiers());
                                             }
                                             else
                                             {
-                                                StartLevel(beatmapLevel, characteristic, levelInfo.difficulty, levelInfo.modifiers);
+                                                StartLevel(beatmapLevel, characteristic, levelInfo.difficulty, levelInfo.modifiers.ToGameplayModifiers());
                                             }
                                         });
                                 }
@@ -471,47 +471,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     currentTime = msg.ReadFloat();
                                     totalTime = msg.ReadFloat();
 
-                                    int playersCount = msg.ReadInt32();
-                                    
-                                    List<PlayerInfo> playerInfos = new List<PlayerInfo>();
-                                    for (int j = 0; j < playersCount; j++)
-                                    {
-                                        try
-                                        {
-                                            playerInfos.Add(new PlayerInfo(msg));
-                                        }
-                                        catch (Exception e)
-                                        {
-#if DEBUG
-                                            Plugin.log.Critical($"Unable to parse PlayerInfo! Excpetion: {e}");
-#endif
-                                        }
-                                    }
-                                    
-                                    switch (roomInfo.roomState)
-                                    {
-                                        case RoomState.InGame:
-                                            List<PlayerInfo> sortedInGame = new List<PlayerInfo>(playerInfos.Count);
-                                            for(int i = 0; i < playerInfos.Count; i++)
-                                            {
-                                                if(playerInfos[i].playerScore > 0 && playerInfos[i].playerState == PlayerState.Game)
-                                                    sortedInGame.Add(playerInfos[i]);
-                                            }
-                                            UpdateLeaderboard(sortedInGame, currentTime, totalTime, false);
-                                            break;
+                                    if(roomInfo.roomState == RoomState.InGame || roomInfo.roomState == RoomState.Results)
+                                        UpdateLeaderboard(currentTime, totalTime, roomInfo.roomState == RoomState.Results);
 
-                                        case RoomState.Results:
-                                            List<PlayerInfo> sortedResults = new List<PlayerInfo>(playerInfos.Count);
-                                            for (int i = 0; i < playerInfos.Count; i++)
-                                            {
-                                                if (playerInfos[i].playerScore > 0 && (playerInfos[i].playerState == PlayerState.Game || playerInfos[i].playerState == PlayerState.Room))
-                                                    sortedResults.Add(playerInfos[i]);
-                                            }
-                                            UpdateLeaderboard(sortedResults, currentTime, totalTime, true);
-                                            break;
-                                    }
-
-                                    _playerManagementViewController.UpdatePlayerList(playerInfos, roomInfo.roomState);
+                                    _playerManagementViewController.UpdatePlayerList(roomInfo.roomState);
                                 }
                             }
                             break;
@@ -558,7 +521,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         if (roomInfo.selectedSong != null)
                         {
                             ShowDifficultySelection(roomInfo.selectedSong);
-                            _playerManagementViewController.SetGameplayModifiers(roomInfo.startLevelInfo.modifiers);
+                            _playerManagementViewController.SetGameplayModifiers(roomInfo.startLevelInfo.modifiers.ToGameplayModifiers());
                         }
                     }
                     break;
@@ -595,25 +558,25 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             LevelOptionsInfo info = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
                             Client.Instance.SetLevelOptions(info);
                             roomInfo.startLevelInfo = info;
-                            Client.Instance.playerInfo.playerLevelOptions = info;
+                            Client.Instance.playerInfo.updateInfo.playerLevelOptions = info;
                         }
                         else
                         {
                             LevelOptionsInfo info = new LevelOptionsInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
                             Client.Instance.SetLevelOptions(info);
                             roomInfo.startLevelInfo = info;
-                            Client.Instance.playerInfo.playerLevelOptions = info;
+                            Client.Instance.playerInfo.updateInfo.playerLevelOptions = info;
                         }
                     }
                     else
                     {
                         if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
                         {
-                            Client.Instance.playerInfo.playerLevelOptions = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
+                            Client.Instance.playerInfo.updateInfo.playerLevelOptions = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
                         }
                         else
                         {
-                            Client.Instance.playerInfo.playerLevelOptions = new LevelOptionsInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
+                            Client.Instance.playerInfo.updateInfo.playerLevelOptions = new LevelOptionsInfo(BeatmapDifficulty.Hard, _playerManagementViewController.modifiers, "Standard");
                         }
                     }
                 }
@@ -639,12 +602,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void StartLevel(IBeatmapLevel level, BeatmapCharacteristicSO characteristic, BeatmapDifficulty difficulty, GameplayModifiers modifiers, float startTime = 0f)
         {
-            Client.Instance.playerInfo.playerComboBlocks = 0;
-            Client.Instance.playerInfo.playerCutBlocks = 0;
-            Client.Instance.playerInfo.playerTotalBlocks = 0;
-            Client.Instance.playerInfo.playerEnergy = 0f;
-            Client.Instance.playerInfo.playerScore = 0;
-            Client.Instance.playerInfo.playerLevelOptions = new LevelOptionsInfo(difficulty, modifiers, characteristic.serializedName);
+            Client.Instance.playerInfo.updateInfo.playerComboBlocks = 0;
+            Client.Instance.playerInfo.updateInfo.playerCutBlocks = 0;
+            Client.Instance.playerInfo.updateInfo.playerTotalBlocks = 0;
+            Client.Instance.playerInfo.updateInfo.playerEnergy = 0f;
+            Client.Instance.playerInfo.updateInfo.playerScore = 0;
+            Client.Instance.playerInfo.updateInfo.playerLevelOptions = new LevelOptionsInfo(difficulty, modifiers, characteristic.serializedName);
 
             MenuTransitionsHelperSO menuSceneSetupData = Resources.FindObjectsOfTypeAll<MenuTransitionsHelperSO>().FirstOrDefault();
 
@@ -655,7 +618,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             if (menuSceneSetupData != null)
             {
-                Client.Instance.playerInfo.playerState = Config.Instance.SpectatorMode ? PlayerState.Spectating : PlayerState.Game;
+                Client.Instance.playerInfo.updateInfo.playerState = Config.Instance.SpectatorMode ? PlayerState.Spectating : PlayerState.Game;
 
                 PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().currentLocalPlayer.playerSpecificSettings;
 
@@ -895,8 +858,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             _difficultySelectionViewController.SetSelectedSong(selectedLevel);
                             _difficultySelectionViewController.SetPlayButtonInteractable(false);
                             Client.Instance.SendPlayerReady(false);
-                            Client.Instance.playerInfo.playerState = PlayerState.DownloadingSongs;
-                            Client.Instance.playerInfo.playerProgress = 0f; selectedLevel.GetPreviewAudioClipAsync(new CancellationToken()).ContinueWith(
+                            Client.Instance.playerInfo.updateInfo.playerState = PlayerState.DownloadingSongs;
+                            Client.Instance.playerInfo.updateInfo.playerProgress = 0f; selectedLevel.GetPreviewAudioClipAsync(new CancellationToken()).ContinueWith(
                                  (res) =>
                                  {
                                      if (!res.IsFaulted)
@@ -923,7 +886,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 Client.Instance.SendPlayerReady(false);
                             }
 
-                            Client.Instance.playerInfo.playerState = PlayerState.Room;
+                            Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Room;
 
                         }
                         else
@@ -931,19 +894,19 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             _difficultySelectionViewController.SetSelectedSong(song);
                             _difficultySelectionViewController.SetPlayButtonInteractable(false);
                             Client.Instance.SendPlayerReady(false);
-                            Client.Instance.playerInfo.playerState = PlayerState.Room;
+                            Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Room;
                         }
                     });
             }
             else
             {
                 _difficultySelectionViewController.SetSelectedSong(song);
-                Client.Instance.playerInfo.playerState = PlayerState.DownloadingSongs;
+                Client.Instance.playerInfo.updateInfo.playerState = PlayerState.DownloadingSongs;
                 Client.Instance.SendPlayerReady(false);
                 _difficultySelectionViewController.SetPlayButtonInteractable(false);
                 SongDownloader.Instance.RequestSongByLevelID(song.hash, (info)=>
                 {
-                    Client.Instance.playerInfo.playerState = PlayerState.DownloadingSongs;
+                    Client.Instance.playerInfo.updateInfo.playerState = PlayerState.DownloadingSongs;
 
                     songToDownload = info;
 
@@ -953,7 +916,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         void onLoaded(SongCore.Loader sender, Dictionary<string, CustomPreviewBeatmapLevel> songs)
                         {
                             SongCore.Loader.SongsLoadedEvent -= onLoaded;
-                            Client.Instance.playerInfo.playerState = PlayerState.Room;
+                            Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Room;
                             roomInfo.selectedSong.UpdateLevelId();
                             selectedLevel = songs.FirstOrDefault(x => x.Value.levelID == roomInfo.selectedSong.levelId).Value;
                             if (selectedLevel != null)
@@ -968,7 +931,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                             _difficultySelectionViewController.SetPlayButtonInteractable(true);
                                             _difficultySelectionViewController.SetProgressBarState(false, 1f);
                                             Client.Instance.SendPlayerReady(true);
-                                            Client.Instance.playerInfo.playerState = PlayerState.Room;
+                                            Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Room;
                                         }
                                         else
                                         {
@@ -991,7 +954,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     {
                         float clampedProgress = Math.Min(progress, 0.99f);
                         _difficultySelectionViewController.SetProgressBarState(true, clampedProgress);
-                        Client.Instance.playerInfo.playerProgress = 100f * clampedProgress;
+                        Client.Instance.playerInfo.updateInfo.playerProgress = 100f * clampedProgress;
                     });
                 });
             }
@@ -1058,7 +1021,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         PreviewPlayer.CrossfadeTo(beatmapLevel.beatmapLevelData.audioClip, beatmapLevel.previewStartTime, (beatmapLevel.beatmapLevelData.audioClip.length - beatmapLevel.previewStartTime), 1f);
                     });
             }
-            _leaderboardViewController.SetLeaderboard(playerInfos);
+            _leaderboardViewController.SetLeaderboard();
             _leaderboardViewController.SetSong(song);
         }
 
@@ -1074,11 +1037,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             PreviewPlayer.CrossfadeToDefault();
         }
 
-        public void UpdateLeaderboard(List<PlayerInfo> playerInfos, float currentTime, float totalTime, bool results)
+        public void UpdateLeaderboard(float currentTime, float totalTime, bool results)
         {
             if (_leaderboardViewController != null)
             {
-                _leaderboardViewController.SetLeaderboard(playerInfos);
+                _leaderboardViewController.SetLeaderboard();
                 _leaderboardViewController.SetTimer(totalTime - currentTime, results);
             }
         }
@@ -1121,7 +1084,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         _leaderboardViewController.SetProgressBarState(false, 0f);
 
                         BeatmapCharacteristicSO characteristic = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>().FirstOrDefault(x => x.serializedName == roomInfo.startLevelInfo.characteristicName);
-                        StartLevel(beatmapLevel, characteristic, roomInfo.startLevelInfo.difficulty, roomInfo.startLevelInfo.modifiers, currentTime);
+                        StartLevel(beatmapLevel, characteristic, roomInfo.startLevelInfo.difficulty, roomInfo.startLevelInfo.modifiers.ToGameplayModifiers(), currentTime);
 
                     });
 

@@ -16,14 +16,14 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         {
             owner = newOwner;
 
-            _songTime = owner.PlayerInfo.playerProgress;
+            _songTime = owner.playerInfo.updateInfo.playerProgress;
         }
 
         public override void Update()
         {
             if (owner != null)
             {
-                _songTime = Mathf.Max(0f, owner.PlayerInfo.playerProgress);
+                _songTime = Mathf.Max(0f, owner.playerInfo.updateInfo.playerProgress);
             }
         }
 

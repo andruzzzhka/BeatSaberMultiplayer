@@ -20,14 +20,27 @@ using UnityEngine.XR;
 
 namespace BeatSaberMultiplayer
 {
+    public class ReplayData
+    {
+        public PlayerInfo playerInfo;
+        public List<PlayerUpdate> updates;
+        public Dictionary<int, HitData> hits;
+
+        public ReplayData()
+        {
+            playerInfo = null;
+            updates = new List<PlayerUpdate>();
+            hits = new Dictionary<int, HitData>();
+        }
+    }
+
     public class SpectatingController : MonoBehaviour
     {
         public static SpectatingController Instance;
 
         public static bool active = false;
 
-        public Dictionary<ulong, List<PlayerInfo>> playerInfos  = new Dictionary<ulong, List<PlayerInfo>>();
-        public Dictionary<ulong, Dictionary<int, HitData>> playersHits = new Dictionary<ulong, Dictionary<int, HitData>>();
+        public Dictionary<ulong, ReplayData> playerUpdates = new Dictionary<ulong, ReplayData>();
 
         public OnlinePlayerController spectatedPlayer;
         public AudioTimeSyncController audioTimeSync;
@@ -132,15 +145,11 @@ namespace BeatSaberMultiplayer
             _bufferingText.transform.position = new Vector3(0f, 2f, 8f);
             _bufferingText.gameObject.SetActive(false);
 
-            if (playerInfos != null)
-                playerInfos.Clear();
+            if (playerUpdates != null)
+                playerUpdates.Clear();
             else
-                playerInfos = new Dictionary<ulong, List<PlayerInfo>>();
+                playerUpdates = new Dictionary<ulong, ReplayData>();
 
-            if (playersHits != null)
-                playersHits.Clear();
-            else
-                playersHits = new Dictionary<ulong, Dictionary<int, HitData>>();
 
 #if DEBUG  && LOCALREPLAY
             string replayPath = Path.GetFullPath("MPDumps\\BootyBounce.mpdmp");
@@ -249,7 +258,7 @@ namespace BeatSaberMultiplayer
         {
             if(spectatedPlayer != null)
             {
-                HitData hit = playersHits[spectatedPlayer.PlayerInfo.playerId].FirstOrDefault(x => x.Key == arg1.id).Value;
+                HitData hit = playerUpdates[spectatedPlayer.playerInfo.playerId].hits.FirstOrDefault(x => x.Key == arg1.id).Value;
                 bool allIsOKExpected = hit.noteWasCut && hit.speedOK && hit.saberTypeOK && hit.directionOK && !hit.wasCutTooSoon;
 
                 if(allIsOKExpected != arg2.allIsOK)
@@ -263,7 +272,7 @@ namespace BeatSaberMultiplayer
         {
             if (spectatedPlayer != null)
             {
-                HitData hit = playersHits[spectatedPlayer.PlayerInfo.playerId].FirstOrDefault(x => x.Key == arg1.id).Value;
+                HitData hit = playerUpdates[spectatedPlayer.playerInfo.playerId].hits.FirstOrDefault(x => x.Key == arg1.id).Value;
 
                 if (hit.noteWasCut)
                 {
@@ -287,35 +296,65 @@ namespace BeatSaberMultiplayer
                     {
                         try
                         {
-                            int packetsCount = msg.ReadInt32();
-                            for (int k = 0; k < packetsCount; k++)
+                            ulong playerId = msg.ReadUInt64();
+                            byte packetsCount = msg.ReadByte();
+
+                            ReplayData replay;
+
+                            if(playerUpdates.TryGetValue(playerId, out replay))
                             {
-                                PlayerInfo player = new PlayerInfo(msg);
-                                if (playerInfos.ContainsKey(player.playerId))
+                                if(replay.playerInfo == null)
                                 {
-                                    if (audioTimeSync != null && audioTimeSync.songTime > 3f)
+                                    if (InGameOnlineController.Instance.players.TryGetValue(playerId, out OnlinePlayerController playerController))
                                     {
-                                        int index = playerInfos[player.playerId].FindIndex(x => x.playerProgress < audioTimeSync.songTime - 2f);
-
-                                        if (index > -1)
-                                            playerInfos[player.playerId].RemoveRange(0, index + 1);
-                                    }
-                                    playerInfos[player.playerId].Add(player);
-
-                                    foreach(HitData hit in player.hitsLastUpdate)
-                                    {
-                                        playersHits[player.playerId].Add(hit.objectId, hit);
+                                        replay.playerInfo = playerController.playerInfo;
                                     }
                                 }
-                                else
+
+                                for (int k = 0; k < packetsCount; k++)
                                 {
-                                    playerInfos.Add(player.playerId, new List<PlayerInfo>() { player });
-                                    foreach (HitData hit in player.hitsLastUpdate)
+                                    PlayerUpdate player = new PlayerUpdate(msg);
+
+                                    replay.updates.Add(player);
+
+                                    byte hitCount = msg.ReadByte();
+
+                                    for (int i = 0; i < hitCount; i++)
                                     {
-                                        playersHits[player.playerId].Add(hit.objectId, hit);
+                                        HitData hit = new HitData(msg);
+                                        replay.hits.Add(hit.objectId, hit);
                                     }
+                                }
+
+                                if (replay.updates.Count > 450)
+                                {
+                                    replay.updates.RemoveRange(0, replay.updates.Count - 450);
                                 }
                             }
+                            else
+                            {
+                                replay = new ReplayData();
+
+                                if(InGameOnlineController.Instance.players.TryGetValue(playerId, out OnlinePlayerController playerController))
+                                {
+                                    replay.playerInfo = playerController.playerInfo;
+                                }
+
+                                for (int k = 0; k < packetsCount; k++)
+                                {
+                                    PlayerUpdate player = new PlayerUpdate(msg);
+
+                                    replay.updates.Add(player);
+
+                                    byte hitCount = msg.ReadByte();
+
+                                    for (int i = 0; i < hitCount; i++)
+                                    {
+                                        HitData hit = new HitData(msg);
+                                        replay.hits.Add(hit.objectId, hit);
+                                    }
+                                }
+                            }                            
                         }
                         catch (Exception e)
                         {
@@ -357,53 +396,54 @@ namespace BeatSaberMultiplayer
                     }
                 }
 
-                if (Input.GetKeyDown(KeyCode.KeypadMultiply) && spectatedPlayer != null && spectatedPlayer.PlayerInfo != null)
+                if (Input.GetKeyDown(KeyCode.KeypadMultiply) && spectatedPlayer != null && spectatedPlayer.playerInfo != null)
                 {
-                    int index = playerInfos.Keys.ToList().FindIndexInList(spectatedPlayer.PlayerInfo.playerId);
-                    if (index >= playerInfos.Count - 1)
+                    int index = playerUpdates.Keys.ToList().FindIndexInList(spectatedPlayer.playerInfo.playerId);
+                    if (index >= playerUpdates.Count - 1)
                     {
                         index = 0;
                     }
 
-                    spectatedPlayer.PlayerInfo = playerInfos[playerInfos.Keys.ElementAt(index)].Last();
-                    Plugin.log.Info("Spectating player: " + spectatedPlayer.PlayerInfo.playerName);
+                    spectatedPlayer.playerInfo = playerUpdates[playerUpdates.Keys.ElementAt(index)].playerInfo;
+                    Plugin.log.Info("Spectating player: " + spectatedPlayer.playerInfo.playerName);
                     _spectatingText.gameObject.SetActive(true);
-                    _spectatingText.text = "Spectating " + spectatedPlayer.PlayerInfo.playerName;
+                    _spectatingText.text = "Spectating " + spectatedPlayer.playerInfo.playerName;
                 }
 
-                if (Input.GetKeyDown(KeyCode.KeypadDivide) && spectatedPlayer != null && spectatedPlayer.PlayerInfo != null)
+                if (Input.GetKeyDown(KeyCode.KeypadDivide) && spectatedPlayer != null && spectatedPlayer.playerInfo != null)
                 {
-                    int index = playerInfos.Keys.ToList().FindIndexInList(spectatedPlayer.PlayerInfo.playerId);
+                    int index = playerUpdates.Keys.ToList().FindIndexInList(spectatedPlayer.playerInfo.playerId);
                     if (index <= 0)
                     {
-                        index = playerInfos.Count - 1;
+                        index = playerUpdates.Count - 1;
                     }
 
-                    spectatedPlayer.PlayerInfo = playerInfos[playerInfos.Keys.ElementAt(index)].Last();
-                    Plugin.log.Info("Spectating player: " + spectatedPlayer.PlayerInfo.playerName);
+                    spectatedPlayer.playerInfo = playerUpdates[playerUpdates.Keys.ElementAt(index)].playerInfo;
+                    Plugin.log.Info("Spectating player: " + spectatedPlayer.playerInfo.playerName);
                     _spectatingText.gameObject.SetActive(true);
-                    _spectatingText.text = "Spectating " + spectatedPlayer.PlayerInfo.playerName;
+                    _spectatingText.text = "Spectating " + spectatedPlayer.playerInfo.playerName;
                 }
 
 
-                if (playerInfos.Count > 0 && spectatedPlayer != null && spectatedPlayer.PlayerInfo == null)
+                if (playerUpdates.Count > 0 && spectatedPlayer != null && spectatedPlayer.playerInfo == null)
                 {
-                    spectatedPlayer.PlayerInfo = playerInfos.FirstOrDefault(x => !x.Key.Equals(Client.Instance.playerInfo)).Value?.LastOrDefault();
-                    if (spectatedPlayer.PlayerInfo != null)
+                    spectatedPlayer.playerInfo = playerUpdates.FirstOrDefault(x => x.Key != Client.Instance.playerInfo.playerId).Value?.playerInfo;
+                    if (spectatedPlayer.playerInfo != null)
                     {
-                        Plugin.log.Info("Spectating player: " + spectatedPlayer.PlayerInfo.playerName);
+                        Plugin.log.Info("Spectating player: " + spectatedPlayer.playerInfo.playerName);
                         _spectatingText.gameObject.SetActive(true);
-                        _spectatingText.text = "Spectating " + spectatedPlayer.PlayerInfo.playerName;
+                        _spectatingText.text = "Spectating " + spectatedPlayer.playerInfo.playerName;
                     }
                 }
 
-                if (spectatedPlayer != null && spectatedPlayer.PlayerInfo != null)
+                if (spectatedPlayer != null && spectatedPlayer.playerInfo != null)
                 {
                     float currentSongTime = Math.Max(0f, audioTimeSync.songTime);
-                    int index = FindClosestIndex(playerInfos[spectatedPlayer.PlayerInfo.playerId], currentSongTime);
+                    int index = FindClosestIndex(playerUpdates[spectatedPlayer.playerInfo.playerId].updates, currentSongTime);
                     index = Math.Max(index, 0);
-                    (float, float) playerProgressMinMax = MinMax(playerInfos[spectatedPlayer.PlayerInfo.playerId]);
-                    PlayerInfo lerpTo;
+                    (float, float) playerProgressMinMax = MinMax(playerUpdates[spectatedPlayer.playerInfo.playerId].updates);
+                    PlayerUpdate lerpFrom;
+                    PlayerUpdate lerpTo;
                     float lerpProgress;
 
 
@@ -434,10 +474,10 @@ namespace BeatSaberMultiplayer
 
                     if (playerProgressMinMax.Item1 < currentSongTime && playerProgressMinMax.Item2 > currentSongTime)
                     {
-                        spectatedPlayer.PlayerInfo = playerInfos[spectatedPlayer.PlayerInfo.playerId][index];
-                        lerpTo = playerInfos[spectatedPlayer.PlayerInfo.playerId][index + 1];
+                        lerpFrom = playerUpdates[spectatedPlayer.playerInfo.playerId].updates[index];
+                        lerpTo = playerUpdates[spectatedPlayer.playerInfo.playerId].updates[index + 1];
 
-                        lerpProgress = Remap(currentSongTime, spectatedPlayer.PlayerInfo.playerProgress, lerpTo.playerProgress, 0f, 1f);
+                        lerpProgress = Remap(currentSongTime, lerpFrom.playerProgress, lerpTo.playerProgress, 0f, 1f);
                     }
                     else
                     {
@@ -472,28 +512,28 @@ namespace BeatSaberMultiplayer
                     _prevFrameLerp = lerpProgress;
 #endif
 
-                    spectatedPlayer.PlayerInfo.leftHandPos = Vector3.Lerp(spectatedPlayer.PlayerInfo.leftHandPos, lerpTo.leftHandPos, lerpProgress);
-                    spectatedPlayer.PlayerInfo.rightHandPos = Vector3.Lerp(spectatedPlayer.PlayerInfo.rightHandPos, lerpTo.rightHandPos, lerpProgress);
-                    spectatedPlayer.PlayerInfo.headPos = Vector3.Lerp(spectatedPlayer.PlayerInfo.headPos, lerpTo.headPos, lerpProgress);
+                    spectatedPlayer.playerInfo.updateInfo.leftHandPos = Vector3.Lerp(lerpFrom.leftHandPos, lerpTo.leftHandPos, lerpProgress);
+                    spectatedPlayer.playerInfo.updateInfo.rightHandPos = Vector3.Lerp(lerpFrom.rightHandPos, lerpTo.rightHandPos, lerpProgress);
+                    spectatedPlayer.playerInfo.updateInfo.headPos = Vector3.Lerp(lerpFrom.headPos, lerpTo.headPos, lerpProgress);
                     
-                    spectatedPlayer.PlayerInfo.leftHandRot = Quaternion.Lerp(spectatedPlayer.PlayerInfo.leftHandRot, lerpTo.leftHandRot, lerpProgress);
-                    spectatedPlayer.PlayerInfo.rightHandRot = Quaternion.Lerp(spectatedPlayer.PlayerInfo.rightHandRot, lerpTo.rightHandRot, lerpProgress);
-                    spectatedPlayer.PlayerInfo.headRot = Quaternion.Lerp(spectatedPlayer.PlayerInfo.headRot, lerpTo.headRot, lerpProgress);
+                    spectatedPlayer.playerInfo.updateInfo.leftHandRot = Quaternion.Lerp(lerpFrom.leftHandRot, lerpTo.leftHandRot, lerpProgress);
+                    spectatedPlayer.playerInfo.updateInfo.rightHandRot = Quaternion.Lerp(lerpFrom.rightHandRot, lerpTo.rightHandRot, lerpProgress);
+                    spectatedPlayer.playerInfo.updateInfo.headRot = Quaternion.Lerp(lerpFrom.headRot, lerpTo.headRot, lerpProgress);
 
-                    if (spectatedPlayer.PlayerInfo.fullBodyTracking)
+                    if (spectatedPlayer.playerInfo.updateInfo.fullBodyTracking)
                     {
-                        spectatedPlayer.PlayerInfo.leftLegPos = Vector3.Lerp(spectatedPlayer.PlayerInfo.leftLegPos, lerpTo.leftLegPos, lerpProgress);
-                        spectatedPlayer.PlayerInfo.rightLegPos = Vector3.Lerp(spectatedPlayer.PlayerInfo.rightLegPos, lerpTo.rightLegPos, lerpProgress);
-                        spectatedPlayer.PlayerInfo.pelvisPos = Vector3.Lerp(spectatedPlayer.PlayerInfo.pelvisPos, lerpTo.pelvisPos, lerpProgress);
+                        spectatedPlayer.playerInfo.updateInfo.leftLegPos = Vector3.Lerp(lerpFrom.leftLegPos, lerpTo.leftLegPos, lerpProgress);
+                        spectatedPlayer.playerInfo.updateInfo.rightLegPos = Vector3.Lerp(lerpFrom.rightLegPos, lerpTo.rightLegPos, lerpProgress);
+                        spectatedPlayer.playerInfo.updateInfo.pelvisPos = Vector3.Lerp(lerpFrom.pelvisPos, lerpTo.pelvisPos, lerpProgress);
 
-                        spectatedPlayer.PlayerInfo.leftLegRot = Quaternion.Lerp(spectatedPlayer.PlayerInfo.leftLegRot, lerpTo.leftLegRot, lerpProgress);
-                        spectatedPlayer.PlayerInfo.rightLegRot = Quaternion.Lerp(spectatedPlayer.PlayerInfo.rightLegRot, lerpTo.rightLegRot, lerpProgress);
-                        spectatedPlayer.PlayerInfo.pelvisRot = Quaternion.Lerp(spectatedPlayer.PlayerInfo.pelvisRot, lerpTo.pelvisRot, lerpProgress);
+                        spectatedPlayer.playerInfo.updateInfo.leftLegRot = Quaternion.Lerp(lerpFrom.leftLegRot, lerpTo.leftLegRot, lerpProgress);
+                        spectatedPlayer.playerInfo.updateInfo.rightLegRot = Quaternion.Lerp(lerpFrom.rightLegRot, lerpTo.rightLegRot, lerpProgress);
+                        spectatedPlayer.playerInfo.updateInfo.pelvisRot = Quaternion.Lerp(lerpFrom.pelvisRot, lerpTo.pelvisRot, lerpProgress);
                     }
 
                     if (_scoreController != null)
                     {
-                        _scoreController.SetPrivateField("_prevFrameRawScore", (int)spectatedPlayer.PlayerInfo.playerScore);
+                        _scoreController.SetPrivateField("_prevFrameRawScore", (int)lerpFrom.playerScore);
                         _scoreController.SetPrivateField("_baseRawScore", (int)lerpTo.playerScore);
                         _scoreController.SetPrivateField("_combo", (int)lerpTo.playerComboBlocks);
                     }
@@ -522,7 +562,7 @@ namespace BeatSaberMultiplayer
             return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
         }
 
-        private static int FindClosestIndex(List<PlayerInfo> infos, float targetProgress)
+        private static int FindClosestIndex(List<PlayerUpdate> infos, float targetProgress)
         {
             for (int i = 0; i < infos.Count - 1; i++)
             {
@@ -534,12 +574,12 @@ namespace BeatSaberMultiplayer
             return -1;
         }
 
-        private static (float, float) MinMax(List<PlayerInfo> infos)
+        private static (float, float) MinMax(List<PlayerUpdate> infos)
         {
             float min = float.MaxValue;
             float max = float.MinValue;
 
-            foreach(PlayerInfo info in infos)
+            foreach(PlayerUpdate info in infos)
             {
                 if (info.playerProgress > max)
                     max = info.playerProgress;

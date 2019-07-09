@@ -20,7 +20,10 @@ namespace BeatSaberMultiplayer
         static List<CustomAvatar.CustomAvatar> pendingAvatars = new List<CustomAvatar.CustomAvatar>();
         static event Action<string> AvatarLoaded;
 
-        PlayerInfo playerInfo;
+        PlayerUpdate playerInfo;
+        ulong playerId;
+        string playerAvatarHash;
+        string playerName;
 
         SpawnedAvatar avatar;
         AvatarScriptPack.FirstPersonExclusion exclusionScript;
@@ -206,7 +209,7 @@ namespace BeatSaberMultiplayer
 
         public void SetPlayerInfo(PlayerInfo _playerInfo, float offset, bool isLocal)
         {
-            if (_playerInfo == null)
+            if (_playerInfo == default)
             {
                 if (playerNameText != null) playerNameText.gameObject.SetActive(false);
                 if (playerSpeakerIcon != null) playerSpeakerIcon.gameObject.SetActive(false);
@@ -217,7 +220,10 @@ namespace BeatSaberMultiplayer
             try
             {
 
-                playerInfo = _playerInfo;
+                playerInfo = _playerInfo.updateInfo;
+                playerId = _playerInfo.playerId;
+                playerAvatarHash = _playerInfo.avatarHash;
+                playerName = _playerInfo.playerName;
 
                 if (playerNameText != null && playerSpeakerIcon != null)
                 {
@@ -236,7 +242,7 @@ namespace BeatSaberMultiplayer
                     {
                         playerNameText.gameObject.SetActive(true);
                         playerNameText.alignment = TextAlignmentOptions.Center;
-                        playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(playerInfo.playerId));
+                        playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(playerId));
                     }
                 }
                 else
@@ -244,14 +250,14 @@ namespace BeatSaberMultiplayer
                     return;
                 }
 #if !DEBUG
-                if ((avatar == null || currentAvatarHash != playerInfo.avatarHash) && !isLocal)
+                if ((avatar == null || currentAvatarHash != playerAvatarHash) && !isLocal)
 #else
-                if ((avatar == null || currentAvatarHash != playerInfo.avatarHash))
+                if ((avatar == null || currentAvatarHash != playerAvatarHash))
 #endif
                     {
-                    if (ModelSaberAPI.cachedAvatars.ContainsKey(playerInfo.avatarHash))
+                    if (ModelSaberAPI.cachedAvatars.ContainsKey(playerAvatarHash))
                     {
-                        CustomAvatar.CustomAvatar cachedAvatar = ModelSaberAPI.cachedAvatars[playerInfo.avatarHash];
+                        CustomAvatar.CustomAvatar cachedAvatar = ModelSaberAPI.cachedAvatars[playerAvatarHash];
                         
                         if (cachedAvatar != null)
                         {
@@ -279,7 +285,7 @@ namespace BeatSaberMultiplayer
                                {
                                    if (result == AvatarLoadResult.Completed)
                                    {
-                                       pendingAvatars.Remove(ModelSaberAPI.cachedAvatars[playerInfo.avatarHash]);
+                                       pendingAvatars.Remove(ModelSaberAPI.cachedAvatars[playerAvatarHash]);
                                        AvatarLoaded?.Invoke(ModelSaberAPI.cachedAvatars.First(x => x.Value == loadedAvatar).Key);
                                    }
                                });
@@ -296,7 +302,7 @@ namespace BeatSaberMultiplayer
                                 if (exclusionScript != null)
                                     exclusionScript.SetVisible();
                                 
-                                currentAvatarHash = playerInfo.avatarHash;
+                                currentAvatarHash = playerAvatarHash;
                             }
                         }
                     }
@@ -304,7 +310,7 @@ namespace BeatSaberMultiplayer
                     {
                         if (Config.Instance.DownloadAvatars)
                         {
-                            if (ModelSaberAPI.queuedAvatars.Contains(playerInfo.avatarHash))
+                            if (ModelSaberAPI.queuedAvatars.Contains(playerAvatarHash))
                             {
                                 ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
                                 ModelSaberAPI.avatarDownloaded += AvatarDownloaded;
@@ -313,7 +319,7 @@ namespace BeatSaberMultiplayer
                             {
                                 ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
                                 ModelSaberAPI.avatarDownloaded += AvatarDownloaded;
-                                SharedCoroutineStarter.instance.StartCoroutine(ModelSaberAPI.DownloadAvatarCoroutine(playerInfo.avatarHash));
+                                SharedCoroutineStarter.instance.StartCoroutine(ModelSaberAPI.DownloadAvatarCoroutine(playerAvatarHash));
 
                                 if (avatar != null)
                                 {
@@ -360,7 +366,7 @@ namespace BeatSaberMultiplayer
 
                 transform.position = HeadPos;
 
-                playerNameText.text = playerInfo.playerName;
+                playerNameText.text = playerName;
                 playerNameText.color = playerInfo.playerNameColor;
             }
             catch (Exception e)
@@ -372,7 +378,7 @@ namespace BeatSaberMultiplayer
 
         private void AvatarController_AvatarLoaded(string hash)
         {
-            if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash) && playerInfo.avatarHash == hash)
+            if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerAvatarHash) && playerAvatarHash == hash)
             {
                 Plugin.log.Info($"Avatar with hash \"{hash}\" loaded! (1)");
                 AvatarLoaded -= AvatarController_AvatarLoaded;
@@ -392,7 +398,7 @@ namespace BeatSaberMultiplayer
 
         private void AvatarDownloaded(string hash)
         {
-            if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerInfo.avatarHash) && playerInfo.avatarHash == hash)
+            if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerAvatarHash) && playerAvatarHash == hash)
             {
                 Plugin.log.Info($"Avatar with hash \"{hash}\" loaded! (2)");
                 ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;

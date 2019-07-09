@@ -149,7 +149,7 @@ namespace BeatSaberMultiplayer.Misc
             return textMesh;
         }
 
-        public static bool IsRotNaN(this PlayerInfo _info)
+        public static bool IsRotNaN(this PlayerUpdate _info)
         {
             return  float.IsNaN(_info.headRot.x)        || float.IsNaN(_info.headRot.y)         || float.IsNaN(_info.headRot.z)         || float.IsNaN(_info.headRot.w) ||
                     float.IsNaN(_info.leftHandRot.x)    || float.IsNaN(_info.leftHandRot.y)     || float.IsNaN(_info.leftHandRot.z)     || float.IsNaN(_info.leftHandRot.w) ||
