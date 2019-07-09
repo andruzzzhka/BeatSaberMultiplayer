@@ -193,7 +193,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void Update()
         {
-            if(_pingText != null && Client.Instance.networkClient != null && Client.Instance.networkClient.Connections.Count > 0 && Time.frameCount % 45 == 0)
+            if(Time.frameCount % 45 == 0 && _pingText != null && Client.Instance.networkClient != null && Client.Instance.networkClient.Connections.Count > 0)
                 _pingText.text = "PING: "+ Math.Round(Client.Instance.networkClient.Connections[0].AverageRoundtripTime*1000, 2).ToString();
         }
 
@@ -204,59 +204,52 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void UpdatePlayerList(RoomState state)
         {
-            try
-            {
-                var players = InGameOnlineController.Instance.players;
+            var players = InGameOnlineController.Instance.players;
                 
-                if (players.Count != _tableCells.Count)
+            if (players.Count != _tableCells.Count)
+            {
+                for (int i = 0; i < _tableCells.Count; i++)
                 {
-                    for (int i = 0; i < _tableCells.Count; i++)
-                    {
-                        Destroy(_tableCells[i].gameObject);
-                    }
-                    _tableCells.Clear();
-                    _playersTableView.RefreshTable(false);
-                    //if(prevCount == 0 && _playersList.Count > 0)
-                    //{
-                    //    StartCoroutine(ScrollWithDelay());
-                    //}
+                    Destroy(_tableCells[i].gameObject);
                 }
+                _tableCells.Clear();
+                _playersTableView.RefreshTable(false);
+                //if(prevCount == 0 && _playersList.Count > 0)
+                //{
+                //    StartCoroutine(ScrollWithDelay());
+                //}
+            }
 
-                PlayerListTableCell buffer;
-                int index = 0;
-                foreach (var player in players)
+            PlayerListTableCell buffer;
+            int index = 0;
+            foreach (var player in players)
+            {
+                if (_tableCells.Count > index)
                 {
-                    if (_tableCells.Count > index)
+                    buffer = _tableCells[index];
+                    buffer.playerName = player.Value.playerInfo.playerName;
+                    buffer.playerInfo = player.Value.playerInfo;
+                    if (state == RoomState.Preparing)
                     {
-                        buffer = _tableCells[index];
-                        buffer.playerName = player.Value.playerInfo.playerName;
-                        buffer.playerInfo = player.Value.playerInfo;
-                        if (state == RoomState.Preparing)
+                        if (player.Value.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
                         {
-                            if (player.Value.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
-                            {
-                                buffer.progress = player.Value.playerInfo.updateInfo.playerProgress / 100f;
-                            }
-                            else
-                            {
-                                buffer.progress = 1f;
-                            }
+                            buffer.progress = player.Value.playerInfo.updateInfo.playerProgress / 100f;
                         }
                         else
                         {
-                            buffer.progress = -1f;
+                            buffer.progress = 1f;
                         }
-                        buffer.IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(player.Key);
-                        buffer.NameColor = player.Value.playerInfo.updateInfo.playerNameColor;
-                        buffer.buttonsInterface = this;
-                        buffer.Update();
                     }
-                    index++;
+                    else
+                    {
+                        buffer.progress = -1f;
+                    }
+                    buffer.IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(player.Key);
+                    buffer.NameColor = player.Value.playerInfo.updateInfo.playerNameColor;
+                    buffer.buttonsInterface = this;
+                    buffer.Update();
                 }
-            }
-            catch (Exception e)
-            {
-                Plugin.log.Error($"Unable to update players list! Exception: {e}");
+                index++;
             }
         }
 

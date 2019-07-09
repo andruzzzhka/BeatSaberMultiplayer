@@ -141,6 +141,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void PacketReceived(NetIncomingMessage msg)
         {
+            msg.Position = 0;
             if ((CommandType)msg.ReadByte() == CommandType.CreateRoom)
             {
                 _mainRoomCreationViewController.CreateButtonInteractable(true);

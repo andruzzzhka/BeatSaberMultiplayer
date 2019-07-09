@@ -20,13 +20,15 @@ namespace BeatSaberMultiplayer.Data
         public string name;
         public Color32 color;
         public uint score;
+        public PlayerState state;
 
-        public PlayerScore(ulong id, string name, uint score, Color32 color)
+        public PlayerScore(ulong id, string name, uint score, Color32 color, PlayerState state)
         {
             this.id = id;
             this.name = name;
             this.score = score;
             this.color = color;
+            this.state = state;
         }
 
         public PlayerScore(PlayerInfo update)
@@ -35,6 +37,7 @@ namespace BeatSaberMultiplayer.Data
             name = update.playerName;
             score = update.updateInfo.playerScore;
             color = update.updateInfo.playerNameColor;
+            state = update.updateInfo.playerState;
         }
 
         public PlayerScore(OnlinePlayerController update)
@@ -43,6 +46,7 @@ namespace BeatSaberMultiplayer.Data
             name = update.playerInfo.playerName;
             score = update.playerInfo.updateInfo.playerScore;
             color = update.playerInfo.updateInfo.playerNameColor;
+            state = update.playerInfo.updateInfo.playerState;
         }
 
         public int CompareTo(PlayerScore other)

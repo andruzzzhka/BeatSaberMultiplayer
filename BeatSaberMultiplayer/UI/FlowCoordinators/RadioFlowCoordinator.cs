@@ -162,6 +162,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _radioNavController.DisplayError("Lost connection to the ServerHub!");
                 return;
             }
+            msg.Position = 0;
 
             CommandType commandType = (CommandType)msg.ReadByte();
             if (!joined)

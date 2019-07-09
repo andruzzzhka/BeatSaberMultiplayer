@@ -55,6 +55,7 @@ namespace ServerHub.Data
                 {
                     playerInfo.hitsLastUpdate.Add(new HitData(msg));
                 }
+                fullUpdate = false;
             }
             else
             {

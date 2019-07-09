@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace BeatSaberMultiplayer
 {
@@ -235,22 +236,7 @@ namespace BeatSaberMultiplayer
                         }
                         _lastPacketTime = Time.realtimeSinceStartup;
 
-                        foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
-                        {
-                            try
-                            {
-                                _receivedMessages[i].Position = 0;
-                                nextDel?.Invoke(_receivedMessages[i]);
-                            }
-                            catch (Exception e)
-                            {
-                                if (nextDel != null)
-                                    Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
-                                else
-                                    Plugin.log.Error($"Exception on update received event: {e}");
-
-                            }
-                        }
+                        MessageReceived?.Invoke(_receivedMessages[i]);
                         _receivedMessages[i].Position = 0;
 
                         break;
@@ -264,23 +250,8 @@ namespace BeatSaberMultiplayer
                     {
                         if (_receivedMessages[i].MessageType == NetIncomingMessageType.Data && _receivedMessages[i].PeekByte() == (byte)CommandType.GetPlayerUpdates)
                         {
-                            foreach (Action<NetIncomingMessage> nextDel in PlayerInfoUpdateReceived.GetInvocationList())
-                            {
-                                try
-                                {
-                                    _receivedMessages[i].Position = 0;
-                                    nextDel?.Invoke(_receivedMessages[i]);
-                                }
-                                catch (Exception e)
-                                {
-                                    if (nextDel != null)
-                                        Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on update received event: {e}");
-                                    else
-                                        Plugin.log.Error($"Exception on update received event: {e}");
-                                }
-                            }
+                            PlayerInfoUpdateReceived?.Invoke(_receivedMessages[i]);
                             _receivedMessages[i].Position = 0;
-
                         }
                     }
                 }
@@ -306,20 +277,7 @@ namespace BeatSaberMultiplayer
 #endif
                                     Disconnect();
 
-                                    foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
-                                    {
-                                        try
-                                        {
-                                            nextDel?.Invoke(null);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            if (nextDel != null)
-                                                Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
-                                            else
-                                                Plugin.log.Error($"Exception on message received event: {e}");
-                                        }
-                                    }
+                                    MessageReceived?.Invoke(null);
                                 }
                                 else if(status == NetConnectionStatus.Disconnected && !connected)
                                 {
@@ -340,7 +298,7 @@ namespace BeatSaberMultiplayer
 #endif
                                             Disconnect();
 
-                                            InvokeMessageReceived(msg);
+                                            MessageReceived?.Invoke(msg);
                                         }
                                         break;
                                     case CommandType.SendEventMessage:
@@ -351,6 +309,7 @@ namespace BeatSaberMultiplayer
 #if DEBUG
                                             Plugin.log.Info($"Received event message! Header=\"{header}\", Data=\"{data}\"");
 #endif
+
                                             foreach (Action<string, string> nextDel in EventMessageReceived.GetInvocationList())
                                             {
                                                 try
@@ -388,7 +347,7 @@ namespace BeatSaberMultiplayer
                                                 }
                                             }
 
-                                            InvokeMessageReceived(msg);
+                                            MessageReceived?.Invoke(msg);
                                         }
                                         break;
                                     case CommandType.StartLevel:
@@ -426,7 +385,7 @@ namespace BeatSaberMultiplayer
                                                 }
                                             }
 
-                                            InvokeMessageReceived(msg);
+                                            MessageReceived?.Invoke(msg);
                                         }
                                         break;
                                     case CommandType.UpdatePlayerInfo:
@@ -434,7 +393,7 @@ namespace BeatSaberMultiplayer
 
                                     default:
                                         {
-                                            InvokeMessageReceived(msg);
+                                            MessageReceived?.Invoke(msg);
                                         }
                                         break;
                                 }
@@ -471,42 +430,14 @@ namespace BeatSaberMultiplayer
 #endif
                 Disconnect();
 
-                foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
-                {
-                    try
-                    {
-                        nextDel.Invoke(null);
-                    }
-                    catch (Exception e)
-                    {
-                        if (nextDel != null)
-                            Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
-                        else
-                            Plugin.log.Error($"Exception on message received event: {e}");
-
-                    }
-                }
+                MessageReceived?.Invoke(null);
             }
-        }
 
-        private void InvokeMessageReceived(NetIncomingMessage msg)
-        {
-            if (MessageReceived != null)
-                foreach (Action<NetIncomingMessage> nextDel in MessageReceived.GetInvocationList())
-                {
-                    try
-                    {
-                        msg.Position = 0;
-                        nextDel?.Invoke(msg);
-                    }
-                    catch (Exception e)
-                    {
-                        if (nextDel != null)
-                            Plugin.log.Error($"Exception in {nextDel.Target.GetType()}.{nextDel.Method.Name} on message received event: {e}");
-                        else
-                            Plugin.log.Error($"Exception on message received event: {e}");
-                    }
-                }
+            if((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.F1))
+            {
+                GarbageCollector.GCMode = GarbageCollector.GCMode == GarbageCollector.Mode.Enabled ? GarbageCollector.Mode.Disabled : GarbageCollector.Mode.Enabled;
+                Plugin.log.Notice($"Garbage collector {GarbageCollector.GCMode.ToString()}!");
+            }
         }
 
         public void LateUpdate()
@@ -754,9 +685,6 @@ namespace BeatSaberMultiplayer
                 NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.UpdatePlayerInfo);
                 outMsg.Write(sendFullUpdate ? (byte)1 : (byte)0);
-
-                if (sendFullUpdate)
-                    Plugin.log.Info("Sending full update!");
 
 #if DEBUG
                 if (playerInfo.updateInfo.playerState == PlayerState.Game)

@@ -27,12 +27,13 @@ namespace BeatSaberMultiplayer
         private Button _pageUpButton;
         private Button _pageDownButton;
         private Button _playNowButton;
+        public IPreviewBeatmapLevel _selectedSong;
 
         LevelListTableCell _songTableCell;
 
         List<LeaderboardTableCell> _tableCells = new List<LeaderboardTableCell>();
 
-        public IPreviewBeatmapLevel _selectedSong;
+        int _lastTime;
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
@@ -128,7 +129,7 @@ namespace BeatSaberMultiplayer
             if (scores == null)
                 return;
             
-            if (scores.Length != _tableCells.Count)
+            if (scores.Count != _tableCells.Count)
             {
                 for (int i = 0; i < _tableCells.Count; i++)
                 {
@@ -141,17 +142,15 @@ namespace BeatSaberMultiplayer
                 //    StartCoroutine(ScrollWithDelay());
                 //}
             }
-            else
+
+            for (int i = 0; i < scores.Count; i++)
             {
-                for (int i = 0; i < scores.Length; i++)
+                if (_tableCells.Count > i)
                 {
-                    if (_tableCells.Count > i)
-                    {
-                        _tableCells[i].playerName = scores[i].name;
-                        _tableCells[i].score = (int)scores[i].score;
-                        _tableCells[i].rank = i + 1;
-                        _tableCells[i].showFullCombo = false;
-                    }
+                    _tableCells[i].playerName = scores[i].name;
+                    _tableCells[i].score = (int)scores[i].score;
+                    _tableCells[i].rank = i + 1;
+                    _tableCells[i].showFullCombo = false;
                 }
             }
         }
@@ -203,20 +202,26 @@ namespace BeatSaberMultiplayer
             _playNowButton.interactable = !enabled;
         }
 
-        public void SetTimer(float time, bool results)
+        public void SetTimer(int time, bool results)
         {
             if (_timerText == null || _playNowButton == null)
                 return;
 
-            _timerText.text = results ? $"RESULTS {((int)time).ToString()}" : SecondsToString(time);
-            _playNowButton.interactable = (time > 15f);
-        }
+            if (time != _lastTime)
+            {
 
-        public string SecondsToString(float time)
-        {
-            int minutes = (int)(time / 60f);
-            int seconds = (int)(time - minutes * 60);
-            return minutes.ToString() + ":" + string.Format("{0:00}", seconds.ToString());
+                if (results)
+                {
+                    _timerText.text = "RESULTS " + time.ToString();
+                }
+                else
+                {
+                    _timerText.text = EssentialHelpers.MinSecDurationText(time);
+                }
+
+                _playNowButton.interactable = time > 15f;
+            }
+            _lastTime = time;
         }
 
         public TableCell CellForIdx(int row)
@@ -236,7 +241,7 @@ namespace BeatSaberMultiplayer
 
         public int NumberOfCells()
         {
-            return InGameOnlineController.Instance.playerScores.Length;
+            return InGameOnlineController.Instance.playerScores.Count;
         }
 
         public float CellSize()

@@ -282,6 +282,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 DisconnectCommandReceived(null);
                 return;
             }
+            msg.Position = 0;
 
             CommandType commandType = (CommandType)msg.ReadByte();
 
@@ -1042,7 +1043,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (_leaderboardViewController != null)
             {
                 _leaderboardViewController.SetLeaderboard();
-                _leaderboardViewController.SetTimer(totalTime - currentTime, results);
+                _leaderboardViewController.SetTimer((int)(totalTime - currentTime), results);
             }
         }
 
