@@ -66,7 +66,7 @@ namespace BeatSaberMultiplayer
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
         private GameObject _scoreScreen;
 
-        private bool _avatarChanged;
+        private bool _nextIsUpdateFull;
         private string _prevAvatarHash;
 
         private TextMeshPro _messageDisplayText;
@@ -264,8 +264,9 @@ namespace BeatSaberMultiplayer
             _currentScene = _menuSceneName;
             _loaded = false;
             DestroyPlayerControllers();
-            if (Client.Instance != null && Client.Instance.connected)
+            if (Client.Instance != null)
             {
+                needToSendUpdates = true;
                 if (Client.Instance.inRadioMode)
                 {
                     PluginUI.instance.radioFlowCoordinator.ReturnToChannel();
@@ -274,7 +275,6 @@ namespace BeatSaberMultiplayer
                 {
                     PluginUI.instance.roomFlowCoordinator.ReturnToRoom();
                 }
-                needToSendUpdates = true;
             }
         }
 
@@ -380,6 +380,7 @@ namespace BeatSaberMultiplayer
                                 else
                                 {
                                     Plugin.log.Error("Not enough info to create new player controller! Waiting for full update...");
+                                    _nextIsUpdateFull = true;
                                     new PlayerUpdate(msg);
                                     byte hitCount = msg.ReadByte();
                                     msg.ReadBytes(hitCount*5);
@@ -750,7 +751,7 @@ namespace BeatSaberMultiplayer
             if (!Config.Instance.SeparateAvatarForMultiplayer && Client.Instance.connected)
             {
                 Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
-                _avatarChanged = true;
+                _nextIsUpdateFull = true;
 
                 if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash))
                 {
@@ -767,12 +768,12 @@ namespace BeatSaberMultiplayer
                 if (Config.Instance.SeparateAvatarForMultiplayer)
                 {
                     Client.Instance.playerInfo.avatarHash = Config.Instance.PublicAvatarHash;
-                    _avatarChanged = true;
+                    _nextIsUpdateFull = true;
                 }
                 else
                 {
                     Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
-                    _avatarChanged = true;
+                    _nextIsUpdateFull = true;
                 }
 #if DEBUG
                 if (Client.Instance.playerInfo.avatarHash != PlayerInfo.avatarHashPlaceholder)
@@ -861,12 +862,12 @@ namespace BeatSaberMultiplayer
 
             if (Client.Instance.playerInfo.avatarHash != _prevAvatarHash)
             {
-                _avatarChanged = true;
+                _nextIsUpdateFull = true;
                 _prevAvatarHash = Client.Instance.playerInfo.avatarHash;
             }
 
-            Client.Instance.SendPlayerInfo(_avatarChanged);
-            _avatarChanged = false;
+            Client.Instance.SendPlayerInfo(_nextIsUpdateFull);
+            _nextIsUpdateFull = false;
         }
 
         private bool ShowAvatarsInGame()
@@ -944,29 +945,34 @@ namespace BeatSaberMultiplayer
             else if (Config.Instance.SubmitScores == 1)
             {
                 bool submitScore = false;
-                if (ScrappedData.Downloaded)
+                if (!gameplayModifiers.noFail)
                 {
-                    ScrappedSong song = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(difficultyBeatmap.level.levelID));
-                    if (song != default)
+                    if (ScrappedData.Downloaded)
                     {
-                        DifficultyStats stats = song.Diffs.FirstOrDefault(x => x.Diff == difficultyBeatmap.difficulty.ToString().Replace("+", "Plus"));
-                        if (stats != default)
+                        ScrappedSong song = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(difficultyBeatmap.level.levelID));
+                        if (song != default)
                         {
-                            if (stats.Ranked != 0)
+                            DifficultyStats stats = song.Diffs.FirstOrDefault(x => x.Diff == difficultyBeatmap.difficulty.ToString().Replace("+", "Plus"));
+                            if (stats != default)
                             {
-                                submitScore = true;
+                                if (stats.Ranked != 0)
+                                {
+                                    submitScore = true;
+                                }
+                                else
+                                    Plugin.log.Warn("Song is unrakned!");
                             }
                             else
-                                Plugin.log.Warn("Song is unrakned!");
+                                Plugin.log.Warn("Difficulty not found!");
                         }
                         else
-                            Plugin.log.Warn("Difficulty not found!");
+                            Plugin.log.Warn("Song not found!");
                     }
                     else
-                        Plugin.log.Warn("Song not found!");
+                        Plugin.log.Warn("Scrapped data is not downloaded!");
                 }
                 else
-                    Plugin.log.Warn("Scrapped data is not downloaded!");
+                    Plugin.log.Warn("No fail enabled, score submission disabled!");
 
                 if (!submitScore)
                 {

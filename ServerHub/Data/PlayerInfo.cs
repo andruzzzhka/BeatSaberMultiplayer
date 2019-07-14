@@ -228,6 +228,8 @@ namespace ServerHub.Data
                 {
                     hitsLastUpdate[i].AddToMessage(msg);
                 }
+
+                hitsLastUpdate.Clear();
             }
             else
             {

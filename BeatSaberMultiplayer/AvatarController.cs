@@ -156,7 +156,14 @@ namespace BeatSaberMultiplayer
             avatar.GameObject.transform.SetParent(_centerAdjust.transform, false);
             transform.SetParent(_centerAdjust.transform, false);
 
-            currentAvatarHash = ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key;
+            if (ModelSaberAPI.cachedAvatars.Any(x => x.Value == avatar.CustomAvatar))
+            {
+                currentAvatarHash = ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key;
+            }
+            else
+            {
+                currentAvatarHash = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+            }
         }
 
         void Update()

@@ -386,7 +386,7 @@ namespace BeatSaberMultiplayer.Data
 
         public PlayerUpdate updateInfo;
 
-        public List<HitData> hitsLastUpdate = new List<HitData>(8);
+        public List<HitData> hitsLastUpdate = new List<HitData>(16);
 
         public PlayerInfo(string _name, ulong _id)
         {

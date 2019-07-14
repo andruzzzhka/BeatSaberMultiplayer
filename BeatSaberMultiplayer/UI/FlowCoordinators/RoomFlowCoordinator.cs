@@ -118,8 +118,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             joined = true;
             Client.Instance.MessageReceived -= PacketReceived;
             Client.Instance.MessageReceived += PacketReceived;
-            Client.Instance.RequestRoomInfo();
-            roomInfoRequestTime = Time.time;
+            if (Client.Instance.connected)
+            {
+                Client.Instance.RequestRoomInfo();
+                roomInfoRequestTime = Time.time;
+            }
+            else
+            {
+                DisconnectCommandReceived(null);
+            }
         }
 
         public void JoinRoom(string ip, int port, uint roomId, bool usePassword, string password = "")

@@ -764,6 +764,8 @@ namespace BeatSaberMultiplayer
                     {
                         hit.AddToMessage(outMsg);
                     }
+
+                    playerInfo.hitsLastUpdate.Clear();
                 }
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);

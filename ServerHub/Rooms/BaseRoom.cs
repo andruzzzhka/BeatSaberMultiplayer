@@ -77,6 +77,8 @@ namespace ServerHub.Rooms
 
         public  DateTime roomStartedDateTime;
 
+        public bool spectatorInRoom;
+
         private DateTime _songStartTime;
         private DateTime _resultsStartTime;
 
@@ -253,55 +255,58 @@ namespace ServerHub.Rooms
                         {
                             outMsg.Write(roomClients[i].playerInfo.playerId);
                             roomClients[i].playerInfo.updateInfo.AddToMessage(outMsg);
-                            outMsg.Write((byte)roomClients[i].playerHitsHistory.Count);
-                            foreach (var hit in roomClients[i].playerHitsHistory)
+                            outMsg.Write((byte)roomClients[i].playerInfo.hitsLastUpdate.Count);
+                            foreach (var hit in roomClients[i].playerInfo.hitsLastUpdate)
                                 hit.AddToMessage(outMsg);
+                            roomClients[i].playerInfo.hitsLastUpdate.Clear();
                         }
-
-            BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
 
             if (roomClients.Count > 0)
+            {
+                BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced, 1);
+
                 BroadcastWebSocket(CommandType.UpdatePlayerInfo, roomClients.Select(x => x.playerInfo).ToArray());
 
-            int spectatorsCount = roomClients.Count(x => x.playerInfo.updateInfo.playerState == PlayerState.Spectating);
-            if (spectatorsCount > 0)
-            {
-                outMsg = HubListener.ListenerServer.CreateMessage();
-
-                outMsg.Write((byte)CommandType.GetPlayerUpdates);
-
-                outMsg.Write(roomClients.Count(x => x.playerInfo.updateInfo.playerState == PlayerState.Game && x.playerUpdateHistory.Count > 0));
-
-                for (i = 0; i < roomClients.Count; i++)
+                spectatorInRoom = roomClients.Any(x => x.playerInfo.updateInfo.playerState == PlayerState.Spectating);
+                if (spectatorInRoom)
                 {
-                    if (i < roomClients.Count)
+                    outMsg = HubListener.ListenerServer.CreateMessage();
+
+                    outMsg.Write((byte)CommandType.GetPlayerUpdates);
+
+                    outMsg.Write(roomClients.Count(x => x.playerInfo.updateInfo.playerState == PlayerState.Game && x.playerUpdateHistory.Count > 0));
+
+                    for (i = 0; i < roomClients.Count; i++)
                     {
-                        if (roomClients[i] != null && roomClients[i].playerInfo.updateInfo.playerState == PlayerState.Game && roomClients[i].playerUpdateHistory.Count > 0)
+                        if (i < roomClients.Count)
                         {
-                            outMsg.Write(roomClients[i].playerInfo.playerId);
-
-                            int historyLength = roomClients[i].playerUpdateHistory.Count;
-                            outMsg.Write((byte)historyLength);
-
-                            for (int j = 0; j < historyLength; j++)
+                            if (roomClients[i] != null && roomClients[i].playerInfo.updateInfo.playerState == PlayerState.Game && roomClients[i].playerUpdateHistory.Count > 0)
                             {
-                                roomClients[i].playerUpdateHistory.Dequeue().AddToMessage(outMsg);
-                            }
-                            roomClients[i].playerUpdateHistory.Clear();
+                                outMsg.Write(roomClients[i].playerInfo.playerId);
 
-                            int hitCount = roomClients[i].playerHitsHistory.Count;
-                            outMsg.Write((byte)hitCount);
+                                int historyLength = roomClients[i].playerUpdateHistory.Count;
+                                outMsg.Write((byte)historyLength);
 
-                            for (int j = 0; j < hitCount; j++)
-                            {
-                                roomClients[i].playerHitsHistory[i].AddToMessage(outMsg);
+                                for (int j = 0; j < historyLength; j++)
+                                {
+                                    roomClients[i].playerUpdateHistory.Dequeue().AddToMessage(outMsg);
+                                }
+                                roomClients[i].playerUpdateHistory.Clear();
+
+                                int hitCount = roomClients[i].playerHitsHistory.Count;
+                                outMsg.Write((byte)hitCount);
+
+                                for (int j = 0; j < hitCount; j++)
+                                {
+                                    roomClients[i].playerHitsHistory[i].AddToMessage(outMsg);
+                                }
+                                roomClients[i].playerHitsHistory.Clear();
                             }
-                            roomClients[i].playerHitsHistory.Clear();
                         }
                     }
-                }
 
-                BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced, 2, roomClients.Where(x => x.playerInfo.updateInfo.playerState != PlayerState.Spectating).ToList());
+                    BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced, 2, roomClients.Where(x => x.playerInfo.updateInfo.playerState != PlayerState.Spectating).ToList());
+                }
             }
         }
 

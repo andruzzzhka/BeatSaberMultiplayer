@@ -145,7 +145,21 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             joined = true;
             Client.Instance.MessageReceived -= MessageReceived;
             Client.Instance.MessageReceived += MessageReceived;
-            Client.Instance.RequestChannelInfo(channelId);
+            if (Client.Instance.connected)
+            {
+                Client.Instance.RequestChannelInfo(channelId);
+            }
+            else
+            {
+                InGameOnlineController.Instance.needToSendUpdates = false;
+
+                PopAllViewControllers();
+                InGameOnlineController.Instance.DestroyPlayerControllers();
+                PreviewPlayer.CrossfadeToDefault();
+                joined = false;
+
+                _radioNavController.DisplayError("Lost connection to the ServerHub!");
+            }
         }
 
         private void MessageReceived(NetIncomingMessage msg)

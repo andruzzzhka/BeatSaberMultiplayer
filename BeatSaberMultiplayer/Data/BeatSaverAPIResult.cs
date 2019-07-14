@@ -9,47 +9,10 @@ using SimpleJSON;
 namespace BeatSaberMultiplayer.Misc
 {
     public enum SongQueueState { Queued, Downloading, Downloaded, Error };
-    [Serializable]
-    public class Metadata
-    {
-        public string[] characteristics;
-        public Difficulties difficulties;
-
-        public Metadata()
-        {
-        }
-
-        [JsonConstructor]
-        public Metadata(string[] characteristics, Difficulties difficulties)
-        {
-            this.characteristics = characteristics;
-            this.difficulties = difficulties;
-        }
-
-        [Serializable]
-        public class Difficulties
-        {
-            public bool easy = false;
-            public bool normal = false;
-            public bool hard = false;
-            public bool expert = false;
-            public bool expertPlus = false;
-            [JsonConstructor]
-            public Difficulties(bool easy, bool normal, bool hard, bool expert, bool expertPlus)
-            {
-                this.easy = easy;
-                this.normal = normal;
-                this.hard = hard;
-                this.expert = expert;
-                this.expertPlus = expertPlus;
-            }
-
-        }
-    }
+    
     [Serializable]
     public class Song
     {
-        public Metadata metadata;
         public string levelAuthorName;
         public string songAuthorName;
         public string songName;
@@ -94,7 +57,6 @@ namespace BeatSaberMultiplayer.Misc
                 ConstructFromScoreSaber(jsonNode);
                 return;
             }
-            metadata = jsonNode["metadata"].ToObject<Metadata>();
             levelAuthorName = (string)jsonNode["metadata"]["levelAuthorName"];
             songAuthorName = (string)jsonNode["metadata"]["songAuthorName"];
             songName = (string)jsonNode["metadata"]["songName"];
@@ -143,13 +105,11 @@ namespace BeatSaberMultiplayer.Misc
             coverURL = Config.Instance.BeatSaverURL + jsonNode["image"];
             hash = (string)jsonNode["id"];
             hash = hash.ToLower();
-            metadata = new Metadata() { characteristics = new string[] { "Standard" }, difficulties = new Metadata.Difficulties(true, false, false, false, false) };
         }
 
         public static Song FromSearchNode(JObject jsonNode)
         {
             Song buffer = new Song();
-            buffer.metadata = jsonNode["metadata"].ToObject<Metadata>();
             buffer.levelAuthorName = (string)jsonNode["metadata"]["levelAuthorName"];
             buffer.songAuthorName = (string)jsonNode["metadata"]["songAuthorName"];
             buffer.songName = (string)jsonNode["metadata"]["songName"];

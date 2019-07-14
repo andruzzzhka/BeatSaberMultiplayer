@@ -27,11 +27,25 @@ namespace ServerHub.Data
 
         public bool fullUpdate;
 
-        public Queue<PlayerUpdate> playerUpdateHistory = new Queue<PlayerUpdate>(10);
-        public List<HitData> playerHitsHistory = new List<HitData>(30);
+        public Queue<PlayerUpdate> playerUpdateHistory = new Queue<PlayerUpdate>(16);
+        public List<HitData> playerHitsHistory = new List<HitData>(32);
         public Queue<UnityVOIP.VoipFragment> playerVoIPQueue = new Queue<UnityVOIP.VoipFragment>();
 
-        public uint joinedRoomID;
+        public uint joinedRoomID {
+            set {
+                if (value > 0) {
+                    var rooms = RoomsController.GetRoomsList();
+                    if (rooms.Any(x => x.roomId == value))
+                        _joinedRoom = rooms.First(x => x.roomId == value);
+                    else
+                        _joinedRoom = null;
+                }
+                else
+                    _joinedRoom = null;
+            }
+            get { return _joinedRoom?.roomId ?? 0; }
+        }
+        private BaseRoom _joinedRoom;
 
         public bool active;
 
@@ -63,18 +77,21 @@ namespace ServerHub.Data
                 fullUpdate = true;
             }
 
-            playerUpdateHistory.Enqueue(playerInfo.updateInfo);
-
-            while (playerUpdateHistory.Count >= 10)
+            if (_joinedRoom != null && _joinedRoom.spectatorInRoom)
             {
-                playerUpdateHistory.Dequeue();
-            }
+                playerUpdateHistory.Enqueue(playerInfo.updateInfo);
 
-            playerHitsHistory.AddRange(playerInfo.hitsLastUpdate);
+                while (playerUpdateHistory.Count >= 16)
+                {
+                    playerUpdateHistory.Dequeue();
+                }
 
-            if(playerHitsHistory.Count > 30)
-            {
-                playerHitsHistory.RemoveRange(0, playerHitsHistory.Count - 30);
+                playerHitsHistory.AddRange(playerInfo.hitsLastUpdate);
+
+                if (playerHitsHistory.Count >= 32)
+                {
+                    playerHitsHistory.RemoveRange(0, playerHitsHistory.Count - 32);
+                }
             }
         }
 

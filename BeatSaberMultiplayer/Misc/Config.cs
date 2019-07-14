@@ -43,6 +43,10 @@ namespace BeatSaberMultiplayer {
             {
                 "0.6.4.3",
                 new string[] { "127.0.0.1", "hub.assistant.moe", "hub.auros.red", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.just-skill.ru", "hub.tgcfabian.tk", "hub.traber-info.de" }
+            },
+            {
+                "0.7.0.0",
+                new string[] { "bs.tigersserver.xyz" }
             }
         };
 
