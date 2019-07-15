@@ -24,6 +24,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
         Button _roomsButton;
         Button _radioButton;
         TextMeshProUGUI _missingFilesText;
+        TextMeshProUGUI _versionText;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -56,6 +57,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
                     Destroy(_radioButton.GetComponentInChildren<HoverHint>());
                     _radioButton.SetButtonIcon(Sprites.radioIcon);
                 }
+                _versionText = BeatSaberUI.CreateText(rectTransform, "v" + IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Metadata.Version.ToString(), new Vector2(45f, -35f));
+                _versionText.alignment = TextAlignmentOptions.Right;
+                _versionText.color = Color.white;
+                _versionText.fontSize = 4.5f;
             }
         }
     }
