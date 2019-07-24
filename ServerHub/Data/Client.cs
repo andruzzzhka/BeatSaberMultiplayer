@@ -25,7 +25,7 @@ namespace ServerHub.Data
         public PlayerInfo playerInfo;
         public DateTime joinTime;
 
-        public bool fullUpdate;
+        public bool lastUpdateIsFull;
 
         public Queue<PlayerUpdate> playerUpdateHistory = new Queue<PlayerUpdate>(16);
         public List<HitData> playerHitsHistory = new List<HitData>(32);
@@ -69,12 +69,13 @@ namespace ServerHub.Data
                 {
                     playerInfo.hitsLastUpdate.Add(new HitData(msg));
                 }
-                fullUpdate = false;
+                
+                lastUpdateIsFull = false;
             }
             else
             {
                 playerInfo = new PlayerInfo(msg);
-                fullUpdate = true;
+                lastUpdateIsFull = true;
             }
 
             if (_joinedRoom != null && _joinedRoom.spectatorInRoom)

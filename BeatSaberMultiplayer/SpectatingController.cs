@@ -256,7 +256,7 @@ namespace BeatSaberMultiplayer
 #if DEBUG
         private void _scoreController_noteWasCutEvent(NoteData arg1, NoteCutInfo arg2, int arg3)
         {
-            if(spectatedPlayer != null)
+            if(spectatedPlayer != null && spectatedPlayer.playerInfo != null)
             {
                 HitData hit = playerUpdates[spectatedPlayer.playerInfo.playerId].hits.FirstOrDefault(x => x.Key == arg1.id).Value;
                 bool allIsOKExpected = hit.noteWasCut && hit.speedOK && hit.saberTypeOK && hit.directionOK && !hit.wasCutTooSoon;
@@ -270,7 +270,7 @@ namespace BeatSaberMultiplayer
 
         private void _scoreController_noteWasMissedEvent(NoteData arg1, int arg2)
         {
-            if (spectatedPlayer != null)
+            if (spectatedPlayer != null && spectatedPlayer.playerInfo != null)
             {
                 HitData hit = playerUpdates[spectatedPlayer.playerInfo.playerId].hits.FirstOrDefault(x => x.Key == arg1.id).Value;
 
@@ -291,7 +291,7 @@ namespace BeatSaberMultiplayer
                 if (commandType == CommandType.GetPlayerUpdates)
                 {
                     int playersCount = msg.ReadInt32();
-                    
+
                     for (int j = 0; j < playersCount; j++)
                     {
                         try
@@ -316,14 +316,15 @@ namespace BeatSaberMultiplayer
                                     PlayerUpdate player = new PlayerUpdate(msg);
 
                                     replay.updates.Add(player);
+                                }
 
-                                    byte hitCount = msg.ReadByte();
+                                byte hitCount = msg.ReadByte();
 
-                                    for (int i = 0; i < hitCount; i++)
-                                    {
-                                        HitData hit = new HitData(msg);
+                                for (int i = 0; i < hitCount; i++)
+                                {
+                                    HitData hit = new HitData(msg);
+                                    if (!replay.hits.ContainsKey(hit.objectId))
                                         replay.hits.Add(hit.objectId, hit);
-                                    }
                                 }
 
                                 if (replay.updates.Count > 450)
@@ -340,20 +341,29 @@ namespace BeatSaberMultiplayer
                                     replay.playerInfo = playerController.playerInfo;
                                 }
 
+                                if(replay.playerInfo == null)
+                                {
+                                    InGameOnlineController.Instance.sendFullUpdate = true;
+                                    continue;
+                                }
+
                                 for (int k = 0; k < packetsCount; k++)
                                 {
                                     PlayerUpdate player = new PlayerUpdate(msg);
 
                                     replay.updates.Add(player);
-
-                                    byte hitCount = msg.ReadByte();
-
-                                    for (int i = 0; i < hitCount; i++)
-                                    {
-                                        HitData hit = new HitData(msg);
-                                        replay.hits.Add(hit.objectId, hit);
-                                    }
                                 }
+
+                                byte hitCount = msg.ReadByte();
+
+                                for (int i = 0; i < hitCount; i++)
+                                {
+                                    HitData hit = new HitData(msg);
+                                    if(!replay.hits.ContainsKey(hit.objectId))
+                                        replay.hits.Add(hit.objectId, hit);
+                                }
+
+                                playerUpdates.Add(playerId, replay);
                             }                            
                         }
                         catch (Exception e)
@@ -428,6 +438,7 @@ namespace BeatSaberMultiplayer
                 if (playerUpdates.Count > 0 && spectatedPlayer != null && spectatedPlayer.playerInfo == null)
                 {
                     spectatedPlayer.playerInfo = playerUpdates.FirstOrDefault(x => x.Key != Client.Instance.playerInfo.playerId).Value?.playerInfo;
+                    Plugin.log.Info("Set spectated player...");
                     if (spectatedPlayer.playerInfo != null)
                     {
                         Plugin.log.Info("Spectating player: " + spectatedPlayer.playerInfo.playerName);

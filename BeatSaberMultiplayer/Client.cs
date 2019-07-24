@@ -245,9 +245,9 @@ namespace BeatSaberMultiplayer
 
                 if (Config.Instance.SpectatorMode)
                 {
-
-                    for (int i = 0; i >= _receivedMessages.Count; i++)
+                    for (int i = 0; i < _receivedMessages.Count; i++)
                     {
+                        _receivedMessages[i].Position = 0;
                         if (_receivedMessages[i].MessageType == NetIncomingMessageType.Data && _receivedMessages[i].PeekByte() == (byte)CommandType.GetPlayerUpdates)
                         {
                             PlayerInfoUpdateReceived?.Invoke(_receivedMessages[i]);

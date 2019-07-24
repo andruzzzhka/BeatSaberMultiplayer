@@ -24,52 +24,61 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 if (playerInfo == null)
                     return;
 
-                if (_prevProgress != value)
+                if (value < 0f)
                 {
-                    if (value < 0f)
+                    if (_prevProgress != value || value < 0f)
                     {
                         _scoreText.text = "";
-                        if (_transferHostButtonEnabled != (Client.Instance.isHost && !playerInfo.Equals(Client.Instance.playerInfo)))
-                        {
-                            _transferHostButtonEnabled = (Client.Instance.isHost && !playerInfo.Equals(Client.Instance.playerInfo));
-                            _transferHostButton.gameObject.SetActive(_transferHostButtonEnabled);
-                        }
-
-                        if (_muteButtonEnabled != (!playerInfo.Equals(Client.Instance.playerInfo)))
-                        {
-                            _muteButtonEnabled = (!playerInfo.Equals(Client.Instance.playerInfo));
-                            _muteButton.gameObject.SetActive(_muteButtonEnabled);
-                        }
                     }
-                    else if (value < 1f)
+
+                    if (_transferHostButtonEnabled != (Client.Instance.isHost && !playerInfo.Equals(Client.Instance.playerInfo)))
+                    {
+                        _transferHostButtonEnabled = (Client.Instance.isHost && !playerInfo.Equals(Client.Instance.playerInfo));
+                        _transferHostButton.gameObject.SetActive(_transferHostButtonEnabled);
+                    }
+
+                    if (_muteButtonEnabled != (!playerInfo.Equals(Client.Instance.playerInfo)))
+                    {
+                        _muteButtonEnabled = (!playerInfo.Equals(Client.Instance.playerInfo));
+                        _muteButton.gameObject.SetActive(_muteButtonEnabled);
+                    }
+                }
+                else if (value < 1f)
+                {
+                    if (_prevProgress != value || value < 0f)
                     {
                         _scoreText.text = value.ToString("P");
-                        if (_transferHostButtonEnabled)
-                        {
-                            _transferHostButtonEnabled = false;
-                            _transferHostButton.gameObject.SetActive(_transferHostButtonEnabled);
-                        }
-
-                        if (_muteButtonEnabled)
-                        {
-                            _muteButtonEnabled = false;
-                            _muteButton.gameObject.SetActive(_muteButtonEnabled);
-                        }
                     }
-                    else
+
+                    if (_transferHostButtonEnabled)
+                    {
+                        _transferHostButtonEnabled = false;
+                        _transferHostButton.gameObject.SetActive(_transferHostButtonEnabled);
+                    }
+
+                    if (_muteButtonEnabled)
+                    {
+                        _muteButtonEnabled = false;
+                        _muteButton.gameObject.SetActive(_muteButtonEnabled);
+                    }
+                }
+                else
+                {
+                    if (_prevProgress != value || value < 0f)
                     {
                         _scoreText.text = "DOWNLOADED";
-                        if (_transferHostButtonEnabled)
-                        {
-                            _transferHostButtonEnabled = false;
-                            _transferHostButton.gameObject.SetActive(_transferHostButtonEnabled);
-                        }
+                    }
 
-                        if (_muteButtonEnabled)
-                        {
-                            _muteButtonEnabled = false;
-                            _muteButton.gameObject.SetActive(_muteButtonEnabled);
-                        }
+                    if (_transferHostButtonEnabled)
+                    {
+                        _transferHostButtonEnabled = false;
+                        _transferHostButton.gameObject.SetActive(_transferHostButtonEnabled);
+                    }
+
+                    if (_muteButtonEnabled)
+                    {
+                        _muteButtonEnabled = false;
+                        _muteButton.gameObject.SetActive(_muteButtonEnabled);
                     }
                 }
                 _prevProgress = value;

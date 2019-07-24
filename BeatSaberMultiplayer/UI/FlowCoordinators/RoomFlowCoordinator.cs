@@ -694,7 +694,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
             _packsViewController.SetData(SongCore.Loader.CustomBeatmapLevelPackCollectionSO, SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.FindIndexInArray(_lastSelectedPack));
-
+            
             if (_roomNavigationController.viewControllers.IndexOf(_songSelectionViewController) < 0)
             {
                 PushViewControllerToNavigationController(_roomNavigationController, _songSelectionViewController, null, true);

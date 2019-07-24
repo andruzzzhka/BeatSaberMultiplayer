@@ -124,7 +124,7 @@ namespace ServerHub.Hub
             }
 
             List<Client> allClients = hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioChannels.SelectMany(x => x.radioClients)).ToList();
-
+            
             NetIncomingMessage msg;
             while (ListenerServer.ReadMessage(out msg))
             {
@@ -208,7 +208,9 @@ namespace ServerHub.Hub
                                         {
                                             if (client != null)
                                             {
-                                                client.UpdatePlayerInfo(msg);
+                                                if (msg.PeekByte() == 1 || !client.lastUpdateIsFull)
+                                                    client.UpdatePlayerInfo(msg);
+
                                                 if (Settings.Instance.Misc.PlayerColors.ContainsKey(client.playerInfo.playerId))
                                                 {
                                                     client.playerInfo.updateInfo.playerNameColor = Settings.Instance.Misc.PlayerColors[client.playerInfo.playerId];

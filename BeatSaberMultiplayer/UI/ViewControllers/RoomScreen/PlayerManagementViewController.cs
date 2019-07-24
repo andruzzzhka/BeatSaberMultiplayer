@@ -47,6 +47,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         TextMeshProUGUI _pingText;
 
+        bool _resetPlayerList;
+
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
@@ -206,7 +208,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         {
             var players = InGameOnlineController.Instance.players;
                 
-            if (players.Count != _tableCells.Count)
+            if (players.Count != _tableCells.Count || _resetPlayerList)
             {
                 for (int i = 0; i < _tableCells.Count; i++)
                 {
@@ -218,12 +220,18 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 //{
                 //    StartCoroutine(ScrollWithDelay());
                 //}
+                _resetPlayerList = false;
             }
 
             PlayerListTableCell buffer;
             int index = 0;
             foreach (var player in players)
             {
+                if (player.Value == null)
+                {
+                    _resetPlayerList = true;
+                    continue;
+                }
                 if (_tableCells.Count > index)
                 {
                     buffer = _tableCells[index];

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using VRUI;
 
 namespace BeatSaberMultiplayer.OverriddenClasses
 {
@@ -18,7 +19,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         {
             try
             {
-                if (Config.Instance.SpectatorMode && SpectatingController.Instance != null && SpectatingController.active && Client.Instance != null && Client.Instance.connected)
+                if (Config.Instance.SpectatorMode && SpectatingController.Instance != null && SpectatingController.active && Client.Instance != null && Client.Instance.connected && SpectatingController.Instance.spectatedPlayer != null && SpectatingController.Instance.spectatedPlayer.playerInfo != null)
                 {
                     ulong playerId = SpectatingController.Instance.spectatedPlayer.playerInfo.playerId;
 
@@ -92,7 +93,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         {
             try
             {
-                if (Config.Instance.SpectatorMode && SpectatingController.Instance != null && SpectatingController.active && Client.Instance != null && Client.Instance.connected)
+                if (Config.Instance.SpectatorMode && SpectatingController.Instance != null && SpectatingController.active && Client.Instance != null && Client.Instance.connected && SpectatingController.Instance.spectatedPlayer != null && SpectatingController.Instance.spectatedPlayer.playerInfo != null)
                 {
                     ulong playerId = SpectatingController.Instance.spectatedPlayer.playerInfo.playerId;
 
@@ -139,7 +140,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         {
             try
             {
-                if (Config.Instance.SpectatorMode && SpectatingController.Instance != null && SpectatingController.active && Client.Instance != null && Client.Instance.connected)
+                if (Config.Instance.SpectatorMode && SpectatingController.Instance != null && SpectatingController.active && Client.Instance != null && Client.Instance.connected && SpectatingController.Instance.spectatedPlayer != null && SpectatingController.Instance.spectatedPlayer.playerInfo != null)
                 {
                     if (__instance.energy + value <= 1E-05f && SpectatingController.Instance.spectatedPlayer.playerInfo.updateInfo.playerEnergy > 1E-04f)
                     {

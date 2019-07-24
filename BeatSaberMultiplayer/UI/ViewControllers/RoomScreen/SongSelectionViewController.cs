@@ -155,6 +155,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 var tableGameObject = new GameObject("CustomTableView");
                 tableGameObject.SetActive(false);
+
+                Plugin.log.Info("Creating tableview");
+
                 _songsTableView = tableGameObject.AddComponent<TableView>();
                 _songsTableView.gameObject.AddComponent<RectMask2D>();
                 _songsTableView.transform.SetParent(container, false);
@@ -173,6 +176,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 _songsTableView.didSelectCellWithIdxEvent += SongsTableView_DidSelectRow;
                 _songsTableView.dataSource = this;
+
+                Plugin.log.Info("Created tableview!");
 
                 _hostIsSelectingSongText = BeatSaberUI.CreateText(rectTransform, "Host is selecting song...", new Vector2(0f, 0f));
                 _hostIsSelectingSongText.fontSize = 8f;
@@ -229,7 +234,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _fastPageDownButton.gameObject.SetActive(isHost);
 
             _hostIsSelectingSongText.gameObject.SetActive(!isHost);
-
             SelectTopButtons(TopButtonsState.Select);
 
             _sortByButton.gameObject.SetActive(isHost);

@@ -66,7 +66,7 @@ namespace BeatSaberMultiplayer
         private List<PlayerInfoDisplay> _scoreDisplays = new List<PlayerInfoDisplay>();
         private GameObject _scoreScreen;
 
-        private bool _nextIsUpdateFull;
+        public bool sendFullUpdate;
         private string _prevAvatarHash;
 
         private TextMeshPro _messageDisplayText;
@@ -251,9 +251,9 @@ namespace BeatSaberMultiplayer
         {
             if(players.TryGetValue(playerId, out OnlinePlayerController player))
             {
-                return  (player.playerInfo.updateInfo.playerState == PlayerState.Game && _currentScene == _gameSceneName) ||
-                        (player.playerInfo.updateInfo.playerState == PlayerState.Room && _currentScene == _menuSceneName) ||
-                        (player.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs && _currentScene == _menuSceneName);
+                return  (player.playerInfo.updateInfo.playerState == PlayerState.Game && _currentScene == _gameSceneName && Config.Instance.ShowAvatarsInGame && !Config.Instance.SpectatorMode) ||
+                        (player.playerInfo.updateInfo.playerState == PlayerState.Room && _currentScene == _menuSceneName && Config.Instance.ShowAvatarsInRoom) ||
+                        (player.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs && _currentScene == _menuSceneName && Config.Instance.ShowAvatarsInRoom);
             }
             else
                 return false;
@@ -380,7 +380,7 @@ namespace BeatSaberMultiplayer
                                 else
                                 {
                                     Plugin.log.Error("Not enough info to create new player controller! Waiting for full update...");
-                                    _nextIsUpdateFull = true;
+                                    sendFullUpdate = true;
                                     new PlayerUpdate(msg);
                                     byte hitCount = msg.ReadByte();
                                     msg.ReadBytes(hitCount*5);
@@ -388,25 +388,20 @@ namespace BeatSaberMultiplayer
                             }
 
                             if(player != null)
-                                player.SetAvatarState(((ShowAvatarsInGame() && !Config.Instance.SpectatorMode && _loaded) || ShowAvatarsInRoom()) && !Client.Instance.inRadioMode);
+                                player.SetAvatarState(!Client.Instance.inRadioMode && IsPlayerVisible(player.playerInfo.playerId));
                         }
 
                         _playerIds.Sort();
 
                         int localPlayerIndex = _playerIds.IndexOf(Client.Instance.playerInfo.playerId);
                         int counter = 0;
-                        bool playerRemoved = false;
+                        bool needToRemovePlayer = false;
 
                         foreach (var pair in players)
                         {
                             if (!_playerIds.Contains(pair.Key))
                             {
-                                if (pair.Value != null && !pair.Value.destroyed)
-                                {
-                                    Destroy(pair.Value.gameObject);
-                                    playerRemoved = true;
-                                    players.Remove(pair.Key);
-                                }
+                                needToRemovePlayer = true;
                             }
                             else
                             {
@@ -420,13 +415,21 @@ namespace BeatSaberMultiplayer
                             }
                         }
 
-                        if (playerRemoved)
+                        if (needToRemovePlayer)
                         {
+                            Plugin.log.Info("Player(s) left! Removing player controllers...");
                             List<ulong> removed = new List<ulong>();
 
                             foreach (var pair in players)
-                                if(pair.Value == null || pair.Value.destroyed)
+                                if (!_playerIds.Contains(pair.Key))
+                                {
+                                    Plugin.log.Info("Removed player controller with ID " + pair.Key);
                                     removed.Add(pair.Key);
+                                    if (pair.Value != null && !pair.Value.destroyed)
+                                    {
+                                        Destroy(pair.Value);
+                                    }
+                                }
 
                             foreach(ulong key in removed)
                                 players.Remove(key);
@@ -751,7 +754,7 @@ namespace BeatSaberMultiplayer
             if (!Config.Instance.SeparateAvatarForMultiplayer && Client.Instance.connected)
             {
                 Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
-                _nextIsUpdateFull = true;
+                sendFullUpdate = true;
 
                 if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash))
                 {
@@ -768,12 +771,12 @@ namespace BeatSaberMultiplayer
                 if (Config.Instance.SeparateAvatarForMultiplayer)
                 {
                     Client.Instance.playerInfo.avatarHash = Config.Instance.PublicAvatarHash;
-                    _nextIsUpdateFull = true;
+                    sendFullUpdate = true;
                 }
                 else
                 {
                     Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
-                    _nextIsUpdateFull = true;
+                    sendFullUpdate = true;
                 }
 #if DEBUG
                 if (Client.Instance.playerInfo.avatarHash != PlayerInfo.avatarHashPlaceholder)
@@ -862,12 +865,12 @@ namespace BeatSaberMultiplayer
 
             if (Client.Instance.playerInfo.avatarHash != _prevAvatarHash)
             {
-                _nextIsUpdateFull = true;
+                sendFullUpdate = true;
                 _prevAvatarHash = Client.Instance.playerInfo.avatarHash;
             }
 
-            Client.Instance.SendPlayerInfo(_nextIsUpdateFull);
-            _nextIsUpdateFull = false;
+            Client.Instance.SendPlayerInfo(sendFullUpdate);
+            sendFullUpdate = false;
         }
 
         private bool ShowAvatarsInGame()

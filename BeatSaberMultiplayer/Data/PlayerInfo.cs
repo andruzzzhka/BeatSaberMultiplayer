@@ -51,7 +51,7 @@ namespace BeatSaberMultiplayer.Data
 
         public int CompareTo(PlayerScore other)
         {
-            return score.CompareTo(other.score);
+            return other.score.CompareTo(score);
         }
 
         public bool Equals(PlayerScore other)

@@ -233,7 +233,8 @@ namespace ServerHub.Rooms
                     {
                         if (roomClients[i].playerInfo.Equals(roomHost) && roomClients[i].playerInfo.updateInfo.playerNameColor.Equals(Color32.defaultColor))
                             roomClients[i].playerInfo.updateInfo.playerNameColor = Color32.roomHostColor;
-                        fullUpdate |= roomClients[i].fullUpdate;
+                        fullUpdate |= roomClients[i].lastUpdateIsFull;
+                        roomClients[i].lastUpdateIsFull = false;
                     }
 
             outMsg.Write(fullUpdate ? (byte)1 : (byte)0);
@@ -336,7 +337,7 @@ namespace ServerHub.Rooms
 
         public virtual void BroadcastPacket(NetOutgoingMessage msg, NetDeliveryMethod deliveryMethod, int seqChannel, List<Client> excludeClients = null)
         {
-            if (roomClients.Count == 0 || roomClients.Where(x => excludeClients == null || !excludeClients.Contains(x)).Count() == 0)
+            if (roomClients.Count == 0 || roomClients.Count(x => excludeClients == null || !excludeClients.Contains(x)) == 0)
                 return;
 
             try
