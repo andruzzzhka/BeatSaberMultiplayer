@@ -2,6 +2,7 @@
 using BeatSaberMultiplayer.Misc;
 using CustomUI.BeatSaber;
 using HMUI;
+using Polyglot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -364,7 +365,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _ratingParamText.text = "--";
             _rankedText.text = "LOADING...";
 
-            _characteristicControl.SetTexts(_selectedSong.beatmapCharacteristics.Distinct().Select(x => x.characteristicNameLocalized).ToArray());
+            _characteristicControl.SetTexts(_selectedSong.beatmapCharacteristics.Distinct().Select(x => Localization.Get(x.characteristicNameLocalizationKey)).ToArray());
 
             int standardCharacteristicIndex = Array.FindIndex(_selectedSong.beatmapCharacteristics.Distinct().ToArray(), x => x.serializedName == "Standard");
             

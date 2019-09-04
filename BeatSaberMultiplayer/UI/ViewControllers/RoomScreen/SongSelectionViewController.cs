@@ -42,6 +42,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         TableView _songsTableView;
         LevelListTableCell _songTableCellInstance;
+        TableViewScroller _songTableViewScroller;
         List<IPreviewBeatmapLevel> availableSongs = new List<IPreviewBeatmapLevel>();
         private BeatmapCharacteristicSO[] _beatmapCharacteristics;
 
@@ -95,11 +96,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _diffButton.SetButtonTextSize(3f);
                 _diffButton.ToggleWordWrapping(false);
                 _diffButton.gameObject.SetActive(false);
-
                 _fastPageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_fastPageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                 (_fastPageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                (_fastPageUpButton.transform as RectTransform).anchoredPosition = new Vector2(-26f, -12.5f);
+                (_fastPageUpButton.transform as RectTransform).anchoredPosition = new Vector2(-26f, -8f);
                 (_fastPageUpButton.transform as RectTransform).sizeDelta = new Vector2(8f, 6f);
                 _fastPageUpButton.GetComponentsInChildren<RectTransform>().First(x => x.name == "BG").sizeDelta = new Vector2(8f, 6f);
                 _fastPageUpButton.GetComponentsInChildren<Image>().First(x => x.name == "Arrow").sprite = Sprites.doubleArrow;
@@ -125,14 +125,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -12.5f);
+                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -8f);
                 (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
-                    _songsTableView.PageScrollUp();
-
+                    _songTableViewScroller.PageScrollUp();
+                    _songsTableView.RefreshScrollButtons();
                 });
-                _pageUpButton.interactable = false;
+                _pageUpButton.interactable = true;
 
                 _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
                 (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
@@ -141,17 +141,17 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
                 _pageDownButton.onClick.AddListener(delegate ()
                 {
-                    _songsTableView.PageScrollDown();
-
+                    _songTableViewScroller.PageScrollDown();
+                    _songsTableView.RefreshScrollButtons();
                 });
-                _pageDownButton.interactable = false;
+                _pageDownButton.interactable = true;
 
                 RectTransform container = new GameObject("Content", typeof(RectTransform)).transform as RectTransform;
-                container.SetParent(rectTransform, false);
+                container.SetParent(base.rectTransform, false);
                 container.anchorMin = new Vector2(0.3f, 0.5f);
                 container.anchorMax = new Vector2(0.7f, 0.5f);
-                container.sizeDelta = new Vector2(0f, 60f);
-                container.anchoredPosition = new Vector2(0f, -3f);
+                container.sizeDelta = new Vector2(0f, 58f);
+                container.anchoredPosition = new Vector2(0f, -2f);
 
                 var tableGameObject = new GameObject("CustomTableView");
                 tableGameObject.SetActive(false);
@@ -162,18 +162,27 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _songsTableView.gameObject.AddComponent<RectMask2D>();
                 _songsTableView.transform.SetParent(container, false);
 
-                _songsTableView.SetPrivateField("_isInitialized", false);
-                _songsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-                tableGameObject.SetActive(true);
-
                 (_songsTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (_songsTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
                 (_songsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
-                (_songsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
+                (_songsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -2f);
+
+                _songsTableView.SetPrivateField("_isInitialized", false);
+                _songsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
+                _songsTableView.SetPrivateField("_tableType", TableView.TableType.Vertical);
+
+                RectTransform viewport = new GameObject("Viewport").AddComponent<RectTransform>(); //Make a Viewport RectTransform
+                viewport.SetParent(_songsTableView.transform as RectTransform, false); //It expects one from a ScrollRect, so we have to make one ourselves.
+                viewport.sizeDelta = new Vector2(0f, 58f);
+
+                _songsTableView.Init();
+                _songsTableView.SetPrivateField("_scrollRectTransform", viewport);
 
                 ReflectionUtil.SetPrivateField(_songsTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_songsTableView, "_pageDownButton", _pageDownButton);
-
+                
+                tableGameObject.SetActive(true);
+                _songTableViewScroller = _songsTableView.GetPrivateField<TableViewScroller>("_scroller");
                 _songsTableView.didSelectCellWithIdxEvent += SongsTableView_DidSelectRow;
                 _songsTableView.dataSource = this;
 
@@ -212,7 +221,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     _songsTableView.ReloadData();
                 }
 
-                _songsTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
+                _songsTableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
+                _songsTableView.RefreshScrollButtons();
             }
         }
 
@@ -221,7 +231,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             if (availableSongs.Any(x => x.levelID == levelId))
             {
                 int row = availableSongs.FindIndex(x => x.levelID == levelId);
-                _songsTableView.ScrollToCellWithIdx(row, TableView.ScrollPositionType.Beginning, false);
+                _songsTableView.ScrollToCellWithIdx(row, TableViewScroller.ScrollPositionType.Center, false);
             }
         }
 
@@ -289,37 +299,37 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         private void FastScrollUp(TableView tableView, int pages)
         {
-            float targetPosition = tableView.GetProperty<float>("position") - (Mathf.Max(1f, tableView.GetNumberOfVisibleCells() - 1f) * tableView.GetPrivateField<float>("_cellSize") * pages);
+            float targetPosition = _songTableViewScroller.position - (Mathf.Max(1f, tableView.visibleCells.Count() - 1f) * tableView.cellSize * pages);
             if (targetPosition < 0f)
             {
                 targetPosition = 0f;
             }
 
-            tableView.SetPrivateField("_targetPosition", targetPosition);
+            _songTableViewScroller.SetPrivateField("_targetPosition", targetPosition);
 
-            tableView.enabled = true;
+            _songTableViewScroller.enabled = true;
             tableView.RefreshScrollButtons();
         }
 
         private void FastScrollDown(TableView tableView, int pages)
         {
-            float num = (tableView.GetPrivateField<TableView.TableType>("_tableType") != TableView.TableType.Vertical) ? tableView.GetPrivateField<RectTransform>("_scrollRectTransform").rect.width : tableView.GetPrivateField<RectTransform>("_scrollRectTransform").rect.height;
-            float num2 = tableView.GetPrivateField<int>("_numberOfCells") * tableView.GetPrivateField<float>("_cellSize") - num;
+            float num = (tableView.tableType != TableView.TableType.Vertical) ? tableView.scrollRectTransform.rect.width : tableView.scrollRectTransform.rect.height;
+            float num2 = tableView.numberOfCells * tableView.cellSize - num;
 
-            float targetPosition = tableView.GetProperty<float>("position") + (Mathf.Max(1f, tableView.GetNumberOfVisibleCells() - 1f) * tableView.GetPrivateField<float>("_cellSize") * pages);
+            float targetPosition = _songTableViewScroller.position + (Mathf.Max(1f, tableView.visibleCells.Count() - 1f) * tableView.cellSize * pages);
 
             if (targetPosition > num2)
             {
                 targetPosition = num2;
             }
 
-            tableView.SetPrivateField("_targetPosition", targetPosition);
+            _songTableViewScroller.SetPrivateField("_targetPosition", targetPosition);
 
-            tableView.enabled = true;
+            _songTableViewScroller.enabled = true;
             tableView.RefreshScrollButtons();
         }
 
-        public TableCell CellForIdx(int row)
+        public TableCell CellForIdx(TableView tableView, int row)
         {
             LevelListTableCell cell = Instantiate(_songTableCellInstance);
 

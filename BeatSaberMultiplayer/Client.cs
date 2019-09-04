@@ -88,9 +88,10 @@ namespace BeatSaberMultiplayer
                         packetsWrittenToCurrentDump += packets;
                         Plugin.log.Info(packets + " update packets are written to disk!");
                     }
-                }catch(Exception e)
+                }
+                catch (Exception e)
                 {
-                    Plugin.log.Error("Unable to write update packets to packet dump! Exception: "+e);
+                    Plugin.log.Error("Unable to write update packets to packet dump! Exception: " + e);
                 }
                 await Task.Delay(TimeSpan.FromSeconds(2.5)).ConfigureAwait(false);
             }
@@ -107,7 +108,7 @@ namespace BeatSaberMultiplayer
         public static event Action ClientLevelStarted;
         public static event Action ClientLeftRoom;
         public static bool disableScoreSubmission;
-        
+
         public event Action ConnectedToServerHub;
 
         public event Action<NetIncomingMessage> MessageReceived;
@@ -118,7 +119,7 @@ namespace BeatSaberMultiplayer
         public bool inRadioMode;
 
         public NetClient networkClient;
-        
+
         public string ip;
         public int port;
 
@@ -131,20 +132,21 @@ namespace BeatSaberMultiplayer
         private float _lastPacketTime;
         private float _averagePacketTime;
         private int _packets;
-        
+
         private List<NetIncomingMessage> _receivedMessages = new List<NetIncomingMessage>();
-        
-        public static Client Instance {
+
+        public static Client Instance
+        {
             get
             {
                 if (instance == null)
-                   instance = new GameObject("MultiplayerClient").AddComponent<Client>();
+                    instance = new GameObject("MultiplayerClient").AddComponent<Client>();
                 return instance;
             }
         }
-        
+
         private static Client instance;
-        
+
         public void Awake()
         {
             instance = this;
@@ -255,7 +257,7 @@ namespace BeatSaberMultiplayer
                         }
                     }
                 }
-                    
+
                 foreach (NetIncomingMessage msg in _receivedMessages)
                 {
                     switch (msg.MessageType)
@@ -269,7 +271,7 @@ namespace BeatSaberMultiplayer
                                     connected = true;
                                     ConnectedToServerHub?.Invoke();
                                 }
-                                else if(status == NetConnectionStatus.Disconnected && connected)
+                                else if (status == NetConnectionStatus.Disconnected && connected)
                                 {
 
 #if DEBUG
@@ -279,7 +281,7 @@ namespace BeatSaberMultiplayer
 
                                     MessageReceived?.Invoke(null);
                                 }
-                                else if(status == NetConnectionStatus.Disconnected && !connected)
+                                else if (status == NetConnectionStatus.Disconnected && !connected)
                                 {
                                     Plugin.log.Error("ServerHub refused connection! Reason: " + msg.ReadString());
                                 }
@@ -365,7 +367,7 @@ namespace BeatSaberMultiplayer
                                             Plugin.log.Info("LevelID: " + songInfo.levelId + ", Bytes: " + BitConverter.ToString(buffer.ToArray()));
 
                                             packetsBuffer.Enqueue(buffer.ToArray());
-                                            msg.Position = 0;                                        
+                                            msg.Position = 0;
 #endif
                                             if (playerInfo != null && playerInfo.updateInfo.playerState == PlayerState.Room && ClientLevelStarted != null)
                                             {
@@ -389,7 +391,7 @@ namespace BeatSaberMultiplayer
                                         }
                                         break;
                                     case CommandType.UpdatePlayerInfo:
-                                            break;
+                                        break;
 
                                     default:
                                         {
@@ -422,7 +424,7 @@ namespace BeatSaberMultiplayer
                 _receivedMessages.Clear();
             }
 
-            if(connected && networkClient.ConnectionsCount == 0)
+            if (connected && networkClient.ConnectionsCount == 0)
             {
 
 #if DEBUG
@@ -433,7 +435,7 @@ namespace BeatSaberMultiplayer
                 MessageReceived?.Invoke(null);
             }
 
-            if((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.F1))
+            if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.F1))
             {
                 GarbageCollector.GCMode = GarbageCollector.GCMode == GarbageCollector.Mode.Enabled ? GarbageCollector.Mode.Disabled : GarbageCollector.Mode.Enabled;
                 Plugin.log.Notice($"Garbage collector {GarbageCollector.GCMode.ToString()}!");
@@ -442,7 +444,7 @@ namespace BeatSaberMultiplayer
 
         public void LateUpdate()
         {
-            if(networkClient != null)
+            if (networkClient != null)
             {
                 networkClient.FlushSendQueue();
             }
@@ -522,14 +524,14 @@ namespace BeatSaberMultiplayer
 
         public void CreateRoom(RoomSettings settings)
         {
-            if(connected && networkClient != null)
+            if (connected && networkClient != null)
             {
                 NetOutgoingMessage outMsg = networkClient.CreateMessage();
                 outMsg.Write((byte)CommandType.CreateRoom);
                 settings.AddToMessage(outMsg);
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
-                
+
 #if DEBUG
                 Plugin.log.Info("Creating room...");
 #endif
@@ -549,7 +551,7 @@ namespace BeatSaberMultiplayer
                 Plugin.log.Info("Leaving room...");
 #endif
                 HMMainThreadDispatcher.instance.Enqueue(() => { ClientLeftRoom?.Invoke(); });
-                
+
             }
             isHost = false;
             inRoom = false;
@@ -613,7 +615,7 @@ namespace BeatSaberMultiplayer
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
-                Plugin.log.Info("Transferred host to "+newHost.playerName);
+                Plugin.log.Info("Transferred host to " + newHost.playerName);
 #endif
             }
         }
@@ -653,7 +655,7 @@ namespace BeatSaberMultiplayer
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
-                Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers.ToGameplayModifiers()).Select(x => x.localizedModifierName)));
+                Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers.ToGameplayModifiers()).Select(x => x.modifierNameLocalizationKey)));
 
 #endif
             }
@@ -760,7 +762,7 @@ namespace BeatSaberMultiplayer
                     playerInfo.updateInfo.AddToMessage(outMsg);
                     outMsg.Write((byte)playerInfo.hitsLastUpdate.Count);
 
-                    foreach(var hit in playerInfo.hitsLastUpdate)
+                    foreach (var hit in playerInfo.hitsLastUpdate)
                     {
                         hit.AddToMessage(outMsg);
                     }

@@ -75,7 +75,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                         {
                             break;
                         }
-                        if (beatmapObjectData.time >= startSongTime)
+                        if (beatmapObjectData.time >= _spawningStartTime)
                         {
                             for (int l = _beatmapObjectDataCallbackCacheList.Count; l >= 0; l--)
                             {

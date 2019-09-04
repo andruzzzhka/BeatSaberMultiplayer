@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.UI;
 using VRUI;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
@@ -52,7 +53,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         SongSelectionViewController _songSelectionViewController;
         DifficultySelectionViewController _difficultySelectionViewController;
         LeaderboardViewController _leaderboardViewController;
-        LevelPacksViewController _packsViewController;
+        CustomLevelPacksViewController _packsViewController;
 
         PlayerManagementViewController _playerManagementViewController;
         QuickSettingsViewController _quickSettingsViewController;
@@ -561,6 +562,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     if (Client.Instance.isHost)
                     {
+                        Plugin.log.Info($"Updating level options... ");
                         if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
                         {
                             LevelOptionsInfo info = new LevelOptionsInfo(_difficultySelectionViewController.selectedDifficulty, _playerManagementViewController.modifiers, _difficultySelectionViewController.selectedCharacteristic.serializedName);
@@ -627,8 +629,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (menuSceneSetupData != null)
             {
                 Client.Instance.playerInfo.updateInfo.playerState = Config.Instance.SpectatorMode ? PlayerState.Spectating : PlayerState.Game;
-
-                PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().currentLocalPlayer.playerSpecificSettings;
+                PlayerData playerData = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().playerData;
+                PlayerSpecificSettings playerSettings = playerData.playerSpecificSettings;
 
                 roomInfo.roomState = RoomState.InGame;
                 
@@ -653,8 +655,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 practiceSettings.startSongTime = startTime + 1.5f;
                 practiceSettings.songSpeedMul = modifiers.songSpeedMul;
                 practiceSettings.startInAdvanceAndClearNotes = true;
-
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, startTime > 1f); });
+                OverrideEnvironmentSettings overrideEnvironmentSettings = new OverrideEnvironmentSettings();
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, overrideEnvironmentSettings, playerData.colorSchemesSettings.GetSelectedColorScheme(), modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => { }, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, startTime > 1f); });
             }
             else
             {
@@ -678,23 +680,20 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _songSelectionViewController.SortPressed += (sortMode) => { SetSongs(_lastSelectedPack, sortMode, _lastSearchRequest);  };
                 _songSelectionViewController.SearchPressed += () => { _searchKeyboard.inputString = ""; PresentViewController(_searchKeyboard, null);};
             }
-
             if(_packsViewController == null)
             {
-                _packsViewController = Instantiate(Resources.FindObjectsOfTypeAll<LevelPacksViewController>().First(x => x.name != "CustomLevelPacksViewController"));
+                _packsViewController = BeatSaberUI.CreateViewController<CustomLevelPacksViewController>(); //Instantiate(Resources.FindObjectsOfTypeAll<LevelPacksViewController>().First(x => x.name == "LevelPacksViewController"));
                 _packsViewController.name = "CustomLevelPacksViewController";
 
-
-                if(_lastSelectedPack == null)
+                if (_lastSelectedPack == null)
                 {
                     _lastSelectedPack = SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks[0];
                 }
 
                 _packsViewController.didSelectPackEvent += (sender, selectedPack) => { SetSongs(selectedPack, _lastSortMode, _lastSearchRequest); };
             }
-
-            _packsViewController.SetData(SongCore.Loader.CustomBeatmapLevelPackCollectionSO, SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.FindIndexInArray(_lastSelectedPack));
             
+
             if (_roomNavigationController.viewControllers.IndexOf(_songSelectionViewController) < 0)
             {
                 PushViewControllerToNavigationController(_roomNavigationController, _songSelectionViewController, null, true);
@@ -705,18 +704,71 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     _songSelectionViewController.ScrollToLevel(lastLevelId);
                 }
             }
-
             if (Client.Instance.isHost)
             {
                 _packsViewController.gameObject.SetActive(true);
-                SetBottomScreenViewController(_packsViewController);
+                try
+                {
+                    SetBottomScreenViewController(_packsViewController);
+                }
+                catch (Exception e)
+                {
+                    Plugin.log.Critical($"Error in setting bottom Exception: {e}");
+                    Plugin.log.Error(e.StackTrace);
+                }
+                _packsViewController.SetData(SongCore.Loader.CustomBeatmapLevelPackCollectionSO, SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.FindIndexInArray(_lastSelectedPack));
+                /*
+                LevelPacksTableView levelpack = _packsViewController.GetPrivateField<LevelPacksTableView>("_levelPacksTableView");
+                levelpack.SelectCellWithIdx(_packsViewController.selectedPackNum);
+                Plugin.log.Info("Init LevelPackTableView");
+                Plugin.log.Info("Getting raw tableview");
+                TableView levelpackTableView = levelpack.GetPrivateField<TableView>("_tableView");
+                Plugin.log.Info("Getting scrollview");
+
+                levelpackTableView.SetPrivateField("_scrollRectTransform", levelpackTableView.transform);
+                */
+                //TableViewScroller levelPackScoller = levelpackTableView.GetPrivateField<TableViewScroller>("_scroller");
+                /*
+                Plugin.log.Info("Getting LevelPackTableView");
+                LevelPacksTableView levelpack = _packsViewController.GetPrivateField<LevelPacksTableView>("_levelPacksTableView");                
+                levelpack.SelectCellWithIdx(_packsViewController.selectedPackNum);
+                Plugin.log.Info("Init LevelPackTableView");
+                levelpack.Init();
+                Plugin.log.Info("Getting raw tableview");
+                TableView levelpackTableView = levelpack.GetPrivateField<TableView>("_tableView");
+                Plugin.log.Info("Getting scrollview");
+                TableViewScroller levelPackScoller = levelpackTableView.GetPrivateField<TableViewScroller>("_scroller");
+                if (levelPackScoller.GetPrivateField<TableView>("_tableView") == null)
+                {
+                    Plugin.log.Error("Tableview is null on Levelpack scroller!");
+                }
+                if (levelpackTableView.contentTransform.anchoredPosition == null)
+                {
+                    Plugin.log.Error("anchoredPosition is null on Levelpack tableview!");
+                }
+                try
+                {
+                    float pos = levelPackScoller.position;
+                    Plugin.log.Error($"Position: {pos}");
+                    levelPackScoller.Update();
+                    pos = levelPackScoller.position;
+                    Plugin.log.Error($"Position: {pos}");
+                }
+                catch (Exception e)
+                {
+                    Plugin.log.Critical($"Couldn't get position! Exception: {e}");
+                    Plugin.log.Error(e.StackTrace);
+                }
+                //Plugin.log.Info("Setting scrollview");
+                //levelPackScoller.SetPrivateField("_tableView", levelpackTableView);
+                Plugin.log.Info("Presenting controller");
+                */
             }
             else
             {
                 _packsViewController.gameObject.SetActive(false);
                 SetBottomScreenViewController(null);
             }
-
             _songSelectionViewController.UpdateViewController(Client.Instance.isHost);
         }
 

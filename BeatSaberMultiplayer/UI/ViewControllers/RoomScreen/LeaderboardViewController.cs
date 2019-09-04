@@ -21,6 +21,7 @@ namespace BeatSaberMultiplayer
         public event Action playNowButtonPressed;
 
         private TableView _leaderboardTableView;
+        private TableViewScroller _leaderboardTableViewScroller;
         private LeaderboardTableCell _leaderboardTableCellInstance;
         private TextMeshProUGUI _timerText;
         private TextMeshProUGUI _progressText;
@@ -57,7 +58,8 @@ namespace BeatSaberMultiplayer
                 _pageUpButton.interactable = true;
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
-                    _leaderboardTableView.PageScrollUp();
+                    _leaderboardTableViewScroller.PageScrollUp();
+                    _leaderboardTableView.RefreshScrollButtons();
 
                 });
                 _pageUpButton.interactable = false;
@@ -70,8 +72,8 @@ namespace BeatSaberMultiplayer
                 _pageDownButton.interactable = true;
                 _pageDownButton.onClick.AddListener(delegate ()
                 {
-                    _leaderboardTableView.PageScrollDown();
-
+                    _leaderboardTableViewScroller.PageScrollDown();
+                    _leaderboardTableView.RefreshScrollButtons();
                 });
                 _pageDownButton.interactable = false;
 
@@ -94,24 +96,31 @@ namespace BeatSaberMultiplayer
                 _leaderboardTableView = tableGameObject.AddComponent<TableView>();
                 _leaderboardTableView.gameObject.AddComponent<RectMask2D>();
                 _leaderboardTableView.transform.SetParent(container, false);
-
-                _leaderboardTableView.SetPrivateField("_isInitialized", false);
-                _leaderboardTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-                tableGameObject.SetActive(true);
-
-                RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(x => x.name != "CustomTableView"), _leaderboardTableView.transform, false);
-                viewportMask.transform.DetachChildren();
-                _leaderboardTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
-
                 (_leaderboardTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (_leaderboardTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
                 (_leaderboardTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
                 (_leaderboardTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
 
+                _leaderboardTableView.SetPrivateField("_isInitialized", false);
+                _leaderboardTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
+
+                RectTransform viewport = new GameObject("Viewport").AddComponent<RectTransform>(); //Make a Viewport RectTransform
+                viewport.SetParent(_leaderboardTableView.transform as RectTransform, false); //It expects one from a ScrollRect, so we have to make one ourselves.
+                viewport.sizeDelta = new Vector2(0f, 56f);
+
+                _leaderboardTableView.Init();
+                _leaderboardTableView.SetPrivateField("_scrollRectTransform", viewport);
+
+                RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(x => x.name != "CustomTableView"), _leaderboardTableView.transform, false);
+                viewportMask.transform.DetachChildren();
+                _leaderboardTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);               
+
                 ReflectionUtil.SetPrivateField(_leaderboardTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_leaderboardTableView, "_pageDownButton", _pageDownButton);
 
                 _leaderboardTableView.dataSource = this;
+                tableGameObject.SetActive(true);
+                _leaderboardTableViewScroller = _leaderboardTableView.GetPrivateField<TableViewScroller>("_scroller");
 
                 _timerText = BeatSaberUI.CreateText(rectTransform, "", new Vector2(0f, 34f));
                 _timerText.fontSize = 8f;
@@ -137,6 +146,7 @@ namespace BeatSaberMultiplayer
                 }
                 _tableCells.Clear();
                 _leaderboardTableView.RefreshTable(false);
+                _leaderboardTableView.RefreshScrollButtons();
                 //if (prevCount == 0 && _playerInfos.Count > 0)
                 //{
                 //    StartCoroutine(ScrollWithDelay());
@@ -160,7 +170,7 @@ namespace BeatSaberMultiplayer
             yield return null;
             yield return null;
 
-            _leaderboardTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
+            _leaderboardTableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
         }
 
         public void SetSong(SongInfo info)
@@ -224,7 +234,7 @@ namespace BeatSaberMultiplayer
             _lastTime = time;
         }
 
-        public TableCell CellForIdx(int row)
+        public TableCell CellForIdx(TableView tableView, int row)
         {
             LeaderboardTableCell cell = Instantiate(_leaderboardTableCellInstance);
 

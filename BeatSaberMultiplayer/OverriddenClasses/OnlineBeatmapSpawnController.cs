@@ -106,10 +106,10 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 Vector3 a3 = a - forward * (_moveDistance + _jumpDistance);
                 Vector3 noteOffset = GetNoteOffset(beatmapObjectData.lineIndex, NoteLineLayer.Base);
                 noteOffset.y = ((obstacleData.obstacleType == ObstacleType.Top) ? (_topObstaclePosY + _globalYJumpOffset) : _verticalObstaclePosY);
-                ObstacleController obstacleController = ((obstacleData.obstacleType == ObstacleType.Top) ? _topObstaclePool : _fullHeightObstaclePool).Spawn();
+                ObstacleController obstacleController = ((obstacleData.obstacleType == ObstacleType.Top) ? _obstaclePool : _obstaclePool).Spawn();
                 SetObstacleEventCallbacks(obstacleController);
                 obstacleController.transform.SetPositionAndRotation(a + noteOffset, Quaternion.identity);
-                obstacleController.Init(obstacleData, a + noteOffset, a2 + noteOffset, a3 + noteOffset, num, num2, beatmapObjectData.time - _spawnAheadTime, _noteLinesDistance);
+                obstacleController.Init(obstacleData, a + noteOffset, a2 + noteOffset, a3 + noteOffset, num, num2, beatmapObjectData.time - _spawnAheadTime, _noteLinesDistance, 0f);
 
                 obstacleController.SetPrivateField("_playerController", owner);
                 obstacleController.SetPrivateField("_audioTimeSyncController", onlineSyncController);

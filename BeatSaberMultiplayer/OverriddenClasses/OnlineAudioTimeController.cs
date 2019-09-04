@@ -27,9 +27,5 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             }
         }
 
-        public override void Awake()
-        {
-        }
-
     }
 }

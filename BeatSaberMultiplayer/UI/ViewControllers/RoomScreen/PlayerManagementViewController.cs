@@ -27,7 +27,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public event Action gameplayModifiersChanged;
         public event Action<PlayerInfo> transferHostButtonPressed;
 
-        public GameplayModifiers modifiers { get { return _modifiersPanel.gameplayModifiers; } }
+        public GameplayModifiers modifiers { get {
+                if (_modifiersPanel.gameplayModifiers == null)
+                {
+                    Plugin.log.Error("Modifiers were null! Returning default modifiers.");
+                    return GameplayModifiers.defaultModifiers;
+                }                
+                return _modifiersPanel.gameplayModifiers;
+            } }
 
         RectTransform _playersTab;
         RectTransform _modifiersTab;
@@ -44,6 +51,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         LeaderboardTableCell _downloadListTableCellInstance;
         List<PlayerListTableCell> _tableCells = new List<PlayerListTableCell>();
+        TableViewScroller _playersTableViewScroller;
 
         TextMeshProUGUI _pingText;
 
@@ -68,6 +76,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _modifiersTab.sizeDelta = new Vector2(0f, 0f);
 
                 _modifiersPanel = Instantiate(Resources.FindObjectsOfTypeAll<GameplayModifiersPanelController>().First(), rectTransform, false);
+                _modifiersPanel.SetData(GameplayModifiers.defaultModifiers);
                 _modifiersPanel.gameObject.SetActive(true);
                 _modifiersPanel.transform.SetParent(_modifiersTab, false);
                 (_modifiersPanel.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
@@ -81,17 +90,18 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 {
                     hint.SetPrivateField("_hoverHintController", hoverHintController);
                 }
-
-                _modifiersPanel.Init(GameplayModifiers.defaultModifiers);
                 _modifiersPanel.Awake();
 
                 var modifierToggles = _modifiersPanel.GetPrivateField<GameplayModifierToggle[]>("_gameplayModifierToggles");
 
                 foreach (var item in modifierToggles)
                 {
-                    item.toggle.onValueChanged.AddListener( (enabled) => { gameplayModifiersChanged?.Invoke(); });
+                    item.toggle.onValueChanged.AddListener( (enabled) => {
+                        Plugin.log.Info("Toggle changed");
+                        gameplayModifiersChanged?.Invoke();
+                    });
                 }
-                
+
                 _modifiersPanelBlocker = new GameObject("ModifiersPanelBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
                 _modifiersPanelBlocker.SetParent(_modifiersTab, false);
                 _modifiersPanelBlocker.gameObject.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
@@ -120,7 +130,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _pageUpButton.interactable = true;
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
-                    _playersTableView.PageScrollUp();
+                    _playersTableViewScroller.PageScrollUp();
 
                 });
                 _pageUpButton.interactable = false;
@@ -133,7 +143,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _pageDownButton.interactable = true;
                 _pageDownButton.onClick.AddListener(delegate ()
                 {
-                    _playersTableView.PageScrollDown();
+                    _playersTableViewScroller.PageScrollDown();
 
                 });
                 _pageDownButton.interactable = false;
@@ -153,7 +163,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 _playersTableView.SetPrivateField("_isInitialized", false);
                 _playersTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-                tableGameObject.SetActive(true);
+                _playersTableView.SetPrivateField("_tableType", TableView.TableType.Vertical);
+
+                var viewport = new GameObject("Viewport").AddComponent<RectTransform>();
+                viewport.SetParent(tableGameObject.GetComponent<RectTransform>(), false);
+                (viewport.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
+                (viewport.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
+                (viewport.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
+                tableGameObject.GetComponent<ScrollRect>().viewport = viewport;
+                _playersTableView.Init();
 
                 (_playersTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (_playersTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
@@ -162,7 +180,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
                 ReflectionUtil.SetPrivateField(_playersTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_playersTableView, "_pageDownButton", _pageDownButton);
-                
+                tableGameObject.SetActive(true);
+                _playersTableViewScroller = _playersTableView.GetPrivateField<TableViewScroller>("_scroller");
+                //_playersTableViewScroller.SetPrivateField("position", zero);
                 _playersTableView.dataSource = this;
                 #endregion
 
@@ -183,6 +203,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             if (activationType == ActivationType.AddedToHierarchy)
             {
+                StartCoroutine(ScrollWithDelay());
                 SetGameplayModifiers(GameplayModifiers.defaultModifiers);
             }
         }
@@ -215,11 +236,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     Destroy(_tableCells[i].gameObject);
                 }
                 _tableCells.Clear();
-                _playersTableView.RefreshTable(false);
+                //_playersTableView.RefreshTable(false);
+                _playersTableView.ReloadData();
                 //if(prevCount == 0 && _playersList.Count > 0)
                 //{
                 //    StartCoroutine(ScrollWithDelay());
                 //}
+                StartCoroutine(ScrollWithDelay());
                 _resetPlayerList = false;
             }
 
@@ -266,15 +289,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             yield return null;
             yield return null;
 
-            _playersTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
+            _playersTableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
         }
 
         public void SetGameplayModifiers(GameplayModifiers modifiers)
         {
             if (_modifiersPanel != null)
             {
-                _modifiersPanel.Init(modifiers);
-
+                _modifiersPanel.SetData(modifiers);
+                _modifiersPanel.Refresh();
+                /*
                 GameplayModifiersModelSO modifiersModel = Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First();
 
                 var modifiersParams = modifiersModel.GetModifierParams(modifiers);
@@ -283,6 +307,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 {
                     gameplayModifierToggle.toggle.isOn = modifiersParams.Contains(gameplayModifierToggle.gameplayModifier);
                 }
+                */
             }
         }
 
@@ -296,7 +321,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             return InGameOnlineController.Instance.players.Count;
         }
 
-        public TableCell CellForIdx(int row)
+        public TableCell CellForIdx(TableView tableView, int row)
         {
             LeaderboardTableCell _originalCell = Instantiate(_downloadListTableCellInstance);
 

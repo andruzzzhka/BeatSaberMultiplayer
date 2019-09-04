@@ -23,6 +23,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private Button _pageDownButton;
 
         TableView _presetsTableView;
+        TableViewScroller _presetsTableViewScroller;
         LevelListTableCell _presetsTableCellInstance;
 
         TextMeshProUGUI _selectPresetText;
@@ -45,7 +46,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _pageUpButton.interactable = true;
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
-                    _presetsTableView.PageScrollUp();
+                    _presetsTableViewScroller.PageScrollUp();
+                    _presetsTableView.RefreshScrollButtons();
 
                 });
                 _pageUpButton.interactable = false;
@@ -58,7 +60,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _pageDownButton.interactable = true;
                 _pageDownButton.onClick.AddListener(delegate ()
                 {
-                    _presetsTableView.PageScrollDown();
+                    _presetsTableViewScroller.PageScrollDown();
+                    _presetsTableView.RefreshScrollButtons();
 
                 });
                 _pageDownButton.interactable = false;
@@ -75,15 +78,23 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 _presetsTableView = tableGameObject.AddComponent<TableView>();
                 _presetsTableView.gameObject.AddComponent<RectMask2D>();
                 _presetsTableView.transform.SetParent(container, false);
-
-                _presetsTableView.SetPrivateField("_isInitialized", false);
-                _presetsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-                tableGameObject.SetActive(true);
-
                 (_presetsTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (_presetsTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
                 (_presetsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
                 (_presetsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
+
+                _presetsTableView.SetPrivateField("_isInitialized", false);
+                _presetsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
+
+                RectTransform viewport = new GameObject("Viewport").AddComponent<RectTransform>(); //Make a Viewport RectTransform
+                viewport.SetParent(_presetsTableView.transform as RectTransform, false); //It expects one from a ScrollRect, so we have to make one ourselves.
+                viewport.sizeDelta = new Vector2(0f, 50f);
+
+                _presetsTableView.Init();
+                _presetsTableView.SetPrivateField("_scrollRectTransform", viewport);
+                _presetsTableView.SetPrivateField("_hideScrollButtonsIfNotNeeded", false);
+                tableGameObject.SetActive(true);
+
 
                 ReflectionUtil.SetPrivateField(_presetsTableView, "_pageUpButton", _pageUpButton);
                 ReflectionUtil.SetPrivateField(_presetsTableView, "_pageDownButton", _pageDownButton);
@@ -131,11 +142,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         {
             yield return null;
             yield return null;
-
-            _presetsTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
+            _presetsTableView.RefreshScrollButtons();
+            _presetsTableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
         }
 
-        public TableCell CellForIdx(int row)
+        public TableCell CellForIdx(TableView tableView, int row)
         {
             LevelListTableCell cell = Instantiate(_presetsTableCellInstance);
 

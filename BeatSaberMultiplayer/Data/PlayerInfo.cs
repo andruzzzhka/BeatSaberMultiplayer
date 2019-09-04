@@ -12,7 +12,7 @@ using UnityEngine.XR;
 
 namespace BeatSaberMultiplayer.Data
 {
-    public enum PlayerState: byte { Disconnected, Lobby, Room, Game, Spectating, DownloadingSongs }
+    public enum PlayerState : byte { Disconnected, Lobby, Room, Game, Spectating, DownloadingSongs }
 
     public struct PlayerScore : IComparable<PlayerScore>, IEquatable<PlayerScore>
     {
@@ -126,7 +126,7 @@ namespace BeatSaberMultiplayer.Data
         public HitData(byte[] data)
         {
             objectId = BitConverter.ToInt32(data, 0);
-            
+
             BitArray bits = new BitArray(new byte[] { data[4] });
 
             noteWasCut = bits[0];
@@ -156,7 +156,7 @@ namespace BeatSaberMultiplayer.Data
         {
             if (noteWasCut)
             {
-                return new NoteCutInfo(speedOK, directionOK, saberTypeOK, wasCutTooSoon, 3f, Vector3.down, isSaberA ? Saber.SaberType.SaberA : Saber.SaberType.SaberB, 0, 0, 0, Vector3.zero, Vector3.down, null, 0f);
+                return new NoteCutInfo(speedOK, directionOK, saberTypeOK, wasCutTooSoon, 3f, Vector3.down, isSaberA ? Saber.SaberType.SaberA : Saber.SaberType.SaberB, 0, 0, Vector3.zero, Vector3.down, null, 0f);
             }
             else
             {
@@ -394,7 +394,7 @@ namespace BeatSaberMultiplayer.Data
             playerId = _id;
             avatarHash = avatarHashPlaceholder;
 
-            updateInfo = new PlayerUpdate() { playerNameColor = new Color32(255,255,255,255) };
+            updateInfo = new PlayerUpdate() { playerNameColor = new Color32(255, 255, 255, 255) };
         }
 
         public PlayerInfo(PlayerInfo original)
@@ -484,7 +484,7 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(HexConverter.ConvertHexToBytesX(avatarHash));
 
             msg.Write((byte)hitsLastUpdate.Count);
-            
+
             for (int i = 0; i < (byte)hitsLastUpdate.Count; i++)
             {
                 hitsLastUpdate[i].AddToMessage(msg);
