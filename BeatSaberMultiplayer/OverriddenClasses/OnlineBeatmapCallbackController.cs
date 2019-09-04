@@ -30,6 +30,8 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             _beatmapDataModel = new GameObject("CustomBeatmapDataModel").AddComponent<BeatmapDataModel>();
             if (BS_Utils.Plugin.LevelData.IsSet)
             {
+                Plugin.log.Debug($"Level data is set, trying to match BeatmapDatamodel for selected difficulty...");
+
                 LevelOptionsInfo levelInfo = owner.playerInfo.updateInfo.playerLevelOptions;
                 IDifficultyBeatmap diffBeatmap = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.level.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic.serializedName == owner.playerInfo.updateInfo.playerLevelOptions.characteristicName).difficultyBeatmaps.First(x => x.difficulty == owner.playerInfo.updateInfo.playerLevelOptions.difficulty);
                 BeatmapData data = diffBeatmap.beatmapData;
@@ -37,7 +39,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 _beatmapDataModel.beatmapData = BeatDataTransformHelper.CreateTransformedBeatmapData(data, levelInfo.modifiers.ToGameplayModifiers(), PracticeSettings.defaultPracticeSettings, PlayerSpecificSettings.defaultSettings);
                 HandleBeatmapDataModelDidChangeBeatmapData();
 
-                Plugin.log.Info($"Set custom BeatmapDataModel for difficulty {levelInfo.difficulty}");
+                Plugin.log.Debug($"Set custom BeatmapDataModel for difficulty {levelInfo.difficulty}");
             }
         }
 
@@ -75,7 +77,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                         {
                             break;
                         }
-                        if (beatmapObjectData.time >= startSongTime)
+                        if (beatmapObjectData.time >= _spawningStartTime)
                         {
                             for (int l = _beatmapObjectDataCallbackCacheList.Count; l >= 0; l--)
                             {

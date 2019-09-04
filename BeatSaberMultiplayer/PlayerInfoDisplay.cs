@@ -63,7 +63,7 @@ namespace BeatSaberMultiplayer
         {
             _playerScore = _info;
 
-            if (_playerScore != default)
+            if (_playerScore != default && _info.valid)
             {
                 playerPlaceText.text = (_index + 1).ToString();
                 playerNameText.text = _playerScore.name;

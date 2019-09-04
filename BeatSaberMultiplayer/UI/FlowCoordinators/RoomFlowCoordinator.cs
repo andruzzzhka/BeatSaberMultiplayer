@@ -628,7 +628,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 Client.Instance.playerInfo.updateInfo.playerState = Config.Instance.SpectatorMode ? PlayerState.Spectating : PlayerState.Game;
 
-                PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().currentLocalPlayer.playerSpecificSettings;
+                PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().playerData.playerSpecificSettings;
 
                 roomInfo.roomState = RoomState.InGame;
                 
@@ -654,7 +654,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 practiceSettings.songSpeedMul = modifiers.songSpeedMul;
                 practiceSettings.startInAdvanceAndClearNotes = true;
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, startTime > 1f); });
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, new OverrideEnvironmentSettings() { overrideEnvironments = false }, null, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => { }, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, startTime > 1f); });
             }
             else
             {
@@ -684,8 +684,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _packsViewController = Instantiate(Resources.FindObjectsOfTypeAll<LevelPacksViewController>().First(x => x.name != "CustomLevelPacksViewController"));
                 _packsViewController.name = "CustomLevelPacksViewController";
 
+                TableView table = _packsViewController.GetComponentInChildren<TableView>();
+                table.Init();
+                _packsViewController.GetComponentInChildren<TableViewScroller>().Init(table);
 
-                if(_lastSelectedPack == null)
+
+                if (_lastSelectedPack == null)
                 {
                     _lastSelectedPack = SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks[0];
                 }

@@ -39,9 +39,9 @@ namespace BeatSaberMultiplayer
         private int _silentFrames;
         private int _voipDelayCounter;
 
-        public float syncDelay = 0f;
-        private float lastSynchronizationTime = 0f;
-        private float syncTime = 0f;
+        public double syncDelay = 0f;
+        private double lastSynchronizationTime = 0f;
+        private double syncTime = 0f;
         private float lerpProgress = 0f;
 
         public void Start()
@@ -63,12 +63,6 @@ namespace BeatSaberMultiplayer
 #endif
                 _syncStartInfo = playerInfo.updateInfo;
                 _syncStartInfo = playerInfo.updateInfo;
-            }
-
-            if (SceneManager.GetActiveScene().name == "GameCore" && Config.Instance.ShowOtherPlayersBlocks && !Client.Instance.playerInfo.Equals(playerInfo) && !Config.Instance.SpectatorMode)
-            {
-                SpawnBeatmapControllers();
-                SpawnSabers();
             }
         }
 
@@ -95,7 +89,15 @@ namespace BeatSaberMultiplayer
         void SpawnSabers()
         {
             Plugin.log.Info("Spawning left saber...");
-            _leftSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "LeftSaber"), transform, false);
+            try
+            {
+                _leftSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "LeftSaber"), transform, false);
+            }
+            catch (Exception e)
+            {
+                if (!(e is NullReferenceException) || !e.StackTrace.Contains("VRController.UpdatePositionAndRotation"))
+                    Plugin.log.Critical("Unable to spawn saber (Left)! Exception: "+e);
+            }
             _leftSaber.gameObject.name = "CustomLeftSaber";
             var leftController = _leftSaber.gameObject.AddComponent<OnlineVRController>();
             leftController.owner = this;
@@ -107,7 +109,15 @@ namespace BeatSaberMultiplayer
             leftTrail.SetPrivateField("_saberTypeObject", leftController.GetComponentInChildren<SaberTypeObject>());
 
             Plugin.log.Info("Spawning right saber...");
-            _rightSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "RightSaber"), transform, false);
+            try
+            { 
+                _rightSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "RightSaber"), transform, false);
+            }
+            catch (Exception e)
+            {
+                if (!(e is NullReferenceException) || !e.StackTrace.Contains("VRController.UpdatePositionAndRotation"))
+                    Plugin.log.Critical("Unable to spawn saber (Right)! Exception: " + e);
+            }
             _rightSaber.gameObject.name = "CustomRightSaber";
             var rightController = _rightSaber.gameObject.AddComponent<OnlineVRController>();
             rightController.owner = this;
@@ -116,8 +126,7 @@ namespace BeatSaberMultiplayer
             var rightTrail = rightController.GetComponentInChildren<SaberWeaponTrail>();
             rightTrail.SetPrivateField("_colorManager", colorManager);
             rightTrail.SetPrivateField("_saberTypeObject", rightController.GetComponentInChildren<SaberTypeObject>());
-
-
+            
             Plugin.log.Info("Sabers spawned!");
         }
 
@@ -125,6 +134,24 @@ namespace BeatSaberMultiplayer
         {
             _leftSaber = leftSaber;
             _rightSaber = rightSaber;
+        }
+
+        public void SetBlocksState(bool active)
+        {
+            if(active && beatmapCallbackController == null && audioTimeController == null && beatmapSpawnController == null && _leftSaber == null && _rightSaber == null)
+            {
+                SpawnBeatmapControllers();
+                SpawnSabers();
+            }
+            else if (!active && beatmapCallbackController != null && audioTimeController != null && beatmapSpawnController != null && _leftSaber != null && _rightSaber != null)
+            {
+                Destroy(beatmapCallbackController.gameObject);
+                Destroy(audioTimeController.gameObject);
+                Destroy(_leftSaber.gameObject);
+                Destroy(_rightSaber.gameObject);
+                beatmapSpawnController.PrepareForDestroy();
+                Destroy(beatmapSpawnController.gameObject, 1.4f);
+            }
         }
 
         public override void Update()
@@ -172,7 +199,7 @@ namespace BeatSaberMultiplayer
                 {
                     syncTime += Time.fixedDeltaTime;
 
-                    lerpProgress = syncTime / syncDelay;
+                    lerpProgress = (float)(syncTime / syncDelay);
 
                     playerInfo.updateInfo.headPos = Vector3.Lerp(_syncStartInfo.headPos, _syncEndInfo.headPos, lerpProgress);
                     playerInfo.updateInfo.leftHandPos = Vector3.Lerp(_syncStartInfo.leftHandPos, _syncEndInfo.leftHandPos, lerpProgress);
@@ -195,6 +222,9 @@ namespace BeatSaberMultiplayer
 
                     float lerpedPlayerProgress = Mathf.Lerp(_syncStartInfo.playerProgress, _syncEndInfo.playerProgress, lerpProgress);
 
+                    playerInfo.updateInfo.playerProgress = lerpedPlayerProgress;
+
+                    /*
                     if(playerInfo.updateInfo.playerProgress < lerpedPlayerProgress && Mathf.Abs(playerInfo.updateInfo.playerProgress - lerpedPlayerProgress) < 0.5f)
                     {
                         playerInfo.updateInfo.playerProgress = lerpedPlayerProgress;
@@ -202,7 +232,7 @@ namespace BeatSaberMultiplayer
                     else
                     {
                         playerInfo.updateInfo.playerProgress = _syncStartInfo.playerProgress;
-                    }
+                    }*/
                 }
 
                 _overrideHeadPos = true;

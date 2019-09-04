@@ -29,8 +29,8 @@ namespace BeatSaberMultiplayer
 
         public static async void WritePackets()
         {
-
             byte[] data;
+
             while (true)
             {
                 try
@@ -653,7 +653,7 @@ namespace BeatSaberMultiplayer
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
 #if DEBUG
-                Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers.ToGameplayModifiers()).Select(x => x.localizedModifierName)));
+                Plugin.log.Info("Updating level options: Selected modifiers: " + string.Join(", ", Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First().GetModifierParams(info.modifiers.ToGameplayModifiers()).Select(x => Polyglot.Localization.Get(x.modifierNameLocalizationKey))));
 
 #endif
             }
@@ -689,68 +689,78 @@ namespace BeatSaberMultiplayer
 #if DEBUG
                 if (playerInfo.updateInfo.playerState == PlayerState.Game)
                 {
-                    List<byte> buffer = new List<byte>();
+                    byte[] dumpBuffer = new byte[114];
 
-                    buffer.Add((byte)playerInfo.updateInfo.playerState);
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerScore));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerCutBlocks));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerComboBlocks));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerTotalBlocks));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerEnergy));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.playerProgress));
+                    Buffer.BlockCopy(BitConverter.GetBytes(114 + playerInfo.hitsLastUpdate.Count * 5), 0, dumpBuffer, 0, 4);
+
+                    dumpBuffer[4] = (byte)playerInfo.updateInfo.playerState;
+
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.playerScore), 0, dumpBuffer, 5, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.playerCutBlocks), 0, dumpBuffer, 9, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.playerComboBlocks), 0, dumpBuffer, 13, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.playerTotalBlocks), 0, dumpBuffer, 17, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.playerEnergy), 0, dumpBuffer, 21, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.playerProgress), 0, dumpBuffer, 25, 4);
 
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandPos.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandPos.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandPos.z));
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.rightHandPos.x), 0, dumpBuffer, 29, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.rightHandPos.y), 0, dumpBuffer, 33, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.rightHandPos.z), 0, dumpBuffer, 37, 4);
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandPos.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandPos.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandPos.z));
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.leftHandPos.x), 0, dumpBuffer, 41, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.leftHandPos.y), 0, dumpBuffer, 45, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.leftHandPos.z), 0, dumpBuffer, 49, 4);
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headPos.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headPos.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headPos.z));
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.headPos.x), 0, dumpBuffer, 53, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.headPos.y), 0, dumpBuffer, 57, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.headPos.z), 0, dumpBuffer, 61, 4);
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.z));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.w));
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.x), 0, dumpBuffer, 65, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.y), 0, dumpBuffer, 69, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.z), 0, dumpBuffer, 73, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.rightHandRot.w), 0, dumpBuffer, 77, 4);
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.z));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.w));
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.x), 0, dumpBuffer, 81, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.y), 0, dumpBuffer, 85, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.z), 0, dumpBuffer, 89, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.leftHandRot.w), 0, dumpBuffer, 93, 4);
 
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headRot.x));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headRot.y));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headRot.z));
-                    buffer.AddRange(BitConverter.GetBytes(playerInfo.updateInfo.headRot.w));
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.headRot.x), 0, dumpBuffer, 97, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.headRot.y), 0, dumpBuffer, 101, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.headRot.z), 0, dumpBuffer, 105, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.updateInfo.headRot.w), 0, dumpBuffer, 109, 4);
 
-                    buffer.Add((byte)playerInfo.hitsLastUpdate.Count);
+                    dumpBuffer[113] = (byte)playerInfo.hitsLastUpdate.Count;
 
-                    for (int i = 0; i < (byte)playerInfo.hitsLastUpdate.Count; i++)
+                    packetsBuffer.Enqueue(dumpBuffer);
+
+                    if (playerInfo.hitsLastUpdate.Count > 0)
                     {
-                        byte[] hitData = new byte[5];
+                        byte[] hitBuffer = new byte[playerInfo.hitsLastUpdate.Count * 5];
 
-                        Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.hitsLastUpdate[i].objectId), 0, hitData, 0, 4);
+                        for (int i = 0; i < (byte)playerInfo.hitsLastUpdate.Count; i++)
+                        {
+                            byte[] hitData = new byte[5];
 
-                        BitArray bits = new BitArray(8);
-                        bits[0] = playerInfo.hitsLastUpdate[i].noteWasCut;
-                        bits[1] = playerInfo.hitsLastUpdate[i].isSaberA;
-                        bits[2] = playerInfo.hitsLastUpdate[i].speedOK;
-                        bits[3] = playerInfo.hitsLastUpdate[i].directionOK;
-                        bits[4] = playerInfo.hitsLastUpdate[i].saberTypeOK;
-                        bits[5] = playerInfo.hitsLastUpdate[i].wasCutTooSoon;
+                            Buffer.BlockCopy(BitConverter.GetBytes(playerInfo.hitsLastUpdate[i].objectId), 0, hitData, 0, 4);
 
-                        bits.CopyTo(hitData, 4);
+                            BitArray bits = new BitArray(8);
+                            bits[0] = playerInfo.hitsLastUpdate[i].noteWasCut;
+                            bits[1] = playerInfo.hitsLastUpdate[i].isSaberA;
+                            bits[2] = playerInfo.hitsLastUpdate[i].speedOK;
+                            bits[3] = playerInfo.hitsLastUpdate[i].directionOK;
+                            bits[4] = playerInfo.hitsLastUpdate[i].saberTypeOK;
+                            bits[5] = playerInfo.hitsLastUpdate[i].wasCutTooSoon;
 
-                        buffer.AddRange(hitData);
+                            bits.CopyTo(hitData, 4);
+
+                            Buffer.BlockCopy(hitData, 0, hitBuffer, i * 5, 5);
+                        }
+
+                        packetsBuffer.Enqueue(hitBuffer);
+
                     }
 
-                    buffer.InsertRange(0, BitConverter.GetBytes(buffer.Count));
-
-                    packetsBuffer.Enqueue(buffer.ToArray());
                 }
 #endif
                 if (sendFullUpdate)

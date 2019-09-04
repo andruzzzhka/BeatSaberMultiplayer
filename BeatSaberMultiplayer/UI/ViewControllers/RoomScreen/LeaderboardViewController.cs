@@ -52,28 +52,28 @@ namespace BeatSaberMultiplayer
                 _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "PageUpButton")), rectTransform, false);
                 (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                 (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -12.5f);
+                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -8.5f);
                 (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
                 _pageUpButton.interactable = true;
                 _pageUpButton.onClick.AddListener(delegate ()
                 {
-                    _leaderboardTableView.PageScrollUp();
+                    _leaderboardTableView.GetPrivateField<TableViewScroller>("_scroller").PageScrollUp();
 
                 });
-                _pageUpButton.interactable = false;
+                _pageUpButton.interactable = true;
 
                 _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
                 (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
                 (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
-                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 7f);
+                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 1f);
                 (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
                 _pageDownButton.interactable = true;
                 _pageDownButton.onClick.AddListener(delegate ()
                 {
-                    _leaderboardTableView.PageScrollDown();
+                    _leaderboardTableView.GetPrivateField<TableViewScroller>("_scroller").PageScrollDown();
 
                 });
-                _pageDownButton.interactable = false;
+                _pageDownButton.interactable = true;
 
                 _playNowButton = this.CreateUIButton("CancelButton", new Vector2(-39f, 34.5f), new Vector2(28f, 8.8f), () => { playNowButtonPressed?.Invoke(); }, "Play now");
                 _playNowButton.ToggleWordWrapping(false);
@@ -97,6 +97,15 @@ namespace BeatSaberMultiplayer
 
                 _leaderboardTableView.SetPrivateField("_isInitialized", false);
                 _leaderboardTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
+
+                RectTransform viewport = new GameObject("Viewport").AddComponent<RectTransform>();
+                viewport.SetParent(_leaderboardTableView.transform, false);
+                (viewport.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
+                (viewport.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
+                (viewport.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
+                _leaderboardTableView.GetComponent<ScrollRect>().viewport = viewport;
+                _leaderboardTableView.Init();
+
                 tableGameObject.SetActive(true);
 
                 RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(x => x.name != "CustomTableView"), _leaderboardTableView.transform, false);
@@ -108,8 +117,8 @@ namespace BeatSaberMultiplayer
                 (_leaderboardTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
                 (_leaderboardTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
 
-                ReflectionUtil.SetPrivateField(_leaderboardTableView, "_pageUpButton", _pageUpButton);
-                ReflectionUtil.SetPrivateField(_leaderboardTableView, "_pageDownButton", _pageDownButton);
+                //ReflectionUtil.SetPrivateField(_leaderboardTableView, "_pageUpButton", _pageUpButton);
+                //ReflectionUtil.SetPrivateField(_leaderboardTableView, "_pageDownButton", _pageDownButton);
 
                 _leaderboardTableView.dataSource = this;
 
@@ -160,7 +169,7 @@ namespace BeatSaberMultiplayer
             yield return null;
             yield return null;
 
-            _leaderboardTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
+            _leaderboardTableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
         }
 
         public void SetSong(SongInfo info)
@@ -224,7 +233,7 @@ namespace BeatSaberMultiplayer
             _lastTime = time;
         }
 
-        public TableCell CellForIdx(int row)
+        public TableCell CellForIdx(TableView sender, int row)
         {
             LeaderboardTableCell cell = Instantiate(_leaderboardTableCellInstance);
 

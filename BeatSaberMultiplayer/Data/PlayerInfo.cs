@@ -20,15 +20,15 @@ namespace BeatSaberMultiplayer.Data
         public string name;
         public Color32 color;
         public uint score;
-        public PlayerState state;
+        public bool valid;
 
-        public PlayerScore(ulong id, string name, uint score, Color32 color, PlayerState state)
+        public PlayerScore(ulong id, string name, uint score, Color32 color, bool valid)
         {
             this.id = id;
             this.name = name;
             this.score = score;
             this.color = color;
-            this.state = state;
+            this.valid = valid;
         }
 
         public PlayerScore(PlayerInfo update)
@@ -37,7 +37,7 @@ namespace BeatSaberMultiplayer.Data
             name = update.playerName;
             score = update.updateInfo.playerScore;
             color = update.updateInfo.playerNameColor;
-            state = update.updateInfo.playerState;
+            valid = update.updateInfo.playerState == PlayerState.Game;
         }
 
         public PlayerScore(OnlinePlayerController update)
@@ -46,12 +46,12 @@ namespace BeatSaberMultiplayer.Data
             name = update.playerInfo.playerName;
             score = update.playerInfo.updateInfo.playerScore;
             color = update.playerInfo.updateInfo.playerNameColor;
-            state = update.playerInfo.updateInfo.playerState;
+            valid = update.playerInfo.updateInfo.playerState == PlayerState.Game;
         }
 
         public int CompareTo(PlayerScore other)
         {
-            return other.score.CompareTo(score);
+            return valid ? other.score.CompareTo(score) : 1;
         }
 
         public bool Equals(PlayerScore other)
@@ -156,7 +156,7 @@ namespace BeatSaberMultiplayer.Data
         {
             if (noteWasCut)
             {
-                return new NoteCutInfo(speedOK, directionOK, saberTypeOK, wasCutTooSoon, 3f, Vector3.down, isSaberA ? Saber.SaberType.SaberA : Saber.SaberType.SaberB, 0, 0, 0, Vector3.zero, Vector3.down, null, 0f);
+                return new NoteCutInfo(speedOK, directionOK, saberTypeOK, wasCutTooSoon, 3f, Vector3.down, isSaberA ? Saber.SaberType.SaberA : Saber.SaberType.SaberB, 0, 0, Vector3.zero, Vector3.down, null, 0f);
             }
             else
             {
@@ -395,25 +395,6 @@ namespace BeatSaberMultiplayer.Data
             avatarHash = avatarHashPlaceholder;
 
             updateInfo = new PlayerUpdate() { playerNameColor = new Color32(255,255,255,255) };
-        }
-
-        public PlayerInfo(PlayerInfo original)
-        {
-
-            var fields = typeof(PlayerInfo).GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (var field in fields)
-            {
-                if (field.FieldType.IsValueType)
-                {
-                    field.SetValue(this, field.GetValue(original));
-                }
-            }
-
-            updateInfo.playerLevelOptions = new LevelOptionsInfo(original.updateInfo.playerLevelOptions);
-            hitsLastUpdate = new List<HitData>(original.hitsLastUpdate);
-            playerName = original.playerName;
-            avatarHash = original.avatarHash;
         }
 
         public PlayerInfo(NetIncomingMessage msg)

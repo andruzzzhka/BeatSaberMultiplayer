@@ -282,9 +282,42 @@ namespace ServerHub.Rooms
                     break;
             }
 
+            bool fullUpdate = false;
+
+            int i = 0;
+
+            for (i = 0; i < radioClients.Count; i++)
+                if (i < radioClients.Count)
+                    if (radioClients[i] != null)
+                    {
+                        fullUpdate |= radioClients[i].lastUpdateIsFull;
+                        radioClients[i].lastUpdateIsFull = false;
+                    }
+
+            outMsg.Write(fullUpdate ? (byte)1 : (byte)0);
+
             outMsg.Write(radioClients.Count);
 
-            radioClients.ForEach(x => x.playerInfo.AddToMessage(outMsg));
+            if (fullUpdate)
+                for (i = 0; i < radioClients.Count; i++)
+                {
+                    if (i < radioClients.Count)
+                        if (radioClients[i] != null)
+                            outMsg.Write(radioClients[i].playerInfo.playerId);
+                    radioClients[i].playerInfo.AddToMessage(outMsg);
+                }
+            else
+                for (i = 0; i < radioClients.Count; i++)
+                    if (i < radioClients.Count)
+                        if (radioClients[i] != null)
+                        {
+                            outMsg.Write(radioClients[i].playerInfo.playerId);
+                            radioClients[i].playerInfo.updateInfo.AddToMessage(outMsg);
+                            outMsg.Write((byte)radioClients[i].playerInfo.hitsLastUpdate.Count);
+                            foreach (var hit in radioClients[i].playerInfo.hitsLastUpdate)
+                                hit.AddToMessage(outMsg);
+                            radioClients[i].playerInfo.hitsLastUpdate.Clear();
+                        }
 
             BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced);
 

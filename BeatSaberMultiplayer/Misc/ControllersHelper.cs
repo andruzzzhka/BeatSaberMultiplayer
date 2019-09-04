@@ -12,17 +12,23 @@ namespace BeatSaberMultiplayer.Misc
         private static bool initialized = false;
         private static bool rumbleEnahncerInstalled = false;
         private static int platform = -1;
+        private static VRPlatformHelper platformHelper;
 
         public static void Init()
         {
             rumbleEnahncerInstalled = IPA.Loader.PluginManager.AllPlugins.Any(x => x.Metadata.Id == "rumbleenhancer");
             Plugin.log.Info("Rumble Enahncer installed: "+ rumbleEnahncerInstalled);
 
-            if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
+            if(platformHelper == null)
+            {
+                platformHelper = Resources.FindObjectsOfTypeAll<VRPlatformHelper>().FirstOrDefault();
+            }
+
+            if (platformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.OpenVR)
                 platform = 0;
-            else if (VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
+            else if (platformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Oculus)
                 platform = 1;
-            else if (Environment.CommandLine.Contains("fpfc") && VRPlatformHelper.instance.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Unknown)
+            else if (Environment.CommandLine.Contains("fpfc") && platformHelper.vrPlatformSDK == VRPlatformHelper.VRPlatformSDK.Unknown)
                 platform = 2;
             else
                 platform = -1;

@@ -47,53 +47,63 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "PageUpButton")), rectTransform, false);
                     (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
                     (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                    (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -14.5f);
+                    (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -4.5f);
                     (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
                     _pageUpButton.interactable = true;
                     _pageUpButton.onClick.AddListener(delegate ()
                     {
-                        _serverHubsTableView.PageScrollUp();
+                        _serverHubsTableView.GetPrivateField<TableViewScroller>("_scroller").PageScrollUp();
 
                     });
-                    _pageUpButton.interactable = false;
+                    _pageUpButton.interactable = true;
 
                     _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
                     (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
                     (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
-                    (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 9f);
+                    (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -1f);
                     (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
                     _pageDownButton.interactable = true;
                     _pageDownButton.onClick.AddListener(delegate ()
                     {
-                        _serverHubsTableView.PageScrollDown();
+                        _serverHubsTableView.GetPrivateField<TableViewScroller>("_scroller").PageScrollDown();
 
                     });
-                    _pageDownButton.interactable = false;
+                    _pageDownButton.interactable = true;
+
+                    RectTransform container = new GameObject("Container", typeof(RectTransform)).transform as RectTransform;
+                    container.SetParent(rectTransform, false);
+                    container.anchorMin = new Vector2(0.3f, 0.5f);
+                    container.anchorMax = new Vector2(0.7f, 0.5f);
+                    container.sizeDelta = new Vector2(0f, 60f);
+                    container.anchoredPosition = new Vector2(0f, -3f);
 
                     var tableGameObject = new GameObject("CustomTableView");
                     tableGameObject.SetActive(false);
                     _serverHubsTableView = tableGameObject.AddComponent<TableView>();
-                    _serverHubsTableView.transform.SetParent(rectTransform, false);
+                    _serverHubsTableView.gameObject.AddComponent<RectMask2D>();
+                    _serverHubsTableView.transform.SetParent(container, false);
 
                     _serverHubsTableView.SetPrivateField("_isInitialized", false);
                     _serverHubsTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
+
+                    RectTransform viewport = new GameObject("Viewport").AddComponent<RectTransform>();
+                    viewport.SetParent(_serverHubsTableView.transform, false);
+                    (viewport.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
+                    (viewport.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
+                    (viewport.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
+                    _serverHubsTableView.GetComponent<ScrollRect>().viewport = viewport;
+                    _serverHubsTableView.Init();
+
+                    (_serverHubsTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
+                    (_serverHubsTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
+                    (_serverHubsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
+                    (_serverHubsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
+
                     tableGameObject.SetActive(true);
-
-                    RectMask2D viewportMask = Instantiate(Resources.FindObjectsOfTypeAll<RectMask2D>().First(x => x.name != "CustomTableView"), _serverHubsTableView.transform, false);
-                    viewportMask.transform.DetachChildren();
-                    _serverHubsTableView.GetComponentsInChildren<RectTransform>().First(x => x.name == "Content").transform.SetParent(viewportMask.rectTransform, false);
-
-                    (_serverHubsTableView.transform as RectTransform).anchorMin = new Vector2(0.3f, 0.5f);
-                    (_serverHubsTableView.transform as RectTransform).anchorMax = new Vector2(0.7f, 0.5f);
-                    (_serverHubsTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 64f);
-                    (_serverHubsTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, -3f);
-
-                    ReflectionUtil.SetPrivateField(_serverHubsTableView, "_pageUpButton", _pageUpButton);
-                    ReflectionUtil.SetPrivateField(_serverHubsTableView, "_pageDownButton", _pageDownButton);
 
                     _serverHubsTableView.didSelectCellWithIdxEvent += ServerHubs_didSelectRowEvent;
                     _serverHubsTableView.dataSource = this;
-                    _serverHubsTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
+                    _serverHubsTableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
                 }
             }
             else
@@ -117,7 +127,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                     _serverHubsTableView.ReloadData();
                 }
 
-                _serverHubsTableView.ScrollToCellWithIdx(0, TableView.ScrollPositionType.Beginning, false);
+                _serverHubsTableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
             }
         }
 
@@ -127,7 +137,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
                 selectedServerHub?.Invoke(_serverHubClients[row]);
         }
 
-        public TableCell CellForIdx(int row)
+        public TableCell CellForIdx(TableView sender, int row)
         {
             LevelListTableCell cell = Instantiate(_serverTableCellInstance);
             cell.reuseIdentifier = "ServerHubCell";

@@ -57,6 +57,7 @@ namespace BeatSaberMultiplayer
         private GameEnergyCounter _energyController;
         private PauseMenuManager _pauseMenuManager;
         private VRPlatformHelper _vrPlatformHelper;
+        private VRControllersInputManager _vrInputManager;
 
         private PlayerAvatarInput _avatarInput;
 
@@ -317,12 +318,12 @@ namespace BeatSaberMultiplayer
 
                         if (_playerIds == null)
                             _playerIds = new List<ulong>(playersCount);
-                        else if (_playerIds.Count != playersCount)
+                        else if (_playerIds.Count > playersCount)
                             _playerIds.Clear();
 
                         if (playerScores == null)
                             playerScores = new List<PlayerScore>(playersCount);
-                        else if (playerScores.Count != playersCount)
+                        else if (playerScores.Count > playersCount)
                             playerScores.Clear();
 
                         _spectatorInRoom = false;
@@ -387,15 +388,22 @@ namespace BeatSaberMultiplayer
                                 }
                             }
 
-                            if(player != null)
+                            if (player != null)
+                            {
                                 player.SetAvatarState(!Client.Instance.inRadioMode && IsPlayerVisible(player.playerInfo.playerId));
+                                player.SetBlocksState(!Client.Instance.inRadioMode &&  _currentScene == _gameSceneName && Config.Instance.ShowOtherPlayersBlocks && !Client.Instance.playerInfo.Equals(player.playerInfo) && !Config.Instance.SpectatorMode && player.playerInfo.updateInfo.playerState == PlayerState.Game);
+                            }
                         }
 
                         _playerIds.Sort();
 
                         int localPlayerIndex = _playerIds.IndexOf(Client.Instance.playerInfo.playerId);
-                        int counter = 0;
                         bool needToRemovePlayer = false;
+
+                        for(int i = 0; i < playerScores.Count; i++)
+                        {
+                            playerScores[i] = new PlayerScore();
+                        }
 
                         foreach (var pair in players)
                         {
@@ -405,13 +413,17 @@ namespace BeatSaberMultiplayer
                             }
                             else
                             {
-                                pair.Value.avatarOffset = (counter - localPlayerIndex) * (_currentScene == _gameSceneName ? 5f : 0f);
+                                int playerIndex = _playerIds.IndexOf(pair.Key);
+                                pair.Value.avatarOffset = (playerIndex - localPlayerIndex) * (_currentScene == _gameSceneName ? 5f : 0f);
 
-                                if (playerScores.Count > counter)
-                                    playerScores[counter] = new PlayerScore(pair.Value);
-                                else
-                                    playerScores.Add(new PlayerScore(pair.Value));
-                                counter++;
+                                if (pair.Value.playerInfo.updateInfo.playerState == PlayerState.Game && _currentScene == _gameSceneName)
+                                {
+
+                                    while (playerScores.Count <= playerIndex)
+                                        playerScores.Add(default);
+
+                                    playerScores[playerIndex] = new PlayerScore(pair.Value);
+                                }
                             }
                         }
 
@@ -602,6 +614,11 @@ namespace BeatSaberMultiplayer
                 }
             }
 
+            if (_vrInputManager == null)
+            {
+                _vrInputManager = PersistentSingleton<VRControllersInputManager>.instance;
+            }
+
             if (Config.Instance.EnableVoiceChat)
             {
                 if (Config.Instance.MicEnabled)
@@ -617,22 +634,23 @@ namespace BeatSaberMultiplayer
                                 isRecording = ControllersHelper.GetRightGrip();
                                 break;
                             case 2:
-                                isRecording = VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+
+                                isRecording = _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
                                 break;
                             case 3:
-                                isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f;
+                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f;
                                 break;
                             case 4:
                                 isRecording = ControllersHelper.GetLeftGrip() && ControllersHelper.GetRightGrip();
                                 break;
                             case 5:
-                                isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f && VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
                                 break;
                             case 6:
                                 isRecording = ControllersHelper.GetLeftGrip() || ControllersHelper.GetRightGrip();
                                 break;
                             case 7:
-                                isRecording = VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f || VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f || _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
                                 break;
                             default:
                                 isRecording = Input.anyKey;
@@ -641,7 +659,7 @@ namespace BeatSaberMultiplayer
                 else
                     isRecording = false;
 
-                if (VRControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.GetRightGrip() && VRControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.GetLeftGrip())
+                if (_vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.GetRightGrip() && _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.GetLeftGrip())
                 {
                     _colorCounter += Time.deltaTime;
                     if (_colorCounter > 7.5f)
@@ -826,7 +844,7 @@ namespace BeatSaberMultiplayer
                 Client.Instance.playerInfo.updateInfo.fullBodyTracking = false;
             }
 
-            if(_vrPlatformHelper == null)
+            if (_vrPlatformHelper == null)
             {
                 _vrPlatformHelper = PersistentSingleton<VRPlatformHelper>.instance;
             }
@@ -989,23 +1007,26 @@ namespace BeatSaberMultiplayer
             achievementsHandler.ProcessSoloFreePlayLevelFinishData(difficultyBeatmap, levelCompletionResults);
 
             SoloFreePlayFlowCoordinator freePlayCoordinator = Resources.FindObjectsOfTypeAll<SoloFreePlayFlowCoordinator>().First();
-            
-            PlayerDataModelSO.LocalPlayer currentLocalPlayer = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel").currentLocalPlayer;
 
-            currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
+            PlayerDataModelSO dataModel = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel");
 
-            string levelID = difficultyBeatmap.level.levelID;
-            BeatmapDifficulty difficulty = difficultyBeatmap.difficulty;
-            BeatmapCharacteristicSO beatmapCharacteristic = difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic;
-            PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(levelID, difficulty, beatmapCharacteristic);
+            PlayerData currentLocalPlayer = dataModel.playerData;
+
+            PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(difficultyBeatmap.level.levelID, difficultyBeatmap.difficulty, difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic);
+
             playerLevelStatsData.IncreaseNumberOfGameplays();
             if (levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared)
             {
                 Plugin.log.Info("Submitting score...");
                 playerLevelStatsData.UpdateScoreData(levelCompletionResults.modifiedScore, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
-                freePlayCoordinator.GetPrivateField<PlatformLeaderboardsModel>("_platformLeaderboardsModel").AddScore(difficultyBeatmap, levelCompletionResults.rawScore, levelCompletionResults.modifiedScore, gameplayModifiers);
+                freePlayCoordinator.GetPrivateField<PlatformLeaderboardsModel>("_platformLeaderboardsModel").AddScoreFromComletionResults(difficultyBeatmap, levelCompletionResults);
                 Plugin.log.Info("Score submitted!");
+
             }
+
+            currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
+
+            dataModel.Save();
         }
 
         IEnumerator WaitForControllers()

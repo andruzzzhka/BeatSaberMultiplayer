@@ -14,12 +14,12 @@ namespace BeatSaberMultiplayer.Misc
         public static void RefreshTable(this TableView tableView, bool callbackTable = true)
         {
             HashSet<int> rows = new HashSet<int>(tableView.GetPrivateField<HashSet<int>>("_selectedCellIdxs"));
-            float scrollPosition = tableView.GetPrivateField<ScrollRect>("_scrollRect").verticalNormalizedPosition;
+            float scrollPosition = tableView.GetComponent<ScrollRect>().verticalNormalizedPosition;
 
             tableView.ReloadData();
 
-            tableView.GetPrivateField<ScrollRect>("_scrollRect").verticalNormalizedPosition = scrollPosition;
-            tableView.SetPrivateField("_targetPosition", scrollPosition);
+            tableView.GetComponent<ScrollRect>().verticalNormalizedPosition = scrollPosition;
+            tableView.GetPrivateField<TableViewScroller>("_scroller").SetPrivateField("_targetPosition", scrollPosition);
             if (rows.Count > 0)
                 tableView.SelectCellWithIdx(rows.First(), callbackTable);
         }

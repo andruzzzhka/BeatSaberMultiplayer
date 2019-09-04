@@ -131,12 +131,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
 
         private bool _transferHostButtonEnabled;
         private bool _muteButtonEnabled;
-
-        protected override void Awake()
-        {
-            base.Awake();
-        }
-
+        
         public void Init()
         {
             LeaderboardTableCell cell = GetComponent<LeaderboardTableCell>();

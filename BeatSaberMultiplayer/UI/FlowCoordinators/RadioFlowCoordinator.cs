@@ -438,7 +438,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             if (menuSceneSetupData != null)
             {
-                PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().currentLocalPlayer.playerSpecificSettings;
+                PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().playerData.playerSpecificSettings;
 
                 channelInfo.state = ChannelState.InGame;
                 Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Game;
@@ -466,7 +466,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 }
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, (startTime > 1f)); });
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, new OverrideEnvironmentSettings() { overrideEnvironments = false }, null, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(sender, levelCompletionResults, difficultyBeatmap, modifiers, (startTime > 1f)); });
             }
             else
             {

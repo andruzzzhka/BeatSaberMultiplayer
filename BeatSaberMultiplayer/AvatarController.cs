@@ -208,10 +208,9 @@ namespace BeatSaberMultiplayer
 
         void OnDestroy()
         {
-#if DEBUG
-            Plugin.log.Info("Destroying avatar");
-#endif
-            Destroy(avatar.GameObject);
+            Plugin.log.Debug("Destroying avatar");
+            if(avatar != null && avatar.GameObject != null)
+                Destroy(avatar.GameObject);
         }
 
         public void SetPlayerInfo(PlayerInfo _playerInfo, float offset, bool isLocal)
@@ -220,7 +219,7 @@ namespace BeatSaberMultiplayer
             {
                 if (playerNameText != null) playerNameText.gameObject.SetActive(false);
                 if (playerSpeakerIcon != null) playerSpeakerIcon.gameObject.SetActive(false);
-                if (avatar != null) Destroy(avatar.GameObject);
+                if (avatar != null && avatar.GameObject != null) Destroy(avatar.GameObject);
                 return;
             }
 
