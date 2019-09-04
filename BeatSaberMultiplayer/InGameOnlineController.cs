@@ -57,6 +57,7 @@ namespace BeatSaberMultiplayer
         private GameEnergyCounter _energyController;
         private PauseMenuManager _pauseMenuManager;
         private VRPlatformHelper _vrPlatformHelper;
+        private VRControllersInputManager _vrInputManager;
 
         private PlayerAvatarInput _avatarInput;
 
@@ -84,7 +85,6 @@ namespace BeatSaberMultiplayer
 
         SpeexCodex speexDec;
         private VoipListener voiceChatListener;
-        private VRControllersInputManager vrControllersInputManager = new VRControllersInputManager();
 
         public static void OnLoad()
         {
@@ -606,6 +606,11 @@ namespace BeatSaberMultiplayer
                 }
             }
 
+            if (_vrInputManager == null)
+            {
+                _vrInputManager = PersistentSingleton<VRControllersInputManager>.instance;
+            }
+
             if (Config.Instance.EnableVoiceChat)
             {
                 if (Config.Instance.MicEnabled)
@@ -621,22 +626,22 @@ namespace BeatSaberMultiplayer
                                 isRecording = ControllersHelper.GetRightGrip();
                                 break;
                             case 2:
-                                isRecording = vrControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
                                 break;
                             case 3:
-                                isRecording = vrControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f;
+                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f;
                                 break;
                             case 4:
                                 isRecording = ControllersHelper.GetLeftGrip() && ControllersHelper.GetRightGrip();
                                 break;
                             case 5:
-                                isRecording = vrControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f && vrControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
                                 break;
                             case 6:
                                 isRecording = ControllersHelper.GetLeftGrip() || ControllersHelper.GetRightGrip();
                                 break;
                             case 7:
-                                isRecording = vrControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f || vrControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f || _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
                                 break;
                             default:
                                 isRecording = Input.anyKey;
@@ -645,7 +650,7 @@ namespace BeatSaberMultiplayer
                 else
                     isRecording = false;
 
-                if (vrControllersInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.GetRightGrip() && vrControllersInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.GetLeftGrip())
+                if (_vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.GetRightGrip() && _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.GetLeftGrip())
                 {
                     _colorCounter += Time.deltaTime;
                     if (_colorCounter > 7.5f)
@@ -995,15 +1000,11 @@ namespace BeatSaberMultiplayer
 
             SoloFreePlayFlowCoordinator freePlayCoordinator = Resources.FindObjectsOfTypeAll<SoloFreePlayFlowCoordinator>().First();
 
-            PlayerDataModelSO playerDataModelSO = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel");
-            PlayerData currentLocalPlayer = playerDataModelSO.GetPrivateField<PlayerData>("_playerData");
+            PlayerDataModelSO dataModel = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel");
+            PlayerData currentLocalPlayer = dataModel.playerData;
+            PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(difficultyBeatmap.level.levelID, difficultyBeatmap.difficulty, difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic);
 
             currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
-
-            string levelID = difficultyBeatmap.level.levelID;
-            BeatmapDifficulty difficulty = difficultyBeatmap.difficulty;
-            BeatmapCharacteristicSO beatmapCharacteristic = difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic;
-            PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(levelID, difficulty, beatmapCharacteristic);
             playerLevelStatsData.IncreaseNumberOfGameplays();
             if (levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared)
             {
@@ -1012,6 +1013,8 @@ namespace BeatSaberMultiplayer
                 freePlayCoordinator.GetPrivateField<PlatformLeaderboardsModel>("_platformLeaderboardsModel").AddScoreFromComletionResults(difficultyBeatmap, levelCompletionResults);
                 Plugin.log.Info("Score submitted!");
             }
+            currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
+            dataModel.Save();
         }
 
         IEnumerator WaitForControllers()
