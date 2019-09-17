@@ -177,7 +177,11 @@ namespace ServerHub.Hub
                                     break;
                                 }
 
-                                msg.SenderConnection.Approve();
+                                NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
+                                outMsg.Write(serverVersion);
+                                outMsg.Write(Settings.Instance.Server.ServerHubName);
+
+                                msg.SenderConnection.Approve(outMsg);
 
                                 Client client = new Client(msg.SenderConnection, playerInfo);
                                 client.playerInfo.updateInfo.playerState = PlayerState.Lobby;

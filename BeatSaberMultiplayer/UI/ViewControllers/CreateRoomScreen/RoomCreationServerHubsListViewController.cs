@@ -145,7 +145,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             ServerHubClient client = _serverHubClients[row];
 
             cell.GetComponentsInChildren<UnityEngine.UI.RawImage>(true).First(x => x.name == "CoverImage").enabled = false;
-            cell.SetText($"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.ip}:{client.port}");
+            if(!string.IsNullOrEmpty(client.serverHubName))
+                cell.SetText($"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.serverHubName}");
+            else
+                cell.SetText($"{(!client.serverHubCompatible ? (client.serverHubAvailable ? "<color=yellow>" : "<color=red>") : "")}{client.ip}:{client.port}");
 
             if (client.serverHubCompatible)
             {

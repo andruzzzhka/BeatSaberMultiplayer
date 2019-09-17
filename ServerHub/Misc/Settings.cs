@@ -13,6 +13,7 @@ namespace ServerHub.Misc {
 
         [JsonObject(MemberSerialization.OptIn)]
         public class ServerSettings {
+            private string _serverHubName;
             private int _port;
             private int _tickrate;
             private bool _tryUPnP;
@@ -37,6 +38,17 @@ namespace ServerHub.Misc {
             /// Remember to Save after changing the value
             /// </summary>
             [JsonProperty]
+            public string ServerHubName
+            {
+                get => _serverHubName ?? "";
+                set
+                {
+                    _serverHubName = value;
+                    MarkDirty?.Invoke();
+                }
+            }
+
+            [JsonProperty]
             public int Port
             {
                 get => _port;
@@ -46,10 +58,9 @@ namespace ServerHub.Misc {
                     MarkDirty?.Invoke();
                 }
             }
-            
-            /// <summary>
-             /// Remember to Save after changing the value
-             /// </summary>
+
+
+
             [JsonProperty]
             public int Tickrate
             {
@@ -61,9 +72,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool TryUPnP
             {
@@ -78,9 +86,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool EnableWebSocketServer
             {
@@ -92,9 +97,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool EnableWebSocketRoomInfo
             {
@@ -106,9 +108,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool EnableWebSocketRCON
             {
@@ -120,9 +119,6 @@ namespace ServerHub.Misc {
                 }
             }
             
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public string RCONPassword
             {
@@ -134,9 +130,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public int WebSocketPort
             {
@@ -148,9 +141,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool SecureWebSocket
             {
@@ -162,9 +152,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public string WebSocketCertPath
             {
@@ -176,9 +163,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public string WebSocketCertPass
             {
@@ -190,9 +174,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool ShowTickrateInTitle
             {
@@ -204,9 +185,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool AllowEventMessages
             {
@@ -218,9 +196,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool AllowVoiceChat
             {
@@ -232,9 +207,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool ShowTickEventExceptions
             {
@@ -246,9 +218,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool SendCrashReports
             {
@@ -260,9 +229,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool EnableInteractiveShell
             {
@@ -276,6 +242,7 @@ namespace ServerHub.Misc {
 
             public ServerSettings(Action markDirty) {
                 MarkDirty = markDirty;
+                _serverHubName = "";
                 _port = 3700;
                 _tickrate = 30;
                 _tryUPnP = true;
@@ -387,9 +354,6 @@ namespace ServerHub.Misc {
 
             internal Action MarkDirty { get; set; }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public string LogsDir
             {
@@ -467,9 +431,6 @@ namespace ServerHub.Misc {
 
             internal Action MarkDirty { get; set; }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public Dictionary<ulong, Color32> PlayerColors
             {
@@ -498,9 +459,6 @@ namespace ServerHub.Misc {
 
             internal Action MarkDirty { get; set; }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public bool Enabled
             {
@@ -512,9 +470,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public string RoomNameTemplate
             {
@@ -526,9 +481,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public int Rooms
             {
@@ -540,9 +492,6 @@ namespace ServerHub.Misc {
                 }
             }
 
-            /// <summary>
-            /// Remember to Save after changing the value
-            /// </summary>
             [JsonProperty]
             public string Password
             {

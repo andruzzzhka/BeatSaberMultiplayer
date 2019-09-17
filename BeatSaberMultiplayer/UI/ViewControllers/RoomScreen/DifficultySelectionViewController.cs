@@ -357,7 +357,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             _rankedText.gameObject.SetActive(true);
             _rankedText.alignment = TextAlignmentOptions.Center;
 
-            _timeParamText.text = EssentialHelpers.MinSecDurationText(level.beatmapLevelData.audioClip.length);
+            _timeParamText.text = level.beatmapLevelData.audioClip != null ? EssentialHelpers.MinSecDurationText(level.beatmapLevelData.audioClip.length) : "--";
             _bpmParamText.text = level.beatsPerMinute.ToString();
             _blocksParamText.text = "--";
             _obstaclesParamText.text = "--";

@@ -28,6 +28,7 @@ namespace ServerHub.Hub
         public struct ServerInfo
         {
             public string Hostname { get; set; }
+            public string ServerHubName { get; set; }
             public int Players { get; set; }
             public int RoomCount { get; set; }
             public int Uptime { get; set; }

@@ -271,7 +271,6 @@ namespace BeatSaberMultiplayer
                                 }
                                 else if(status == NetConnectionStatus.Disconnected && connected)
                                 {
-
 #if DEBUG
                                     Plugin.log.Info("Disconnecting...");
 #endif

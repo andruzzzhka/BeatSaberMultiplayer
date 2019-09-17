@@ -55,6 +55,13 @@ namespace ServerHub.Misc {
 
         #region Log Functions
 
+        public void Debug(object msg, bool hideHeader = false)
+        {
+#if DEBUG
+            PrintLogMessage(new LogMessage($"[DEBUG     -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Log));
+#endif
+        }
+
         public void Log(object msg, bool hideHeader = false) {
             PrintLogMessage(new LogMessage($"[LOG       -- {DateTime.Now:HH:mm:ss}] {msg}", LoggerLevel.Log));
         }

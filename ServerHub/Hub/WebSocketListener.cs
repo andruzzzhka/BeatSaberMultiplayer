@@ -40,6 +40,7 @@ namespace ServerHub.Hub
 
     public struct ServerHubInfo
     {
+        public string ServerHubName;
         public string Version;
         public int TotalClients;
         public List<WSRoomInfo> Rooms;
@@ -83,6 +84,7 @@ namespace ServerHub.Hub
                     List<RCONChannelInfo> channels = paths.Where(x => x.Contains("channel")).Select(x => new RCONChannelInfo(x)).ToList();
                     ServerHubInfo info = new ServerHubInfo()
                     {
+                        ServerHubName = Settings.Instance.Server.ServerHubName,
                         Version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
                         TotalClients = HubListener.hubClients.Count + RoomsController.GetRoomsList().Sum(x => x.roomClients.Count) + RadioController.radioChannels.Sum(x => x.radioClients.Count),
                         Rooms = rooms,
@@ -102,7 +104,7 @@ namespace ServerHub.Hub
         protected override void OnOpen()
         {
             base.OnOpen();
-            Logger.Instance.Log($"WebSocket Client Connected! ");
+            Logger.Instance.Debug($"WebSocket Client Connected!");
             
             string[] split = Context.RequestUri.AbsolutePath.Split('/');
             int _id = Convert.ToInt32(split[split.Length - 1]);
@@ -138,9 +140,7 @@ namespace ServerHub.Hub
                 if (e.IsText)
                 {
                     IncomingMessage message = JsonConvert.DeserializeObject<IncomingMessage>(e.Data);
-#if DEBUG
-                    Logger.Instance.Log($"Got message from RCON client: ID={message.Identifier}, Message={message.Message}");
-#endif
+                    Logger.Instance.Debug($"Got message from RCON client: ID={message.Identifier}, Message={message.Message}");
 
                     List<string> args = Program.ParseLine(message.Message);
                     var response = Program.ProcessCommand(args[0], args.Skip(1).ToArray());
@@ -178,7 +178,7 @@ namespace ServerHub.Hub
                 Server.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
             }
 
-            Logger.Instance.Log($"Hosting {(Settings.Instance.Server.SecureWebSocket && !string.IsNullOrEmpty(Settings.Instance.Server.WebSocketCertPath) ? "Secure" : "")} WebSocket Server @ {Program.GetPublicIPv4()}:{webSocketPort}");
+            Logger.Instance.Log($"Hosting {(Settings.Instance.Server.SecureWebSocket && !string.IsNullOrEmpty(Settings.Instance.Server.WebSocketCertPath) ? "Secure " : "")}WebSocket Server @ {Program.GetPublicIPv4()}:{webSocketPort}");
             
             Server.AddWebSocketService<ListServices>("/");
             if (Settings.Instance.Server.EnableWebSocketRCON)

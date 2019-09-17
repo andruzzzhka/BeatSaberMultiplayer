@@ -1287,6 +1287,7 @@ namespace ServerHub.Hub
                     {
                         ServerInfo info = new ServerInfo()
                         {
+                            ServerHubName = Settings.Instance.Server.ServerHubName,
                             Hostname = IP + ":" + Settings.Instance.Server.Port,
                             Tickrate = (float)System.Math.Round(HubListener.Tickrate, 1),
                             Memory = (float)System.Math.Round((Process.GetCurrentProcess().WorkingSet64 / 1024f / 1024f), 2),

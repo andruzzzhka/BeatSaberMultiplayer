@@ -177,7 +177,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _roomsList.AddRange(rooms.Select(x => new ServerHubRoom(sender.ip, sender.port, x)));
             HMMainThreadDispatcher.instance.Enqueue(delegate ()
             {
-                Plugin.log.Info($"Received rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
+                if (!string.IsNullOrEmpty(sender.serverHubName))
+                    Plugin.log.Info($"Received rooms from \"{sender.serverHubName}\" ({sender.ip}:{sender.port})! Total rooms count: {_roomsList.Count}");
+                else
+                    Plugin.log.Info($"Received rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
                 _roomListViewController.SetRooms(_roomsList);
                 _serverHubNavigationController.SetLoadingState(false);
                 _roomListViewController.SetRefreshButtonState(true);
@@ -186,7 +189,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void ServerHubException(ServerHubClient sender, Exception e)
         {
-            Plugin.log.Error($"ServerHub exception ({sender.ip}:{sender.port}): {e}");
+            if (!string.IsNullOrEmpty(sender.serverHubName))
+                Plugin.log.Error($"ServerHub exception \"{sender.serverHubName}\" ({sender.ip}:{sender.port}): {e}");
+            else
+                Plugin.log.Error($"ServerHub exception ({sender.ip}:{sender.port}): {e}");
         }
     }
 
@@ -195,7 +201,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
     class ServerHubClient : MonoBehaviour
     {
         private NetClient NetworkClient;
-        
+
+        public string serverHubName = "";
         public string ip;
         public int port;
 
@@ -264,13 +271,29 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                                 if (status == NetConnectionStatus.Connected)
                                 {
+                                    if (NetworkClient.ServerConnection != null && NetworkClient.ServerConnection.RemoteHailMessage != null && NetworkClient.ServerConnection.RemoteHailMessage.LengthBytes > 4)
+                                    {
+                                        var hailMsg = NetworkClient.ServerConnection.RemoteHailMessage;
+
+                                        try
+                                        {
+                                            byte[] serverVer = hailMsg.ReadBytes(4);
+                                            serverHubName = hailMsg.ReadString();
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            Plugin.log.Warn("Unable to read additional ServerHub info! Exception: " + e);
+                                        }
+                                    }
+
                                     serverHubCompatible = true;
                                     serverHubAvailable = true;
                                     NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
                                     outMsg.Write((byte)CommandType.GetRooms);
 
                                     NetworkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
-                                }else if(status == NetConnectionStatus.Disconnected)
+                                }
+                                else if(status == NetConnectionStatus.Disconnected)
                                 {
                                     try
                                     {

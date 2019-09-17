@@ -265,7 +265,7 @@ namespace BeatSaberMultiplayer
             _currentScene = _menuSceneName;
             _loaded = false;
             DestroyPlayerControllers();
-            if (Client.Instance != null)
+            if (Client.Instance != null && Client.Instance.connected)
             {
                 needToSendUpdates = true;
                 if (Client.Instance.inRadioMode)
