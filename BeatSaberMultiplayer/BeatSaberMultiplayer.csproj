@@ -169,6 +169,7 @@
     <Compile Include="Client.cs" />
     <Compile Include="Data\BeatSaverAPIResult.cs" />
     <Compile Include="Data\ChannelInfo.cs" />
+    <Compile Include="Data\ExtraPlayerFlags.cs" />
     <Compile Include="Data\ModelSaberAPI.cs" />
     <Compile Include="Data\PlayerInfo.cs" />
     <Compile Include="Data\RoomInfo.cs" />

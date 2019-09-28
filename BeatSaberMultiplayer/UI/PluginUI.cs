@@ -2,7 +2,6 @@
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.UIElements;
-using BeatSaberMultiplayer.UI.ViewControllers;
 using BS_Utils.Gameplay;
 using CustomUI.BeatSaber;
 using CustomUI.Settings;
@@ -13,12 +12,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace BeatSaberMultiplayer.UI

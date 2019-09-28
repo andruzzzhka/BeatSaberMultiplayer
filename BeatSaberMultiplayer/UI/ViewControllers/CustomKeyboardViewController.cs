@@ -1,12 +1,8 @@
-﻿using BeatSaberMultiplayer.UI;
-using CustomUI.BeatSaber;
+﻿using CustomUI.BeatSaber;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using VRUI;
 
 namespace BeatSaberMultiplayer.UI

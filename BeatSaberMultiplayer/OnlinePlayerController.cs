@@ -1,16 +1,9 @@
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.OverriddenClasses;
-using BS_Utils.Gameplay;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace BeatSaberMultiplayer
 {
@@ -332,6 +325,8 @@ namespace BeatSaberMultiplayer
                 playerInfo.updateInfo.playerTotalBlocks = value.playerTotalBlocks;
                 playerInfo.updateInfo.playerEnergy = value.playerEnergy;
                 playerInfo.updateInfo.playerLevelOptions = value.playerLevelOptions;
+                playerInfo.updateInfo.playerFlags = value.playerFlags;
+
             }
         }
 

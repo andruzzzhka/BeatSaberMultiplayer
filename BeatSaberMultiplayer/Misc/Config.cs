@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using BeatSaberMultiplayer.Misc;
-using IPA.Config;
-using SimpleJSON;
 using UnityEngine;
 
-namespace BeatSaberMultiplayer {
+namespace BeatSaberMultiplayer
+{
     [Serializable]
     public class Config {
 

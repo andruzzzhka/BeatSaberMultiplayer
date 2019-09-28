@@ -1,5 +1,4 @@
-﻿using BeatSaberMultiplayer.Misc;
-using System;
+﻿using System;
 using System.Reflection;
 using UnityEngine;
 

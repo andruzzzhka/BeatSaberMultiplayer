@@ -1,13 +1,11 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
-using BeatSaberMultiplayer.UI;
 using CustomUI.BeatSaber;
 using HMUI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using TMPro;
 using UnityEngine;

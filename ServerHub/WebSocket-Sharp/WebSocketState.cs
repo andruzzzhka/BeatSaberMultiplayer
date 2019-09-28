@@ -26,19 +26,18 @@
  */
 #endregion
 
-using System;
 
 namespace WebSocketSharp
 {
-  /// <summary>
-  /// Indicates the state of a WebSocket connection.
-  /// </summary>
-  /// <remarks>
-  /// The values of this enumeration are defined in
-  /// <see href="http://www.w3.org/TR/websockets/#dom-websocket-readystate">
-  /// The WebSocket API</see>.
-  /// </remarks>
-  public enum WebSocketState : ushort
+    /// <summary>
+    /// Indicates the state of a WebSocket connection.
+    /// </summary>
+    /// <remarks>
+    /// The values of this enumeration are defined in
+    /// <see href="http://www.w3.org/TR/websockets/#dom-websocket-readystate">
+    /// The WebSocket API</see>.
+    /// </remarks>
+    public enum WebSocketState : ushort
   {
     /// <summary>
     /// Equivalent to numeric value 0. Indicates that the connection has not

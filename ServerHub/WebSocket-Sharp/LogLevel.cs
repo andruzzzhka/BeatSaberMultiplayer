@@ -26,14 +26,13 @@
  */
 #endregion
 
-using System;
 
 namespace WebSocketSharp
 {
-  /// <summary>
-  /// Specifies the logging level.
-  /// </summary>
-  public enum LogLevel
+    /// <summary>
+    /// Specifies the logging level.
+    /// </summary>
+    public enum LogLevel
   {
     /// <summary>
     /// Specifies the bottom logging level.

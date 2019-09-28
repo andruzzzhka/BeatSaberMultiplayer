@@ -31,20 +31,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Timers;
 
 namespace WebSocketSharp.Server
 {
-  /// <summary>
-  /// Provides the management function for the sessions in a WebSocket service.
-  /// </summary>
-  /// <remarks>
-  /// This class manages the sessions in a WebSocket service provided by
-  /// the <see cref="WebSocketServer"/> or <see cref="HttpServer"/>.
-  /// </remarks>
-  public class WebSocketSessionManager
+    /// <summary>
+    /// Provides the management function for the sessions in a WebSocket service.
+    /// </summary>
+    /// <remarks>
+    /// This class manages the sessions in a WebSocket service provided by
+    /// the <see cref="WebSocketServer"/> or <see cref="HttpServer"/>.
+    /// </remarks>
+    public class WebSocketSessionManager
   {
     #region Private Fields
 

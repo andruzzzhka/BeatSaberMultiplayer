@@ -1,6 +1,5 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
-using BeatSaberMultiplayer.UI.ViewControllers;
 using BeatSaberMultiplayer.UI.ViewControllers.RadioScreen;
 using BeatSaberMultiplayer.UI.ViewControllers.RoomScreen;
 using CustomUI.BeatSaber;
@@ -8,9 +7,7 @@ using Lidgren.Network;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using VRUI;
 

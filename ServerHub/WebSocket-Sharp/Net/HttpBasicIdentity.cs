@@ -37,15 +37,14 @@
  */
 #endregion
 
-using System;
 using System.Security.Principal;
 
 namespace WebSocketSharp.Net
 {
-  /// <summary>
-  /// Holds the username and password from an HTTP Basic authentication attempt.
-  /// </summary>
-  public class HttpBasicIdentity : GenericIdentity
+    /// <summary>
+    /// Holds the username and password from an HTTP Basic authentication attempt.
+    /// </summary>
+    public class HttpBasicIdentity : GenericIdentity
   {
     #region Private Fields
 

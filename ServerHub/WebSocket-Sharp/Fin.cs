@@ -26,18 +26,17 @@
  */
 #endregion
 
-using System;
 
 namespace WebSocketSharp
 {
-  /// <summary>
-  /// Indicates whether a WebSocket frame is the final frame of a message.
-  /// </summary>
-  /// <remarks>
-  /// The values of this enumeration are defined in
-  /// <see href="http://tools.ietf.org/html/rfc6455#section-5.2">Section 5.2</see> of RFC 6455.
-  /// </remarks>
-  internal enum Fin : byte
+    /// <summary>
+    /// Indicates whether a WebSocket frame is the final frame of a message.
+    /// </summary>
+    /// <remarks>
+    /// The values of this enumeration are defined in
+    /// <see href="http://tools.ietf.org/html/rfc6455#section-5.2">Section 5.2</see> of RFC 6455.
+    /// </remarks>
+    internal enum Fin : byte
   {
     /// <summary>
     /// Equivalent to numeric value 0. Indicates more frames of a message follow.

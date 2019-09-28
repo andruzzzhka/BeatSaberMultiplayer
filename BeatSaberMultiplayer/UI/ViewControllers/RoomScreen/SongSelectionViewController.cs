@@ -4,15 +4,12 @@ using HMUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Image = UnityEngine.UI.Image;
 using VRUI;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
-using BS_Utils.Utilities;
 using System.Threading;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen

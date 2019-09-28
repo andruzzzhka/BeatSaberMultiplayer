@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 
-namespace ServerHub.Misc {
+namespace ServerHub.Misc
+{
     public class Logger : IDisposable {
         private static Logger _instance;
         

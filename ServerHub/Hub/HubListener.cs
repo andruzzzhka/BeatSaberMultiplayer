@@ -1,5 +1,4 @@
 using Lidgren.Network;
-using Newtonsoft.Json;
 using ServerHub.Data;
 using ServerHub.Misc;
 using ServerHub.Rooms;
@@ -7,11 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace ServerHub.Hub
 {

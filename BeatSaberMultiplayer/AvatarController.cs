@@ -1,14 +1,13 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using CustomAvatar;
+using SongCore.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
-using UnityEngine.XR;
 using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer
@@ -47,9 +46,12 @@ namespace BeatSaberMultiplayer
         Quaternion RightLegRot;
         Quaternion PelvisRot;
 
-        Camera _camera;
+        HSBColor nameColor;
+        bool rainbowName;
 
-        VRCenterAdjust _centerAdjust;
+        Camera camera;
+
+        VRCenterAdjust centerAdjust;
 
         public PosRot HeadPosRot => new PosRot(HeadPos, HeadRot);
 
@@ -133,7 +135,7 @@ namespace BeatSaberMultiplayer
 #if DEBUG
             Plugin.log.Info("Spawning avatar");
 #endif
-            _centerAdjust = FindObjectOfType<VRCenterAdjust>();
+            centerAdjust = FindObjectOfType<VRCenterAdjust>();
 
             avatar = AvatarSpawner.SpawnAvatar(defaultAvatarInstance, this);
             exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
@@ -153,8 +155,8 @@ namespace BeatSaberMultiplayer
             playerSpeakerIcon.rectTransform.anchoredPosition3D = new Vector3(0f, 0.65f, 0f);
             playerSpeakerIcon.sprite = Sprites.speakerIcon;
             
-            avatar.GameObject.transform.SetParent(_centerAdjust.transform, false);
-            transform.SetParent(_centerAdjust.transform, false);
+            avatar.GameObject.transform.SetParent(centerAdjust.transform, false);
+            transform.SetParent(centerAdjust.transform, false);
 
             if (ModelSaberAPI.cachedAvatars.Any(x => x.Value == avatar.CustomAvatar))
             {
@@ -176,15 +178,15 @@ namespace BeatSaberMultiplayer
                     {
                         if (IPA.Loader.PluginManager.AllPlugins.Select(x => x.Metadata.Name) //BSIPA Plugins
                             .Concat(IPA.Loader.PluginManager.Plugins.Select(x => x.Name))    //Old IPA Plugins 
-                            .Any(x => x == "CameraPlus") && (_camera == null || !_camera.isActiveAndEnabled))
+                            .Any(x => x == "CameraPlus") && (camera == null || !camera.isActiveAndEnabled))
                         {
-                            _camera = FindObjectsOfType<Camera>().FirstOrDefault(x => (x.name.StartsWith("CamPlus_") || x.name.Contains("cameraplus")) && x.isActiveAndEnabled);
+                            camera = FindObjectsOfType<Camera>().FirstOrDefault(x => (x.name.StartsWith("CamPlus_") || x.name.Contains("cameraplus")) && x.isActiveAndEnabled);
                         }
 
-                        if (_camera != null)
+                        if (camera != null)
                         {
-                            playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - _camera.transform.position);
-                            playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - _camera.transform.position);
+                            playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - camera.transform.position);
+                            playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - camera.transform.position);
                         }
                         else
                         {
@@ -196,6 +198,16 @@ namespace BeatSaberMultiplayer
                     {
                         playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput.HeadPosRot.Position);
                         playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput.HeadPosRot.Position);
+                    }
+
+                    if (rainbowName)
+                    {
+                        playerNameText.color = HSBColor.ToColor(nameColor);
+                        nameColor.h += 0.125f * Time.deltaTime;
+                        if (nameColor.h >= 1f)
+                        {
+                            nameColor.h = 0f;
+                        }
                     }
                 }
             }
@@ -373,7 +385,18 @@ namespace BeatSaberMultiplayer
                 transform.position = HeadPos;
 
                 playerNameText.text = playerName;
-                playerNameText.color = playerInfo.playerNameColor;
+
+                if (playerInfo.playerFlags.rainbowName && !rainbowName)
+                {
+                    playerNameText.color = playerInfo.playerNameColor;
+                    nameColor = HSBColor.FromColor(playerInfo.playerNameColor);
+                }
+                else if(!playerInfo.playerFlags.rainbowName && playerNameText.color != playerInfo.playerNameColor)
+                {
+                    playerNameText.color = playerInfo.playerNameColor;
+                }
+
+                rainbowName = playerInfo.playerFlags.rainbowName;
             }
             catch (Exception e)
             {

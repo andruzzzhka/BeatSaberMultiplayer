@@ -1,15 +1,11 @@
 ﻿using BeatSaberMultiplayer.Data;
-using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers;
 using CustomUI.BeatSaber;
 using CustomUI.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using VRUI;

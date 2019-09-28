@@ -1,12 +1,6 @@
-﻿using BeatSaberMultiplayer.Misc;
-using Newtonsoft.Json;
-using SimpleJSON;
+﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using UnityEngine;
 
 namespace BeatSaberMultiplayer.Data
 {

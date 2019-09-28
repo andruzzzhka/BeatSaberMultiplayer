@@ -1,22 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
-using BeatSaberMultiplayer.UI;
-using Harmony;
 using Lidgren.Network;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.XR;
 
 namespace BeatSaberMultiplayer
 {

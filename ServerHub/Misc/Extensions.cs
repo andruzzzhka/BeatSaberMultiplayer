@@ -2,9 +2,9 @@
 
 using ServerHub.Misc;
 using System.Collections.Generic;
-using System.Net;
 
-namespace System.Linq {
+namespace System.Linq
+{
     public static class Extensions {
         public static ConsoleColor GetColour(this Logger.LogMessage message) {
             switch (Enum.Parse(typeof(Logger.LoggerLevel), message.Type)) {

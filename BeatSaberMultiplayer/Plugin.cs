@@ -5,8 +5,6 @@ using CustomUI.Utilities;
 using Harmony;
 using IPA;
 using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;

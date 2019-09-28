@@ -26,14 +26,13 @@
  */
 #endregion
 
-using System;
 
 namespace WebSocketSharp
 {
-  /// <summary>
-  /// Specifies the byte order.
-  /// </summary>
-  public enum ByteOrder
+    /// <summary>
+    /// Specifies the byte order.
+    /// </summary>
+    public enum ByteOrder
   {
     /// <summary>
     /// Specifies Little-endian.

@@ -4,11 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using UnityEngine;
-using UnityEngine.XR;
 
 namespace BeatSaberMultiplayer.Data
 {
@@ -21,14 +17,16 @@ namespace BeatSaberMultiplayer.Data
         public Color32 color;
         public uint score;
         public bool valid;
+        public ExtraPlayerFlags playerFlags;
 
-        public PlayerScore(ulong id, string name, uint score, Color32 color, bool valid)
+        public PlayerScore(ulong id, string name, uint score, Color32 color, bool valid, ExtraPlayerFlags playerFlags)
         {
             this.id = id;
             this.name = name;
             this.score = score;
             this.color = color;
             this.valid = valid;
+            this.playerFlags = playerFlags;
         }
 
         public PlayerScore(PlayerInfo update)
@@ -38,6 +36,7 @@ namespace BeatSaberMultiplayer.Data
             score = update.updateInfo.playerScore;
             color = update.updateInfo.playerNameColor;
             valid = update.updateInfo.playerState == PlayerState.Game;
+            playerFlags = update.updateInfo.playerFlags;
         }
 
         public PlayerScore(OnlinePlayerController update)
@@ -47,6 +46,7 @@ namespace BeatSaberMultiplayer.Data
             score = update.playerInfo.updateInfo.playerScore;
             color = update.playerInfo.updateInfo.playerNameColor;
             valid = update.playerInfo.updateInfo.playerState == PlayerState.Game;
+            playerFlags = update.playerInfo.updateInfo.playerFlags;
         }
 
         public int CompareTo(PlayerScore other)
@@ -59,7 +59,8 @@ namespace BeatSaberMultiplayer.Data
             return id == other.id &&
                     name == other.name &&
                     score == other.score &&
-                    EqualityComparer<Color32>.Default.Equals(color, other.color);
+                    EqualityComparer<Color32>.Default.Equals(color, other.color) &&
+                    playerFlags.Equals(other.playerFlags);
         }
 
         public static bool operator ==(PlayerScore c1, PlayerScore c2)
@@ -180,6 +181,8 @@ namespace BeatSaberMultiplayer.Data
 
         public LevelOptionsInfo playerLevelOptions;
 
+        public ExtraPlayerFlags playerFlags;
+
         public bool fullBodyTracking;
 
         public Vector3 headPos;
@@ -212,6 +215,8 @@ namespace BeatSaberMultiplayer.Data
             playerProgress = msg.ReadFloat();
 
             playerLevelOptions = new LevelOptionsInfo(msg);
+
+            playerFlags = new ExtraPlayerFlags(msg);
 
             rightHandPos = msg.ReadVector3();
             leftHandPos = msg.ReadVector3();
@@ -263,6 +268,8 @@ namespace BeatSaberMultiplayer.Data
                 new LevelOptionsInfo(BeatmapDifficulty.Hard, GameplayModifiers.defaultModifiers, "Standard").AddToMessage(msg);
             else
                 playerLevelOptions.AddToMessage(msg);
+
+            playerFlags.AddToMessage(msg);
 
             rightHandPos.AddToMessage(msg);
             leftHandPos.AddToMessage(msg);

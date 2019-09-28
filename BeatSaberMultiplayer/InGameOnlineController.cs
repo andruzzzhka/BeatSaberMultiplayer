@@ -5,23 +5,18 @@ using BeatSaberMultiplayer.UI;
 using BeatSaberMultiplayer.VOIP;
 using BS_Utils.Gameplay;
 using CustomAvatar;
-using CustomUI.BeatSaber;
 using Lidgren.Network;
 using SongCore.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.XR;
-using VRUI;
 
 namespace BeatSaberMultiplayer
 {
@@ -78,10 +73,7 @@ namespace BeatSaberMultiplayer
         private int _sendRateCounter;
         private int _fixedSendRate = 0;
         private bool _spectatorInRoom;
-
-        private HSBColor _color;
         private float _colorCounter;
-        private bool _colorChanger;
 
         SpeexCodex speexDec;
         private VoipListener voiceChatListener;
@@ -402,7 +394,7 @@ namespace BeatSaberMultiplayer
 
                         for(int i = 0; i < playerScores.Count; i++)
                         {
-                            playerScores[i] = new PlayerScore();
+                            playerScores[i] = default;
                         }
 
                         foreach (var pair in players)
@@ -416,14 +408,10 @@ namespace BeatSaberMultiplayer
                                 int playerIndex = _playerIds.IndexOf(pair.Key);
                                 pair.Value.avatarOffset = (playerIndex - localPlayerIndex) * (_currentScene == _gameSceneName ? 5f : 0f);
 
-                                if (pair.Value.playerInfo.updateInfo.playerState == PlayerState.Game && _currentScene == _gameSceneName)
-                                {
+                                while (playerScores.Count <= playerIndex)
+                                    playerScores.Add(default);
 
-                                    while (playerScores.Count <= playerIndex)
-                                        playerScores.Add(default);
-
-                                    playerScores[playerIndex] = new PlayerScore(pair.Value);
-                                }
+                                playerScores[playerIndex] = new PlayerScore(pair.Value);
                             }
                         }
 
@@ -659,13 +647,17 @@ namespace BeatSaberMultiplayer
                 else
                     isRecording = false;
 
+#if DEBUG
+                if ((_vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.GetRightGrip() && _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.GetLeftGrip()) || Input.GetKey(KeyCode.P))
+
+#else
                 if (_vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.GetRightGrip() && _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.GetLeftGrip())
+#endif
                 {
                     _colorCounter += Time.deltaTime;
                     if (_colorCounter > 7.5f)
                     {
-                        _color = new HSBColor(0f, 1f, 1f);
-                        _colorChanger = !_colorChanger;
+                        Client.Instance.playerInfo.updateInfo.playerFlags.rainbowName ^= true;
                         _colorCounter = 0f;
                     }
                 }
@@ -723,15 +715,6 @@ namespace BeatSaberMultiplayer
 
             if (needToSendUpdates)
             {
-                if (_colorChanger)
-                {
-                    Client.Instance.playerInfo.updateInfo.playerNameColor = HSBColor.ToColor(_color);
-                    _color.h += 0.001388f;
-                    if(_color.h >= 1f)
-                    {
-                        _color.h = 0f;
-                    }
-                }
                 if (_fixedSendRate == 1 || (_fixedSendRate == 0 && Client.Instance.tickrate > (2f / (3f * Time.deltaTime) + 5f)) || _spectatorInRoom)
                 {
                     _sendRateCounter = 0;

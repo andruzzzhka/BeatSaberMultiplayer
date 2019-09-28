@@ -4,14 +4,9 @@ using ServerHub.Misc;
 using Logger = ServerHub.Misc.Logger;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Timers;
-using WebSocketSharp;
 using Newtonsoft.Json;
 using Lidgren.Network;
-using System.Threading.Tasks;
 
 namespace ServerHub.Rooms
 {

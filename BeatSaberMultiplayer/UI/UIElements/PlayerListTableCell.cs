@@ -1,13 +1,9 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.UI.ViewControllers.RoomScreen;
 using CustomUI.BeatSaber;
-using HMUI;
-using System;
-using System.Collections.Generic;
+using SongCore.Utilities;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -117,9 +113,48 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 if (_playerNameText != null)
                     _playerNameText.color = value;
             }
+
+            get
+            {
+                return _playerNameText.color;
+            }
         }
 
-        public PlayerInfo playerInfo;
+        public PlayerInfo playerInfo
+        {
+            set
+            {
+                _playerInfo = value;
+
+                if (value != null)
+                {
+                    playerName = value.playerName;
+
+                    IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(value.playerId);
+
+                    if (value.updateInfo.playerFlags.rainbowName && !_rainbowName)
+                    {
+                        NameColor = value.updateInfo.playerNameColor;
+                        _color = HSBColor.FromColor(value.updateInfo.playerNameColor);
+                    }
+                    else if (!value.updateInfo.playerFlags.rainbowName && NameColor != value.updateInfo.playerNameColor)
+                    {
+                        NameColor = value.updateInfo.playerNameColor;
+                    }
+
+                    _rainbowName = value.updateInfo.playerFlags.rainbowName;
+
+                    Update();
+                }
+            }
+            get
+            {
+                return _playerInfo;
+            }
+
+        }
+        private PlayerInfo _playerInfo;
+
         public IPlayerManagementButtons buttonsInterface;
 
         private Sprite _buttonStrokeSprite;
@@ -128,6 +163,9 @@ namespace BeatSaberMultiplayer.UI.UIElements
         private Button _transferHostButton;
         private Button _muteButton;
         private bool _isMuted;
+
+        private bool _rainbowName;
+        private HSBColor _color;
 
         private bool _transferHostButtonEnabled;
         private bool _muteButtonEnabled;
@@ -198,6 +236,16 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 {
                     _isMuted = true;
                     _muteButton.SetButtonText("UNMUTE");
+                }
+
+                if (_rainbowName)
+                {
+                    _playerNameText.color = HSBColor.ToColor(_color);
+                    _color.h += 0.125f * Time.deltaTime;
+                    if (_color.h >= 1f)
+                    {
+                        _color.h = 0f;
+                    }
                 }
             }
         }

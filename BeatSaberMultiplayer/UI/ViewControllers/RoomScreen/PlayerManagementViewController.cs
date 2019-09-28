@@ -7,8 +7,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -227,10 +225,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 }
                 _tableCells.Clear();
                 _playersTableView.RefreshTable(false);
-                //if(prevCount == 0 && _playersList.Count > 0)
-                //{
-                //    StartCoroutine(ScrollWithDelay());
-                //}
                 _resetPlayerList = false;
             }
 
@@ -238,16 +232,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             int index = 0;
             foreach (var player in players)
             {
-                if (player.Value == null)
+                if (player.Value == null || player.Value.playerInfo == null)
                 {
                     _resetPlayerList = true;
-                    continue;
+                    break;
                 }
                 if (_tableCells.Count > index)
                 {
                     buffer = _tableCells[index];
-                    buffer.playerName = player.Value.playerInfo.playerName;
                     buffer.playerInfo = player.Value.playerInfo;
+                    buffer.buttonsInterface = this;
                     if (state == RoomState.Preparing)
                     {
                         if (player.Value.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
@@ -263,10 +257,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     {
                         buffer.progress = -1f;
                     }
-                    buffer.IsTalking = InGameOnlineController.Instance.VoiceChatIsTalking(player.Key);
-                    buffer.NameColor = player.Value.playerInfo.updateInfo.playerNameColor;
-                    buffer.buttonsInterface = this;
-                    buffer.Update();
                 }
                 index++;
             }

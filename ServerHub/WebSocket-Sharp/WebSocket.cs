@@ -42,8 +42,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -56,20 +54,20 @@ using WebSocketSharp.Net.WebSockets;
 
 namespace WebSocketSharp
 {
-  /// <summary>
-  /// Implements the WebSocket interface.
-  /// </summary>
-  /// <remarks>
-  ///   <para>
-  ///   This class provides a set of methods and properties for two-way
-  ///   communication using the WebSocket protocol.
-  ///   </para>
-  ///   <para>
-  ///   The WebSocket protocol is defined in
-  ///   <see href="http://tools.ietf.org/html/rfc6455">RFC 6455</see>.
-  ///   </para>
-  /// </remarks>
-  public class WebSocket : IDisposable
+    /// <summary>
+    /// Implements the WebSocket interface.
+    /// </summary>
+    /// <remarks>
+    ///   <para>
+    ///   This class provides a set of methods and properties for two-way
+    ///   communication using the WebSocket protocol.
+    ///   </para>
+    ///   <para>
+    ///   The WebSocket protocol is defined in
+    ///   <see href="http://tools.ietf.org/html/rfc6455">RFC 6455</see>.
+    ///   </para>
+    /// </remarks>
+    public class WebSocket : IDisposable
   {
     #region Private Fields
 

@@ -37,9 +37,7 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
@@ -48,13 +46,13 @@ using WebSocketSharp.Net.WebSockets;
 
 namespace WebSocketSharp.Server
 {
-  /// <summary>
-  /// Provides a WebSocket protocol server.
-  /// </summary>
-  /// <remarks>
-  /// This class can provide multiple WebSocket services.
-  /// </remarks>
-  public class WebSocketServer
+    /// <summary>
+    /// Provides a WebSocket protocol server.
+    /// </summary>
+    /// <remarks>
+    /// This class can provide multiple WebSocket services.
+    /// </remarks>
+    public class WebSocketServer
   {
     #region Private Fields
 

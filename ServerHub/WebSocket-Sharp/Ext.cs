@@ -51,18 +51,15 @@ using System.Collections.Specialized;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Sockets;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using WebSocketSharp.Net;
-using WebSocketSharp.Net.WebSockets;
-using WebSocketSharp.Server;
 
 namespace WebSocketSharp
 {
-  /// <summary>
-  /// Provides a set of static methods for websocket-sharp.
-  /// </summary>
-  public static class Ext
+    /// <summary>
+    /// Provides a set of static methods for websocket-sharp.
+    /// </summary>
+    public static class Ext
   {
     #region Private Fields
 

@@ -26,11 +26,10 @@
  */
 #endregion
 
-using System;
 
 namespace WebSocketSharp.Server
 {
-  internal enum ServerState
+    internal enum ServerState
   {
     Ready,
     Start,

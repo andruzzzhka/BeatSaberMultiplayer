@@ -2,8 +2,6 @@
 using ServerHub.Misc;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace ServerHub.Data
 {
@@ -25,6 +23,8 @@ namespace ServerHub.Data
 
         public LevelOptionsInfo playerLevelOptions;
 
+        public ExtraPlayerFlags playerFlags;
+
         public bool fullBodyTracking;
 
         public byte[] avatarData;
@@ -44,6 +44,8 @@ namespace ServerHub.Data
             playerProgress = msg.ReadFloat();
 
             playerLevelOptions = new LevelOptionsInfo(msg);
+
+            playerFlags = new ExtraPlayerFlags(msg);
 
             avatarData = msg.ReadBytes(fullBodyTracking ? 168 : 84);
         }
@@ -68,6 +70,8 @@ namespace ServerHub.Data
                 new LevelOptionsInfo(BeatmapDifficulty.Hard, new GameplayModifiers(), "Standard").AddToMessage(msg);
             else
                 playerLevelOptions.AddToMessage(msg);
+
+            playerFlags.AddToMessage(msg);
 
             if ((avatarData.Length == 168 && fullBodyTracking) || (avatarData.Length == 84 && !fullBodyTracking))
             {
