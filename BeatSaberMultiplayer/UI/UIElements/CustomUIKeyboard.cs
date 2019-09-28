@@ -27,8 +27,6 @@ namespace BeatSaberMultiplayer.UI
         {
             _keyButtonPrefab = Resources.FindObjectsOfTypeAll<TextMeshProButton>().First(x => x.name == "KeyboardButton");
 
-            Plugin.log.Info("Found keyboard button!");
-
             string[] array = new string[]
             {
                 "q",

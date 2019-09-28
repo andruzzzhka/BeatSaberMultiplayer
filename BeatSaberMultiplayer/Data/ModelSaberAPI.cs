@@ -38,9 +38,7 @@ namespace BeatSaberMultiplayer.Misc
             }
             else
             {
-#if DEBUG
-                Plugin.log.Info("Received response from ModelSaber...");
-#endif
+                Plugin.log.Debug("Received response from ModelSaber...");
                 JSONNode node = JSON.Parse(www.downloadHandler.text);
 
                 if (node.Count == 0)
@@ -102,9 +100,7 @@ namespace BeatSaberMultiplayer.Misc
             }
             else
             {
-#if DEBUG
-                Plugin.log.Info("Received response from ModelSaber...");
-#endif
+                Plugin.log.Debug("Received response from ModelSaber...");
                 string docPath = "";
                 string customAvatarPath = "";
 
@@ -118,12 +114,12 @@ namespace BeatSaberMultiplayer.Misc
                     customAvatarPath = docPath + "/CustomAvatars/" + avatarName;
 
                     File.WriteAllBytes(customAvatarPath, data);
-                    Plugin.log.Info($"Saving avatar to \"{customAvatarPath}\"...");
+                    Plugin.log.Debug($"Saving avatar to \"{customAvatarPath}\"...");
 
                     CustomAvatar.CustomAvatar downloadedAvatar = CustomExtensions.CreateInstance<CustomAvatar.CustomAvatar>(customAvatarPath);
 
-                    Plugin.log.Info("Downloaded avatar!");
-                    Plugin.log.Info($"Loading avatar...");
+                    Plugin.log.Debug("Downloaded avatar!");
+                    Plugin.log.Debug($"Loading avatar...");
 
                     downloadedAvatar.Load(
                         (CustomAvatar.CustomAvatar avatar, CustomAvatar.AvatarLoadResult result) => 
@@ -155,7 +151,7 @@ namespace BeatSaberMultiplayer.Misc
             if (cachedAvatars.Count != CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count)
             {
                 isCalculatingHashes = true;
-                Plugin.log.Info("Hashing all avatars...");
+                Plugin.log.Debug("Hashing all avatars...");
                 try
                 {
                     cachedAvatars.Clear();
@@ -169,15 +165,13 @@ namespace BeatSaberMultiplayer.Misc
                                 if (!cachedAvatars.ContainsKey(hash))
                                 {
                                     cachedAvatars.Add(hash, avatar);
-#if DEBUG
-                                    Plugin.log.Info("Hashed avatar "+avatar.Name+"! Hash: "+hash);
-#endif
+                                    Plugin.log.Debug("Hashed avatar "+avatar.Name+"! Hash: "+hash);
                                 }
                             }
                         }).ConfigureAwait(false);
 
                     }
-                    Plugin.log.Info("All avatars hashed!");
+                    Plugin.log.Debug("All avatars hashed!");
                     hashesCalculated?.Invoke();
                 }
                 catch(Exception e)

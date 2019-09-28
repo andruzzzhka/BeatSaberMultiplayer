@@ -54,7 +54,7 @@ namespace BeatSaberMultiplayer
             try
             {
                 FileLocation.Directory.Create();
-                Plugin.log.Info($"Attempting to load JSON @ {FileLocation.FullName}");
+                Plugin.log.Debug($"Attempting to load JSON @ {FileLocation.FullName}");
                 _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
 
                 UpdateServerHubs(_instance);
@@ -365,7 +365,7 @@ namespace BeatSaberMultiplayer
             if (!IsDirty) return false;
             try {
                 using (var f = new StreamWriter(FileLocation.FullName)) {
-                    Plugin.log.Info($"Writing to File @ {FileLocation.FullName}");
+                    Plugin.log.Debug($"Writing to File @ {FileLocation.FullName}");
                     var json = JsonUtility.ToJson(this, true);
                     f.Write(json);
                 }

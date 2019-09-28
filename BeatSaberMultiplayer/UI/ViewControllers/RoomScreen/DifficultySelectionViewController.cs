@@ -209,7 +209,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                                 if (difficultyLevel != null && !string.IsNullOrEmpty(difficultyLevel._difficultyLabel))
                                 {
                                     difficulties[diffKey] = difficultyLevel._difficultyLabel;
-                                    Plugin.log.Info($"Found difficulty label \"{difficulties[diffKey]}\" for difficulty {diffKey.difficulty.ToString()}");
+                                    Plugin.log.Debug($"Found difficulty label \"{difficulties[diffKey]}\" for difficulty {diffKey.difficulty.ToString()}");
                                 }
                             }
                         }

@@ -228,7 +228,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     NetworkClient.Start();
 
-                    Plugin.log.Info($"Creating message...");
+                    Plugin.log.Debug($"Creating message...");
                     NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
 
                     Version assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
@@ -237,7 +237,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     outMsg.Write(version);
                     new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).AddToMessage(outMsg);
 
-                    Plugin.log.Info($"Connecting to {ip}:{port}...");
+                    Plugin.log.Debug($"Connecting to {ip}:{port}...");
 
                     NetworkClient.Connect(ip, port, outMsg);
                 }).ConfigureAwait(false);
@@ -348,15 +348,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case NetIncomingMessageType.ErrorMessage:
                             Plugin.log.Error(msg.ReadString());
                             break;
-#if DEBUG
                         case NetIncomingMessageType.VerboseDebugMessage:
                         case NetIncomingMessageType.DebugMessage:
-                            Plugin.log.Info(msg.ReadString());
+                            Plugin.log.Debug(msg.ReadString());
                             break;
                         default:
-                            Console.WriteLine("Unhandled type: " + msg.MessageType);
+                            Plugin.log.Debug("Unhandled type: " + msg.MessageType);
                             break;
-#endif
                     }
 
                 }

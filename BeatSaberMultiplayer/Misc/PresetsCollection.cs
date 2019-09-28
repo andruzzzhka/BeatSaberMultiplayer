@@ -36,11 +36,11 @@ namespace BeatSaberMultiplayer.Misc
                     {
                         RoomPreset preset = RoomPreset.LoadPreset(path);
                         loadedPresets.Add(preset);
-                        Plugin.log.Info($"Found preset \"{preset.GetName()}\"");
+                        Plugin.log.Debug($"Found preset \"{preset.GetName()}\"");
                     }
                     catch (Exception e)
                     {
-                        Plugin.log.Info($"Unable to parse preset @ {path}! Exception: {e}");
+                        Plugin.log.Error($"Unable to parse preset @ {path}! Exception: {e}");
                     }
                 }
             }

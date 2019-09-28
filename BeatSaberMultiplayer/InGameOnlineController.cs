@@ -417,13 +417,13 @@ namespace BeatSaberMultiplayer
 
                         if (needToRemovePlayer)
                         {
-                            Plugin.log.Info("Player(s) left! Removing player controllers...");
+                            Plugin.log.Debug("Player(s) left! Removing player controllers...");
                             List<ulong> removed = new List<ulong>();
 
                             foreach (var pair in players)
                                 if (!_playerIds.Contains(pair.Key))
                                 {
-                                    Plugin.log.Info("Removed player controller with ID " + pair.Key);
+                                    Plugin.log.Debug("Removed player controller with ID " + pair.Key);
                                     removed.Add(pair.Key);
                                     if (pair.Value != null && !pair.Value.destroyed)
                                     {
@@ -530,7 +530,7 @@ namespace BeatSaberMultiplayer
                                     if (speexDec == null || speexDec.mode != data.mode)
                                     {
                                         speexDec = SpeexCodex.Create(data.mode);
-                                        Plugin.log.Info("New Speex decoder created!");
+                                        Plugin.log.Debug("New Speex decoder created!");
                                     }
 
                                     if(players.TryGetValue(data.playerId, out OnlinePlayerController player))
@@ -782,7 +782,7 @@ namespace BeatSaberMultiplayer
 #if DEBUG
                 if (Client.Instance.playerInfo.avatarHash != PlayerInfo.avatarHashPlaceholder)
                 {
-                    Plugin.log.Info("Updating avatar hash... New hash: " + (Client.Instance.playerInfo.avatarHash));
+                    Plugin.log.Debug("Updating avatar hash... New hash: " + (Client.Instance.playerInfo.avatarHash));
                 }
 #endif
             }
@@ -894,7 +894,7 @@ namespace BeatSaberMultiplayer
                         Destroy(playerPair.Value.gameObject);
                 }
                 players.Clear();
-                Plugin.log.Info("Destroyed player controllers!");
+                Plugin.log.Debug("Destroyed player controllers!");
             }catch(Exception e)
             {
                 Plugin.log.Critical(e);
@@ -1014,13 +1014,12 @@ namespace BeatSaberMultiplayer
 
         IEnumerator WaitForControllers()
         {
-#if DEBUG
-            Plugin.log.Info("Waiting for game controllers...");
-#endif
+            Plugin.log.Debug("Waiting for game controllers...");
+
             yield return new WaitUntil(delegate () { return FindObjectOfType<ScoreController>() != null; });
-#if DEBUG
-            Plugin.log.Info("Game controllers found!");
-#endif
+
+            Plugin.log.Debug("Game controllers found!");
+
             _gameManager = Resources.FindObjectsOfTypeAll<StandardLevelGameplayManager>().First();
 
             if (_gameManager != null)
@@ -1044,9 +1043,8 @@ namespace BeatSaberMultiplayer
                     Plugin.log.Critical(e);
                 }
             }
-#if DEBUG
-            Plugin.log.Info("Disabled pause button!");
-#endif
+            Plugin.log.Debug("Disabled pause button!");
+
             _scoreController = FindObjectOfType<ScoreController>();
 
             if (_scoreController != null)
@@ -1056,9 +1054,7 @@ namespace BeatSaberMultiplayer
                 _scoreController.comboDidChangeEvent += ComboDidChangeEvent;
                 _scoreController.noteWasMissedEvent += NoteWasMissedEvent;
             }
-#if DEBUG
-            Plugin.log.Info("Found score controller");
-#endif
+            Plugin.log.Debug("Found score controller");
 
             _energyController = FindObjectOfType<GameEnergyCounter>();
 
@@ -1066,9 +1062,7 @@ namespace BeatSaberMultiplayer
             {
                 _energyController.gameEnergyDidChangeEvent += EnergyDidChangeEvent;
             }
-#if DEBUG
-            Plugin.log.Info("Found energy controller");
-#endif
+            Plugin.log.Debug("Found energy controller");
 
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault(x => !(x is OnlineAudioTimeController));
 
@@ -1079,9 +1073,7 @@ namespace BeatSaberMultiplayer
                 _pauseMenuManager.GetPrivateField<Button>("_restartButton").interactable = false;
             }
 
-#if DEBUG
-            Plugin.log.Info("Found pause manager");
-#endif
+            Plugin.log.Debug("Found pause manager");
 
             _loaded = true;
         }

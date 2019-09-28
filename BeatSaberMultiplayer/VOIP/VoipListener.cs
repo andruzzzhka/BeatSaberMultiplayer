@@ -68,8 +68,8 @@ namespace BeatSaberMultiplayer.VOIP
             }            
 
             recording = Microphone.Start(null, true, 20, inputFreq);
-            Plugin.log.Info("Used mic sample rate: " + inputFreq + "Hz");
-            Plugin.log.Info("Used buffer size for recording: " + sizeRequired + " floats");
+            Plugin.log.Debug("Used mic sample rate: " + inputFreq + "Hz");
+            Plugin.log.Debug("Used buffer size for recording: " + sizeRequired + " floats");
         }
 
         public void StopRecording()

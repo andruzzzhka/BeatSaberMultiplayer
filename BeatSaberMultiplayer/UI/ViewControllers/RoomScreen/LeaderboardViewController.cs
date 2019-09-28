@@ -115,9 +115,6 @@ namespace BeatSaberMultiplayer
                 (_leaderboardTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
                 (_leaderboardTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
 
-                //ReflectionUtil.SetPrivateField(_leaderboardTableView, "_pageUpButton", _pageUpButton);
-                //ReflectionUtil.SetPrivateField(_leaderboardTableView, "_pageDownButton", _pageDownButton);
-
                 _leaderboardTableView.dataSource = this;
 
                 _timerText = BeatSaberUI.CreateText(rectTransform, "", new Vector2(0f, 34f));
@@ -144,10 +141,6 @@ namespace BeatSaberMultiplayer
                 }
                 _tableCells.Clear();
                 _leaderboardTableView.RefreshTable(false);
-                //if (prevCount == 0 && _playerInfos.Count > 0)
-                //{
-                //    StartCoroutine(ScrollWithDelay());
-                //}
             }
 
             for (int i = 0; i < scores.Count; i++)

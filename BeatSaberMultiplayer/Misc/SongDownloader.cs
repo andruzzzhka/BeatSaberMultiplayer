@@ -172,7 +172,6 @@ namespace BeatSaberMultiplayer.Misc
                     while (Directory.Exists(path + $" ({pathNum})")) ++pathNum;
                     path += $" ({pathNum})";
                 }
-                Plugin.log.Info(path);
                 await Task.Run(() => archive.ExtractToDirectory(path)).ConfigureAwait(false);
                 archive.Dispose();
                 songInfo.path = path;

@@ -14,7 +14,7 @@ namespace BeatSaberMultiplayer.Misc
         public static void Init()
         {
             rumbleEnahncerInstalled = IPA.Loader.PluginManager.AllPlugins.Any(x => x.Metadata.Id == "rumbleenhancer");
-            Plugin.log.Info("Rumble Enahncer installed: "+ rumbleEnahncerInstalled);
+            Plugin.log.Debug("Rumble Enahncer installed: "+ rumbleEnahncerInstalled);
 
             if(platformHelper == null)
             {

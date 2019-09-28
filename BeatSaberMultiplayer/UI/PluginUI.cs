@@ -294,11 +294,11 @@ namespace BeatSaberMultiplayer.UI
                         if (result == CustomAvatar.AvatarLoadResult.Completed)
                         {
                             UpdateAvatarsList();
-                            Plugin.log.Info($"Loaded avatar \"{loadedAvatar.Name}\"!");
+                            Plugin.log.Debug($"Loaded avatar \"{loadedAvatar.Name}\"!");
                         }
                         else
                         {
-                            Plugin.log.Info($"Unable to load avatar! "+result.ToString());
+                            Plugin.log.Error($"Unable to load avatar! "+result.ToString());
 
                         }
                     });

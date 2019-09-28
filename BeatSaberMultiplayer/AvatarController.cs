@@ -409,7 +409,7 @@ namespace BeatSaberMultiplayer
         {
             if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerAvatarHash) && playerAvatarHash == hash)
             {
-                Plugin.log.Info($"Avatar with hash \"{hash}\" loaded! (1)");
+                Plugin.log.Debug($"Avatar with hash \"{hash}\" loaded! (1)");
                 AvatarLoaded -= AvatarController_AvatarLoaded;
 
                 if (avatar != null)
@@ -429,7 +429,7 @@ namespace BeatSaberMultiplayer
         {
             if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerAvatarHash) && playerAvatarHash == hash)
             {
-                Plugin.log.Info($"Avatar with hash \"{hash}\" loaded! (2)");
+                Plugin.log.Debug($"Avatar with hash \"{hash}\" loaded! (2)");
                 ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
 
                 if (avatar != null)

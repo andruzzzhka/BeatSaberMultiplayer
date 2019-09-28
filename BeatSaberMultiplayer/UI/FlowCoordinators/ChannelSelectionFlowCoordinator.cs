@@ -94,9 +94,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             else
             {
-#if DEBUG
-                Plugin.log.Info("Received response!");
-#endif
+                Plugin.log.Debug("Received response!");
+
                 JSONNode node = JSON.Parse(www.downloadHandler.text);
 
                 _channelInfos.Clear();
@@ -141,7 +140,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
                 
                 _channelClients.ForEach(x => x.GetRooms());
-                Plugin.log.Info("Requested channel infos!");
+                Plugin.log.Debug("Requested channel infos!");
             }
 
         }
@@ -185,7 +184,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 NetworkClient.Start();
 
-                Plugin.log.Info($"Creating message...");
+                Plugin.log.Debug($"Creating message...");
                 NetOutgoingMessage outMsg = NetworkClient.CreateMessage();
 
                 Version assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
@@ -194,7 +193,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 outMsg.Write(version);
                 new PlayerInfo(GetUserInfo.GetUserName(), GetUserInfo.GetUserID()).AddToMessage(outMsg);
 
-                Plugin.log.Info($"Connecting to {channelInfos[0].ip}:{channelInfos[0].port}...");
+                Plugin.log.Debug($"Connecting to {channelInfos[0].ip}:{channelInfos[0].port}...");
 
                 NetworkClient.Connect(channelInfos[0].ip, channelInfos[0].port, outMsg);
             }
@@ -273,10 +272,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             break;
                         case NetIncomingMessageType.VerboseDebugMessage:
                         case NetIncomingMessageType.DebugMessage:
-                            Plugin.log.Info(msg.ReadString());
+                            Plugin.log.Debug(msg.ReadString());
                             break;
                         default:
-                            Console.WriteLine("Unhandled type: " + msg.MessageType);
+                            Plugin.log.Debug("Unhandled type: " + msg.MessageType);
                             break;
                     }
 

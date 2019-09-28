@@ -39,9 +39,8 @@ namespace BeatSaberMultiplayer
 
         public void Start()
         {
-#if DEBUG
-            Plugin.log.Info($"Player controller created!");
-#endif
+            Plugin.log.Debug($"Player controller created!");
+
             voipSource = gameObject.AddComponent<AudioSource>();
 
             _voipClip = AudioClip.Create("VoIP Clip", 161280, 1, 16000, false);
@@ -51,9 +50,8 @@ namespace BeatSaberMultiplayer
 
             if (playerInfo != null)
             {
-#if DEBUG
-                Plugin.log.Info($"Starting player controller for {playerInfo.playerName}:{playerInfo.playerId}...");
-#endif
+                Plugin.log.Debug($"Starting player controller for {playerInfo.playerName}:{playerInfo.playerId}...");
+
                 _syncStartInfo = playerInfo.updateInfo;
                 _syncStartInfo = playerInfo.updateInfo;
             }
@@ -61,27 +59,27 @@ namespace BeatSaberMultiplayer
 
         void SpawnBeatmapControllers()
         {
-            Plugin.log.Info("Creating beatmap controllers...");
+            Plugin.log.Debug("Creating beatmap controllers...");
 
             beatmapCallbackController = new GameObject("OnlineBeatmapCallbackController").AddComponent<OnlineBeatmapCallbackController>();
-            Plugin.log.Info("Created beatmap callback controller!");
+            Plugin.log.Debug("Created beatmap callback controller!");
             beatmapCallbackController.Init(this);
-            Plugin.log.Info("Initialized beatmap callback controller!");
+            Plugin.log.Debug("Initialized beatmap callback controller!");
 
             audioTimeController = new GameObject("OnlineAudioTimeController").AddComponent<OnlineAudioTimeController>();
-            Plugin.log.Info("Created audio time controller!");
+            Plugin.log.Debug("Created audio time controller!");
             audioTimeController.Init(this);
-            Plugin.log.Info("Initialized audio time controller!");
+            Plugin.log.Debug("Initialized audio time controller!");
 
             beatmapSpawnController = new GameObject("OnlineBeatmapSpawnController").AddComponent<OnlineBeatmapSpawnController>();
-            Plugin.log.Info("Created beatmap spawn controller!");
+            Plugin.log.Debug("Created beatmap spawn controller!");
             beatmapSpawnController.Init(this, beatmapCallbackController, audioTimeController);
-            Plugin.log.Info("Initialized beatmap spawn controller!");
+            Plugin.log.Debug("Initialized beatmap spawn controller!");
         }
 
         void SpawnSabers()
         {
-            Plugin.log.Info("Spawning left saber...");
+            Plugin.log.Debug("Spawning left saber...");
             try
             {
                 _leftSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "LeftSaber"), transform, false);
@@ -101,7 +99,7 @@ namespace BeatSaberMultiplayer
             leftTrail.SetPrivateField("_colorManager", colorManager);
             leftTrail.SetPrivateField("_saberTypeObject", leftController.GetComponentInChildren<SaberTypeObject>());
 
-            Plugin.log.Info("Spawning right saber...");
+            Plugin.log.Debug("Spawning right saber...");
             try
             { 
                 _rightSaber = Instantiate(Resources.FindObjectsOfTypeAll<Saber>().First(x => x.name == "RightSaber"), transform, false);
@@ -120,7 +118,7 @@ namespace BeatSaberMultiplayer
             rightTrail.SetPrivateField("_colorManager", colorManager);
             rightTrail.SetPrivateField("_saberTypeObject", rightController.GetComponentInChildren<SaberTypeObject>());
             
-            Plugin.log.Info("Sabers spawned!");
+            Plugin.log.Debug("Sabers spawned!");
         }
 
         public void SetSabers(Saber leftSaber, Saber rightSaber)
@@ -237,12 +235,11 @@ namespace BeatSaberMultiplayer
 
         public void OnDestroy()
         {
-#if DEBUG
             if(playerInfo == null)
-                Plugin.log.Info("Destroying player controller!");
+                Plugin.log.Debug("Destroying player controller!");
             else
-                Plugin.log.Info($"Destroying player controller! Name: {playerInfo.playerName}, ID: {playerInfo.playerId}");
-#endif
+                Plugin.log.Debug($"Destroying player controller! Name: {playerInfo.playerName}, ID: {playerInfo.playerId}");
+
             destroyed = true;
             
             if (avatar != null)

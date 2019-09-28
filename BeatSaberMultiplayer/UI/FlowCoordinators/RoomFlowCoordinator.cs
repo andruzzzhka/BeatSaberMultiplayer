@@ -192,7 +192,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             catch
             {
-                Plugin.log.Info("Unable to disconnect from ServerHub properly!");
+                Plugin.log.Warn("Unable to disconnect from ServerHub properly!");
             }
 
             Client.Instance.MessageReceived -= PacketReceived;
@@ -628,9 +628,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 
                 IDifficultyBeatmap difficultyBeatmap = level.GetDifficultyBeatmap(characteristic, difficulty, false);
 
-#if DEBUG
-                Plugin.log.Info($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={difficulty}");
-#endif
+                Plugin.log.Debug($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={difficulty}");
 
                 Client.Instance.MessageReceived -= PacketReceived;
 
