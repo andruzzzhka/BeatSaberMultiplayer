@@ -550,11 +550,13 @@ namespace BeatSaberMultiplayer
                     break;
                 case CommandType.SetGameState:
                     {
+                        var targetState = (StandardLevelGameplayManager.GameState)msg.ReadByte();
+
                         if (_currentScene == _gameSceneName && _loaded)
                         {
                             PropertyInfo property = typeof(StandardLevelGameplayManager).GetProperty("gameState");
                             property.DeclaringType.GetProperty("gameState");
-                            property.GetSetMethod(true).Invoke(_gameManager, new object[] { (StandardLevelGameplayManager.GameState)msg.ReadByte() });
+                            property.GetSetMethod(true).Invoke(_gameManager, new object[] { targetState });
                         }
                     }
                     break;
@@ -919,7 +921,7 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SongFinished(StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers, bool practice)
+        public void SongFinished(LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers, bool practice)
         {
             if(Client.Instance.inRadioMode)
             {
