@@ -40,12 +40,16 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
-    <Reference Include="BeatSaberCustomUI, Version=1.5.3.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="BeatSaberCustomUI, Version=1.7.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BeatSaberCustomUI.dll</HintPath>
     </Reference>
     <Reference Include="BeatSaverDownloader">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BeatSaverDownloader.dll</HintPath>
+    </Reference>
+    <Reference Include="BSML, Version=1.0.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BSML.dll</HintPath>
     </Reference>
     <Reference Include="BS_Utils">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BS_Utils.dll</HintPath>
@@ -209,11 +213,16 @@
     <Compile Include="UI\FlowCoordinators\RoomFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\ServerHubFlowCoordinator.cs" />
     <Compile Include="UI\PluginUI.cs" />
+    <Compile Include="UI\UIElements\BigButtonHandler.cs" />
+    <Compile Include="UI\UIElements\BigButtonImages.cs" />
+    <Compile Include="UI\UIElements\BigButtonTag.cs" />
+    <Compile Include="UI\UIElements\ImageHandler.cs" />
     <Compile Include="UI\UIElements\PlayerListTableCell.cs" />
     <Compile Include="UI\UIElements\OnOffViewController.cs" />
     <Compile Include="Misc\CustomSettingsHelper.cs" />
     <Compile Include="UI\UIElements\CustomUIKeyboard.cs" />
     <Compile Include="UI\UIElements\MultiplayerListViewController.cs" />
+    <Compile Include="UI\UIElements\StackLayoutTag.cs" />
     <Compile Include="UI\ViewControllers\ChannelSelectionScreen\ChannelSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\PresetsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
@@ -240,6 +249,7 @@
     <EmbeddedResource Include="Assets\Shader.asset" />
     <EmbeddedResource Include="manifest.json" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="UI\ViewControllers\ModeSelectionScreen\ModeSelectionViewController.bsml" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\LockedRoom.png" />

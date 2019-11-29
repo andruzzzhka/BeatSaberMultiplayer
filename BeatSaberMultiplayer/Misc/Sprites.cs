@@ -1,4 +1,8 @@
-﻿using System.Linq;
+﻿using CustomUI.Utilities;
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace BeatSaberMultiplayer
@@ -107,6 +111,21 @@ namespace BeatSaberMultiplayer
 
             ratingIcon =            CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RatingIcon.png");
             ratingIcon.texture.wrapMode = TextureWrapMode.Clamp;
+        }
+
+        public static Sprite FindSpriteInAssembly(string path)
+        {
+            try
+            {
+                Assembly asm = Assembly.Load(path.Substring(0, path.IndexOf('.')));
+                if (asm.GetManifestResourceNames().Contains(path))
+                    return UIUtilities.LoadSpriteRaw(UIUtilities.GetResource(asm, path));
+            }
+            catch(Exception ex)
+            {
+                Plugin.log.Warn("Unable to find sprite in assembly! Exception: "+ex);
+            }
+            return null;
         }
     }
 }

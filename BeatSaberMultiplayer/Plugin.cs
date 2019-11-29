@@ -65,6 +65,10 @@ namespace BeatSaberMultiplayer
                 Plugin.log.Error("Unable to patch assembly! Exception: " + e);
             }
 
+            BeatSaberMarkupLanguage.BSMLParser.instance.RegisterTag(new UI.UIElements.StackLayoutTag());
+            BeatSaberMarkupLanguage.BSMLParser.instance.RegisterTag(new UI.UIElements.BigButtonTag());
+            BeatSaberMarkupLanguage.BSMLParser.instance.RegisterTypeHandler(new UI.UIElements.BigButtonHandler());
+
         }
 
         private void MenuSceneLoadedFresh()

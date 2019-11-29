@@ -1,9 +1,9 @@
-﻿using BeatSaberMultiplayer.Data;
+﻿using BeatSaberMarkupLanguage;
+using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.UI.ViewControllers;
 using BeatSaberMultiplayer.UI.ViewControllers.ChannelSelectionScreen;
 using BS_Utils.Gameplay;
-using CustomUI.BeatSaber;
-using CustomUI.Utilities;
+using BS_Utils.Utilities;
 using Lidgren.Network;
 using SimpleJSON;
 using System;
