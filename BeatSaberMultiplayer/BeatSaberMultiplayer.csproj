@@ -241,6 +241,7 @@
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
     <Compile Include="UI\ViewControllers\MultiplayerNavigationController.cs" />
     <Compile Include="VOIP\AudioUtils.cs" />
+    <Compile Include="VOIP\FifoFloatStream.cs" />
     <Compile Include="VOIP\SpeexCodex.cs" />
     <Compile Include="Data\VoipFragment.cs" />
     <Compile Include="VOIP\VoipListener.cs" />

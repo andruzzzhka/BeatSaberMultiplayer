@@ -1,5 +1,6 @@
 ﻿using NSpeex;
 using System;
+using System.IO;
 using UnityEngine;
 
 namespace BeatSaberMultiplayer.VOIP
@@ -18,9 +19,6 @@ namespace BeatSaberMultiplayer.VOIP
         private int index;
 
         public event Action<VoipFragment> OnAudioGenerated;
-
-        [Range(0.001f,1f)]
-        public float minAmplitude = 0.001f;
 
         public BandMode max = BandMode.Wide;
         public int inputFreq;
@@ -101,24 +99,20 @@ namespace BeatSaberMultiplayer.VOIP
                 if (_isListening && recording.GetData(recordingBuffer, lastPos))
                 {
                     //Send..
-                    var amplitude = AudioUtils.GetMaxAmplitude(recordingBuffer);
-                    if (amplitude >= minAmplitude )
+                    index++;
+                    if (OnAudioGenerated != null )
                     {
-                        index++;
-                        if (OnAudioGenerated != null )
+                        //Downsample if needed.
+                        if (recordingBuffer != resampleBuffer)
                         {
-                            //Downsample if needed.
-                            if (recordingBuffer != resampleBuffer)
-                            {
-                                AudioUtils.Resample(recordingBuffer, resampleBuffer, inputFreq, AudioUtils.GetFrequency(encoder.mode));
-                            }
-
-                            var data = encoder.Encode(resampleBuffer);
-
-                            VoipFragment frag = new VoipFragment(0, index, data, encoder.mode);
-
-                            OnAudioGenerated?.Invoke(frag);
+                            AudioUtils.Resample(recordingBuffer, resampleBuffer, inputFreq, AudioUtils.GetFrequency(encoder.mode));
                         }
+
+                        var data = encoder.Encode(resampleBuffer);
+
+                        VoipFragment frag = new VoipFragment(0, index, data, encoder.mode);
+
+                        OnAudioGenerated?.Invoke(frag);
                     }
                 }
                 length -= recordingBuffer.Length;

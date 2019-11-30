@@ -35,36 +35,41 @@ namespace BeatSaberMultiplayer.VOIP
             }
         }
 
-        public static void Resample(float[] source, float[] target, int inputSampleRate, int outputSampleRate)
+        public static void Resample(float[] source, float[] target, int inputSampleRate, int outputSampleRate, int outputChannelsNum = 1)
         {
-            Resample(source, target, source.Length, target.Length, inputSampleRate, outputSampleRate);
+            Resample(source, target, source.Length, target.Length, inputSampleRate, outputSampleRate, outputChannelsNum);
         }
 
-        public static void Resample(float[] source, float[] target, int inputNum, int outputNum, int inputSampleRate, int outputSampleRate)
+        public static void Resample(float[] source, float[] target, int inputNum, int outputNum, int inputSampleRate, int outputSampleRate, int outputChannelsNum)
         {
             float ratio = inputSampleRate / (float)outputSampleRate;
-            if (ratio % 1 <= float.Epsilon)
+            if (ratio % 1f <= float.Epsilon)
             {
-                int intRatio = (int)ratio;
-                for (int i = 0; i < outputNum; i++)
+                int intRatio = Mathf.RoundToInt(ratio);
+                for (int i = 0; i < (outputNum / outputChannelsNum) && (i * intRatio) < inputNum; i++)
                 {
-                    target[i] = source[i * intRatio];
+                    for(int j = 0; j < outputChannelsNum; j++)
+                        target[i * outputChannelsNum + j] = source[i * intRatio];
                 }
             }
             else
             {
                 if (ratio > 1f)
                 {
-                    for (int i = 0; i < outputNum; i++)
+                    for (int i = 0; i < (outputNum / outputChannelsNum) && Mathf.CeilToInt(i * ratio) < inputNum; i++)
                     {
-                        target[i] = Mathf.Lerp(source[Mathf.FloorToInt(i * ratio)], source[Mathf.CeilToInt(i * ratio)], ratio % 1);
+                        for (int j = 0; j < outputChannelsNum; j++)
+                            target[i * outputChannelsNum + j] = Mathf.Lerp(source[Mathf.FloorToInt(i * ratio)], source[Mathf.CeilToInt(i * ratio)], ratio % 1);
                     }
                 }
                 else
                 {
-                    for (int i = 0; i < outputNum; i++)
+                    for (int i = 0; i < (outputNum / outputChannelsNum) && Mathf.FloorToInt(i * ratio) < inputNum; i++)
                     {
-                        target[i] = source[Mathf.FloorToInt(i * ratio)];
+                        for (int j = 0; j < outputChannelsNum; j++)
+                        {
+                            target[i * outputChannelsNum + j] = source[Mathf.FloorToInt(i * ratio)];
+                        }
                     }
                 }
             }
