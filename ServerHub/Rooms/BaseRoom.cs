@@ -99,7 +99,7 @@ namespace ServerHub.Rooms
 
         public virtual RoomInfo GetRoomInfo()
         {
-            return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, roomHost = roomHost, roomState = roomState, songSelectionType = roomSettings.SelectionType, selectedSong = selectedSong, startLevelInfo = startLevelInfo, perPlayerDifficulty = roomSettings.PerPlayerDifficulty };
+            return new RoomInfo() { roomId = roomId, name = roomSettings.Name, usePassword = roomSettings.UsePassword, noHost = noHost, players = roomClients.Count, maxPlayers = roomSettings.MaxPlayers, roomHost = roomHost, roomState = roomState, songSelectionType = roomSettings.SelectionType, selectedSong = selectedSong, startLevelInfo = startLevelInfo, perPlayerDifficulty = roomSettings.PerPlayerDifficulty };
         }
 
         public virtual void PlayerLeft(Client player)

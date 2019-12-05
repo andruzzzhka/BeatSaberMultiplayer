@@ -12,11 +12,12 @@ using VRUI;
 using Lidgren.Network;
 using BS_Utils.Gameplay;
 using System.Reflection;
+using BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
 
-    struct ServerHubRoom
+    public struct ServerHubRoom
     {
         public string ip;
         public int port;
@@ -32,8 +33,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
     class ServerHubFlowCoordinator : FlowCoordinator
     {
-        MultiplayerNavigationController _serverHubNavigationController;
-
         RoomListViewController _roomListViewController;
 
         List<ServerHubClient> _serverHubClients = new List<ServerHubClient>();
@@ -47,21 +46,18 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
                 title = "Online Multiplayer";
-
-                _serverHubNavigationController = BeatSaberUI.CreateViewController<MultiplayerNavigationController>();
-                _serverHubNavigationController.didFinishEvent += () => {
-                    PluginUI.instance.modeSelectionFlowCoordinator.InvokeMethod("DismissFlowCoordinator", this, null, false);
-                };
-
+                
                 _roomListViewController = BeatSaberUI.CreateViewController<RoomListViewController>();
 
                 _roomListViewController.createRoomButtonPressed += CreateRoomPressed;
                 _roomListViewController.selectedRoom += RoomSelected;
                 _roomListViewController.refreshPressed += RefreshPresed;
+                _roomListViewController.didFinishEvent += () => {
+                    PluginUI.instance.modeSelectionFlowCoordinator.InvokeMethod("DismissFlowCoordinator", this, null, false);
+                };
             }
 
-            SetViewControllerToNavigationConctroller(_serverHubNavigationController, _roomListViewController);
-            ProvideInitialViewControllers(_serverHubNavigationController, null, null);
+            ProvideInitialViewControllers(_roomListViewController, null, null);
 
             StartCoroutine(UpdateRoomsListCoroutine());
         }
@@ -161,7 +157,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
             _roomListViewController.SetRooms(null);
-            _serverHubNavigationController.SetLoadingState(true);
             _roomListViewController.SetRefreshButtonState(false);
             _serverHubClients.ForEach(x => x.GetRooms());
 
@@ -178,7 +173,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 else
                     Plugin.log.Info($"Received rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
                 _roomListViewController.SetRooms(_roomsList);
-                _serverHubNavigationController.SetLoadingState(false);
                 _roomListViewController.SetRefreshButtonState(true);
             });
         }
@@ -194,7 +188,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
 
 
-    class ServerHubClient : MonoBehaviour
+    public class ServerHubClient : MonoBehaviour
     {
         private NetClient NetworkClient;
 

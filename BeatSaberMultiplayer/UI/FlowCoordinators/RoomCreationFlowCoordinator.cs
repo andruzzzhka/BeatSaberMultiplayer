@@ -1,4 +1,5 @@
-﻿using BeatSaberMultiplayer.Data;
+﻿using BeatSaberMarkupLanguage.ViewControllers;
+using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen;
 using CustomUI.BeatSaber;
@@ -51,12 +52,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             ProvideInitialViewControllers(_serverHubsViewController, null, null);
         }
 
-        public void PresentKeyboard(CustomKeyboardViewController keyboardViewController)
+        public void PresentKeyboard(KeyboardViewController keyboardViewController)
         {
             PresentViewController(keyboardViewController, null, false);
         }
         
-        private void _mainRoomCreationViewController_keyboardDidFinishEvent(CustomKeyboardViewController keyboardViewController)
+        private void _mainRoomCreationViewController_keyboardDidFinishEvent(KeyboardViewController keyboardViewController)
         {
             DismissViewController(keyboardViewController, null, false);
         }
@@ -112,7 +113,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             _roomSettings = settings;
 
-            _mainRoomCreationViewController.CreateButtonInteractable(false);
+            _mainRoomCreationViewController.SetCreateButtonInteractable(false);
             
             if(!Client.Instance.connected || (Client.Instance.ip != _selectedServerHub.ip || Client.Instance.port != _selectedServerHub.port))
             {
@@ -141,7 +142,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             msg.Position = 0;
             if ((CommandType)msg.ReadByte() == CommandType.CreateRoom)
             {
-                _mainRoomCreationViewController.CreateButtonInteractable(true);
+                _mainRoomCreationViewController.SetCreateButtonInteractable(true);
 
                 Client.Instance.MessageReceived -= PacketReceived;
                 _createdRoomId = msg.ReadUInt32();

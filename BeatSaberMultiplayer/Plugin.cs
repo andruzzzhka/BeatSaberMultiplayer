@@ -67,8 +67,6 @@ namespace BeatSaberMultiplayer
 
             BeatSaberMarkupLanguage.BSMLParser.instance.RegisterTag(new UI.UIElements.StackLayoutTag());
             BeatSaberMarkupLanguage.BSMLParser.instance.RegisterTag(new UI.UIElements.BigButtonTag());
-            BeatSaberMarkupLanguage.BSMLParser.instance.RegisterTypeHandler(new UI.UIElements.BigButtonHandler());
-
         }
 
         private void MenuSceneLoadedFresh()

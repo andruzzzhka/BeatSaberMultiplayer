@@ -8,18 +8,20 @@ using UnityEngine;
 using UnityEngine.UI;
 using VRUI;
 
-namespace BeatSaberMultiplayer.UI.ViewControllers
+namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
 {
     class ModeSelectionViewController : BSMLResourceViewController
     {
-        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen.ModeSelectionViewController.bsml";
+        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen.ModeSelectionViewController";
 
         public event Action didSelectRooms;
         public event Action didSelectRadio;
+        public event Action didFinishEvent;
 
         private string[] _dllPaths = new[] { @"Libs\Lidgren.Network.2012.1.7.0.dll", @"Libs\NSpeex.1.1.1.0.dll" };
         private bool _filesMising;
         private string _missingFilesString = "Missing DLL files:";
+
 
         [UIComponent("rooms-button")]
         Button _roomsButton;
@@ -66,16 +68,22 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             }
         }
 
-        [UIAction("rooms-btn-clicked")]
-        private void RoomsBtnClicked()
+        [UIAction("rooms-btn-pressed")]
+        private void RoomsBtnPressed()
         {
             didSelectRooms?.Invoke();
         }
 
-        [UIAction("radio-btn-clicked")]
-        private void RadioBtnClicked()
+        [UIAction("radio-btn-pressed")]
+        private void RadioBtnPressed()
         {
             didSelectRadio?.Invoke();
+        }
+
+        [UIAction("back-btn-pressed")]
+        private void BackBtnPressed()
+        {
+            didFinishEvent?.Invoke();
         }
     }
 }

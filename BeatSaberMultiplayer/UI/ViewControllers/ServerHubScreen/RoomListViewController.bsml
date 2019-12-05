@@ -1,0 +1,27 @@
+﻿<stack vertical-fit='Unconstrained'>
+  <bg>
+    <back-button on-click='back-btn-pressed' />
+  </bg>
+  <vertical vertical-fit='Unconstrained'>
+    <horizontal horizontal-fit='PreferredSize'>
+      <icon-btn id='refresh-btn' on-click='refresh-btn-pressed' icon='BeatSaberMultiplayer.Assets.RefreshIcon.png' stroke='small' pad='1'/>
+      <button text='Create room' on-click='create-room-btn-pressed' />
+    </horizontal>
+    <vertical>
+      <pg-button dir='Up' click-event='rooms-list#PageUp'/>
+      <custom-list visible-cells='5' cell-size='10' id='rooms-list' contents='rooms' select-cell='room-selected'>
+        <stack vertical-fit='Unconstrained'>
+          <horizontal child-expand-width='false' vertical-fit='Unconstrained'>
+            <image id='locked-icon' pref-width='10'/>
+            <vertical horizontal-fit='Unconstrained'>
+              <text text='~room-name' align='MidlineLeft' font-size='4' />
+              <text id='room-state-text' text='~room-state' align='MidlineLeft'/>
+            </vertical>
+          </horizontal>
+          <image id='bg' tags='hovered' />
+        </stack>
+      </custom-list>
+      <pg-button dir='Down' click-event='rooms-list#PageDown'/>
+    </vertical>
+  </vertical>
+</stack>

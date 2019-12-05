@@ -1,4 +1,5 @@
-﻿using BeatSaberMultiplayer.Data;
+﻿using BeatSaberMarkupLanguage.ViewControllers;
+using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers.RoomScreen;
 using CustomUI.BeatSaber;
@@ -39,10 +40,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         AdditionalContentModelSO _contentModelSO;
         BeatmapLevelsModelSO _beatmapLevelsModel;
 
-        CustomKeyboardViewController _passwordKeyboard;
+        KeyboardViewController _passwordKeyboard;
         RoomNavigationController _roomNavigationController;
 
-        CustomKeyboardViewController _searchKeyboard;
+        KeyboardViewController _searchKeyboard;
         SongSelectionViewController _songSelectionViewController;
         DifficultySelectionViewController _difficultySelectionViewController;
         LeaderboardViewController _leaderboardViewController;
@@ -98,10 +99,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _roomNavigationController = BeatSaberUI.CreateViewController<RoomNavigationController>();
                 _roomNavigationController.didFinishEvent += () => { LeaveRoom(); };
                 
-                _searchKeyboard = BeatSaberUI.CreateViewController<CustomKeyboardViewController>();
-                _searchKeyboard.enterButtonPressed += SearchPressed;
-                _searchKeyboard.backButtonPressed += () => { DismissViewController(_searchKeyboard); };
-                _searchKeyboard.allowEmptyInput = true;
+                _searchKeyboard = BeatSaberUI.CreateViewController<KeyboardViewController>();
+                _searchKeyboard.enterPressed = null;
+                _searchKeyboard.enterPressed += SearchPressed;
+                //_searchKeyboard.backButtonPressed += () => { DismissViewController(_searchKeyboard); };
+                //_searchKeyboard.allowEmptyInput = true;
             }
 
             ProvideInitialViewControllers(_roomNavigationController, _playerManagementViewController, _quickSettingsViewController);
@@ -135,12 +137,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 if (_passwordKeyboard == null)
                 {
-                    _passwordKeyboard = BeatSaberUI.CreateViewController<CustomKeyboardViewController>();
-                    _passwordKeyboard.enterButtonPressed += PasswordEntered;
-                    _passwordKeyboard.backButtonPressed += () => { DismissViewController(_passwordKeyboard); didFinishEvent?.Invoke(); };
+                    _passwordKeyboard = BeatSaberUI.CreateViewController<KeyboardViewController>();
+                    _passwordKeyboard.enterPressed = null;
+                    _passwordKeyboard.enterPressed += PasswordEntered;
+                    //_passwordKeyboard.backButtonPressed += () => { DismissViewController(_passwordKeyboard); didFinishEvent?.Invoke(); };
                 }
 
-                _passwordKeyboard.inputString = "";
+                _passwordKeyboard.startingText = "";
                 PresentViewController(_passwordKeyboard, null);
             }
             else
@@ -668,7 +671,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _songSelectionViewController = BeatSaberUI.CreateViewController<SongSelectionViewController>();
                 _songSelectionViewController.SongSelected += SongSelected;
                 _songSelectionViewController.SortPressed += (sortMode) => { SetSongs(_lastSelectedPack, sortMode, _lastSearchRequest);  };
-                _songSelectionViewController.SearchPressed += () => { _searchKeyboard.inputString = ""; PresentViewController(_searchKeyboard, null);};
+                _songSelectionViewController.SearchPressed += () => { _searchKeyboard.startingText = ""; PresentViewController(_searchKeyboard, null);};
             }
 
             if(_packsViewController == null)
