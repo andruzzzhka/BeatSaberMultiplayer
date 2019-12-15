@@ -38,6 +38,8 @@ namespace BeatSaberMultiplayer.UI
         private TextMeshProUGUI _newVersionText;
         private Button _multiplayerButton;
 
+        private Settings _settings;
+
         public static void OnLoad()
         {
             if (instance != null)
@@ -111,7 +113,8 @@ namespace BeatSaberMultiplayer.UI
 
                 StartCoroutine(CheckVersion());
 
-                BSMLSettings.instance.AddSettingsMenu("Multiplayer", "BeatSaberMultiplayer.UI.Settings", Settings.instance);
+                _settings = new GameObject("Multiplayer Settings").AddComponent<Settings>();
+                BSMLSettings.instance.AddSettingsMenu("Multiplayer", "BeatSaberMultiplayer.UI.Settings", _settings);
             }
             catch (Exception e)
             {

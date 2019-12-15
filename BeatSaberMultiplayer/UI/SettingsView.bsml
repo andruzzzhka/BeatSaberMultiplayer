@@ -17,7 +17,7 @@
     <scrollable-settings-container>
       <clickable-text text='Back' click-event='back' />
       <checkbox text='Enable voice chat' value='enable-voice-chat' apply-on-change='true' />
-      <slider-setting text='Voice chat volume' value='voice-chat-volume' min='1' max='100' increment='1' integer-only='true' apply-on-change='true' />
+      <slider-setting text='Voice chat volume' value='voice-chat-volume' min='0' max='100' increment='1' integer-only='true' apply-on-change='true' />
       <checkbox text='Enable microphone' value='mic-enabled' apply-on-change='true' />
       <checkbox text='Use push to talk' value='push-to-talk' apply-on-change='true' />
       <dropdown-list-setting text='Push to talk button' value='ptt-button-value' apply-on-change='true' options='ptt-button-options'/>

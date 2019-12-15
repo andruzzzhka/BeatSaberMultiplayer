@@ -2,6 +2,7 @@
 using BeatSaberMarkupLanguage.Components.Settings;
 using BeatSaberMultiplayer.Misc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,16 +13,7 @@ namespace BeatSaberMultiplayer.UI
 {
     class Settings : MonoBehaviour
     {
-        public static Settings instance
-        {
-            get 
-            { 
-                if(_instance == null)
-                    _instance = new GameObject("Multiplayer Settings").AddComponent<Settings>();
-                return _instance;
-            }
-        }
-        private static Settings _instance;
+        public static event Action<string> voiceChatMicrophoneChanged;
 
         public void Awake()
         {
@@ -50,15 +42,12 @@ namespace BeatSaberMultiplayer.UI
                     publicAvatars.Add(avatar);
                 }
             }
-            UpdateAvatarsList();
-            if(publicAvatarSetting)
-                publicAvatarSetting.ReceiveValue();
-        }
 
-        void UpdateAvatarsList()
-        {
-            if(publicAvatarSetting && publicAvatarSetting.tableView)
+            if (publicAvatarSetting)
+            {
                 publicAvatarSetting.tableView.ReloadData();
+                publicAvatarSetting.ReceiveValue();
+            }
         }
 
         CustomAvatar.CustomAvatar GetSelectedAvatar()
@@ -156,7 +145,18 @@ namespace BeatSaberMultiplayer.UI
             {
                 micSelectOptions.Add(mic);
             }
+
+            if (micSelectSetting)
+            {
+                micSelectSetting.tableView.ReloadData();
+                micSelectSetting.ReceiveValue();
+            }
+
+            voiceChatMicrophoneChanged?.Invoke(Config.Instance.VoiceChatMicrophone);
         }
+
+        [UIComponent("mic-select-setting")]
+        public DropDownListSetting micSelectSetting;
 
         [UIValue("enable-voice-chat")]
         public bool enableVoiceChat
@@ -212,13 +212,15 @@ namespace BeatSaberMultiplayer.UI
                     return "DEFAULT MIC";
             }
             set
-            { 
+            {
                 if (string.IsNullOrEmpty(value as string) || (value as string) == "DEFAULT MIC")
                 {
                     Config.Instance.VoiceChatMicrophone = null;
                 }
                 else
                     Config.Instance.VoiceChatMicrophone = (value as string);
+
+                voiceChatMicrophoneChanged?.Invoke(Config.Instance.VoiceChatMicrophone);
             }
         }
 

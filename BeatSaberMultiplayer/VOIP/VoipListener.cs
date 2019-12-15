@@ -1,4 +1,5 @@
-﻿using NSpeex;
+﻿using BeatSaberMultiplayer.UI;
+using NSpeex;
 using System;
 using System.IO;
 using UnityEngine;
@@ -34,7 +35,7 @@ namespace BeatSaberMultiplayer.VOIP
                 if (!_isListening && value && recordingBuffer != null)
                 {
                     index += 3;
-                    lastPos = Math.Max(Microphone.GetPosition(Config.Instance.VoiceChatMicrophone) - recordingBuffer.Length, 0);
+                    lastPos = Math.Max(Microphone.GetPosition(_usedMicrophone) - recordingBuffer.Length, 0);
                 }
                 _isListening = value;
             }
@@ -42,9 +43,24 @@ namespace BeatSaberMultiplayer.VOIP
 
         private bool _isListening;
 
+        private bool _isRecording;
+        private string _usedMicrophone;
+
         void Awake()
         {
-           
+            Settings.voiceChatMicrophoneChanged -= Instance_voiceChatMicrophoneChanged;
+            Settings.voiceChatMicrophoneChanged += Instance_voiceChatMicrophoneChanged;
+            _usedMicrophone = Config.Instance.VoiceChatMicrophone;
+        }
+
+        private void Instance_voiceChatMicrophoneChanged(string newMic)
+        {
+            if(recording != null)
+            {
+                StopRecording();
+                _usedMicrophone = newMic;
+                StartRecording();
+            }
         }
 
         public void StartRecording()
@@ -65,15 +81,15 @@ namespace BeatSaberMultiplayer.VOIP
                 recordingBuffer = resampleBuffer;
             }            
 
-            recording = Microphone.Start(Config.Instance.VoiceChatMicrophone, true, 20, inputFreq);
-            Plugin.log.Debug("Used microphone: " + (Config.Instance.VoiceChatMicrophone == null ? "DEFAULT" : Config.Instance.VoiceChatMicrophone));
+            recording = Microphone.Start(_usedMicrophone, true, 20, inputFreq);
+            Plugin.log.Debug("Used microphone: " + (_usedMicrophone == null ? "DEFAULT" : _usedMicrophone));
             Plugin.log.Debug("Used mic sample rate: " + inputFreq + "Hz");
             Plugin.log.Debug("Used buffer size for recording: " + sizeRequired + " floats");
         }
 
         public void StopRecording()
         {
-            Microphone.End(Config.Instance.VoiceChatMicrophone);
+            Microphone.End(_usedMicrophone);
             Destroy(recording);
             recording = null;
         }
@@ -85,7 +101,7 @@ namespace BeatSaberMultiplayer.VOIP
                 return;
             }
 
-            var now = Microphone.GetPosition(Config.Instance.VoiceChatMicrophone);
+            var now = Microphone.GetPosition(_usedMicrophone);
 
             var length = now - lastPos;
 
