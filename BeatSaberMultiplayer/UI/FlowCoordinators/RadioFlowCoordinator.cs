@@ -1,15 +1,15 @@
-﻿using BeatSaberMultiplayer.Data;
+﻿using BeatSaberMarkupLanguage;
+using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers.RadioScreen;
 using BeatSaberMultiplayer.UI.ViewControllers.RoomScreen;
-using CustomUI.BeatSaber;
+using HMUI;
 using Lidgren.Network;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using UnityEngine;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
@@ -54,19 +54,18 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         NextSongScreenViewController _nextSongScreenViewController;
         ResultsScreenViewController _resultsScreenViewController;
 
-        BeatmapLevelsModelSO _beatmapLevelsModel;
+        BeatmapLevelsModel _beatmapLevelsModel;
 
         BeatmapCharacteristicSO[] _beatmapCharacteristics;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
             _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
-            _beatmapLevelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModelSO>().FirstOrDefault();
+            _beatmapLevelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModel>().FirstOrDefault();
 
             if (firstActivation)
             {
                 _radioNavController = BeatSaberUI.CreateViewController<RoomNavigationController>();
-                _radioNavController.didFinishEvent += () => { LeaveChannel(); };
 
                 _inGameViewController = BeatSaberUI.CreateViewController<InGameScreenViewController>();
                 _inGameViewController.playPressedEvent += PlayNow_Pressed;
@@ -77,8 +76,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _resultsScreenViewController = BeatSaberUI.CreateViewController<ResultsScreenViewController>();
             }
 
+            showBackButton = true;
             
             ProvideInitialViewControllers(_radioNavController, null, null);
+        }
+
+        protected override void BackButtonWasPressed(ViewController topViewController)
+        {
+            if(topViewController == _radioNavController)
+                LeaveChannel();
         }
 
         public void JoinChannel(string ip, int port, int channelId)
@@ -419,7 +425,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private async void LoadBeatmapLevelAsync(IPreviewBeatmapLevel selectedLevel, Action<bool, IBeatmapLevel> callback)
         {
-            BeatmapLevelsModelSO.GetBeatmapLevelResult getBeatmapLevelResult = await _beatmapLevelsModel.GetBeatmapLevelAsync(selectedLevel.levelID, new CancellationTokenSource().Token);
+            BeatmapLevelsModel.GetBeatmapLevelResult getBeatmapLevelResult = await _beatmapLevelsModel.GetBeatmapLevelAsync(selectedLevel.levelID, new CancellationTokenSource().Token);
 
             callback?.Invoke(!getBeatmapLevelResult.isError, getBeatmapLevelResult.beatmapLevel);
         }
@@ -430,12 +436,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             Client.Instance.playerInfo.updateInfo.playerCutBlocks = 0;
             Client.Instance.playerInfo.updateInfo.playerEnergy = 0f;
             Client.Instance.playerInfo.updateInfo.playerScore = 0;
+            
+            MenuTransitionsHelper menuTransitionHelper = Resources.FindObjectsOfTypeAll<MenuTransitionsHelper>().FirstOrDefault();
 
-            MenuTransitionsHelperSO menuSceneSetupData = Resources.FindObjectsOfTypeAll<MenuTransitionsHelperSO>().FirstOrDefault();
-
-            if (menuSceneSetupData != null)
+            if (menuTransitionHelper != null)
             {
-                PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().playerData.playerSpecificSettings;
+                PlayerData playerData = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().playerData;
+
+                PlayerSpecificSettings playerSettings = playerData.playerSpecificSettings;
+                OverrideEnvironmentSettings environmentOverrideSettings = playerData.overrideEnvironmentSettings;
+                ColorSchemesSettings colorSchemesSettings = playerData.colorSchemesSettings;
 
                 channelInfo.state = ChannelState.InGame;
                 Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Game;
@@ -461,7 +471,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 }
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, new OverrideEnvironmentSettings() { overrideEnvironments = false }, null, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(levelCompletionResults, difficultyBeatmap, modifiers, (startTime > 1f)); });
+                menuTransitionHelper.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings.GetColorSchemeForId(colorSchemesSettings.selectedColorSchemeId), modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => {}, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(levelCompletionResults, difficultyBeatmap, modifiers, (startTime > 1f)); });
             }
             else
             {

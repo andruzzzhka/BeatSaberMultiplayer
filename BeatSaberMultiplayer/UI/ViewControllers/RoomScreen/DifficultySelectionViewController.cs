@@ -10,11 +10,10 @@ using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
-    class DifficultySelectionViewController : VRUIViewController
+    class DifficultySelectionViewController : ViewController
     {
         public event Action discardPressed;
         public event Action levelOptionsChanged;
@@ -69,7 +68,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     (_selectedSongCell.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
                     (_selectedSongCell.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
                     (_selectedSongCell.transform as RectTransform).anchoredPosition = new Vector2(-25f, 17.5f);
-                    _selectedSongCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
+                    //_selectedSongCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
                     _selectedSongCell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
                     _selectedSongCell.SetPrivateField("_bought", true);
                     foreach (var icon in _selectedSongCell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))

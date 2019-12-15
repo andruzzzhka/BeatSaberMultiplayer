@@ -157,4 +157,27 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             }
         }
     }
+
+    [HarmonyPatch(typeof(PauseController))]
+    [HarmonyPatch("Pause")]
+    class GameplayManagerPausePatch
+    {
+        static bool Prefix(StandardLevelGameplayManager __instance, PauseMenuManager ____pauseMenuManager)
+        {
+            try
+            {
+                if (Client.Instance.connected)
+                {
+                    ____pauseMenuManager.ShowMenu();
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+                Plugin.log.Error("Exception in Harmony patch StandardLevelGameplayManager.Pause: " + e);
+                return true;
+            }
+        }
+    }
 }

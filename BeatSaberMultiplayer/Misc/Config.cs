@@ -21,7 +21,6 @@ namespace BeatSaberMultiplayer
         [SerializeField] private string _publicAvatarHash;
         [SerializeField] private bool _spectatorMode;
         [SerializeField] private int _submitScores;
-        [SerializeField] private int _maxSimultaneousDownloads;
         [SerializeField] private string _beatSaverURL;
 
         [SerializeField] private bool _enableVoiceChat;
@@ -30,6 +29,7 @@ namespace BeatSaberMultiplayer
         [SerializeField] private bool _spatialAudio;
         [SerializeField] private bool _pushToTalk;
         [SerializeField] private int _pushToTalkButton;
+        [SerializeField] private string _voiceChatMicrophone;
 
 
         private static Config _instance;
@@ -255,16 +255,6 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public int MaxSimultaneousDownloads
-        {
-            get { return _maxSimultaneousDownloads; }
-            set
-            {
-                _maxSimultaneousDownloads = value;
-                MarkDirty();
-            }
-        }
-
         public string BeatSaverURL
         {
             get { return _beatSaverURL; }
@@ -335,6 +325,16 @@ namespace BeatSaberMultiplayer
             }
         }
 
+        public string VoiceChatMicrophone
+        {
+            get { return _voiceChatMicrophone; }
+            set
+            {
+                _voiceChatMicrophone = value;
+                MarkDirty();
+            }
+        }
+
         Config()
         {
             _modVersion = string.Empty;
@@ -348,7 +348,6 @@ namespace BeatSaberMultiplayer
             _separateAvatarForMultiplayer = false;
             _publicAvatarHash = Data.PlayerInfo.avatarHashPlaceholder;
             _submitScores = 2;
-            _maxSimultaneousDownloads = 3;
             _beatSaverURL = "https://beatsaver.com";
 
             _enableVoiceChat = true;
@@ -357,6 +356,7 @@ namespace BeatSaberMultiplayer
             _spatialAudio = false;
             _pushToTalk = true;
             _pushToTalkButton = 6;
+            _voiceChatMicrophone = null;
 
             IsDirty = true;
         }

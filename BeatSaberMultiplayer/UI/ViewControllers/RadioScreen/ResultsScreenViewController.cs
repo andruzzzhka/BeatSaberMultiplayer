@@ -2,12 +2,12 @@
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using VRUI;
 using CustomUI.BeatSaber;
+using HMUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 {
-    class ResultsScreenViewController : VRUIViewController
+    class ResultsScreenViewController : ViewController
     {
         TextMeshProUGUI _timerText;
 

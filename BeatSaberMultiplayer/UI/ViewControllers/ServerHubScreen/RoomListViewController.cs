@@ -12,7 +12,6 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
 {
@@ -23,7 +22,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
         public event Action createRoomButtonPressed;
         public event Action<ServerHubRoom> selectedRoom;
         public event Action refreshPressed;
-        public event Action didFinishEvent;
 
         [UIComponent("refresh-btn")]
         private Button _refreshButton;
@@ -67,12 +65,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
         private void RoomSelected(TableView sender, RoomListObject obj)
         {
             selectedRoom?.Invoke(obj.room);
-        }
-
-        [UIAction("back-btn-pressed")]
-        private void BackBtnPressed()
-        {
-            didFinishEvent?.Invoke();
         }
 
         [UIAction("create-room-btn-pressed")]

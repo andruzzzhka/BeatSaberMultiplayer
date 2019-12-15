@@ -1,7 +1,4 @@
 ﻿<stack vertical-fit='Unconstrained'>
-  <bg>
-    <back-button on-click='back-btn-pressed' />
-  </bg>
   <vertical vertical-fit='Unconstrained'>
     <horizontal horizontal-fit='PreferredSize'>
       <text text='Select ServerHub' align='Center' font-size='8' />

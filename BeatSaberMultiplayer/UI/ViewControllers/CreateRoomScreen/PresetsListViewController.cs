@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using VRUI;
 using UnityEngine.UI;
 using BeatSaberMultiplayer.Data;
 using UnityEngine;

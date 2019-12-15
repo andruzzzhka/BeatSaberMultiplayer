@@ -1,18 +1,18 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.UI.ViewControllers;
-using CustomUI.BeatSaber;
-using CustomUI.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-using VRUI;
 using Lidgren.Network;
 using BS_Utils.Gameplay;
 using System.Reflection;
 using BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen;
+using HMUI;
+using BeatSaberMarkupLanguage;
+using BS_Utils.Utilities;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
@@ -52,14 +52,21 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _roomListViewController.createRoomButtonPressed += CreateRoomPressed;
                 _roomListViewController.selectedRoom += RoomSelected;
                 _roomListViewController.refreshPressed += RefreshPresed;
-                _roomListViewController.didFinishEvent += () => {
-                    PluginUI.instance.modeSelectionFlowCoordinator.InvokeMethod("DismissFlowCoordinator", this, null, false);
-                };
             }
+
+            showBackButton = true;
 
             ProvideInitialViewControllers(_roomListViewController, null, null);
 
             StartCoroutine(UpdateRoomsListCoroutine());
+        }
+
+        protected override void BackButtonWasPressed(ViewController topViewController)
+        {
+            if(topViewController == _roomListViewController)
+            {
+                PluginUI.instance.modeSelectionFlowCoordinator.InvokeMethod("DismissFlowCoordinator", this, null, false);
+            }
         }
 
         private void RefreshPresed()
@@ -69,14 +76,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void CreateRoomPressed()
         {
-            if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
-            {
-                PresentFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, false, false);
-                PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients);
+            PresentFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, false, false);
+            PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients);
 
-                PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent -= RoomCreationFlowCoordinator_didFinishEvent;
-                PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent += RoomCreationFlowCoordinator_didFinishEvent;
-            }
+            PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent -= RoomCreationFlowCoordinator_didFinishEvent;
+            PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent += RoomCreationFlowCoordinator_didFinishEvent;
         }
 
         private void RoomCreationFlowCoordinator_didFinishEvent(bool immediately)
@@ -98,14 +102,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void JoinRoom(string ip, int port, uint roomId, bool usePassword, string pass = "")
         {
-            if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
-            {
-                PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
-                PluginUI.instance.roomFlowCoordinator.JoinRoom(ip, port, roomId, usePassword, pass);
-                Client.Instance.inRadioMode = false;
-                PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
-                PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
-            }
+            PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
+            PluginUI.instance.roomFlowCoordinator.JoinRoom(ip, port, roomId, usePassword, pass);
+            Client.Instance.inRadioMode = false;
+            PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
+            PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
         }
 
         private void RoomFlowCoordinator_didFinishEvent()

@@ -1,7 +1,7 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using BS_Utils.Gameplay;
-using CustomUI.Utilities;
+using BS_Utils.Utilities;
 using Harmony;
 using IPA;
 using System;
@@ -23,13 +23,6 @@ namespace BeatSaberMultiplayer
 
         public void OnApplicationStart()
         {
-#if DEBUG
-            if (Environment.CommandLine.Contains("fpfc"))
-            {
-                QualitySettings.vSyncCount = 2;
-                Application.targetFrameRate = 60;
-            }
-#endif
             instance = this;
             
             BSEvents.OnLoad();
@@ -64,9 +57,6 @@ namespace BeatSaberMultiplayer
             {
                 Plugin.log.Error("Unable to patch assembly! Exception: " + e);
             }
-
-            BeatSaberMarkupLanguage.BSMLParser.instance.RegisterTag(new UI.UIElements.StackLayoutTag());
-            BeatSaberMarkupLanguage.BSMLParser.instance.RegisterTag(new UI.UIElements.BigButtonTag());
         }
 
         private void MenuSceneLoadedFresh()

@@ -24,7 +24,7 @@ namespace BeatSaberMultiplayer.Misc
                                     "_beatmapObjectCallbackData");
 
                         _beatmapData = _beatmapObjectCallbackController
-                            .GetPrivateField<BeatmapDataModel>("_beatmapDataModel").beatmapData;
+                            .GetPrivateField<BeatmapData>("_beatmapData");
                     }
 
                     if (_beatmapObjectSpawnController == null)

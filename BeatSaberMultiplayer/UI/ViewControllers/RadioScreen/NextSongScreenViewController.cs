@@ -3,15 +3,16 @@ using System;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using VRUI;
 using UnityEngine.UI;
 using BeatSaberMultiplayer.Misc;
 using CustomUI.BeatSaber;
 using System.Threading;
+using HMUI;
+using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 {
-    class NextSongScreenViewController : VRUIViewController
+    class NextSongScreenViewController : ViewController
     {
         public event Action skipPressedEvent;
 
@@ -45,7 +46,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
                 _currentSongCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")), rectTransform, false);
                 (_currentSongCell.transform as RectTransform).anchoredPosition = new Vector2(55f, -27f);
-                _currentSongCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
+                //_currentSongCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
                 _currentSongCell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
                 _currentSongCell.SetPrivateField("_bought", true);
                 foreach (var icon in _currentSongCell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))

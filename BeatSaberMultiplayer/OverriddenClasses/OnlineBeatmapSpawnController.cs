@@ -97,20 +97,18 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             if (beatmapObjectData.beatmapObjectType == BeatmapObjectType.Obstacle)
             {
                 ObstacleData obstacleData = (ObstacleData)beatmapObjectData;
-                Vector3 forward = transform.forward;
-                Vector3 a = transform.position;
-                a += forward * (_moveDistance + _jumpDistance * 0.5f);
-                Vector3 a2 = a - forward * _moveDistance;
-                Vector3 a3 = a - forward * (_moveDistance + _jumpDistance);
-                Vector3 noteOffset = GetNoteOffset(beatmapObjectData.lineIndex, NoteLineLayer.Base);
-                noteOffset.y = ((obstacleData.obstacleType == ObstacleType.Top) ? (_topObstaclePosY + _globalYJumpOffset) : _verticalObstaclePosY);
-
+                Vector3 forward = base.transform.forward;
+                Vector3 a = base.transform.position;
+                a += forward * (this._moveDistance + this._jumpDistance * 0.5f);
+                Vector3 a2 = a - forward * this._moveDistance;
+                Vector3 a3 = a - forward * (this._moveDistance + this._jumpDistance);
+                Vector3 noteOffset = this.GetNoteOffset(beatmapObjectData.lineIndex, NoteLineLayer.Base);
+                noteOffset.y = ((obstacleData.obstacleType == ObstacleType.Top) ? (this._topObstaclePosY + this._globalJumpOffsetY) : this._verticalObstaclePosY);
                 float height = (obstacleData.obstacleType == ObstacleType.Top) ? this._topObstacleHeight : this._verticalObstacleHeight;
                 ObstacleController obstacleController = this._obstaclePool.Spawn();
-                SetObstacleEventCallbacks(obstacleController);
+                this.SetObstacleEventCallbacks(obstacleController);
                 obstacleController.transform.SetPositionAndRotation(a + noteOffset, Quaternion.identity);
-                obstacleController.Init(obstacleData, a + noteOffset, a2 + noteOffset, a3 + noteOffset, num, num2, beatmapObjectData.time - _spawnAheadTime, _noteLinesDistance, height);
-                
+                obstacleController.Init(obstacleData, this._spawnRotationProcesser.rotation, a + noteOffset, a2 + noteOffset, a3 + noteOffset, num, num2, beatmapObjectData.time - this._spawnAheadTime, this._noteLinesDistance, height);
                 obstacleController.SetPrivateField("_playerController", owner);
                 obstacleController.SetPrivateField("_audioTimeSyncController", onlineSyncController);
                 obstacleController.finishedMovementEvent += ResetControllers;
@@ -138,7 +136,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     NoteController noteController = _bombNotePool.Spawn();
                     SetNoteControllerEventCallbacks(noteController);
                     noteController.transform.SetPositionAndRotation(a4 + noteOffset2, Quaternion.identity);
-                    noteController.Init(noteData, a4 + noteOffset2, a5 + noteOffset2, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity);
+                    noteController.Init(noteData, this._spawnRotationProcesser.rotation, a4 + noteOffset2, a5 + noteOffset2, a6 + noteOffset2, num, num2, noteData.time - this._spawnAheadTime, jumpGravity);
 
                     var noteJump = noteController.GetComponent<NoteJump>();
                     noteJump.SetPrivateField("_playerController", owner);
@@ -164,11 +162,11 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     GameNoteController gameNoteController = noteController2 as GameNoteController;
                     if (gameNoteController != null)
                     {
-                        gameNoteController.Init(noteData, a4 + noteOffset3, a5 + noteOffset3, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity, _disappearingArrows, _ghostNotes && !flag);
+                        gameNoteController.Init(noteData, this._spawnRotationProcesser.rotation, a4 + noteOffset3, a5 + noteOffset3, a6 + noteOffset2, num, num2, noteData.time - this._spawnAheadTime, jumpGravity, this._disappearingArrows, this._ghostNotes && !flag);
                     }
                     else
                     {
-                        noteController2.Init(noteData, a4 + noteOffset3, a5 + noteOffset3, a6 + noteOffset2, num, num2, noteData.time - _spawnAheadTime, jumpGravity);
+                        noteController2.Init(noteData, this._spawnRotationProcesser.rotation, a4 + noteOffset3, a5 + noteOffset3, a6 + noteOffset2, num, num2, noteData.time - this._spawnAheadTime, jumpGravity);
                     }
 
                     var noteJump = noteController2.GetComponent<NoteJump>();

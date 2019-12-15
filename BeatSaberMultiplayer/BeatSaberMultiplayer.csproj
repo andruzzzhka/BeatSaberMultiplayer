@@ -32,20 +32,9 @@
     <Reference Include="0Harmony.1.2.0.1">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Libs\0Harmony.1.2.0.1.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-    </Reference>
     <Reference Include="BeatSaberCustomUI, Version=1.7.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BeatSaberCustomUI.dll</HintPath>
-    </Reference>
-    <Reference Include="BeatSaverDownloader">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BeatSaverDownloader.dll</HintPath>
     </Reference>
     <Reference Include="BSML, Version=1.0.6.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -54,9 +43,17 @@
     <Reference Include="BS_Utils">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\BS_Utils.dll</HintPath>
     </Reference>
-    <Reference Include="CustomAvatar, Version=4.6.2.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="CustomAvatar, Version=4.7.5.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\CustomAvatar.dll</HintPath>
+    </Reference>
+    <Reference Include="HMLib, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\HMLib.dll</HintPath>
+    </Reference>
+    <Reference Include="HMUI, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\HMUI.dll</HintPath>
     </Reference>
     <Reference Include="IPA.Loader, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -64,6 +61,10 @@
     </Reference>
     <Reference Include="Lidgren.Network, Version=2012.1.7.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Lidgren.Network.1.0.2\lib\net451\Lidgren.Network.dll</HintPath>
+    </Reference>
+    <Reference Include="MainAssembly, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\MainAssembly.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json.12.0.0.0">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Libs\Newtonsoft.Json.12.0.0.0.dll</HintPath>
@@ -89,6 +90,10 @@
     <Reference Include="SongCore, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\SongCore.dll</HintPath>
+    </Reference>
+    <Reference Include="SteamVR, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\SteamVR.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -163,6 +168,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\UnityEngine.XRModule.dll</HintPath>
     </Reference>
+    <Reference Include="VRUI, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\VRUI.dll</HintPath>
+    </Reference>
     <Reference Include="Zenject, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Beat Saber_Data\Managed\Zenject.dll</HintPath>
@@ -185,6 +194,7 @@
     <Compile Include="Misc\ControllersHelper.cs" />
     <Compile Include="Misc\ScrappedData.cs" />
     <Compile Include="Misc\ScrappedSong.cs" />
+    <Compile Include="Misc\SimpleJSON.cs" />
     <Compile Include="Misc\Sprites.cs" />
     <Compile Include="Misc\Config.cs" />
     <Compile Include="Misc\CustomExtensions.cs" />
@@ -213,11 +223,9 @@
     <Compile Include="UI\FlowCoordinators\RoomFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\ServerHubFlowCoordinator.cs" />
     <Compile Include="UI\PluginUI.cs" />
+    <Compile Include="UI\Settings.cs" />
     <Compile Include="UI\UIElements\PlayerListTableCell.cs" />
-    <Compile Include="UI\UIElements\OnOffViewController.cs" />
     <Compile Include="Misc\CustomSettingsHelper.cs" />
-    <Compile Include="UI\UIElements\MultiplayerListViewController.cs" />
-    <Compile Include="UI\UIElements\StackLayoutTag.cs" />
     <Compile Include="UI\ViewControllers\ChannelSelectionScreen\ChannelSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\PresetsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
@@ -233,7 +241,6 @@
     <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
-    <Compile Include="UI\ViewControllers\MultiplayerNavigationController.cs" />
     <Compile Include="VOIP\AudioUtils.cs" />
     <Compile Include="VOIP\FifoFloatStream.cs" />
     <Compile Include="VOIP\SpeexCodex.cs" />
@@ -243,6 +250,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Assets\Shader.asset" />
     <EmbeddedResource Include="manifest.json" />
+    <EmbeddedResource Include="UI\SettingsView.bsml">
+      <DependentUpon>Settings.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewControllers\CreateRoomScreen\PresetsListViewController.bsml">
       <DependentUpon>PresetsListViewController.cs</DependentUpon>
     </EmbeddedResource>
@@ -259,6 +269,9 @@
     <None Include="packages.config" />
     <EmbeddedResource Include="UI\ViewControllers\CreateRoomScreen\MainRoomCreationViewController.bsml">
       <DependentUpon>MainRoomCreationViewController.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\QuickSettingsViewController.bsml">
+      <DependentUpon>QuickSettingsViewController.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

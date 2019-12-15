@@ -34,7 +34,7 @@ namespace BeatSaberMultiplayer.VOIP
                 if (!_isListening && value && recordingBuffer != null)
                 {
                     index += 3;
-                    lastPos = Math.Max(Microphone.GetPosition(null) - recordingBuffer.Length, 0);
+                    lastPos = Math.Max(Microphone.GetPosition(Config.Instance.VoiceChatMicrophone) - recordingBuffer.Length, 0);
                 }
                 _isListening = value;
             }
@@ -65,14 +65,15 @@ namespace BeatSaberMultiplayer.VOIP
                 recordingBuffer = resampleBuffer;
             }            
 
-            recording = Microphone.Start(null, true, 20, inputFreq);
+            recording = Microphone.Start(Config.Instance.VoiceChatMicrophone, true, 20, inputFreq);
+            Plugin.log.Debug("Used microphone: " + (Config.Instance.VoiceChatMicrophone == null ? "DEFAULT" : Config.Instance.VoiceChatMicrophone));
             Plugin.log.Debug("Used mic sample rate: " + inputFreq + "Hz");
             Plugin.log.Debug("Used buffer size for recording: " + sizeRequired + " floats");
         }
 
         public void StopRecording()
         {
-            Microphone.End(null);
+            Microphone.End(Config.Instance.VoiceChatMicrophone);
             Destroy(recording);
             recording = null;
         }
@@ -84,7 +85,7 @@ namespace BeatSaberMultiplayer.VOIP
                 return;
             }
 
-            var now = Microphone.GetPosition(null);
+            var now = Microphone.GetPosition(Config.Instance.VoiceChatMicrophone);
 
             var length = now - lastPos;
 

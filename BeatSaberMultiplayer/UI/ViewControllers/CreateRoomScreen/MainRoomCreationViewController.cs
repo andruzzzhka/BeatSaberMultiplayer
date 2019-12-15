@@ -1,4 +1,5 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
+using BeatSaberMarkupLanguage.Components;
 using BeatSaberMarkupLanguage.Components.Settings;
 using BeatSaberMarkupLanguage.Parser;
 using BeatSaberMarkupLanguage.ViewControllers;
@@ -12,7 +13,6 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 {
@@ -21,15 +21,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen.MainRoomCreationViewController";
 
         public event Action didFinishEvent;
-        public event Action<KeyboardViewController> keyboardDidFinishEvent;
-        public event Action<KeyboardViewController> presentKeyboardEvent;
         public event Action<RoomSettings> CreatedRoom;
         public event Action<RoomSettings, string> SavePresetPressed;
         public event Action LoadPresetPressed;
-
-        private KeyboardViewController _presetNameKeyboard;
-        private KeyboardViewController _roomNameKeyboard;
-        private KeyboardViewController _roomPasswordKeyboard;
 
         private string _presetName;
 
@@ -56,22 +50,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         [UIComponent("create-room-btn")]
         private Button _createRoomButton;
 
-        /*
-        [UIComponent("room-name-setting")]
-        private StringSetting _roomNameSetting;
-        [UIComponent("room-password-setting")]
-        private StringSetting _roomPasswordSetting;
-        [UIComponent("use-password-setting")]
-        private CheckboxSetting _usePasswordSetting;
-        [UIComponent("song-selection-setting")]
-        private DropDownListSetting _songSelectionTypeSetting;
-        [UIComponent("max-players-setting")]
-        private SliderSetting _maxPlayerSetting;
-        [UIComponent("results-show-time-setting")]
-        private SliderSetting _resultsShowTimeSetting;
-        [UIComponent("per-player-diff-setting")]
-        private CheckboxSetting _perPlayerDiffSetting;
-        */
+        [UIComponent("preset-name-keyboard")]
+        private ModalKeyboard _presetNameKeyboard;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -79,18 +59,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
             if(firstActivation)
             {
-                _presetNameKeyboard = BeatSaberUI.CreateViewController<KeyboardViewController>();
-                _presetNameKeyboard.enterPressed = null;
-                _presetNameKeyboard.enterPressed += PresetNameEntered;
-
-                _roomNameKeyboard = BeatSaberUI.CreateViewController<KeyboardViewController>();
-                _roomNameKeyboard.enterPressed = null;
-                _roomNameKeyboard.enterPressed += NameEntered;
-
-                _roomPasswordKeyboard = BeatSaberUI.CreateViewController<KeyboardViewController>();
-                _roomPasswordKeyboard.enterPressed = null;
-                _roomPasswordKeyboard.enterPressed += PasswordEntered;
-
                 _roomName = $"{GetUserInfo.GetUserName()}'s room".ToUpper();
                 _roomPassword = "";
             }
@@ -116,46 +84,47 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
             parserParams.EmitEvent("cancel");
         }
-        
-        private void PasswordEntered(string obj)
-        {
-            keyboardDidFinishEvent?.Invoke(_roomPasswordKeyboard);
-            _roomPassword = obj?.ToUpper() ?? "";
-            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
-            parserParams.EmitEvent("cancel");
-        }
-
-        private void NameEntered(string obj)
-        {
-            keyboardDidFinishEvent?.Invoke(_roomNameKeyboard);
-            _roomName = obj?.ToUpper() ?? "";
-            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
-            parserParams.EmitEvent("cancel");
-        }
-
-        private void PresetNameEntered(string obj)
-        {
-            keyboardDidFinishEvent?.Invoke(_presetNameKeyboard);
-            _presetName = obj.ToUpper();
-            if(!string.IsNullOrEmpty(_presetName))
-                SavePresetPressed?.Invoke(new RoomSettings() { Name = _roomName, UsePassword = _usePassword, Password = _roomPassword, PerPlayerDifficulty = _allowPerPlayerDifficulty, MaxPlayers = _maxPlayers, SelectionType = _songSelectionType, ResultsShowTime = _resultsShowTime }, _presetName);
-        }
-
-        public void SetCreateButtonInteractable(bool interactable)
-        {
-            if (_createRoomButton != null)
-                _createRoomButton.interactable = interactable;
-        }
 
         public void Update()
         {
-            if(isInViewControllerHierarchy && _createRoomButton != null)
+            if (isInViewControllerHierarchy && _createRoomButton != null)
                 _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
         }
 
         public bool CheckRequirements()
         {
             return (!_usePassword || !string.IsNullOrEmpty(_roomPassword)) && !string.IsNullOrEmpty(_roomName);
+        }
+
+        [UIAction("room-password-changed")]
+        private void PasswordEntered(string obj)
+        {
+            _roomPassword = obj?.ToUpper() ?? "";
+            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
+            parserParams.EmitEvent("cancel");
+        }
+
+        [UIAction("room-name-changed")]
+        private void NameEntered(string obj)
+        {
+            _roomName = obj?.ToUpper() ?? "";
+            _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
+            parserParams.EmitEvent("cancel");
+        }
+
+        [UIAction("preset-name-entered")]
+        private void PresetNameEntered(string obj)
+        {
+            _presetName = obj.ToUpper();
+            if(!string.IsNullOrEmpty(_presetName))
+                SavePresetPressed?.Invoke(new RoomSettings() { Name = _roomName, UsePassword = _usePassword, Password = _roomPassword, PerPlayerDifficulty = _allowPerPlayerDifficulty, MaxPlayers = _maxPlayers, SelectionType = _songSelectionType, ResultsShowTime = _resultsShowTime }, _presetName);
+        }
+        
+
+        public void SetCreateButtonInteractable(bool interactable)
+        {
+            if (_createRoomButton != null)
+                _createRoomButton.interactable = interactable;
         }
 
         [UIAction("max-players-format")]
@@ -168,25 +137,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
             return value.ToString("0");
         }
 
-        [UIAction("on-edit-room-password")]
-        private void OnEditRoomPasswordPressed()
-        {
-            _roomPasswordKeyboard.startingText = _roomPassword;
-            presentKeyboardEvent?.Invoke(_roomPasswordKeyboard);
-        }
-
-        [UIAction("on-edit-room-name")]
-        private void OnEditRoomNamePressed()
-        {
-            _roomNameKeyboard.startingText = _roomName;
-            presentKeyboardEvent?.Invoke(_roomNameKeyboard);
-        }
-
         [UIAction("save-preset-btn-pressed")]
         private void SavePresetBtnPressed()
         {
-            _presetNameKeyboard.startingText = "NEW PRESET";
-            presentKeyboardEvent?.Invoke(_presetNameKeyboard);
+            _presetNameKeyboard.modalView.Show(true, true);
+            _presetNameKeyboard.SetText("NEW PRESET");
         }
 
         [UIAction("load-preset-btn-pressed")]
@@ -199,12 +154,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         private void CreateRoomBtnPressed()
         {
             CreatedRoom?.Invoke(new RoomSettings() { Name = _roomName, UsePassword = _usePassword, Password = _roomPassword, PerPlayerDifficulty = _allowPerPlayerDifficulty, MaxPlayers = _maxPlayers, SelectionType = _songSelectionType, ResultsShowTime = _resultsShowTime });
-        }
-
-        [UIAction("back-btn-pressed")]
-        private void BackBtnPressed()
-        {
-            didFinishEvent?.Invoke();
         }
     }
 }

@@ -4,6 +4,7 @@ using BeatSaberMultiplayer.UI.ViewControllers;
 using BeatSaberMultiplayer.UI.ViewControllers.ChannelSelectionScreen;
 using BS_Utils.Gameplay;
 using BS_Utils.Utilities;
+using HMUI;
 using Lidgren.Network;
 using SimpleJSON;
 using System;
@@ -13,13 +14,11 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
     class ChannelSelectionFlowCoordinator : FlowCoordinator
     {
-        MultiplayerNavigationController channelSelectionNavController;
         ChannelSelectionViewController channelSelectionViewController;
 
         List<ChannelInfo> _channelInfos = new List<ChannelInfo>();
@@ -31,9 +30,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             if (firstActivation)
             {
-                channelSelectionNavController = BeatSaberUI.CreateViewController<MultiplayerNavigationController>();
-                channelSelectionNavController.didFinishEvent += () => { PluginUI.instance.modeSelectionFlowCoordinator.InvokeMethod("DismissFlowCoordinator", this, null, false); };
-
                 channelSelectionViewController = BeatSaberUI.CreateViewController<ChannelSelectionViewController>();
                 channelSelectionViewController.nextPressedEvent += () =>
                 {
@@ -51,22 +47,25 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 };
                 channelSelectionViewController.joinPressedEvent += (channel) => 
                 {
-                    if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
-                    {
-                        PresentFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false, false);
-                        PluginUI.instance.radioFlowCoordinator.JoinChannel(channel.ip, channel.port, channel.channelId);
-                        PluginUI.instance.radioFlowCoordinator.didFinishEvent -= DismissRadio;
-                        PluginUI.instance.radioFlowCoordinator.didFinishEvent += DismissRadio;
-                    }
+                    PresentFlowCoordinator(PluginUI.instance.radioFlowCoordinator, null, false, false);
+                    PluginUI.instance.radioFlowCoordinator.JoinChannel(channel.ip, channel.port, channel.channelId);
+                    PluginUI.instance.radioFlowCoordinator.didFinishEvent -= DismissRadio;
+                    PluginUI.instance.radioFlowCoordinator.didFinishEvent += DismissRadio;
                 };
 
             }
 
-
-            SetViewControllerToNavigationConctroller(channelSelectionNavController, channelSelectionViewController);
-            ProvideInitialViewControllers(channelSelectionNavController, null, null);
+            ProvideInitialViewControllers(channelSelectionViewController, null, null);
             
             StartCoroutine(GetChannelsList());
+        }
+
+        protected override void BackButtonWasPressed(ViewController topViewController)
+        {
+            if(topViewController == channelSelectionViewController)
+            {
+                PluginUI.instance.modeSelectionFlowCoordinator.InvokeMethod("DismissFlowCoordinator", this, null, false);
+            }
         }
 
         private void DismissRadio()

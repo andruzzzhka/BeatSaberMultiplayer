@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -146,42 +147,64 @@ namespace BeatSaberMultiplayer.Misc
             }
         }
 
-        public static void HashAllAvatars()
+        public static async void HashAllAvatars()
         {
             if (cachedAvatars.Count != CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count)
             {
                 isCalculatingHashes = true;
-                Plugin.log.Debug("Hashing all avatars...");
+                Plugin.log.Debug($"Hashing all avatars... {cachedAvatars.Count} of {CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count} avatars hashed");
                 try
                 {
                     cachedAvatars.Clear();
                     foreach (CustomAvatar.CustomAvatar avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
                     {
-                        Task.Run(() =>
+                        if (!avatar.IsLoaded)
                         {
-                            string hash;
-                            if (SongDownloader.CreateMD5FromFile(avatar.FullPath, out hash))
+                            AutoResetEvent wh = new AutoResetEvent(false);
+
+                            avatar.Load(async (loadedAvatar, result) =>
                             {
-                                if (!cachedAvatars.ContainsKey(hash))
-                                {
-                                    cachedAvatars.Add(hash, avatar);
-                                    Plugin.log.Debug("Hashed avatar "+avatar.Name+"! Hash: "+hash);
-                                }
-                            }
-                        }).ConfigureAwait(false);
+                                if (result == CustomAvatar.AvatarLoadResult.Completed)
+                                    await HashAvatar(avatar).ConfigureAwait(false);
+                                wh.Set();
+                            });
+
+                            await Task.Run(() => wh.WaitOne()).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await HashAvatar(avatar).ConfigureAwait(false);
+                        }
 
                     }
-                    Plugin.log.Debug("All avatars hashed!");
-                    hashesCalculated?.Invoke();
+                    Plugin.log.Debug("All avatars hashed and loaded!");
+
+                    HMMainThreadDispatcher.instance.Enqueue(() => {
+                        hashesCalculated?.Invoke();
+                    });
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
-                    Plugin.log.Error($"Unable to hash avatars! Exception: {e}");
+                    Plugin.log.Error($"Unable to hash and load avatars! Exception: {e}");
                 }
                 isCalculatingHashes = false;
             }
         }
 
-
+        private static async Task HashAvatar(CustomAvatar.CustomAvatar avatar)
+        {
+            await Task.Run(() =>
+            {
+                string hash;
+                if (SongDownloader.CreateMD5FromFile(avatar.FullPath, out hash))
+                {
+                    if (!cachedAvatars.ContainsKey(hash))
+                    {
+                        cachedAvatars.Add(hash, avatar);
+                        Plugin.log.Debug("Hashed avatar " + avatar.Name + "! Hash: " + hash);
+                    }
+                }
+            }).ConfigureAwait(false);
+        }
     }
 }

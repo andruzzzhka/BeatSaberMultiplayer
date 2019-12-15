@@ -2,15 +2,15 @@
 using BeatSaberMultiplayer.Misc;
 using CustomUI.BeatSaber;
 using CustomUI.Utilities;
+using HMUI;
 using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.ChannelSelectionScreen
 {
-    class ChannelSelectionViewController : VRUIViewController
+    class ChannelSelectionViewController : ViewController
     {
 
         public event Action nextPressedEvent;

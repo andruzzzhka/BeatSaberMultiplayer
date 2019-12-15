@@ -11,6 +11,8 @@ namespace BeatSaberMultiplayer
         Vector3 targetPos;
         Quaternion targetRot;
 
+        VRPlatformHelper _platformHelper;
+
         public OnlineVRController()
         {
             VRController original = GetComponent<VRController>();
@@ -20,10 +22,12 @@ namespace BeatSaberMultiplayer
                 info.SetValue(this, info.GetValue(original));
             }
 
+            _platformHelper = original.GetPrivateField<VRPlatformHelper>("_vrPlatformHelper");
+
             Destroy(original);
         }
 
-        public override void Update()
+        public new void Update()
         {
             if (Client.Instance == null || !Client.Instance.connected)
             {
@@ -33,8 +37,8 @@ namespace BeatSaberMultiplayer
             {
                 if (owner != null && owner.playerInfo != null)
                 {
-                    targetPos = (_node == XRNode.LeftHand ? owner.playerInfo.updateInfo.leftHandPos : owner.playerInfo.updateInfo.rightHandPos);
-                    targetRot = (_node == XRNode.LeftHand ? owner.playerInfo.updateInfo.leftHandRot : owner.playerInfo.updateInfo.rightHandRot);
+                    targetPos = (node == XRNode.LeftHand ? owner.playerInfo.updateInfo.leftHandPos : owner.playerInfo.updateInfo.rightHandPos);
+                    targetRot = (node == XRNode.LeftHand ? owner.playerInfo.updateInfo.leftHandRot : owner.playerInfo.updateInfo.rightHandRot);
 
                     transform.position = targetPos + Vector3.right * owner.avatarOffset;
                     transform.rotation = targetRot;
@@ -51,9 +55,9 @@ namespace BeatSaberMultiplayer
 
         private void DefaultUpdate()
         {
-            transform.localPosition = InputTracking.GetLocalPosition(_node);
-            transform.localRotation = InputTracking.GetLocalRotation(_node);
-            PersistentSingleton<VRPlatformHelper>.instance.AdjustPlatformSpecificControllerTransform(transform);
+            transform.localPosition = InputTracking.GetLocalPosition(node);
+            transform.localRotation = InputTracking.GetLocalRotation(node);
+            _platformHelper.AdjustPlatformSpecificControllerTransform(node, transform);
         }
     }
 }

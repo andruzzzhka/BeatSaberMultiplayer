@@ -1,16 +1,16 @@
-﻿using BeatSaberMultiplayer.UI.ViewControllers;
+﻿using BeatSaberMarkupLanguage;
+using BeatSaberMultiplayer.UI.ViewControllers;
 using BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen;
-using CustomUI.BeatSaber;
-using CustomUI.Utilities;
+using BS_Utils.Utilities;
+using HMUI;
 using System.Linq;
 using UnityEngine;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
     class ModeSelectionFlowCoordinator : FlowCoordinator
     {
-        ModeSelectionViewController _selectionViewController;
+        ViewControllers.ModeSelectionScreen.ModeSelectionViewController _selectionViewController;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -20,24 +20,28 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 AvatarController.LoadAvatars();
 
-                _selectionViewController = BeatSaberUI.CreateViewController<ModeSelectionViewController>();
+                _selectionViewController = BeatSaberUI.CreateViewController<ViewControllers.ModeSelectionScreen.ModeSelectionViewController>();
                 _selectionViewController.didSelectRooms += () =>
                 {
-                    if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
-                    { PresentFlowCoordinator(PluginUI.instance.serverHubFlowCoordinator); }
+                    PresentFlowCoordinator(PluginUI.instance.serverHubFlowCoordinator);
                 };
                 _selectionViewController.didSelectRadio += () =>
                 {
-                    if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
-                    { PresentFlowCoordinator(PluginUI.instance.channelSelectionFlowCoordinator); }
-                };
-                _selectionViewController.didFinishEvent += () =>
-                {
-                    Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First().InvokeMethod("DismissFlowCoordinator", this, null, false);
+                    PresentFlowCoordinator(PluginUI.instance.channelSelectionFlowCoordinator);
                 };
             }
-            
+
+            showBackButton = true;
+
             ProvideInitialViewControllers(_selectionViewController, null, null);
+        }
+
+        protected override void BackButtonWasPressed(ViewController topViewController)
+        {
+            if(topViewController == _selectionViewController)
+            {
+                Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First().InvokeMethod("DismissFlowCoordinator", this, null, false);
+            }
         }
     }
 }

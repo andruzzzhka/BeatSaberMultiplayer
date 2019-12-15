@@ -6,7 +6,6 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
 {

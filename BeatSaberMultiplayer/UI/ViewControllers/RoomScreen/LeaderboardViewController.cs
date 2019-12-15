@@ -10,11 +10,10 @@ using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
 
 namespace BeatSaberMultiplayer
 {
-    class LeaderboardViewController : VRUIViewController, TableView.IDataSource
+    class LeaderboardViewController : ViewController, TableView.IDataSource
     {
         public event Action playNowButtonPressed;
 
@@ -39,7 +38,7 @@ namespace BeatSaberMultiplayer
             {
                 _songTableCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")), rectTransform);
                 (_songTableCell.transform as RectTransform).anchoredPosition = new Vector2(100f, -1.5f);
-                _songTableCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
+                //_songTableCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
                 _songTableCell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
                 _songTableCell.SetPrivateField("_bought", true);
                 foreach (var icon in _songTableCell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
@@ -102,7 +101,7 @@ namespace BeatSaberMultiplayer
                 (viewport.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (viewport.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
                 _leaderboardTableView.GetComponent<ScrollRect>().viewport = viewport;
-                _leaderboardTableView.Init();
+                //_leaderboardTableView.Init();
 
                 tableGameObject.SetActive(true);
 

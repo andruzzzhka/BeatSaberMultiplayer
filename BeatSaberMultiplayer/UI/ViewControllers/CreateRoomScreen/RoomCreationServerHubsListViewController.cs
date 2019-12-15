@@ -9,7 +9,6 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 {
@@ -55,12 +54,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         {
             if(obj.hub.serverHubCompatible)
                 selectedServerHub?.Invoke(obj.hub);
-        }
-
-        [UIAction("back-btn-pressed")]
-        private void BackBtnPressed()
-        {
-            didFinishEvent?.Invoke();
         }
     }
 

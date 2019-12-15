@@ -199,6 +199,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
             _playerSpeakerIcon.sprite = Sprites.speakerIcon;
             _playerSpeakerIcon.material = Sprites.NoGlowMat;
 
+            
             _transferHostButton = BeatSaberUI.CreateUIButton(transform as RectTransform, "CancelButton", new Vector2(14f, 0f), new Vector2(14f, 6f), () => {
                 if (buttonsInterface != null)
                     buttonsInterface.TransferHostButtonWasPressed(playerInfo);
@@ -208,7 +209,9 @@ namespace BeatSaberMultiplayer.UI.UIElements
             _transferHostButton.SetButtonTextSize(3.25f);
             _transferHostButton.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").sprite = _buttonStrokeSprite;
             _transferHostButtonEnabled = true;
+            
 
+            
             _muteButton = BeatSaberUI.CreateUIButton(transform as RectTransform, "CancelButton", new Vector2(30f, 0f), new Vector2(14f, 6f), () => {
                 if (buttonsInterface != null)
                     buttonsInterface.MuteButtonWasPressed(playerInfo);
@@ -218,6 +221,7 @@ namespace BeatSaberMultiplayer.UI.UIElements
             _muteButton.ToggleWordWrapping(false);
             _muteButton.GetComponentsInChildren<UnityEngine.UI.Image>().First(x => x.name == "Stroke").sprite = _buttonStrokeSprite;
             _muteButtonEnabled = true;
+            
 
             _scoreText.overflowMode = TextOverflowModes.Overflow;
             _scoreText.enableWordWrapping = false;

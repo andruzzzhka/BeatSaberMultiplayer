@@ -8,7 +8,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Image = UnityEngine.UI.Image;
-using VRUI;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using System.Threading;
 
@@ -16,7 +15,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
     public enum TopButtonsState { Select, SortBy, Search, Mode };
 
-    class SongSelectionViewController : VRUIViewController, TableView.IDataSource
+    class SongSelectionViewController : ViewController, TableView.IDataSource
     {
         public event Action<IPreviewBeatmapLevel> SongSelected;
         public event Action SearchPressed;
@@ -99,7 +98,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _fastPageUpButton.GetComponentsInChildren<Image>().First(x => x.name == "Arrow").sprite = Sprites.doubleArrow;
                 _fastPageUpButton.onClick.AddListener(delegate ()
                 {
-                    FastScrollUp(_songsTableView, 4);
+                    //FastScrollUp(_songsTableView, 4);
                 });
                 _fastPageUpButton.interactable = true;
 
@@ -112,7 +111,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _fastPageDownButton.GetComponentsInChildren<Image>().First(x => x.name == "Arrow").sprite = Sprites.doubleArrow;
                 _fastPageDownButton.onClick.AddListener(delegate ()
                 {
-                    FastScrollDown(_songsTableView, 4);
+                    //FastScrollDown(_songsTableView, 4);
                 });
                 _fastPageDownButton.interactable = true;
 
@@ -162,7 +161,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 (viewport.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (viewport.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
                 _songsTableView.GetComponent<ScrollRect>().viewport = viewport;
-                _songsTableView.Init();
+                _songsTableView.InvokePrivateMethod("Init", new object[0]);
 
                 (_songsTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (_songsTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
@@ -285,6 +284,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
         }
 
+        /*
         private void FastScrollDown(TableView tableView, int pages)
         {
             TableViewScroller scroller = tableView.GetPrivateField<TableViewScroller>("_scroller");
@@ -305,7 +305,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             tableView.RefreshScrollButtons();
         }
+        */
 
+        /*
         private void FastScrollUp(TableView tableView, int pages)
         {
             TableViewScroller scroller = tableView.GetPrivateField<TableViewScroller>("_scroller");
@@ -324,6 +326,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             tableView.RefreshScrollButtons();
         }
+        */
 
         public TableCell CellForIdx(TableView sender, int row)
         {
@@ -331,17 +334,18 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             IPreviewBeatmapLevel song = availableSongs[row];
             
+            
             song.GetCoverImageTexture2DAsync(new CancellationToken()).ContinueWith((tex) => {
                 if(!tex.IsFaulted)
                     cell.SetIcon(tex.Result);
             }).ConfigureAwait(false);
+            
 
             cell.SetText($"{song.songName} <size=80%>{song.songSubName}</size>");
             cell.SetSubText(song.songAuthorName + " <size=80%>[" + song.levelAuthorName + "]</size>");
 
             cell.reuseIdentifier = "SongCell";
 
-            cell.SetPrivateField("_beatmapCharacteristicAlphas", new float[3] { song.beatmapCharacteristics.Any(x => x.serializedName == "Standard") ? 1f : 0.1f, song.beatmapCharacteristics.Any(x => x.serializedName == "NoArrows") ? 1f : 0.1f, song.beatmapCharacteristics.Any(x => x.serializedName == "OneSaber") ? 1f : 0.1f });
             cell.SetPrivateField("_beatmapCharacteristicImages", cell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")).ToArray());
             cell.SetPrivateField("_bought", true);
 

@@ -1,11 +1,12 @@
-﻿using BeatSaberMultiplayer.Data;
+﻿using BeatSaberMarkupLanguage;
+using BeatSaberMarkupLanguage.Settings;
+using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.UIElements;
 using BS_Utils.Gameplay;
-using CustomUI.BeatSaber;
-using CustomUI.Settings;
-using CustomUI.Utilities;
+using BS_Utils.Utilities;
+using HMUI;
 using Polyglot;
 using SimpleJSON;
 using System;
@@ -36,7 +37,6 @@ namespace BeatSaberMultiplayer.UI
 
         private TextMeshProUGUI _newVersionText;
         private Button _multiplayerButton;
-        private MultiplayerListViewController _publicAvatarOption;
 
         public static void OnLoad()
         {
@@ -83,27 +83,27 @@ namespace BeatSaberMultiplayer.UI
 
                 if (serverHubFlowCoordinator == null)
                 {
-                    serverHubFlowCoordinator = new GameObject("ServerHubFlow").AddComponent<ServerHubFlowCoordinator>();
+                    serverHubFlowCoordinator = BeatSaberUI.CreateFlowCoordinator<ServerHubFlowCoordinator>();
                 }
                 if (roomCreationFlowCoordinator == null)
                 {
-                    roomCreationFlowCoordinator = new GameObject("RoomCreationFlow").AddComponent<RoomCreationFlowCoordinator>();
+                    roomCreationFlowCoordinator = BeatSaberUI.CreateFlowCoordinator<RoomCreationFlowCoordinator>();
                 }
                 if (roomFlowCoordinator == null)
                 {
-                    roomFlowCoordinator = new GameObject("RoomFlow").AddComponent<RoomFlowCoordinator>();
+                    roomFlowCoordinator = BeatSaberUI.CreateFlowCoordinator<RoomFlowCoordinator>();
                 }
                 if (modeSelectionFlowCoordinator == null)
                 {
-                    modeSelectionFlowCoordinator = new GameObject("ModeSelectFlow").AddComponent<ModeSelectionFlowCoordinator>();
+                    modeSelectionFlowCoordinator = BeatSaberUI.CreateFlowCoordinator<ModeSelectionFlowCoordinator>();
                 }
                 if (channelSelectionFlowCoordinator == null)
                 {
-                    channelSelectionFlowCoordinator = new GameObject("ChannelSelectFlow").AddComponent<ChannelSelectionFlowCoordinator>();
+                    channelSelectionFlowCoordinator = BeatSaberUI.CreateFlowCoordinator<ChannelSelectionFlowCoordinator>();
                 }
                 if (radioFlowCoordinator == null)
                 {
-                    radioFlowCoordinator = new GameObject("RadioFlow").AddComponent<RadioFlowCoordinator>();
+                    radioFlowCoordinator = BeatSaberUI.CreateFlowCoordinator<RadioFlowCoordinator>();
                 }
 
                 CreateOnlineButton();
@@ -111,7 +111,7 @@ namespace BeatSaberMultiplayer.UI
 
                 StartCoroutine(CheckVersion());
 
-                CreateMenu();
+                BSMLSettings.instance.AddSettingsMenu("Multiplayer", "BeatSaberMultiplayer.UI.Settings", Settings.instance);
             }
             catch (Exception e)
             {
@@ -133,7 +133,8 @@ namespace BeatSaberMultiplayer.UI
                 (item.transform as RectTransform).sizeDelta = new Vector2(35f, 30f);
             }
 
-            _multiplayerButton = BeatSaberUI.CreateUIButton(_mainMenuRectTransform, "SoloFreePlayButton");
+            _multiplayerButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "SoloFreePlayButton")), _mainMenuRectTransform, false);
+            _multiplayerButton.name = "BSMultiplayerButton";
             Destroy(_multiplayerButton.GetComponentInChildren<LocalizedTextMeshProUGUI>());
             Destroy(_multiplayerButton.GetComponentInChildren<HoverHint>());
             _multiplayerButton.transform.SetParent(mainButtons.First(x => x.name == "SoloFreePlayButton").transform.parent);
@@ -141,8 +142,9 @@ namespace BeatSaberMultiplayer.UI
 
             _multiplayerButton.SetButtonText("Online");
             _multiplayerButton.SetButtonIcon(Sprites.onlineIcon);
-            BeatSaberUI.AddHintText(_multiplayerButton.transform as RectTransform, "Play with your friends online!");
+            //BeatSaberUI.AddHintText(_multiplayerButton.transform as RectTransform, "Play with your friends online!");
 
+            _multiplayerButton.onClick = new Button.ButtonClickedEvent();
             _multiplayerButton.onClick.AddListener(delegate ()
             {
                 try
@@ -180,137 +182,7 @@ namespace BeatSaberMultiplayer.UI
                     Plugin.log.Critical($"Unable to present flow coordinator! Exception: {e}");
                 }
             });
-        }
-
-        private void CreateMenu()
-        {
-            var onlineSubMenu = SettingsUI.CreateSubMenu("Multiplayer | General");
-
-            var avatarsInGame = onlineSubMenu.AddBool("Show Avatars In Game", "Show avatars of other players while playing a song");
-            avatarsInGame.GetValue += delegate { return Config.Instance.ShowAvatarsInGame; };
-            avatarsInGame.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInGame = value; };
-
-            var blocksInGame = onlineSubMenu.AddBool("Show Other Players Blocks", "<color=red>BETA</color>\nShow other players blocks while playing a song\n<color=red>Requires \"Show Avatars In Game\"</color>");
-            blocksInGame.GetValue += delegate { return Config.Instance.ShowOtherPlayersBlocks; };
-            blocksInGame.SetValue += delegate (bool value) { Config.Instance.ShowOtherPlayersBlocks = value; };
-
-            var avatarsInRoom = onlineSubMenu.AddBool("Show Avatars In Room", "Show avatars of other players while in room");
-            avatarsInRoom.GetValue += delegate { return Config.Instance.ShowAvatarsInRoom; };
-            avatarsInRoom.SetValue += delegate (bool value) { Config.Instance.ShowAvatarsInRoom = value; };
-
-            var downloadAvatars = onlineSubMenu.AddBool("Download Other Players Avatars", "Download other players avatars from ModelSaber");
-            downloadAvatars.GetValue += delegate { return Config.Instance.DownloadAvatars; };
-            downloadAvatars.SetValue += delegate (bool value) { Config.Instance.DownloadAvatars = value; };
-
-            var separateAvatar = onlineSubMenu.AddBool("Separate Avatar For Multiplayer", "Use avatar specified in \"Public Avatar\" instead of your current avatar");
-            separateAvatar.GetValue += delegate { return Config.Instance.SeparateAvatarForMultiplayer; };
-            separateAvatar.SetValue += delegate (bool value) { InGameOnlineController.Instance.SetSeparatePublicAvatarState(value); };
-
-            _publicAvatarOption = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>((RectTransform)onlineSubMenu.transform, "Public Avatar");
-            _publicAvatarOption.OnEnable();
-            _publicAvatarOption.ValueChanged += (e) => { InGameOnlineController.Instance.SetSeparatePublicAvatarHash(ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.AvatarLoader.Avatars[e]).Key); };
-            _publicAvatarOption.maxValue = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count - 1;
-            _publicAvatarOption.textForValues = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Select(x => (string.IsNullOrEmpty(x.Name) ? "" : x.Name)).ToArray();
-
-            if (ModelSaberAPI.cachedAvatars.TryGetValue(Config.Instance.PublicAvatarHash, out CustomAvatar.CustomAvatar avatar))
-            { 
-                _publicAvatarOption.Value = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().IndexOf(avatar);
-            }
-            else
-            {
-                if (ModelSaberAPI.isCalculatingHashes)
-                {
-                    ModelSaberAPI.hashesCalculated -= UpdateSelectedAvatar;
-                    ModelSaberAPI.hashesCalculated += UpdateSelectedAvatar;
-                }
-                _publicAvatarOption.Value = 0;
-            }
-
-            _publicAvatarOption.UpdateText();
-            onlineSubMenu.viewController.AddSubmenuOption(_publicAvatarOption.gameObject);
-            LoadAllAvatars();
-            
-            var spectatorMode = onlineSubMenu.AddBool("Spectator Mode", "<color=red>BETA</color>\nWatch other players playing a song (e.g. tournaments)\n<color=red>You can't play songs while \"Spectator Mode\" is on!</color>");
-            spectatorMode.GetValue += delegate { return Config.Instance.SpectatorMode; };
-            spectatorMode.SetValue += delegate (bool value) { Config.Instance.SpectatorMode = value; };
-
-            var submitScores = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>((RectTransform)onlineSubMenu.transform, "Submit Scores");
-            submitScores.OnEnable();
-            submitScores.ValueChanged += (e) => { Config.Instance.SubmitScores = e; };
-            submitScores.maxValue = 2;
-            submitScores.textForValues = new string[] { "NEVER", "RANKED", "ALWAYS" };
-            submitScores.Value = Config.Instance.SubmitScores;
-            submitScores.UpdateText();
-            onlineSubMenu.viewController.AddSubmenuOption(submitScores.gameObject);
-
-            var voiceSubMenu = SettingsUI.CreateSubMenu("Multiplayer | Voice");
-
-            var voiceEnabled = voiceSubMenu.AddBool("Enable Voice Chat");
-            voiceEnabled.GetValue += delegate { return Config.Instance.EnableVoiceChat; };
-            voiceEnabled.SetValue += delegate (bool value) { InGameOnlineController.Instance.ToggleVoiceChat(value); };
-
-            var voiceVolume = voiceSubMenu.AddInt("Voice Chat Volume", 0, 100, 5);
-            voiceVolume.GetValue += delegate { return (int)(Config.Instance.VoiceChatVolume * 100f); };
-            voiceVolume.SetValue += delegate (int value) { Config.Instance.VoiceChatVolume = value / 100f; InGameOnlineController.Instance.VoiceChatVolumeChanged(value / 100f); };
-
-            var micEnabled = voiceSubMenu.AddBool("Enable Microphone");
-            micEnabled.GetValue += delegate { return Config.Instance.MicEnabled; };
-            micEnabled.SetValue += delegate (bool value) { Config.Instance.MicEnabled = value; };
-
-            var spatialAudio = voiceSubMenu.AddBool("Spatial Audio");
-            spatialAudio.GetValue += delegate { return Config.Instance.SpatialAudio; };
-            spatialAudio.SetValue += delegate (bool value) { Config.Instance.SpatialAudio = value; InGameOnlineController.Instance.VoiceChatSpatialAudioChanged(value); };
-
-            var pushToTalk = voiceSubMenu.AddBool("Push to Talk");
-            pushToTalk.GetValue += delegate { return Config.Instance.PushToTalk; };
-            pushToTalk.SetValue += delegate (bool value) { Config.Instance.PushToTalk = value; };
-            
-            var pushToTalkButton = CustomSettingsHelper.AddListSetting<MultiplayerListViewController>((RectTransform)voiceSubMenu.transform, "Push to Talk Button");
-            pushToTalkButton.OnEnable();
-            pushToTalkButton.ValueChanged += (e) => { Config.Instance.PushToTalkButton = e; };
-            pushToTalkButton.maxValue = 7;
-            pushToTalkButton.textForValues = new string[] { "L Grip", "R Grip", "L Trigger", "R Trigger", "L+R Grip", "L+R Trigger", "Any Grip", "Any Trigger" };
-            pushToTalkButton.Value = Config.Instance.PushToTalkButton;
-            pushToTalkButton.UpdateText();
-            voiceSubMenu.viewController.AddSubmenuOption(pushToTalkButton.gameObject);
-        }
-
-        void UpdateSelectedAvatar()
-        {
-            if (ModelSaberAPI.cachedAvatars.TryGetValue(Config.Instance.PublicAvatarHash, out CustomAvatar.CustomAvatar avatar))
-            {
-                _publicAvatarOption.Value = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.ToList().IndexOf(avatar);
-            }
-        }
-
-        void LoadAllAvatars(Action callback = null)
-        {
-            Plugin.log.Info($"Loading all avatars...");
-            foreach (var avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
-            {
-                if (!avatar.IsLoaded)
-                {
-                    avatar.Load((loadedAvatar, result) => {
-                        if (result == CustomAvatar.AvatarLoadResult.Completed)
-                        {
-                            UpdateAvatarsList();
-                            Plugin.log.Debug($"Loaded avatar \"{loadedAvatar.Name}\"!");
-                        }
-                        else
-                        {
-                            Plugin.log.Error($"Unable to load avatar! "+result.ToString());
-
-                        }
-                    });
-                }
-            }
-        }
-
-        void UpdateAvatarsList()
-        {
-            _publicAvatarOption.textForValues = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Select(x => (string.IsNullOrEmpty(x.Name) ? "" : x.Name)).ToArray();
-            _publicAvatarOption.UpdateText();
-        }
+        }     
 
         IEnumerator CheckVersion()
         {

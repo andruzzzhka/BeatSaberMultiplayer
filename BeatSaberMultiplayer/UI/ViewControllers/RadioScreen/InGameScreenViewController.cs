@@ -2,16 +2,17 @@
 using System;
 using System.Linq;
 using TMPro;
-using VRUI;
 using UnityEngine.UI;
-using CustomUI.BeatSaber;
 using UnityEngine;
 using BeatSaberMultiplayer.Misc;
 using System.Threading;
+using HMUI;
+using BeatSaberMarkupLanguage;
+using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 {
-    class InGameScreenViewController : VRUIViewController
+    class InGameScreenViewController : ViewController
     {
         public event Action playPressedEvent;
 
@@ -45,7 +46,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
                 _currentSongCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")), rectTransform, false);
                 (_currentSongCell.transform as RectTransform).anchoredPosition = new Vector2(55f, -27f);
-                _currentSongCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
+                //_currentSongCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
                 _currentSongCell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
                 _currentSongCell.SetPrivateField("_bought", true);
                 foreach (var icon in _currentSongCell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
@@ -90,8 +91,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
                 _progressBarRect.gameObject.SetActive(false);
 
-                _playNowButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton", new Vector2(-25.5f, -25f), new Vector2(28f, 8.8f), () => { playPressedEvent?.Invoke(); }, "Play now");
-                _playNowButton.ToggleWordWrapping(false);
+                //_playNowButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton", new Vector2(-25.5f, -25f), new Vector2(28f, 8.8f), () => { playPressedEvent?.Invoke(); }, "Play now");
+                //_playNowButton.ToggleWordWrapping(false);
 
                 _waitText = BeatSaberUI.CreateText(rectTransform, " or wait for the next song!", new Vector2(14f, -21f));
                 _waitText.alignment = TextAlignmentOptions.Top;
@@ -107,6 +108,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
         {
             _currentSongInfo = songInfo;
 
+            /*
             if (_currentSongCell != null)
             {
                 IPreviewBeatmapLevel level = SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(songInfo.levelId));
@@ -135,6 +137,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
                 }
 
             }
+            */
         }
 
         public void SetProgressBarState(bool enabled, float progress)

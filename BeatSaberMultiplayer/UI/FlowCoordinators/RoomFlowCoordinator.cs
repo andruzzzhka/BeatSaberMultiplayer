@@ -1,8 +1,9 @@
-﻿using BeatSaberMarkupLanguage.ViewControllers;
+﻿using BeatSaberMarkupLanguage;
+using BeatSaberMarkupLanguage.Components;
+using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers.RoomScreen;
-using CustomUI.BeatSaber;
 using HMUI;
 using Lidgren.Network;
 using System;
@@ -11,7 +12,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using UnityEngine;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
@@ -37,13 +37,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             private set { _songPreviewPlayer = value; }
         }
 
-        AdditionalContentModelSO _contentModelSO;
-        BeatmapLevelsModelSO _beatmapLevelsModel;
+        AdditionalContentModel _contentModelSO;
+        BeatmapLevelsModel _beatmapLevelsModel;
 
-        KeyboardViewController _passwordKeyboard;
         RoomNavigationController _roomNavigationController;
 
-        KeyboardViewController _searchKeyboard;
+        ModalKeyboard _searchKeyboard;
         SongSelectionViewController _songSelectionViewController;
         DifficultySelectionViewController _difficultySelectionViewController;
         LeaderboardViewController _leaderboardViewController;
@@ -81,8 +80,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
             _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
-            _beatmapLevelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModelSO>().FirstOrDefault();
-            _contentModelSO = Resources.FindObjectsOfTypeAll<AdditionalContentModelSO>().FirstOrDefault();
+            _beatmapLevelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModel>().FirstOrDefault();
+            _contentModelSO = Resources.FindObjectsOfTypeAll<AdditionalContentModel>().FirstOrDefault();
 
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
@@ -97,16 +96,23 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _quickSettingsViewController = BeatSaberUI.CreateViewController<QuickSettingsViewController>();
 
                 _roomNavigationController = BeatSaberUI.CreateViewController<RoomNavigationController>();
-                _roomNavigationController.didFinishEvent += () => { LeaveRoom(); };
                 
-                _searchKeyboard = BeatSaberUI.CreateViewController<KeyboardViewController>();
-                _searchKeyboard.enterPressed = null;
-                _searchKeyboard.enterPressed += SearchPressed;
+                //_searchKeyboard = BeatSaberUI.CreateViewController<KeyboardViewController>();
+                //_searchKeyboard.enterPressed = null;
+                //_searchKeyboard.enterPressed += SearchPressed;
                 //_searchKeyboard.backButtonPressed += () => { DismissViewController(_searchKeyboard); };
                 //_searchKeyboard.allowEmptyInput = true;
             }
 
+            showBackButton = true;
+
             ProvideInitialViewControllers(_roomNavigationController, _playerManagementViewController, _quickSettingsViewController);
+        }
+
+        protected override void BackButtonWasPressed(ViewController topViewController)
+        {
+            if(topViewController == _roomNavigationController)
+                LeaveRoom();
         }
 
         public void ReturnToRoom()
@@ -133,20 +139,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             this.roomId = roomId;
             this.usePassword = usePassword;
 
-            if (usePassword && string.IsNullOrEmpty(password))
-            {
-                if (_passwordKeyboard == null)
-                {
-                    _passwordKeyboard = BeatSaberUI.CreateViewController<KeyboardViewController>();
-                    _passwordKeyboard.enterPressed = null;
-                    _passwordKeyboard.enterPressed += PasswordEntered;
-                    //_passwordKeyboard.backButtonPressed += () => { DismissViewController(_passwordKeyboard); didFinishEvent?.Invoke(); };
-                }
-
-                _passwordKeyboard.startingText = "";
-                PresentViewController(_passwordKeyboard, null);
-            }
-            else
+            if (!usePassword || !string.IsNullOrEmpty(password))
             {
                 if (!Client.Instance.connected || (Client.Instance.ip != ip || Client.Instance.port != port))
                 {
@@ -159,7 +152,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     ConnectedToServerHub();
                 }
-
             }
         }
 
@@ -215,22 +207,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _lastSearchRequest = "";
             Client.Instance.inRoom = false;
             PopAllViewControllers();
-            if(leftScreenViewController == _passHostDialog)
-            {
-                SetLeftScreenViewController(_playerManagementViewController);
-            }
+            SetLeftScreenViewController(_playerManagementViewController);
             didFinishEvent?.Invoke();
         }
-
-        private void PasswordEntered(string input)
-        {
-            DismissViewController(_passwordKeyboard);
-            if (!string.IsNullOrEmpty(input))
-            {
-                JoinRoom(ip, port, roomId, usePassword, input.ToUpper());
-            }
-        }
-
+        
         private void ConnectedToServerHub()
         {
             Client.Instance.ConnectedToServerHub -= ConnectedToServerHub;
@@ -614,7 +594,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             Client.Instance.playerInfo.updateInfo.playerScore = 0;
             Client.Instance.playerInfo.updateInfo.playerLevelOptions = new LevelOptionsInfo(difficulty, modifiers, characteristic.serializedName);
 
-            MenuTransitionsHelperSO menuSceneSetupData = Resources.FindObjectsOfTypeAll<MenuTransitionsHelperSO>().FirstOrDefault();
+            MenuTransitionsHelper menuSceneSetupData = Resources.FindObjectsOfTypeAll<MenuTransitionsHelper>().FirstOrDefault();
 
             if(_playerManagementViewController != null)
             {
@@ -625,7 +605,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 Client.Instance.playerInfo.updateInfo.playerState = Config.Instance.SpectatorMode ? PlayerState.Spectating : PlayerState.Game;
 
-                PlayerSpecificSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().playerData.playerSpecificSettings;
+                PlayerData playerData = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().playerData;
+
+                PlayerSpecificSettings playerSettings = playerData.playerSpecificSettings;
+                OverrideEnvironmentSettings environmentOverrideSettings = playerData.overrideEnvironmentSettings;
+                ColorSchemesSettings colorSchemesSettings = playerData.colorSchemesSettings;
 
                 roomInfo.roomState = RoomState.InGame;
                 
@@ -649,7 +633,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 practiceSettings.songSpeedMul = modifiers.songSpeedMul;
                 practiceSettings.startInAdvanceAndClearNotes = true;
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, new OverrideEnvironmentSettings() { overrideEnvironments = false }, null, modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => { }, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(levelCompletionResults, difficultyBeatmap, modifiers, startTime > 1f); });
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings.GetColorSchemeForId(colorSchemesSettings.selectedColorSchemeId), modifiers, playerSettings, (startTime > 1f ? practiceSettings : null), "Lobby", false, () => { }, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(levelCompletionResults, difficultyBeatmap, modifiers, startTime > 1f); });
             }
             else
             {
@@ -671,18 +655,24 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _songSelectionViewController = BeatSaberUI.CreateViewController<SongSelectionViewController>();
                 _songSelectionViewController.SongSelected += SongSelected;
                 _songSelectionViewController.SortPressed += (sortMode) => { SetSongs(_lastSelectedPack, sortMode, _lastSearchRequest);  };
-                _songSelectionViewController.SearchPressed += () => { _searchKeyboard.startingText = ""; PresentViewController(_searchKeyboard, null);};
+                //_songSelectionViewController.SearchPressed += () => { _searchKeyboard.modalView.Show(true, true); _searchKeyboard.SetText(""); };
             }
 
+            
             if(_packsViewController == null)
             {
-                _packsViewController = Instantiate(Resources.FindObjectsOfTypeAll<LevelPacksViewController>().First(x => x.name != "CustomLevelPacksViewController"));
+                LevelPacksViewController original = Resources.FindObjectsOfTypeAll<LevelPacksViewController>().First(x => x.name != "CustomLevelPacksViewController");
+
+                _packsViewController = Instantiate(original);
+
+                _packsViewController.gameObject.SetActive(false);
                 _packsViewController.name = "CustomLevelPacksViewController";
+                _packsViewController.SetPrivateField("_additionalContentModel", original.GetPrivateField<AdditionalContentModel>("_additionalContentModel"));
+                _packsViewController.gameObject.SetActive(true);
 
                 TableView table = _packsViewController.GetComponentInChildren<TableView>();
-                table.Init();
+                table.InvokePrivateMethod("Init", new object[0]);
                 _packsViewController.GetComponentInChildren<TableViewScroller>().Init(table);
-
 
                 if (_lastSelectedPack == null)
                 {
@@ -692,7 +682,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _packsViewController.didSelectPackEvent += (sender, selectedPack) => { SetSongs(selectedPack, _lastSortMode, _lastSearchRequest); };
             }
 
-            _packsViewController.SetData(SongCore.Loader.CustomBeatmapLevelPackCollectionSO, SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.FindIndexInArray(_lastSelectedPack));
+            _packsViewController.SetData(SongCore.Loader.CustomBeatmapLevelPackCollectionSO, SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.FindIndexInArray(_lastSelectedPack), false);
             
             if (_roomNavigationController.viewControllers.IndexOf(_songSelectionViewController) < 0)
             {
@@ -705,6 +695,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
             }
 
+            
             if (Client.Instance.isHost)
             {
                 _packsViewController.gameObject.SetActive(true);
@@ -715,6 +706,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _packsViewController.gameObject.SetActive(false);
                 SetBottomScreenViewController(null);
             }
+            
 
             _songSelectionViewController.UpdateViewController(Client.Instance.isHost);
         }
@@ -724,25 +716,24 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             
             if (_songSelectionViewController != null)
             {
+                /*
                 if(_roomNavigationController.childViewController == _searchKeyboard)
                 {
                     DismissViewController(_searchKeyboard, null, true);
                 }
+                */
                 if (_roomNavigationController.viewControllers.IndexOf(_songSelectionViewController) >= 0)
                 {
                     PopViewControllerFromNavigationController(_roomNavigationController, null, true);
                 }
             }
 
-            if(bottomScreenViewController != null)
-            {
-                SetBottomScreenViewController(null);
-            }
+            SetBottomScreenViewController(null);
         }
 
         public void SearchPressed(string input)
         {
-            DismissViewController(_searchKeyboard);
+            //DismissViewController(_searchKeyboard);
             SetSongs(_lastSelectedPack,  _lastSortMode, input);
         }
 
@@ -860,7 +851,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 LoadBeatmapLevelAsync(selectedLevel,
                     (status, success, level) =>
                     {
-                        if(status == AdditionalContentModelSO.EntitlementStatus.NotOwned)
+                        if(status == AdditionalContentModel.EntitlementStatus.NotOwned)
                         {
                             _difficultySelectionViewController.SetSelectedSong(selectedLevel);
                             _difficultySelectionViewController.SetPlayButtonInteractable(false);
@@ -967,15 +958,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        private async void LoadBeatmapLevelAsync(IPreviewBeatmapLevel selectedLevel, Action<AdditionalContentModelSO.EntitlementStatus, bool, IBeatmapLevel> callback)
+        private async void LoadBeatmapLevelAsync(IPreviewBeatmapLevel selectedLevel, Action<AdditionalContentModel.EntitlementStatus, bool, IBeatmapLevel> callback)
         {
             var token = new CancellationTokenSource();
 
             var entitlementStatus  = await _contentModelSO.GetLevelEntitlementStatusAsync(selectedLevel.levelID, token.Token);
 
-            if (entitlementStatus == AdditionalContentModelSO.EntitlementStatus.Owned)
+            if (entitlementStatus == AdditionalContentModel.EntitlementStatus.Owned)
             {
-                BeatmapLevelsModelSO.GetBeatmapLevelResult getBeatmapLevelResult = await _beatmapLevelsModel.GetBeatmapLevelAsync(selectedLevel.levelID, token.Token);
+                BeatmapLevelsModel.GetBeatmapLevelResult getBeatmapLevelResult = await _beatmapLevelsModel.GetBeatmapLevelAsync(selectedLevel.levelID, token.Token);
 
                 callback?.Invoke(entitlementStatus, !getBeatmapLevelResult.isError, getBeatmapLevelResult.beatmapLevel);
             }

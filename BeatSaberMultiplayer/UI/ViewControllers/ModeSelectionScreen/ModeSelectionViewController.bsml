@@ -1,7 +1,4 @@
 ﻿<stack vertical-fit='Unconstrained'>
-  <bg>
-    <back-button on-click='back-btn-pressed' />
-  </bg>
   <horizontal id='buttons-rect' horizontal-fit='PreferredSize' spacing='15'>
     <big-button id='rooms-button' text='Rooms' on-click='rooms-btn-pressed' icon='BeatSaberMultiplayer.Assets.RoomsIcon.png' />
     <big-button id='radio-button' text='Radio' on-click='radio-btn-pressed' icon='BeatSaberMultiplayer.Assets.RadioIcon.png'/>

@@ -28,7 +28,6 @@ namespace BeatSaberMultiplayer
         private const string _gameSceneName = "GameCore";
         private const string _menuSceneName = "MenuCore";
 
-
         public static Quaternion oculusTouchRotOffset = Quaternion.Euler(-40f, 0f, 0f);
         public static Vector3 oculusTouchPosOffset = new Vector3(0f, 0f, 0.055f);
         public static Quaternion openVrRotOffset = Quaternion.Euler(-4.3f, 0f, 0f);
@@ -606,7 +605,7 @@ namespace BeatSaberMultiplayer
 
             if (_vrInputManager == null)
             {
-                _vrInputManager = PersistentSingleton<VRControllersInputManager>.instance;
+                _vrInputManager = Resources.FindObjectsOfTypeAll<VRController>().FirstOrDefault(x => !(x is OnlineVRController)).GetPrivateField<VRControllersInputManager>("_vrControllersInputManager");
             }
 
             if (Config.Instance.EnableVoiceChat)
@@ -985,33 +984,31 @@ namespace BeatSaberMultiplayer
                     Plugin.log.Warn("Score submission is disabled!");
                     return;
                 }
-            } 
+            }
 
-            AchievementsEvaluationHandler achievementsHandler = Resources.FindObjectsOfTypeAll<AchievementsEvaluationHandler>().First();
-            achievementsHandler.ProcessLevelFinishData(difficultyBeatmap, levelCompletionResults);
-            achievementsHandler.ProcessSoloFreePlayLevelFinishData(difficultyBeatmap, levelCompletionResults);
 
             SoloFreePlayFlowCoordinator freePlayCoordinator = Resources.FindObjectsOfTypeAll<SoloFreePlayFlowCoordinator>().First();
 
             PlayerDataModelSO dataModel = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel");
 
-            PlayerData currentLocalPlayer = dataModel.playerData;
+            dataModel.playerData.playerAllOverallStatsData.UpdateSoloFreePlayOverallStatsData(levelCompletionResults, difficultyBeatmap);
+            dataModel.Save();
 
-            PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(difficultyBeatmap.level.levelID, difficultyBeatmap.difficulty, difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic);
+            if (levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Failed && levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Cleared)
+            {
+                return;
+            }
 
-            playerLevelStatsData.IncreaseNumberOfGameplays();
+            PlayerLevelStatsData playerLevelStats = dataModel.playerData.GetPlayerLevelStatsData(difficultyBeatmap);
+
+            playerLevelStats.IncreaseNumberOfGameplays();
             if (levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared)
             {
                 Plugin.log.Info("Submitting score...");
-                playerLevelStatsData.UpdateScoreData(levelCompletionResults.modifiedScore, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
-                freePlayCoordinator.GetPrivateField<PlatformLeaderboardsModel>("_platformLeaderboardsModel").AddScoreFromComletionResults(difficultyBeatmap, levelCompletionResults);
+                playerLevelStats.UpdateScoreData(levelCompletionResults.modifiedScore, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
+                freePlayCoordinator.GetPrivateField<PlatformLeaderboardsModel>("_platformLeaderboardsModel").UploadScore(difficultyBeatmap, levelCompletionResults.rawScore, levelCompletionResults.modifiedScore, levelCompletionResults.fullCombo, levelCompletionResults.goodCutsCount, levelCompletionResults.badCutsCount, levelCompletionResults.missedCount, levelCompletionResults.maxCombo, levelCompletionResults.gameplayModifiers);
                 Plugin.log.Info("Score submitted!");
-
             }
-
-            currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
-
-            dataModel.Save();
         }
 
         IEnumerator WaitForControllers()
@@ -1021,31 +1018,6 @@ namespace BeatSaberMultiplayer
             yield return new WaitUntil(delegate () { return FindObjectOfType<ScoreController>() != null; });
 
             Plugin.log.Debug("Game controllers found!");
-
-            _gameManager = Resources.FindObjectsOfTypeAll<StandardLevelGameplayManager>().First();
-
-            if (_gameManager != null)
-            {
-                try
-                {
-                    if (ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger") != null)
-                    {
-                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").pauseTriggeredEvent -= _gameManager.HandlePauseTriggered;
-                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").pauseTriggeredEvent += ShowMenu;
-                    }
-
-                    if (ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper") != null)
-                    {
-                        ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper").inputFocusWasCapturedEvent -= _gameManager.HandleInputFocusWasCaptured;
-                        ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper").inputFocusWasCapturedEvent += ShowMenu;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Plugin.log.Critical(e);
-                }
-            }
-            Plugin.log.Debug("Disabled pause button!");
 
             _scoreController = FindObjectOfType<ScoreController>();
 

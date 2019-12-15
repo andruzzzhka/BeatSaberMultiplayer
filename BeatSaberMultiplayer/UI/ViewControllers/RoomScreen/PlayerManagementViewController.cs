@@ -10,7 +10,6 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
@@ -20,7 +19,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         void TransferHostButtonWasPressed(PlayerInfo player);
     }
 
-    class PlayerManagementViewController : VRUIViewController, TableView.IDataSource, IPlayerManagementButtons
+    class PlayerManagementViewController : ViewController, TableView.IDataSource, IPlayerManagementButtons
     {
         public event Action gameplayModifiersChanged;
         public event Action<PlayerInfo> transferHostButtonPressed;
@@ -160,7 +159,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 (viewport.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
                 (viewport.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
                 _playersTableView.GetComponent<ScrollRect>().viewport = viewport;
-                _playersTableView.Init();
+                //_playersTableView.Init();
 
                 tableGameObject.SetActive(true);
 

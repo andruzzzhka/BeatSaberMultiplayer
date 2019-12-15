@@ -1,13 +1,13 @@
-﻿using BeatSaberMarkupLanguage.ViewControllers;
+﻿using BeatSaberMarkupLanguage;
+using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen;
-using CustomUI.BeatSaber;
+using HMUI;
 using Lidgren.Network;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using VRUI;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
@@ -34,24 +34,36 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 _serverHubsViewController = BeatSaberUI.CreateViewController<RoomCreationServerHubsListViewController>();
                 _serverHubsViewController.selectedServerHub += ServerHubSelected;
-                _serverHubsViewController.didFinishEvent += () => { didFinishEvent?.Invoke(false); };
 
                 _mainRoomCreationViewController = BeatSaberUI.CreateViewController<MainRoomCreationViewController>();
                 _mainRoomCreationViewController.CreatedRoom += CreateRoomPressed;
                 _mainRoomCreationViewController.SavePresetPressed += SavePreset;
                 _mainRoomCreationViewController.LoadPresetPressed += LoadPresetPressed;
-                _mainRoomCreationViewController.keyboardDidFinishEvent += _mainRoomCreationViewController_keyboardDidFinishEvent;
-                _mainRoomCreationViewController.presentKeyboardEvent += PresentKeyboard;
-                _mainRoomCreationViewController.didFinishEvent += () => { DismissViewController(_mainRoomCreationViewController); SetLeftScreenViewController(null); };
                 
                 _presetsListViewController = BeatSaberUI.CreateViewController<PresetsListViewController>();
                 _presetsListViewController.didFinishEvent += _presetsListViewController_didFinishEvent;
 
             }
 
+            showBackButton = true;
+
             ProvideInitialViewControllers(_serverHubsViewController, null, null);
         }
 
+        protected override void BackButtonWasPressed(ViewController topViewController)
+        {
+            if (topViewController == _serverHubsViewController)
+                didFinishEvent?.Invoke(false);
+            else if (topViewController == _mainRoomCreationViewController)
+            {
+                DismissViewController(_mainRoomCreationViewController);
+                SetLeftScreenViewController(null);
+            }
+            else if (topViewController == _presetsListViewController)
+                _presetsListViewController_didFinishEvent(null);
+        }
+
+        /*
         public void PresentKeyboard(KeyboardViewController keyboardViewController)
         {
             PresentViewController(keyboardViewController, null, false);
@@ -61,6 +73,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             DismissViewController(keyboardViewController, null, false);
         }
+        */
 
         public void SetServerHubsList(List<ServerHubClient> serverHubs)
         {
