@@ -262,6 +262,9 @@
     <EmbeddedResource Include="UI\ViewControllers\ModeSelectionScreen\ModeSelectionViewController.bsml">
       <DependentUpon>ModeSelectionViewController.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.bsml">
+      <DependentUpon>SongSelectionViewController.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.bsml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
       <DependentUpon>RoomListViewController.cs</DependentUpon>

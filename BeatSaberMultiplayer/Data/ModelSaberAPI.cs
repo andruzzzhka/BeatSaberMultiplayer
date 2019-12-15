@@ -19,6 +19,8 @@ namespace BeatSaberMultiplayer.Misc
         public static List<string> queuedAvatars = new List<string>();
 
         public static bool isCalculatingHashes;
+        public static int calculatedHashesCount;
+        public static int totalAvatarsCount;
 
         public static IEnumerator DownloadAvatarCoroutine(string hash)
         {
@@ -156,6 +158,8 @@ namespace BeatSaberMultiplayer.Misc
                 try
                 {
                     cachedAvatars.Clear();
+                    totalAvatarsCount = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count;
+                    calculatedHashesCount = 0;
                     foreach (CustomAvatar.CustomAvatar avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
                     {
                         if (!avatar.IsLoaded)
@@ -170,10 +174,12 @@ namespace BeatSaberMultiplayer.Misc
                             });
 
                             await Task.Run(() => wh.WaitOne()).ConfigureAwait(false);
+                            calculatedHashesCount++;
                         }
                         else
                         {
                             await HashAvatar(avatar).ConfigureAwait(false);
+                            calculatedHashesCount++;
                         }
 
                     }

@@ -1,5 +1,6 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.ViewControllers;
+using BeatSaberMultiplayer.Misc;
 using System;
 using System.IO;
 using System.Linq;
@@ -30,11 +31,20 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
         TextMeshProUGUI _missingFilesText;
         [UIComponent("version-text")]
         TextMeshProUGUI _versionText;
+        [UIComponent("loading-progress-text")]
+        TextMeshProUGUI _loadingProgressText;
 
         [UIComponent("missing-files-rect")]
         RectTransform _missingFilesRect;
         [UIComponent("buttons-rect")]
         RectTransform _buttonsRect;
+        [UIComponent("avatars-loading-rect")]
+        RectTransform _avatarsLoadingRect;
+
+        [UIComponent("progress-bar-top")]
+        RawImage _progressBarTop;
+        [UIComponent("progress-bar-bg")]
+        RawImage _progressBarBG;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -64,7 +74,36 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
                 }
 
                 _versionText.text = "v" + IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Metadata.Version.ToString();
+
+                if (ModelSaberAPI.isCalculatingHashes)
+                {
+                    _buttonsRect.gameObject.SetActive(false);
+                    _avatarsLoadingRect.gameObject.SetActive(true);
+                    ModelSaberAPI.hashesCalculated += ModelSaberAPI_hashesCalculated;
+
+                    _progressBarBG.color = new Color(1f, 1f, 1f, 0.2f);
+                    _progressBarTop.color = new Color(1f, 1f, 1f, 1f);
+
+                }
+                else
+                    _avatarsLoadingRect.gameObject.SetActive(false);
+
             }
+        }
+
+        private void Update()
+        {
+            if (ModelSaberAPI.isCalculatingHashes)
+            {
+                _loadingProgressText.text = $"{ModelSaberAPI.calculatedHashesCount} out of {ModelSaberAPI.totalAvatarsCount}";
+                _progressBarTop.rectTransform.sizeDelta = new Vector2(60f * (ModelSaberAPI.calculatedHashesCount / (float)ModelSaberAPI.totalAvatarsCount), 6f);
+            }
+        }
+
+        private void ModelSaberAPI_hashesCalculated()
+        {
+            _buttonsRect.gameObject.SetActive(true); 
+            _avatarsLoadingRect.gameObject.SetActive(false);
         }
 
         [UIAction("rooms-btn-pressed")]
