@@ -98,7 +98,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _fastPageUpButton.GetComponentsInChildren<Image>().First(x => x.name == "Arrow").sprite = Sprites.doubleArrow;
                 _fastPageUpButton.onClick.AddListener(delegate ()
                 {
-                    //FastScrollUp(_songsTableView, 4);
+                    FastScrollUp(_songsTableView, 4);
                 });
                 _fastPageUpButton.interactable = true;
 
@@ -111,7 +111,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _fastPageDownButton.GetComponentsInChildren<Image>().First(x => x.name == "Arrow").sprite = Sprites.doubleArrow;
                 _fastPageDownButton.onClick.AddListener(delegate ()
                 {
-                    //FastScrollDown(_songsTableView, 4);
+                    FastScrollDown(_songsTableView, 4);
                 });
                 _fastPageDownButton.interactable = true;
 
@@ -284,14 +284,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
         }
 
-        /*
         private void FastScrollDown(TableView tableView, int pages)
         {
             TableViewScroller scroller = tableView.GetPrivateField<TableViewScroller>("_scroller");
 
             float maxPos = (float)tableView.numberOfCells * tableView.cellSize - tableView.scrollRectTransform.rect.height;
 
-            float targetPosition = scroller.position + Mathf.Max(1f, scroller.GetNumberOfVisibleCells() - 1f) * tableView.cellSize * pages;
+            float targetPosition = scroller.position + Mathf.Max(1f, GetNumberOfVisibleCells(tableView) - 1f) * tableView.cellSize * pages;
 
             if (targetPosition > maxPos)
             {
@@ -302,17 +301,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             scroller.enabled = true;
             tableView.enabled = true;
-
-            tableView.RefreshScrollButtons();
         }
-        */
 
-        /*
         private void FastScrollUp(TableView tableView, int pages)
         {
             TableViewScroller scroller = tableView.GetPrivateField<TableViewScroller>("_scroller");
-            
-            float targetPosition = scroller.position - Mathf.Max(1f, scroller.GetNumberOfVisibleCells() - 1f) * tableView.cellSize * pages;
+
+            float targetPosition = scroller.position - Mathf.Max(1f, GetNumberOfVisibleCells(tableView) - 1f) * tableView.cellSize * pages;
 
             if (targetPosition < 0f)
             {
@@ -323,10 +318,12 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             scroller.enabled = true;
             tableView.enabled = true;
-
-            tableView.RefreshScrollButtons();
         }
-        */
+
+        private float GetNumberOfVisibleCells(TableView tableView)
+        {
+            return (float)Mathf.CeilToInt(((tableView.tableType == TableView.TableType.Vertical) ? tableView.scrollRectTransform.rect.height : tableView.scrollRectTransform.rect.width) / tableView.cellSize);
+        }
 
         public TableCell CellForIdx(TableView sender, int row)
         {

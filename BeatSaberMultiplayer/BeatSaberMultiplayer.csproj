@@ -146,9 +146,6 @@
     <EmbeddedResource Include="Assets\RoomsIcon.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Assets\DoubleArrowIcon.png" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Assets\SpeakerIcon.png" />
   </ItemGroup>
   <ItemGroup>
@@ -402,6 +399,9 @@
       <EmbedInteropTypes>False</EmbedInteropTypes>
       <Private>False</Private>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\DoubleArrowIcon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

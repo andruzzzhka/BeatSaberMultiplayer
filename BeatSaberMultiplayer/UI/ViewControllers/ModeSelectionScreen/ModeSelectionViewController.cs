@@ -73,8 +73,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
                     _buttonsRect.gameObject.SetActive(true);
                 }
 
-                _versionText.text = "v" + IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Metadata.Version.ToString();
-
                 if (ModelSaberAPI.isCalculatingHashes)
                 {
                     _buttonsRect.gameObject.SetActive(false);
@@ -88,6 +86,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
                 else
                     _avatarsLoadingRect.gameObject.SetActive(false);
 
+                var pluginVersion = IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Metadata.Version.ToString();
+                var pluginBuild = pluginVersion.Substring(pluginVersion.LastIndexOf('.') + 1);
+
+                _versionText.text = $"v{pluginVersion}{(!int.TryParse(pluginBuild, out var buildNumber) ? " <color=red>(UNSTABLE)</color>" : "")}";
             }
         }
 
