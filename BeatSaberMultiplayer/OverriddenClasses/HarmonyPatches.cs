@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
 using Harmony;
+using IPA.Utilities;
 using System;
 
 namespace BeatSaberMultiplayer.OverriddenClasses

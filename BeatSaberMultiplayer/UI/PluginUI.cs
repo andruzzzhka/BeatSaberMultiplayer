@@ -1,11 +1,14 @@
 ﻿using BeatSaberMarkupLanguage;
+using BeatSaberMarkupLanguage.FloatingScreen;
 using BeatSaberMarkupLanguage.Settings;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.UIElements;
+using BeatSaberMultiplayer.UI.ViewControllers.DiscordScreens;
 using BS_Utils.Gameplay;
 using BS_Utils.Utilities;
+using Discord;
 using HMUI;
 using Polyglot;
 using SimpleJSON;
@@ -23,7 +26,7 @@ namespace BeatSaberMultiplayer.UI
     class PluginUI : MonoBehaviour
     {
         public static PluginUI instance;
-        
+
         private MainMenuViewController _mainMenuViewController;
         private RectTransform _mainMenuRectTransform;
         private SimpleDialogPromptViewController _noUserInfoWarning;
@@ -42,24 +45,23 @@ namespace BeatSaberMultiplayer.UI
 
         public static void OnLoad()
         {
-            if (instance != null)
+            if (instance == null)
             {
-                instance.CreateUI();
-                return;
+                new GameObject("Multiplayer Plugin").AddComponent<PluginUI>().Setup();
             }
-            new GameObject("Multiplayer Plugin").AddComponent<PluginUI>();
         }
 
-        public void Awake()
+        public void Setup()
         {
-            if (instance != this)
-            {
-                DontDestroyOnLoad(this);
-                instance = this;
-                GetUserInfo.UpdateUserInfo();
+            instance = this;
+            GetUserInfo.UpdateUserInfo();
+
+            CreateUI();
+
+            if (SongCore.Loader.AreSongsLoading)
                 SongCore.Loader.SongsLoadedEvent += SongsLoaded;
-                CreateUI();
-            }
+            else
+                SongsLoaded(null, null);
         }
 
         public void SongsLoaded(SongCore.Loader sender, Dictionary<string, CustomPreviewBeatmapLevel> levels)
@@ -67,10 +69,6 @@ namespace BeatSaberMultiplayer.UI
             if (_multiplayerButton != null)
             {
                 _multiplayerButton.interactable = true;
-            }
-            else
-            {
-                CreateUI();
             }
 
             SongInfo.GetOriginalLevelHashes();
@@ -98,6 +96,14 @@ namespace BeatSaberMultiplayer.UI
                 if (modeSelectionFlowCoordinator == null)
                 {
                     modeSelectionFlowCoordinator = BeatSaberUI.CreateFlowCoordinator<ModeSelectionFlowCoordinator>();
+                    modeSelectionFlowCoordinator.didFinishEvent += () =>
+                    {
+                        Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First().InvokeMethod("DismissFlowCoordinator", modeSelectionFlowCoordinator, null, false);
+                        Plugin.discordActivity = default;
+                        Plugin.overrideDiscordActivity = false;
+                        Plugin.discord?.GetActivityManager().ClearActivity((result) => { Plugin.log.Debug("Clear Discord activity result: " + result); });
+                    };
+
                 }
                 if (channelSelectionFlowCoordinator == null)
                 {
@@ -109,7 +115,6 @@ namespace BeatSaberMultiplayer.UI
                 }
 
                 CreateOnlineButton();
-                SongCore.Loader.SongsLoadedEvent += SongsLoaded;
 
                 StartCoroutine(CheckVersion());
 
@@ -131,7 +136,7 @@ namespace BeatSaberMultiplayer.UI
 
             Button[] mainButtons = Resources.FindObjectsOfTypeAll<RectTransform>().First(x => x.name == "MainButtons" && x.parent.name == "MainMenuViewController").GetComponentsInChildren<Button>();
 
-            foreach(var item in mainButtons)
+            foreach (var item in mainButtons)
             {
                 (item.transform as RectTransform).sizeDelta = new Vector2(35f, 30f);
             }
@@ -145,13 +150,17 @@ namespace BeatSaberMultiplayer.UI
 
             _multiplayerButton.SetButtonText("Online");
             _multiplayerButton.SetButtonIcon(Sprites.onlineIcon);
-            //BeatSaberUI.AddHintText(_multiplayerButton.transform as RectTransform, "Play with your friends online!");
+
+            _multiplayerButton.interactable = !SongCore.Loader.AreSongsLoading;
 
             _multiplayerButton.onClick = new Button.ButtonClickedEvent();
             _multiplayerButton.onClick.AddListener(delegate ()
             {
                 try
                 {
+                    Plugin.overrideDiscordActivity = true;
+                    SetLobbyDiscordActivity();
+
                     MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
 
                     if (_noUserInfoWarning == null)
@@ -185,7 +194,53 @@ namespace BeatSaberMultiplayer.UI
                     Plugin.log.Critical($"Unable to present flow coordinator! Exception: {e}");
                 }
             });
-        }     
+        }
+
+        public void ShowJoinRequest(User user)
+        {
+            FloatingScreen screen = FloatingScreen.CreateFloatingScreen(new Vector2(100, 50), true, new Vector3(0f, 0.9f, 2.4f), Quaternion.Euler(30f, 0f, 0f));
+
+            DiscordAskToJoinView discordView = BeatSaberUI.CreateViewController<DiscordAskToJoinView>();
+            discordView.user = user;
+
+            screen.SetRootViewController(discordView, false);
+        }
+
+        public void ShowInvite(User user, Activity activity)
+        {
+            FloatingScreen screen = FloatingScreen.CreateFloatingScreen(new Vector2(100, 50), true, new Vector3(0f, 0.9f, 2.4f), Quaternion.Euler(30f, 0f, 0f));
+
+            DiscordInviteResponseView discordView = BeatSaberUI.CreateViewController<DiscordInviteResponseView>();
+            discordView.user = user;
+            discordView.activity = activity;
+
+            screen.SetRootViewController(discordView, false);
+        }
+
+        public IEnumerator JoinGameWithSecret(string secret)
+        {
+            yield return null;
+
+            MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
+            mainFlow.InvokeMethod("PresentFlowCoordinator", modeSelectionFlowCoordinator, null, true, false);
+
+            modeSelectionFlowCoordinator.JoinGameWithSecret(secret);
+        }
+
+        public void SetLobbyDiscordActivity()
+        {
+            Plugin.discordActivity = new Discord.Activity
+            {
+                State = "Playing multiplayer",
+                Details = "In lobby",
+                Timestamps =
+                        {
+                            Start = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+                        },
+                Instance = false,
+            };
+            Plugin.discord.GetActivityManager().UpdateActivity(Plugin.discordActivity, (result) => { Plugin.log.Debug("Update Discord activity result: " + result); });
+        }
 
         IEnumerator CheckVersion()
         {
@@ -196,8 +251,8 @@ namespace BeatSaberMultiplayer.UI
             www.timeout = 10;
 
             yield return www.SendWebRequest();
-            
-            if(!www.isNetworkError && !www.isHttpError)
+
+            if (!www.isNetworkError && !www.isHttpError)
             {
                 JSONNode releases = JSON.Parse(www.downloadHandler.text);
 

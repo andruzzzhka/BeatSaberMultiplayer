@@ -35,6 +35,8 @@ namespace BeatSaberMultiplayer.Misc
         private List<Song> _alreadyDownloadedSongs;
         private static bool _extractingZip;
 
+        private static BeatmapLevelsModel _beatmapLevelsModel;
+
         public void Awake()
         {
             DontDestroyOnLoad(gameObject);
@@ -207,7 +209,11 @@ namespace BeatSaberMultiplayer.Misc
 
         public static CustomPreviewBeatmapLevel GetLevel(string levelId)
         {
-            return SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID == levelId) as CustomPreviewBeatmapLevel;
+            if(_beatmapLevelsModel == null)
+            {
+                _beatmapLevelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModel>().First();
+            }
+            return _beatmapLevelsModel.allLoadedBeatmapLevelPackCollection.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID == levelId) as CustomPreviewBeatmapLevel;
         }
 
         public static bool CreateMD5FromFile(string path, out string hash)

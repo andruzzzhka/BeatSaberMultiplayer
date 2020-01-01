@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
+using BS_Utils.Utilities;
 using CustomUI.BeatSaber;
 using HMUI;
 using System;
@@ -17,6 +18,8 @@ namespace BeatSaberMultiplayer
     {
         public event Action playNowButtonPressed;
 
+        public IPreviewBeatmapLevel _selectedSong;
+
         private TableView _leaderboardTableView;
         private LeaderboardTableCell _leaderboardTableCellInstance;
         private TextMeshProUGUI _timerText;
@@ -24,13 +27,14 @@ namespace BeatSaberMultiplayer
         private Button _pageUpButton;
         private Button _pageDownButton;
         private Button _playNowButton;
-        public IPreviewBeatmapLevel _selectedSong;
 
-        LevelListTableCell _songTableCell;
+        private LevelListTableCell _songTableCell;
 
-        List<LeaderboardTableCell> _tableCells = new List<LeaderboardTableCell>();
+        private List<LeaderboardTableCell> _tableCells = new List<LeaderboardTableCell>();
 
-        int _lastTime;
+        private int _lastTime;
+
+        private BeatmapLevelsModel _beatmapLevelsModel;
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
@@ -120,6 +124,8 @@ namespace BeatSaberMultiplayer
                 _timerText.fontSize = 8f;
                 _timerText.alignment = TextAlignmentOptions.Center;
                 _timerText.rectTransform.sizeDelta = new Vector2(30f, 6f);
+
+                _beatmapLevelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModel>().First();
             }
 
         }
@@ -167,7 +173,7 @@ namespace BeatSaberMultiplayer
             if (_songTableCell == null)
                 return;
             
-            _selectedSong = SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(info.levelId));
+            _selectedSong = _beatmapLevelsModel.allLoadedBeatmapLevelPackCollection.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(info.levelId));
 
             if (_selectedSong != null)
             {

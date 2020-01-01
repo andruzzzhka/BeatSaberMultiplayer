@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace BeatSaberMultiplayer.Data
 {
@@ -29,7 +30,9 @@ namespace BeatSaberMultiplayer.Data
         {
             originalLevels.Clear();
 
-            foreach (var item in SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).Where(y => !(y is CustomPreviewBeatmapLevel)))
+            BeatmapLevelsModel _levelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModel>().First();
+
+            foreach (var item in _levelsModel.ostAndExtrasPackCollection.beatmapLevelPacks.Concat(_levelsModel.dlcBeatmapLevelPackCollection.beatmapLevelPacks).SelectMany(x => x.beatmapLevelCollection.beatmapLevels))
             {
                 originalLevels.Add(item.levelID, BitConverter.ToString(HexConverter.GetStringHashBytes(item.levelID)).Replace("-", ""));
             }
@@ -39,7 +42,7 @@ namespace BeatSaberMultiplayer.Data
         {
             songName = level.songName;
             songSubName = level.songSubName;
-            authorName = level.levelAuthorName;
+            authorName = level.songAuthorName;
             
             key = "";
             if (level is CustomPreviewBeatmapLevel)

@@ -1,0 +1,5 @@
+﻿<horizontal horizontal-fit='PreferredSize'>
+  <page-button dir='Left' click-event='packs-list-table#PageUp' />
+  <list id='packs-list-table' select-cell='pack-selected' list-style='Box' list-direction='Horizontal' visible-cells='5' cell-size='27' list-height='36'/>
+  <page-button dir='Right' click-event='packs-list-table#PageDown' />
+</horizontal>

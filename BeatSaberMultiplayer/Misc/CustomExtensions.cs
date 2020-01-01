@@ -103,29 +103,6 @@ namespace BeatSaberMultiplayer.Misc
             return -1;
         }
 
-        public static TextMeshProUGUI CreateLevelParam(Transform parent, Vector2 position, string defaultText = "TEXT", Sprite icon = null, string hintText = "HINT")
-        {
-            RectTransform copy = (RectTransform)GameObject.Instantiate(Resources.FindObjectsOfTypeAll<LevelParamsPanel>().First().transform.GetChild(0), parent);
-
-            copy.anchorMin = new Vector2(0f, 0f);
-            copy.anchorMax = new Vector2(0f, 0f);
-            copy.anchoredPosition = position;
-
-            TextMeshProUGUI paramText = copy.GetComponentInChildren<TextMeshProUGUI>();
-            paramText.rectTransform.anchoredPosition = new Vector2(4f, 0f);
-            paramText.alignment = TextAlignmentOptions.CaplineLeft;
-            paramText.text = defaultText;
-
-            UnityEngine.UI.Image image = copy.GetComponentInChildren<UnityEngine.UI.Image>();
-            image.rectTransform.anchoredPosition = new Vector2(-4f, 0f);
-            image.rectTransform.sizeDelta = new Vector2(5f, 5f);
-            image.sprite = icon;
-
-            copy.GetComponent<HoverHint>().text = hintText;
-
-            return paramText;
-        }
-
         public static TextMeshPro CreateWorldText(Transform parent, string text="TEXT")
         {
             GameObject textMeshGO = new GameObject("CustomUIText");

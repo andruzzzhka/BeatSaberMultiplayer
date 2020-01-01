@@ -39,7 +39,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         [UIValue("song-selection-type")]
         private SongSelectionType _songSelectionType;
         [UIValue("max-players")]
-        private int _maxPlayers = 0;
+        private int _maxPlayers = 16;
         [UIValue("results-show-time")]
         private int _resultsShowTime = 15;
         [UIValue("use-password")]

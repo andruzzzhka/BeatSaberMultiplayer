@@ -2,6 +2,7 @@ using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.OverriddenClasses;
 using BeatSaberMultiplayer.VOIP;
+using BS_Utils.Utilities;
 using System;
 using System.IO;
 using System.Linq;

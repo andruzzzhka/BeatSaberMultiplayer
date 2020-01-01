@@ -25,8 +25,14 @@ namespace BeatSaberMultiplayer.Data
         public bool songSelected;
         
         public LevelOptionsInfo startLevelInfo;
-        public SongInfo selectedSong;
-        
+        public SongInfo selectedSong
+        {
+            get { return _selectedSong; }
+            set { _selectedSong = value; songSelected = (selectedSong != null && roomState != RoomState.SelectingSong); }
+        }
+        private SongInfo _selectedSong;
+
+
         public RoomInfo()
         {
 
@@ -70,8 +76,6 @@ namespace BeatSaberMultiplayer.Data
 
         public void AddToMessage(NetOutgoingMessage msg)
         {
-            songSelected = selectedSong != null && roomState != RoomState.SelectingSong;
-
             msg.Write(roomId);
             msg.Write(name);
             msg.Write(usePassword);
@@ -117,6 +121,18 @@ namespace BeatSaberMultiplayer.Data
             hashCode = hashCode * -1521134295 + players.GetHashCode();
             hashCode = hashCode * -1521134295 + maxPlayers.GetHashCode();
             return hashCode;
+        }
+
+        public static string StateToActivityState(RoomState state)
+        {
+            switch (state)
+            {
+                case RoomState.InGame: return "Playing";
+                case RoomState.Preparing: return "Preparing";
+                case RoomState.Results: return "Viewing results";
+                case RoomState.SelectingSong: return "Selecting song";
+            }
+            return "Unknown";
         }
     }
 

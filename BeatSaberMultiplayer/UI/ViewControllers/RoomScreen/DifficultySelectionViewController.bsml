@@ -1,0 +1,4 @@
+﻿<vertical horizontal-fit="PreferredSize" padding="10">
+  <vertical id="level-details" preferred-width="90"/>
+  <text id="players-ready-text" text="0/0 players ready" align="Center"/>
+</vertical>

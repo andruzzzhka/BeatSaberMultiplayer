@@ -9,6 +9,7 @@ using CustomUI.BeatSaber;
 using System.Threading;
 using HMUI;
 using Image = UnityEngine.UI.Image;
+using BS_Utils.Utilities;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 {
@@ -31,6 +32,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
         Button _skipButton;
         TextMeshProUGUI _skipText;
+
+        BeatmapLevelsModel _beatmapLevelsModel;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -100,6 +103,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
                 _skipText.rectTransform.sizeDelta = new Vector2(0f, 0f);
                 _skipText.overflowMode = TextOverflowModes.Overflow;
                 _skipText.enableWordWrapping = false;
+
+                _beatmapLevelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModel>().First();
             }
             _progressBarRect.gameObject.SetActive(false);
             SetSkipState(false);
@@ -111,7 +116,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RadioScreen
 
             if (_currentSongCell != null)
             {
-                IPreviewBeatmapLevel level = SongCore.Loader.CustomBeatmapLevelPackCollectionSO.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(songInfo.levelId));
+                IPreviewBeatmapLevel level = _beatmapLevelsModel.allLoadedBeatmapLevelPackCollection.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(songInfo.levelId));
                 if (level == null)
                 {
                     _currentSongCell.SetText(_currentSongInfo.songName);

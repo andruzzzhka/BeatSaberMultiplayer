@@ -151,7 +151,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public static async void HashAllAvatars()
         {
-            if (cachedAvatars.Count != CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count)
+            if (cachedAvatars.Count != CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count && !isCalculatingHashes)
             {
                 isCalculatingHashes = true;
                 Plugin.log.Debug($"Hashing all avatars... {cachedAvatars.Count} of {CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count} avatars hashed");

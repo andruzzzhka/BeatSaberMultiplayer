@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;LOCALRADIO</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;LOCALRADIO; UNITY_STANDALONE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -26,7 +26,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;UNITY_STANDALONE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AvatarController.cs" />
@@ -41,6 +41,13 @@
     <Compile Include="Data\RoomSettings.cs" />
     <Compile Include="Data\SongInfo.cs" />
     <Compile Include="Data\LevelOptionsInfo.cs" />
+    <Compile Include="DIscordSDK\ActivityManager.cs" />
+    <Compile Include="DIscordSDK\Constants.cs" />
+    <Compile Include="DIscordSDK\Core.cs" />
+    <Compile Include="DIscordSDK\ImageManager.cs" />
+    <Compile Include="DIscordSDK\LobbyManager.cs" />
+    <Compile Include="DIscordSDK\StorageManager.cs" />
+    <Compile Include="DIscordSDK\StoreManager.cs" />
     <Compile Include="InGameOnlineController.cs" />
     <Compile Include="Misc\ControllersHelper.cs" />
     <Compile Include="Misc\ScrappedData.cs" />
@@ -52,7 +59,6 @@
     <Compile Include="Misc\HexConverter.cs" />
     <Compile Include="Misc\LoadScripts.cs" />
     <Compile Include="Misc\PresetsCollection.cs" />
-    <Compile Include="Misc\ReflectionUtil.cs" />
     <Compile Include="Misc\Serialization.cs" />
     <Compile Include="Misc\SongDownloader.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
@@ -81,12 +87,15 @@
     <Compile Include="UI\ViewControllers\CreateRoomScreen\PresetsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\MainRoomCreationViewController.cs" />
+    <Compile Include="UI\ViewControllers\DiscordScreens\DiscordInviteResponseView.cs" />
+    <Compile Include="UI\ViewControllers\DiscordScreens\DiscordAskToJoinView.cs" />
     <Compile Include="UI\ViewControllers\ModeSelectionScreen\ModeSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RadioScreen\InGameScreenViewController.cs" />
     <Compile Include="UI\ViewControllers\RadioScreen\ResultsScreenViewController.cs" />
     <Compile Include="UI\ViewControllers\RadioScreen\NextSongScreenViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\LeaderboardViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\LevelPacksUIViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\QuickSettingsViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\PlayerManagementViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
@@ -110,6 +119,9 @@
     <EmbeddedResource Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.bsml">
       <DependentUpon>RoomCreationServerHubsListViewController.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\DiscordScreens\DiscordInviteResponseView.bsml">
+      <DependentUpon>DiscordInviteResponseView.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewControllers\ModeSelectionScreen\ModeSelectionViewController.bsml">
       <DependentUpon>ModeSelectionViewController.cs</DependentUpon>
     </EmbeddedResource>
@@ -126,6 +138,15 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewControllers\RoomScreen\QuickSettingsViewController.bsml">
       <DependentUpon>QuickSettingsViewController.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\LevelPacksUIViewController.bsml">
+      <DependentUpon>LevelPacksUIViewController.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.bsml">
+      <DependentUpon>DifficultySelectionViewController.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\DiscordScreens\DiscordAskToJoinView.bsml">
+      <DependentUpon>DiscordAskToJoinView.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
