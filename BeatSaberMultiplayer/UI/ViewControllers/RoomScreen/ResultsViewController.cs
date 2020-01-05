@@ -141,6 +141,7 @@ namespace BeatSaberMultiplayer
                 scoreValue.text = "--";
                 rankValue.text = "--";
                 scoreChangeValue.text = "--";
+                scoreChangeValue.color = Color.white;
                 scoreChangeIcon.gameObject.SetActive(false);
 
                 SongDownloader.Instance.RequestSongByLevelID(info.hash, (song) =>

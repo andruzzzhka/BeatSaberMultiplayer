@@ -436,6 +436,7 @@ namespace BeatSaberMultiplayer
 
                         if (_currentScene == _gameSceneName && _loaded)
                         {
+                            playerScores = Enumerable.Repeat(playerScores, 10).SelectMany(x => x).ToList();
                             playerScores.Sort();
                             localPlayerIndex = playerScores.FindIndex((x) => { return x.id == Client.Instance.playerInfo.playerId; });
 
@@ -443,9 +444,27 @@ namespace BeatSaberMultiplayer
                             {
                                 if (_scoreScreen == null)
                                 {
-                                    _scoreScreen = new GameObject("ScoreScreen");
+                                    _scoreScreen = new GameObject("ScoreScreen", typeof(RectTransform));
                                     _scoreScreen.transform.position = new Vector3(0f, 4f, 12f);
                                     _scoreScreen.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+
+                                    var rotator = GameObject.FindObjectOfType<FlyingGameHUDRotation>();
+
+                                    if(rotator != null)
+                                    {
+                                        _scoreScreen.transform.SetParent(rotator.transform, true);
+                                        _scoreScreen.transform.position = new Vector3(0f, 5f, 12f);
+                                    }
+
+                                    var bg = new GameObject("Background", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();
+                                    bg.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+                                    bg.rectTransform.SetParent(_scoreScreen.transform);
+                                    bg.rectTransform.localScale = new Vector3(0.18f, 0.0525f, 1f);
+                                    bg.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                                    bg.rectTransform.anchoredPosition3D = new Vector3(-0.75f, 2.5f, 0.01f);
+                                    bg.sprite = Sprites.whitePixel;
+                                    bg.material = Sprites.NoGlowMat;
+                                    bg.color = new Color(0f, 0f, 0f, 0.5f);
                                 }
 
                                 foreach (var display in _scoreDisplays)

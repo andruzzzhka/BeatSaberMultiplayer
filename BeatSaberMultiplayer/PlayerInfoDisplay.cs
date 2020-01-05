@@ -57,7 +57,7 @@ namespace BeatSaberMultiplayer
             playerScoreText = CustomExtensions.CreateWorldText(transform, "");
             playerScoreText.rectTransform.anchoredPosition = new Vector2(55f, -47.5f);
             playerScoreText.fontSize = 8f;
-            
+
             playerSpeakerIcon = new GameObject("Player Speaker Icon", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();
             playerSpeakerIcon.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
             playerSpeakerIcon.rectTransform.SetParent(transform);
