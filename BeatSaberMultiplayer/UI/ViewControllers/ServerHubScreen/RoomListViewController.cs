@@ -2,17 +2,14 @@
 using BeatSaberMarkupLanguage.Components;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
-using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using HMUI;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static BeatSaberMarkupLanguage.Components.CustomListTableData;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
 {

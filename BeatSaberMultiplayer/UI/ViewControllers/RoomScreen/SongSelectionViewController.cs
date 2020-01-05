@@ -6,13 +6,10 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Image = UnityEngine.UI.Image;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
-using System.Threading;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components;
-using BeatSaberMarkupLanguage;
 using BS_Utils.Utilities;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
@@ -24,7 +21,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.RoomScreen.SongSelectionViewController";
 
         public event Action<IPreviewBeatmapLevel> SongSelected;
-        public event Action SearchPressed;
+        public event Action<string> SearchPressed;
         public event Action<SortMode> SortPressed;
 
         [UIComponent("host-selects-song-text")]
@@ -40,8 +37,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         [UIComponent("sort-btns-rect")]
         RectTransform _sortBtnsRect;
 
+        [UIComponent("search-keyboard")]
+        ModalKeyboard _searchKeyboard;
+
         [UIComponent("diff-sort-btn")]
         Button _diffButton;
+
+        [UIValue("search-value")]
+        string searchValue;
 
         private LevelListTableCell songListTableCellInstance;
         private PlayerDataModelSO _playerDataModel;
@@ -128,8 +131,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         [UIAction("search-btn-pressed")]
         public void SearchButtonPressed()
         {
-            SelectTopButtons(TopButtonsState.Search);
-            SearchPressed?.Invoke();
+            SelectTopButtons(TopButtonsState.Select);
+            _searchKeyboard.modalView.Show(true);
+        }
+
+        [UIAction("search-pressed")]
+        public void SearchStartPressed(string value)
+        {
+            SelectTopButtons(TopButtonsState.Select);
+            _searchKeyboard.modalView.Hide(true);
+            SearchPressed?.Invoke(value);
         }
 
         [UIAction("def-sort-btn-pressed")]

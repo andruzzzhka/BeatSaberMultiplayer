@@ -151,6 +151,7 @@
     <EmbeddedResource Include="UI\ViewControllers\RoomScreen\PlayerManagementViewController.bsml">
       <DependentUpon>PlayerManagementViewController.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\RoomSettingsView.bsml" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\LockedRoom.png" />

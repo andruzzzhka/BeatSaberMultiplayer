@@ -1,12 +1,10 @@
 ﻿using HMUI;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine.UI;
 using BeatSaberMultiplayer.Data;
 using UnityEngine;
 using TMPro;
-using System.Collections;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components;

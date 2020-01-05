@@ -1,12 +1,7 @@
 ﻿using BeatSaberMarkupLanguage;
 using BeatSaberMultiplayer.Misc;
-using BeatSaberMultiplayer.UI.ViewControllers;
-using BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen;
-using BS_Utils.Utilities;
 using HMUI;
 using System;
-using System.Linq;
-using UnityEngine;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {

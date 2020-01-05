@@ -1,5 +1,4 @@
 ﻿using BeatSaberMultiplayer.Data;
-using BeatSaberMultiplayer.UI.ViewControllers;
 using System;
 using System.Collections;
 using System.Collections.Generic;

@@ -1,19 +1,12 @@
 ﻿using BeatSaberMarkupLanguage;
-using BeatSaberMarkupLanguage.ViewControllers;
-using BeatSaberMultiplayer.Misc;
-using BeatSaberMultiplayer.UI.UIElements;
 using HMUI;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
-    class QuickSettingsViewController : BSMLViewController
+    class QuickSettingsViewController : ViewController
     {
-        public override string Content => Utilities.GetResourceContent(Assembly.GetAssembly(this.GetType()), "BeatSaberMultiplayer.UI.ViewControllers.RoomScreen.QuickSettingsViewController");
-
         private Settings _settings;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
@@ -21,12 +14,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             if (firstActivation)
             {
                 _settings = new GameObject("Multiplayer Quick Settings").AddComponent<Settings>();
-                BSMLParser.instance.Parse(Content, gameObject, _settings);
+                BSMLParser.instance.Parse(Utilities.GetResourceContent(Assembly.GetAssembly(this.GetType()), "BeatSaberMultiplayer.UI.ViewControllers.RoomScreen.QuickSettingsViewController"), gameObject, _settings);
             }
-
-            didActivate?.Invoke(firstActivation, activationType);
         }
-
-
     }
 }

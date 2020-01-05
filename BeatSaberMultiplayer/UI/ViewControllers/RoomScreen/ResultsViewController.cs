@@ -1,13 +1,10 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
-using BeatSaberMarkupLanguage.Components;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using BS_Utils.Utilities;
 using HMUI;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -18,11 +15,9 @@ using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer
 {
-    class ResultsViewController : HotReloadableViewController
+    class ResultsViewController : BSMLResourceViewController
     {
         public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen.ResultsViewController";
-
-        public override string ContentFilePath => @"C:\Users\andru_000\Source\Repos\BeatSaberMultiplayer\BeatSaberMultiplayer\UI\ViewControllers\RoomScreen\ResultsViewController.bsml";
         
         public IPreviewBeatmapLevel _selectedLevel;
 
@@ -54,16 +49,12 @@ namespace BeatSaberMultiplayer
         public TextMeshProUGUI scoreChangeValue;
         [UIComponent("score-change-icon")]
         public Image scoreChangeIcon;
-        //private TextMeshProUGUI _progressText;
-
-        //private int _lastTime;
 
         private List<LeaderboardTableView.ScoreData> _scoreData = new List<LeaderboardTableView.ScoreData>();
 
         private Texture2D _defaultArtworkTexture;
 
         private BeatmapLevelsModel _beatmapLevelsModel;
-        private PlayerDataModelSO _playerDataModel;
 
         [UIAction("#post-parse")]
         public void SetupViewController()
@@ -80,7 +71,6 @@ namespace BeatSaberMultiplayer
             levelCoverImage.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
 
             _beatmapLevelsModel = Resources.FindObjectsOfTypeAll<BeatmapLevelsModel>().First();
-            _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
 
             _defaultArtworkTexture = Resources.FindObjectsOfTypeAll<Texture2D>().First(x => x.name == "DefaultSongArtwork");
 

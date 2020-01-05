@@ -3,12 +3,9 @@ using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
-using BeatSaberMultiplayer.Misc;
-using BeatSaberMultiplayer.UI.UIElements;
 using BS_Utils.Utilities;
 using HMUI;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -24,11 +21,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         void TransferHostButtonWasPressed(PlayerInfo player);
     }
 
-    class PlayerManagementViewController : HotReloadableViewController, IPlayerManagementButtons
+    class PlayerManagementViewController : BSMLResourceViewController, IPlayerManagementButtons
     {
         public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.RoomScreen.PlayerManagementViewController";
-        
-        public override string ContentFilePath => @"C:\Users\andru_000\Source\Repos\BeatSaberMultiplayer\BeatSaberMultiplayer\UI\ViewControllers\RoomScreen\PlayerManagementViewController.bsml";
 
         public event Action gameplayModifiersChanged;
         public event Action<PlayerInfo> transferHostButtonPressed;

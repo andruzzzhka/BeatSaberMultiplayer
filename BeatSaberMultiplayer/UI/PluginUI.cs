@@ -2,9 +2,7 @@
 using BeatSaberMarkupLanguage.FloatingScreen;
 using BeatSaberMarkupLanguage.Settings;
 using BeatSaberMultiplayer.Data;
-using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
-using BeatSaberMultiplayer.UI.UIElements;
 using BeatSaberMultiplayer.UI.ViewControllers.DiscordScreens;
 using BS_Utils.Gameplay;
 using BS_Utils.Utilities;

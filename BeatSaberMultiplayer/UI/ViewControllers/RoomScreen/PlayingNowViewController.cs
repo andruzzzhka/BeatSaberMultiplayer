@@ -7,7 +7,6 @@ using BeatSaberMultiplayer.Misc;
 using BS_Utils.Utilities;
 using HMUI;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -18,11 +17,9 @@ using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer
 {
-    class PlayingNowViewController : HotReloadableViewController
+    class PlayingNowViewController : BSMLResourceViewController
     {
         public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen.PlayingNowViewController";
-
-        public override string ContentFilePath => @"C:\Users\andru_000\Source\Repos\BeatSaberMultiplayer\BeatSaberMultiplayer\UI\ViewControllers\RoomScreen\PlayingNowViewController.bsml";
 
         public event Action playNowPressed;
 

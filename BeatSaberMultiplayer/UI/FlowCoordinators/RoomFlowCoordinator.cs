@@ -103,12 +103,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _quickSettingsViewController = BeatSaberUI.CreateViewController<QuickSettingsViewController>();
 
                 _roomNavigationController = BeatSaberUI.CreateViewController<RoomNavigationController>();
-
-                //_searchKeyboard = BeatSaberUI.CreateViewController<KeyboardViewController>();
-                //_searchKeyboard.enterPressed = null;
-                //_searchKeyboard.enterPressed += SearchPressed;
-                //_searchKeyboard.backButtonPressed += () => { DismissViewController(_searchKeyboard); };
-                //_searchKeyboard.allowEmptyInput = true;
             }
 
             showBackButton = true;
@@ -419,8 +413,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 roomInfo.roomHost = new PlayerInfo(msg);
                                 Client.Instance.isHost = Client.Instance.playerInfo.Equals(roomInfo.roomHost);
 
-                                Plugin.log.Debug("(1) Is host: "+Client.Instance.isHost);
-
                                 if (Client.Instance.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
                                     return;
 
@@ -687,7 +679,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _songSelectionViewController = BeatSaberUI.CreateViewController<SongSelectionViewController>();
                 _songSelectionViewController.SongSelected += SongSelected;
                 _songSelectionViewController.SortPressed += (sortMode) => { SetSongs(_lastSelectedCollection, sortMode, _lastSearchRequest); };
-                //_songSelectionViewController.SearchPressed += () => { _searchKeyboard.modalView.Show(true, true); _searchKeyboard.SetText(""); };
+                _songSelectionViewController.SearchPressed += (value) => { SetSongs(_lastSelectedCollection, _lastSortMode, value); };
             }
 
 
@@ -728,13 +720,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
 
             if (_songSelectionViewController != null)
-            {
-                /*
-                if(_roomNavigationController.childViewController == _searchKeyboard)
-                {
-                    DismissViewController(_searchKeyboard, null, true);
-                }
-                */
+            {                
                 if (_roomNavigationController.viewControllers.IndexOf(_songSelectionViewController) >= 0)
                 {
                     PopViewControllerFromNavigationController(_roomNavigationController, null, true);
@@ -742,12 +728,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
             SetBottomScreenViewController(null);
-        }
-
-        public void SearchPressed(string input)
-        {
-            //DismissViewController(_searchKeyboard);
-            SetSongs(_lastSelectedCollection, _lastSortMode, input);
         }
 
         public void SetSongs(IAnnotatedBeatmapLevelCollection selectedCollection, SortMode sortMode, string searchRequest)

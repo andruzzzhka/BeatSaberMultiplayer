@@ -1,10 +1,8 @@
 ﻿using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using BS_Utils.Gameplay;
-using BS_Utils.Utilities;
 using Discord;
 using Harmony;
-using HMUI;
 using IPA;
 using System;
 using System.Linq;

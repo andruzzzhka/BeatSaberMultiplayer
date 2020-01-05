@@ -1,7 +1,6 @@
 ﻿using BeatSaberMultiplayer.UI;
 using NSpeex;
 using System;
-using System.IO;
 using UnityEngine;
 
 namespace BeatSaberMultiplayer.VOIP
