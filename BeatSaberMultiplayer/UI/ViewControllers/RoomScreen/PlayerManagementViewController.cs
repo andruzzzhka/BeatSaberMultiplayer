@@ -255,7 +255,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     }
                     else
                     {
-                        buffer.progress = -1f;
+                        buffer.progress = -10f;
                     }
                 }
                 index++;

@@ -11,7 +11,7 @@
             <text text='~preset-name' align='MidlineLeft' font-size='4.75'/>
             <text id='preset-room-name-text' text='~preset-room-name' align='MidlineLeft'/>
           </vertical>
-          <image id='bg' tags='hovered' />
+          <raw-image id='bg' tags='hovered' />
         </stack>
       </custom-list>
       <pg-button dir='Down' click-event='presets-list#PageDown'/>

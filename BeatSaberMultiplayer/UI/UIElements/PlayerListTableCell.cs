@@ -20,9 +20,9 @@ namespace BeatSaberMultiplayer.UI.UIElements
                 if (playerInfo == null)
                     return;
 
-                if (value < 0f)
+                if (value < -5f)
                 {
-                    if (_prevProgress != value || value < 0f)
+                    if (_prevProgress != value || value < -5f)
                     {
                         _scoreText.text = "";
                     }
@@ -36,6 +36,25 @@ namespace BeatSaberMultiplayer.UI.UIElements
                     if (_muteButtonEnabled != (!playerInfo.Equals(Client.Instance.playerInfo)))
                     {
                         _muteButtonEnabled = (!playerInfo.Equals(Client.Instance.playerInfo));
+                        _muteButton.gameObject.SetActive(_muteButtonEnabled);
+                    }
+                }
+                else if (value < 0f)
+                {
+                    if (_prevProgress != value || value < 0f)
+                    {
+                        _scoreText.text = "ERROR";
+                    }
+
+                    if (_transferHostButtonEnabled)
+                    {
+                        _transferHostButtonEnabled = false;
+                        _transferHostButton.gameObject.SetActive(_transferHostButtonEnabled);
+                    }
+
+                    if (_muteButtonEnabled)
+                    {
+                        _muteButtonEnabled = false;
                         _muteButton.gameObject.SetActive(_muteButtonEnabled);
                     }
                 }

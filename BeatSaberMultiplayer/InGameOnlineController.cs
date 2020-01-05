@@ -922,10 +922,24 @@ namespace BeatSaberMultiplayer
 
         public void SongFinished(LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers, bool practice)
         {
-            if(Client.Instance.inRadioMode)
+            Plugin.log.Debug("Song finished!");
+
+            SoloFreePlayFlowCoordinator freePlayCoordinator = Resources.FindObjectsOfTypeAll<SoloFreePlayFlowCoordinator>().First();
+
+            PlayerDataModelSO dataModel = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel");
+
+            var playerLevelStats = dataModel.playerData.GetPlayerLevelStatsData(difficultyBeatmap);
+
+            if (Client.Instance.inRoom)
             {
-                PluginUI.instance.radioFlowCoordinator.lastDifficulty = difficultyBeatmap;
-                PluginUI.instance.radioFlowCoordinator.lastResults = levelCompletionResults;
+                PluginUI.instance.roomFlowCoordinator.levelDifficultyBeatmap = difficultyBeatmap;
+                PluginUI.instance.roomFlowCoordinator.levelResults = levelCompletionResults;
+
+
+                PluginUI.instance.roomFlowCoordinator.lastHighscoreValid = playerLevelStats.validScore;
+                PluginUI.instance.roomFlowCoordinator.lastHighscoreForLevel = playerLevelStats.highScore;
+
+                Plugin.log.Debug("Set level results!");
             }
 
             if (Config.Instance.SpectatorMode || Client.disableScoreSubmission || ScoreSubmission.Disabled || ScoreSubmission.ProlongedDisabled || practice)
@@ -985,12 +999,7 @@ namespace BeatSaberMultiplayer
                     return;
                 }
             }
-
-
-            SoloFreePlayFlowCoordinator freePlayCoordinator = Resources.FindObjectsOfTypeAll<SoloFreePlayFlowCoordinator>().First();
-
-            PlayerDataModelSO dataModel = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel");
-
+            
             dataModel.playerData.playerAllOverallStatsData.UpdateSoloFreePlayOverallStatsData(levelCompletionResults, difficultyBeatmap);
             dataModel.Save();
 
@@ -998,8 +1007,6 @@ namespace BeatSaberMultiplayer
             {
                 return;
             }
-
-            PlayerLevelStatsData playerLevelStats = dataModel.playerData.GetPlayerLevelStatsData(difficultyBeatmap);
 
             playerLevelStats.IncreaseNumberOfGameplays();
             if (levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared)

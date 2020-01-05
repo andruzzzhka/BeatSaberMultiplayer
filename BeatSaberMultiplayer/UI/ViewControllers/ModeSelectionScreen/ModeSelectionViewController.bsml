@@ -8,8 +8,8 @@
     <text text='Loading avatars...' font-size='5.5' align='Center' pref-height='8'/>
     <text id='loading-progress-text' text='0 out of 0' font-size='5.5' align='Center' pref-height='8'/>
     <stack child-align='MiddleLeft' horizontal-fit='PreferredSize' child-expand-width='false'>
-      <image id='progress-bar-bg' src='BeatSaberMultiplayer.Assets.WhitePixel.png' pref-width='60' pref-height='6' />
-      <image id='progress-bar-top' src='BeatSaberMultiplayer.Assets.WhitePixel.png' ignore-layout='true' anchor-pos-x='-30' pivot-x='0' />
+      <raw-image id='progress-bar-bg' src='BeatSaberMultiplayer.Assets.WhitePixel.png' pref-width='60' pref-height='6' />
+      <raw-image id='progress-bar-top' src='BeatSaberMultiplayer.Assets.WhitePixel.png' ignore-layout='true' anchor-pos-x='-30' pivot-x='0' />
     </stack>
   </vertical>
 

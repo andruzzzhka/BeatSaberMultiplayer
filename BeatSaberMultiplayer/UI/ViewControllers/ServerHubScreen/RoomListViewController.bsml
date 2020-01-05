@@ -9,13 +9,13 @@
       <custom-list visible-cells='5' cell-size='10' id='rooms-list' contents='rooms' select-cell='room-selected'>
         <stack vertical-fit='Unconstrained'>
           <horizontal child-expand-width='false' vertical-fit='Unconstrained'>
-            <image id='locked-icon' pref-width='10'/>
+            <raw-image id='locked-icon' pref-width='10'/>
             <vertical horizontal-fit='Unconstrained'>
               <text text='~room-name' align='MidlineLeft' font-size='4' />
               <text id='room-state-text' text='~room-state' align='MidlineLeft'/>
             </vertical>
           </horizontal>
-          <image id='bg' tags='hovered' />
+          <raw-image id='bg' tags='hovered' />
         </stack>
       </custom-list>
       <pg-button dir='Down' click-event='rooms-list#PageDown'/>

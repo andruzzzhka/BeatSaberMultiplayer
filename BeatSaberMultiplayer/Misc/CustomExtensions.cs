@@ -43,6 +43,8 @@ namespace BeatSaberMultiplayer.Misc
             else
             {
                 difficultySet = level.beatmapLevelData.difficultyBeatmapSets.FirstOrDefault(x => x.beatmapCharacteristic == characteristic);
+                if(difficultySet == null)
+                    difficultySet = level.beatmapLevelData.difficultyBeatmapSets.FirstOrDefault();
             }
 
             if (difficultySet == null)
@@ -95,9 +97,19 @@ namespace BeatSaberMultiplayer.Misc
 
         public static int FindIndexInArray<T>(this T[] list, T b)
         {
-            for(int i = 0; i < list.Length; i++)
+            for (int i = 0; i < list.Length; i++)
             {
                 if ((list[i] == null && b == null) || (list[i] != null && list[i].Equals(b)))
+                    return i;
+            }
+            return -1;
+        }
+
+        public static int FindIndexInArray<T>(this T[] list, Predicate<T> predicate)
+        {
+            for (int i = 0; i < list.Length; i++)
+            {
+                if (predicate(list[i]))
                     return i;
             }
             return -1;

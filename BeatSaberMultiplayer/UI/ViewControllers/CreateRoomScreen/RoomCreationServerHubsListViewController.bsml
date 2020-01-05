@@ -11,7 +11,7 @@
             <text text='~hub-name' align='MidlineLeft' font-size='4.75'/>
             <text id='hub-state-text' text='~hub-state' align='MidlineLeft'/>
           </vertical>
-          <image id='bg' tags='hovered' />
+          <raw-image id='bg' tags='hovered' />
         </stack>
       </custom-list>
       <pg-button dir='Down' click-event='hubs-list#PageDown'/>

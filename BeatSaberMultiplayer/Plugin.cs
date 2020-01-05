@@ -70,10 +70,10 @@ namespace BeatSaberMultiplayer
             discord = new Discord.Discord(661577830919962645, (UInt64)Discord.CreateFlags.NoRequireDiscord);
 
             discord.SetLogHook(Discord.LogLevel.Debug, DiscordLogCallback);
-            discord.GetActivityManager().RegisterSteam(620980);
 
             var activityManager = discord.GetActivityManager();
 
+            activityManager.RegisterSteam(620980);
             activityManager.OnActivityJoin += OnActivityJoin;
             activityManager.OnActivityJoinRequest += ActivityManager_OnActivityJoinRequest;
             activityManager.OnActivityInvite += ActivityManager_OnActivityInvite;
@@ -142,8 +142,6 @@ namespace BeatSaberMultiplayer
         public void OnUpdate()
         {
             discord?.RunCallbacks();
-            if (Input.GetKeyDown(KeyCode.U))
-                PluginUI.instance.ShowInvite(new User() { Id= 123039658580901888, Username="andruzzzhka", Discriminator="6859" }, new Activity() { Secrets = { Join="127.0.0.1:3700?1#test" } });
         }
 
         public void OnFixedUpdate()

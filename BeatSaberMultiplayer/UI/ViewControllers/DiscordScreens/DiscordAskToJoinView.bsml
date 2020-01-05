@@ -1,8 +1,8 @@
 ﻿<vertical pad="4" horizontal-fit="PreferredSize" vertical-fit="PreferredSize" spacing="2">
-  <text id="title-text" text="{player} wants to join your game!" align="Center" size="6.5"/>
+  <text id="title-text" text="{player} wants to join your game!" align="Center"/>
   <stack horizontal-fit="PreferredSize" vertical-fit="PreferredSize">
     <loading />
-    <image id="player-avatar" preferred-width="29" preferred-height="29"/>
+    <raw-image id="player-avatar" preferred-width="29" preferred-height="29"/>
   </stack>
   <horizontal spacing="2" preferred-width="85">
     <button text="Accept" on-click="accept-pressed" glow-color="#00B140"/>

@@ -94,7 +94,8 @@
     <Compile Include="UI\ViewControllers\RadioScreen\ResultsScreenViewController.cs" />
     <Compile Include="UI\ViewControllers\RadioScreen\NextSongScreenViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
-    <Compile Include="UI\ViewControllers\RoomScreen\LeaderboardViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\PlayingNowViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\ResultsViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\LevelPacksUIViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\QuickSettingsViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\PlayerManagementViewController.cs" />
@@ -125,6 +126,9 @@
     <EmbeddedResource Include="UI\ViewControllers\ModeSelectionScreen\ModeSelectionViewController.bsml">
       <DependentUpon>ModeSelectionViewController.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\ResultsViewController.bsml">
+      <DependentUpon>ResultsViewController.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.bsml">
       <DependentUpon>SongSelectionViewController.cs</DependentUpon>
     </EmbeddedResource>
@@ -147,6 +151,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewControllers\DiscordScreens\DiscordAskToJoinView.bsml">
       <DependentUpon>DiscordAskToJoinView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\PlayingNowViewController.bsml">
+      <DependentUpon>PlayingNowViewController.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

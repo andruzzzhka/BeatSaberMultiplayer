@@ -13,6 +13,7 @@ namespace BeatSaberMultiplayer.Misc
         public string songName;
         public string songSubName;
         public float bpm;
+        public float duration;
         public int downloads;
         public int plays;
         public int upVotes;
@@ -57,6 +58,7 @@ namespace BeatSaberMultiplayer.Misc
             songName = (string)jsonNode["metadata"]["songName"];
             songSubName = (string)jsonNode["metadata"]["songSubName"];
             bpm = (float)jsonNode["metadata"]["bpm"];
+            duration = (float)jsonNode["metadata"]["duration"];
             downloads = (int)jsonNode["stats"]["downloads"];
             plays = (int)jsonNode["stats"]["plays"];
             upVotes = (int)jsonNode["stats"]["upVotes"];

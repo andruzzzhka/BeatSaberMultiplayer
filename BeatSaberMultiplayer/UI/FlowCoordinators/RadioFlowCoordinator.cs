@@ -450,7 +450,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 channelInfo.state = ChannelState.InGame;
                 Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Game;
 
-                IDifficultyBeatmap difficultyBeatmap = level.GetDifficultyBeatmap(characteristic, difficulty, false);
+                IDifficultyBeatmap difficultyBeatmap = level.beatmapLevelData.GetDifficultyBeatmap(characteristic, difficulty);
 
                 Plugin.log.Debug($"Starting song: name={level.songName}, levelId={level.levelID}, difficulty={difficulty}");
 
