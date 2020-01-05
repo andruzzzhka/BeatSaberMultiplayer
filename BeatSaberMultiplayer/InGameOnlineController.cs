@@ -436,7 +436,6 @@ namespace BeatSaberMultiplayer
 
                         if (_currentScene == _gameSceneName && _loaded)
                         {
-                            playerScores = Enumerable.Repeat(playerScores, 10).SelectMany(x => x).ToList();
                             playerScores.Sort();
                             localPlayerIndex = playerScores.FindIndex((x) => { return x.id == Client.Instance.playerInfo.playerId; });
 
