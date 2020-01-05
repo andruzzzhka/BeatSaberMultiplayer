@@ -261,7 +261,7 @@ namespace BeatSaberMultiplayer
                 needToSendUpdates = true;
                 if (Client.Instance.inRadioMode)
                 {
-                    PluginUI.instance.radioFlowCoordinator.ReturnToChannel();
+                    //PluginUI.instance.radioFlowCoordinator.ReturnToChannel();
                 }
                 else
                 {

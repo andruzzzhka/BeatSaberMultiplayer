@@ -419,6 +419,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                 roomInfo.roomHost = new PlayerInfo(msg);
                                 Client.Instance.isHost = Client.Instance.playerInfo.Equals(roomInfo.roomHost);
 
+                                Plugin.log.Debug("(1) Is host: "+Client.Instance.isHost);
+
                                 if (Client.Instance.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
                                     return;
 

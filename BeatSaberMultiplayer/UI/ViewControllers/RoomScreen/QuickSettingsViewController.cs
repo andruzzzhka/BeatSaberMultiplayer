@@ -2,7 +2,6 @@
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.UIElements;
-using CustomUI.BeatSaber;
 using HMUI;
 using System.Collections.Generic;
 using System.Linq;

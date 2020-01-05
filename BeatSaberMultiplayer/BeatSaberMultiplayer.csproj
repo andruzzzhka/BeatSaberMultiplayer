@@ -73,26 +73,19 @@
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpectatingController.cs" />
-    <Compile Include="UI\FlowCoordinators\ChannelSelectionFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\ModeSelectionFlowCoordinator.cs" />
-    <Compile Include="UI\FlowCoordinators\RadioFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\RoomCreationFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\RoomFlowCoordinator.cs" />
     <Compile Include="UI\FlowCoordinators\ServerHubFlowCoordinator.cs" />
     <Compile Include="UI\PluginUI.cs" />
     <Compile Include="UI\Settings.cs" />
-    <Compile Include="UI\UIElements\PlayerListTableCell.cs" />
     <Compile Include="Misc\CustomSettingsHelper.cs" />
-    <Compile Include="UI\ViewControllers\ChannelSelectionScreen\ChannelSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\PresetsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\MainRoomCreationViewController.cs" />
     <Compile Include="UI\ViewControllers\DiscordScreens\DiscordInviteResponseView.cs" />
     <Compile Include="UI\ViewControllers\DiscordScreens\DiscordAskToJoinView.cs" />
     <Compile Include="UI\ViewControllers\ModeSelectionScreen\ModeSelectionViewController.cs" />
-    <Compile Include="UI\ViewControllers\RadioScreen\InGameScreenViewController.cs" />
-    <Compile Include="UI\ViewControllers\RadioScreen\ResultsScreenViewController.cs" />
-    <Compile Include="UI\ViewControllers\RadioScreen\NextSongScreenViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\PlayingNowViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\ResultsViewController.cs" />
@@ -155,6 +148,9 @@
     <EmbeddedResource Include="UI\ViewControllers\RoomScreen\PlayingNowViewController.bsml">
       <DependentUpon>PlayingNowViewController.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\PlayerManagementViewController.bsml">
+      <DependentUpon>PlayerManagementViewController.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\LockedRoom.png" />
@@ -187,12 +183,6 @@
     <Reference Include="0Harmony.1.2.0.1, Version=1.2.0.1, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\0Harmony.1.2.0.1.dll</HintPath>
-      <EmbedInteropTypes>False</EmbedInteropTypes>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="BeatSaberCustomUI, Version=1.7.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Refs\BeatSaberCustomUI.dll</HintPath>
       <EmbedInteropTypes>False</EmbedInteropTypes>
       <Private>False</Private>
     </Reference>

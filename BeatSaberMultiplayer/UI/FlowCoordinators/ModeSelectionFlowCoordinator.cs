@@ -31,7 +31,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 };
                 _selectionViewController.didSelectRadio += () =>
                 {
-                    PresentFlowCoordinator(PluginUI.instance.channelSelectionFlowCoordinator);
+                    //PresentFlowCoordinator(PluginUI.instance.channelSelectionFlowCoordinator);
                 };
             }
 

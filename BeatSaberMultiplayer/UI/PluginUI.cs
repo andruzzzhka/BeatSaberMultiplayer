@@ -35,8 +35,8 @@ namespace BeatSaberMultiplayer.UI
         public RoomCreationFlowCoordinator roomCreationFlowCoordinator;
         public RoomFlowCoordinator roomFlowCoordinator;
         public ModeSelectionFlowCoordinator modeSelectionFlowCoordinator;
-        public ChannelSelectionFlowCoordinator channelSelectionFlowCoordinator;
-        public RadioFlowCoordinator radioFlowCoordinator;
+        //public ChannelSelectionFlowCoordinator channelSelectionFlowCoordinator;
+        //public RadioFlowCoordinator radioFlowCoordinator;
 
         private TextMeshProUGUI _newVersionText;
         private Button _multiplayerButton;
@@ -105,6 +105,7 @@ namespace BeatSaberMultiplayer.UI
                     };
 
                 }
+                /*
                 if (channelSelectionFlowCoordinator == null)
                 {
                     channelSelectionFlowCoordinator = BeatSaberUI.CreateFlowCoordinator<ChannelSelectionFlowCoordinator>();
@@ -112,7 +113,7 @@ namespace BeatSaberMultiplayer.UI
                 if (radioFlowCoordinator == null)
                 {
                     radioFlowCoordinator = BeatSaberUI.CreateFlowCoordinator<RadioFlowCoordinator>();
-                }
+                }*/
 
                 CreateOnlineButton();
 

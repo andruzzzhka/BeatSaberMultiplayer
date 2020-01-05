@@ -1,4 +1,4 @@
-﻿using CustomUI.BeatSaber;
+﻿using BeatSaberMarkupLanguage;
 using HMUI;
 using System;
 using TMPro;

@@ -7,7 +7,6 @@ using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.UIElements;
 using BS_Utils.Gameplay;
-using CustomUI.BeatSaber;
 using System;
 using System.Collections.Generic;
 using TMPro;

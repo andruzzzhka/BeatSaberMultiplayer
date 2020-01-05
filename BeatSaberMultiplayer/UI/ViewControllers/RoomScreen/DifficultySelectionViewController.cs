@@ -415,9 +415,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
             else
             {
-                buttonsRect.gameObject.SetActive(isHost);
                 controlsRect.gameObject.SetActive(_selectedLevel != null);
-                charactertisticControlBlocker.gameObject.SetActive(!isHost && !perPlayerDifficulty);
+                UpdateViewController(isHost, perPlayerDifficulty);
                 loadingRect.gameObject.SetActive(false);
             }
 

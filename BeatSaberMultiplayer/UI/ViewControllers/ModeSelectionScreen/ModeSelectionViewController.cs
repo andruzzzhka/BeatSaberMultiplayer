@@ -51,7 +51,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
             base.DidActivate(firstActivation, activationType);
             if (firstActivation)
             {
-                foreach(string path in _dllPaths)
+                _radioButton.interactable = false;
+
+                foreach (string path in _dllPaths)
                 {
                     if (!File.Exists(path))
                     {

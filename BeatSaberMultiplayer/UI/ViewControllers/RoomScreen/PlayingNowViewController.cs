@@ -1,10 +1,10 @@
-﻿using BeatSaberMarkupLanguage.Attributes;
+﻿using BeatSaberMarkupLanguage;
+using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BS_Utils.Utilities;
-using CustomUI.BeatSaber;
 using HMUI;
 using System;
 using System.Collections;
