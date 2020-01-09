@@ -98,8 +98,7 @@ namespace BeatSaberMultiplayer.UI
                     {
                         Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First().InvokeMethod("DismissFlowCoordinator", modeSelectionFlowCoordinator, null, false);
                         Plugin.discordActivity = default;
-                        Plugin.overrideDiscordActivity = false;
-                        Plugin.discord?.GetActivityManager().ClearActivity((result) => { Plugin.log.Debug("Clear Discord activity result: " + result); });
+                        Plugin.discord?.ClearActivity();
                     };
 
                 }
@@ -157,7 +156,6 @@ namespace BeatSaberMultiplayer.UI
             {
                 try
                 {
-                    Plugin.overrideDiscordActivity = true;
                     SetLobbyDiscordActivity();
 
                     MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
@@ -238,7 +236,7 @@ namespace BeatSaberMultiplayer.UI
                         },
                 Instance = false,
             };
-            Plugin.discord.GetActivityManager().UpdateActivity(Plugin.discordActivity, (result) => { Plugin.log.Debug("Update Discord activity result: " + result); });
+            Plugin.discord.UpdateActivity(Plugin.discordActivity);
         }
 
         IEnumerator CheckVersion()

@@ -1,6 +1,7 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.ViewControllers;
 using Discord;
+using DiscordCore;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,7 +24,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.DiscordScreens
         {
             titleText.text = $"<b>{user.Username}#{user.Discriminator}</b> wants to join your game!";
 
-            var imageManager = Plugin.discord.GetImageManager(); 
+            var imageManager = DiscordClient.GetImageManager(); 
 
             var handle = new ImageHandle()
             {
@@ -45,7 +46,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.DiscordScreens
         [UIAction("accept-pressed")]
         public void AcceptPressed()
         {
-            Plugin.discord.GetActivityManager().SendRequestReply(user.Id, ActivityJoinRequestReply.Yes,
+            DiscordClient.GetActivityManager().SendRequestReply(user.Id, ActivityJoinRequestReply.Yes,
                 (result) =>
                 {
                     Plugin.log.Debug("Accept invite result: " + result);
@@ -58,7 +59,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.DiscordScreens
         [UIAction("decline-pressed")]
         public void DeclinePressed()
         {
-            Plugin.discord.GetActivityManager().SendRequestReply(user.Id, ActivityJoinRequestReply.No,
+            DiscordClient.GetActivityManager().SendRequestReply(user.Id, ActivityJoinRequestReply.No,
                 (result) =>
                 {
                     Plugin.log.Debug("Decline invite result: " + result);
@@ -71,7 +72,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.DiscordScreens
         [UIAction("ignore-pressed")]
         public void IgnorePressed()
         {
-            Plugin.discord.GetActivityManager().SendRequestReply(user.Id, ActivityJoinRequestReply.Ignore,
+            DiscordClient.GetActivityManager().SendRequestReply(user.Id, ActivityJoinRequestReply.Ignore,
                 (result) =>
                 {
                     Plugin.log.Debug("Ignore invite result: " + result);

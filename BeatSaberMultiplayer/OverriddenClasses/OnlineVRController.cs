@@ -13,6 +13,7 @@ namespace BeatSaberMultiplayer
         Quaternion targetRot;
 
         VRPlatformHelper _platformHelper;
+        VRControllerTransformOffset _transformOffset;
 
         public OnlineVRController()
         {
@@ -24,6 +25,7 @@ namespace BeatSaberMultiplayer
             }
 
             _platformHelper = original.GetPrivateField<VRPlatformHelper>("_vrPlatformHelper");
+            _transformOffset = original.GetPrivateField<VRControllerTransformOffset>("_transformOffset");
 
             Destroy(original);
         }
@@ -58,7 +60,10 @@ namespace BeatSaberMultiplayer
         {
             transform.localPosition = InputTracking.GetLocalPosition(node);
             transform.localRotation = InputTracking.GetLocalRotation(node);
-            _platformHelper.AdjustPlatformSpecificControllerTransform(node, transform);
+            if(_transformOffset != null)
+                _platformHelper.AdjustPlatformSpecificControllerTransform(node, transform, _transformOffset.positionOffset, _transformOffset.rotationOffset);
+            else
+                _platformHelper.AdjustPlatformSpecificControllerTransform(node, transform, Vector3.zero, Vector3.zero);
         }
     }
 }

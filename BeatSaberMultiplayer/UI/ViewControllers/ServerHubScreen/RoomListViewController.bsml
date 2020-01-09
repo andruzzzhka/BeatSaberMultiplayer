@@ -1,7 +1,7 @@
 ﻿<stack vertical-fit='Unconstrained'>
   <vertical vertical-fit='Unconstrained'>
     <horizontal horizontal-fit='PreferredSize'>
-      <icon-button id='refresh-btn' on-click='refresh-btn-pressed' icon='BeatSaberMultiplayer.Assets.RefreshIcon.png' stroke-type='small' pad='1'/>
+      <icon-button id='refresh-btn' on-click='refresh-btn-pressed' icon='BeatSaberMultiplayer.Assets.RefreshIcon.png' stroke-type='Clean' pad='1'/>
       <button text='Create room' on-click='create-room-btn-pressed' />
     </horizontal>
     <vertical>

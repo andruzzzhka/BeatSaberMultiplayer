@@ -2,6 +2,7 @@
 using BeatSaberMultiplayer.UI;
 using BS_Utils.Gameplay;
 using Discord;
+using DiscordCore;
 using Harmony;
 using IPA;
 using System;
@@ -16,14 +17,13 @@ namespace BeatSaberMultiplayer
     {
         public static Plugin instance;
         public static IPA.Logging.Logger log;
-        public static Discord.Discord discord;
+        public static DiscordInstance discord;
         public static Discord.Activity discordActivity;
-        public static bool overrideDiscordActivity;
 
         private static bool joinAfterRestart;
         private static string joinSecret;
 
-        public void Init(object nullObject, IPA.Logging.Logger logger)
+        public void Init(IPA.Logging.Logger logger)
         {
             log = logger;
         }
@@ -48,7 +48,7 @@ namespace BeatSaberMultiplayer
             }
             catch (Exception e)
             {
-                log.Warn("Unable to load presets! Exception: "+e);
+                log.Warn("Unable to load presets! Exception: " + e);
             }
 
             Sprites.ConvertSprites();
@@ -65,16 +65,11 @@ namespace BeatSaberMultiplayer
                 Plugin.log.Error("Unable to patch assembly! Exception: " + e);
             }
 
-            discord = new Discord.Discord(661577830919962645, (UInt64)Discord.CreateFlags.NoRequireDiscord);
+            discord = DiscordManager.Instance.CreateInstance(new DiscordSettings() { modId = "BeatSaberMultiplayer", modName = "Beat Saber Multiplayer", modIcon = Sprites.onlineIcon, handleInvites = true, appId = 661577830919962645 });
 
-            discord.SetLogHook(Discord.LogLevel.Debug, DiscordLogCallback);
-
-            var activityManager = discord.GetActivityManager();
-
-            activityManager.RegisterSteam(620980);
-            activityManager.OnActivityJoin += OnActivityJoin;
-            activityManager.OnActivityJoinRequest += ActivityManager_OnActivityJoinRequest;
-            activityManager.OnActivityInvite += ActivityManager_OnActivityInvite;
+            discord.OnActivityJoin += OnActivityJoin;
+            discord.OnActivityJoinRequest += ActivityManager_OnActivityJoinRequest;
+            discord.OnActivityInvite += ActivityManager_OnActivityInvite;
         }
 
         private void ActivityManager_OnActivityInvite(ActivityActionType type, ref User user, ref Activity activity)
@@ -139,7 +134,6 @@ namespace BeatSaberMultiplayer
 
         public void OnUpdate()
         {
-            discord?.RunCallbacks();
         }
 
         public void OnFixedUpdate()

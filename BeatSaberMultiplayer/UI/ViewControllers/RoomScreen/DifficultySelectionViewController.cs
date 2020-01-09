@@ -261,13 +261,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         private async void SetContent(IBeatmapLevel level)
         {
-            if (level.beatmapCharacteristics.Contains(_playerDataModel.playerData.lastSelectedBeatmapCharacteristic))
+            if (level.beatmapLevelData.difficultyBeatmapSets.Any(x => x.beatmapCharacteristic == _playerDataModel.playerData.lastSelectedBeatmapCharacteristic))
             {
                 _selectedDifficultyBeatmap = level.GetDifficultyBeatmap(_playerDataModel.playerData.lastSelectedBeatmapCharacteristic, _playerDataModel.playerData.lastSelectedBeatmapDifficulty);
             }
-            else if (level.beatmapCharacteristics.Length > 0)
+            else if (level.beatmapLevelData.difficultyBeatmapSets.Length > 0)
             {
-                _selectedDifficultyBeatmap = level.GetDifficultyBeatmap(level.beatmapCharacteristics[0], _playerDataModel.playerData.lastSelectedBeatmapDifficulty);
+                _selectedDifficultyBeatmap = level.GetDifficultyBeatmap(level.beatmapLevelData.difficultyBeatmapSets[0].beatmapCharacteristic, _playerDataModel.playerData.lastSelectedBeatmapDifficulty);
             }
             else
                 Plugin.log.Critical("Unable to set level! No beatmap characteristics found!");

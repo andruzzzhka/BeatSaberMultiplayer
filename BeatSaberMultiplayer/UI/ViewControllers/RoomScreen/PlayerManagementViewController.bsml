@@ -12,8 +12,8 @@
             <text id='player-name' align='MidlineLeft' font-size='4' size-delta-x='50' />
           </horizontal>
           <horizontal id='control-buttons' child-expand-width='false' child-control-width='false' spacing='2'>
-            <button id='pass-host-button' text='PASS&#10;&#13;HOST' stroke-type='small' font-size='3' word-wrapping='false' pref-height='5.75' pref-width='6' />
-            <button id='mute-button' text='MUTE' stroke-type='small' font-size='3.75' word-wrapping='false' pref-height='5.75' size-delta-x='6'  pref-width='6'/>
+            <button id='pass-host-button' text='PASS&#10;&#13;HOST' stroke-type='Clean' font-size='3' word-wrapping='false' pref-height='5.75' pref-width='6' />
+            <button id='mute-button' text='MUTE' stroke-type='Clean' font-size='3.75' word-wrapping='false' pref-height='5.75' size-delta-x='6'  pref-width='6'/>
           </horizontal>
           <text id='progress-text' text='DOWNLOADED' />
         </horizontal>

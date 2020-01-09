@@ -1,6 +1,7 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.ViewControllers;
 using Discord;
+using DiscordCore;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,7 +25,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.DiscordScreens
         {
             titleText.text = $"<b>{user.Username}#{user.Discriminator}</b> invited you to play! ({activity.Party.Size.CurrentSize}/{activity.Party.Size.MaxSize} players)";
 
-            var imageManager = Plugin.discord.GetImageManager(); 
+            var imageManager = DiscordClient.GetImageManager(); 
 
             var handle = new ImageHandle()
             {

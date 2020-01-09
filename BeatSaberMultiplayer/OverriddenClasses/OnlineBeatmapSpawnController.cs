@@ -73,7 +73,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
             if (_beatmapObjectCallbackController != null)
             {
-                _beatmapObjectCallbackId = _beatmapObjectCallbackController.AddBeatmapObjectCallback(new BeatmapObjectCallbackController.BeatmapObjectCallback(BeatmapObjectSpawnCallback), _spawnAheadTime);
+                _beatmapObjectCallbackId = _beatmapObjectCallbackController.AddBeatmapObjectCallback(new BeatmapObjectCallbackController.BeatmapObjectCallback(SpawnBeatmapObject), _spawnAheadTime);
             }
 
             _localPlayer = FindObjectsOfType<PlayerController>().First(x => !(x is OnlinePlayerController));
@@ -87,7 +87,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             _activeObstacles = new List<ObstacleController>();
         }
 
-        public override void BeatmapObjectSpawnCallback(BeatmapObjectData beatmapObjectData)
+        public override void SpawnBeatmapObject(BeatmapObjectData beatmapObjectData)
         {
             if (_disableSpawning)
             {

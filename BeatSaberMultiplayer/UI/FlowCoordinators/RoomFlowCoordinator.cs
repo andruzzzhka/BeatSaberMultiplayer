@@ -1258,7 +1258,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 Instance = true,
             };
 
-            Plugin.discord?.GetActivityManager().UpdateActivity(Plugin.discordActivity, (result) => { Plugin.log.Debug("Update Discord activity result: " + result); });
+            Plugin.discord?.UpdateActivity(Plugin.discordActivity);
         }
 
         private string GetActivityDetails(bool includeAuthorName)

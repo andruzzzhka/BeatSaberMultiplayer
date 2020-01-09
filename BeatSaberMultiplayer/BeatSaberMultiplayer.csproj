@@ -41,13 +41,6 @@
     <Compile Include="Data\RoomSettings.cs" />
     <Compile Include="Data\SongInfo.cs" />
     <Compile Include="Data\LevelOptionsInfo.cs" />
-    <Compile Include="DIscordSDK\ActivityManager.cs" />
-    <Compile Include="DIscordSDK\Constants.cs" />
-    <Compile Include="DIscordSDK\Core.cs" />
-    <Compile Include="DIscordSDK\ImageManager.cs" />
-    <Compile Include="DIscordSDK\LobbyManager.cs" />
-    <Compile Include="DIscordSDK\StorageManager.cs" />
-    <Compile Include="DIscordSDK\StoreManager.cs" />
     <Compile Include="InGameOnlineController.cs" />
     <Compile Include="Misc\ControllersHelper.cs" />
     <Compile Include="Misc\ScrappedData.cs" />
@@ -205,6 +198,10 @@
       <EmbedInteropTypes>False</EmbedInteropTypes>
       <Private>False</Private>
     </Reference>
+    <Reference Include="DiscordCore, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\DiscordCore.dll</HintPath>
+    </Reference>
     <Reference Include="HMLib, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\HMLib.dll</HintPath>
@@ -271,11 +268,9 @@
       <EmbedInteropTypes>False</EmbedInteropTypes>
       <Private>False</Private>
     </Reference>
-    <Reference Include="SongCore, Version=2.7.2.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SongCore, Version=2.7.4.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Refs\SongCore.dll</HintPath>
-      <EmbedInteropTypes>False</EmbedInteropTypes>
-      <Private>False</Private>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Beat Saber\Plugins\SongCore.dll</HintPath>
     </Reference>
     <Reference Include="SteamVR, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
