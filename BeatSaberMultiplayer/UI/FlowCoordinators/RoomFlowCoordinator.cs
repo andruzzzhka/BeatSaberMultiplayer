@@ -480,10 +480,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             break;
                         case CommandType.PlayerReady:
                             {
+
                                 int playersReady = msg.ReadInt32();
                                 int playersTotal = msg.ReadInt32();
 
-                                if (roomInfo.roomState == RoomState.Preparing && _difficultySelectionViewController != null)
+                                if (_difficultySelectionViewController != null)
                                 {
                                     _difficultySelectionViewController.SetPlayersReady(playersReady, playersTotal);
                                 }

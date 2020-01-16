@@ -10,7 +10,8 @@ using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components;
-using BS_Utils.Utilities;
+using IPA.Utilities;
+using BeatSaberMarkupLanguage.Parser;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
@@ -23,6 +24,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public event Action<IPreviewBeatmapLevel> SongSelected;
         public event Action<string> SearchPressed;
         public event Action<SortMode> SortPressed;
+
+        [UIParams]
+        BSMLParserParams _parserParams;
 
         [UIComponent("host-selects-song-text")]
         TextMeshProUGUI _hostIsSelectingSongText;
@@ -200,44 +204,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         [UIAction("fast-scroll-down-pressed")]
         private void FastScrollDown()
         {
-            TableViewScroller scroller = _songsTableView.tableView.GetPrivateField<TableViewScroller>("_scroller");
-
-            float maxPos = (float)_songsTableView.tableView.numberOfCells * _songsTableView.tableView.cellSize - _songsTableView.tableView.scrollRectTransform.rect.height;
-
-            float targetPosition = scroller.position + Mathf.Max(1f, GetNumberOfVisibleCells(_songsTableView.tableView) - 1f) * _songsTableView.tableView.cellSize * 5;
-
-            if (targetPosition > maxPos)
-            {
-                targetPosition = maxPos;
-            }
-
-            scroller.SetPrivateField("_targetPosition", Mathf.Round(targetPosition / _songsTableView.tableView.cellSize) * _songsTableView.tableView.cellSize);
-
-            scroller.enabled = true;
-            _songsTableView.tableView.enabled = true;
+            for(int i = 0; i < 5; i++)
+                _parserParams.EmitEvent("song-list#PageDown");
         }
 
         [UIAction("fast-scroll-up-pressed")]
         private void FastScrollUp()
         {
-            TableViewScroller scroller = _songsTableView.tableView.GetPrivateField<TableViewScroller>("_scroller");
-            
-            float targetPosition = scroller.position - Mathf.Max(1f, GetNumberOfVisibleCells(_songsTableView.tableView) - 1f) * _songsTableView.tableView.cellSize * 5;
-
-            if (targetPosition < 0f)
-            {
-                targetPosition = 0f;
-            }
-
-            scroller.SetPrivateField("_targetPosition", Mathf.Round(targetPosition / _songsTableView.tableView.cellSize) * _songsTableView.tableView.cellSize);
-
-            scroller.enabled = true;
-            _songsTableView.tableView.enabled = true;
-        }
-
-        private float GetNumberOfVisibleCells(TableView tableView)
-        {
-            return (float)Mathf.CeilToInt(((tableView.tableType == TableView.TableType.Vertical) ? tableView.scrollRectTransform.rect.height : tableView.scrollRectTransform.rect.width) / tableView.cellSize);
+            for (int i = 0; i < 5; i++)
+                _parserParams.EmitEvent("song-list#PageUp");
         }
 
     }

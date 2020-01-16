@@ -33,13 +33,25 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
             owner = newOwner;
 
+            _beatmapObjectCallbackController = callbackController;
+            onlineSyncController = syncController;
+
+            _localPlayer = FindObjectsOfType<PlayerController>().First(x => !(x is OnlinePlayerController));
+            _localSyncController = FindObjectsOfType<AudioTimeSyncController>().First(x => !(x is OnlineAudioTimeController));
+
+            _activeNotes = new List<NoteController>();
+            _activeObstacles = new List<ObstacleController>();
+        }
+
+        public override void Start()
+        {
             try
             {
                 if (BS_Utils.Plugin.LevelData.IsSet)
                 {
                     LevelOptionsInfo levelInfo = owner.playerInfo.updateInfo.playerLevelOptions;
                     IDifficultyBeatmap diffBeatmap = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.level.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic.serializedName == owner.playerInfo.updateInfo.playerLevelOptions.characteristicName).difficultyBeatmaps.First(x => x.difficulty == owner.playerInfo.updateInfo.playerLevelOptions.difficulty);
-                    
+
                     _beatsPerMinute = diffBeatmap.level.beatsPerMinute;
                     _noteLinesCount = diffBeatmap.beatmapData.beatmapLinesData.Length;
                     _noteJumpMovementSpeed = diffBeatmap.noteJumpMovementSpeed;
@@ -59,13 +71,11 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     _jumpDistance = _noteJumpMovementSpeed * num * _halfJumpDurationInBeats * 2f;
                     _spawnAheadTime = _moveDistance / _moveSpeed + _jumpDistance * 0.5f / _noteJumpMovementSpeed;
                 }
-            }catch(Exception e)
-            {
-                Plugin.log.Warn("Unable to update beatmap data! Exception: "+e);
             }
-
-            _beatmapObjectCallbackController = callbackController;
-            onlineSyncController = syncController;
+            catch (Exception e)
+            {
+                Plugin.log.Warn("Unable to update beatmap data! Exception: " + e);
+            }
 
             if (_beatmapObjectCallbackController != null)
             {
@@ -74,7 +84,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     _beatmapObjectCallbackController.RemoveBeatmapObjectCallback(_beatmapObjectCallbackId);
                 }
                 _beatmapObjectCallbackId = _beatmapObjectCallbackController.AddBeatmapObjectCallback(new BeatmapObjectCallbackController.BeatmapObjectCallback(HandleBeatmapObjectCallback), _spawnAheadTime);
-                
+
                 if (_eventCallbackId != -1)
                 {
                     _beatmapObjectCallbackController.RemoveBeatmapEventCallback(_eventCallbackId);
@@ -82,20 +92,9 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 _beatmapObjectCallbackController.callbacksForThisFrameWereProcessedEvent += HandleCallbacksForThisFrameWereProcessed;
             }
 
-            _localPlayer = FindObjectsOfType<PlayerController>().First(x => !(x is OnlinePlayerController));
-            _localSyncController = FindObjectsOfType<AudioTimeSyncController>().First(x => !(x is OnlineAudioTimeController));
-
             NoteCutEffectSpawner cutEffectSpawner = FindObjectOfType<NoteCutEffectSpawner>();
 
             (this as BeatmapObjectSpawnController).noteWasCutEvent += (sender, controller, cutInfo) => { if(cutInfo.allIsOK) cutEffectSpawner.HandleNoteWasCutEvent(sender, controller, cutInfo); };
-
-            _activeNotes = new List<NoteController>();
-            _activeObstacles = new List<ObstacleController>();
-        }
-
-        public override void Start()
-        {
-
         }
 
         public override void SpawnBeatmapObject(BeatmapObjectData beatmapObjectData)

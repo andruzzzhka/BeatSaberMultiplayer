@@ -8,7 +8,7 @@
       <horizontal id='sort-btns-rect' horizontal-fit='PreferredSize'>
         <button text='Default' on-click='def-sort-btn-pressed' />
         <button text='Newest' on-click='new-sort-btn-pressed' />
-        <button text='Difficulty' on-click='diff-sort-btn-pressed' />
+        <button id='diff-sort-btn' text='Difficulty' on-click='diff-sort-btn-pressed' />
       </horizontal>
     </stack>
     <vertical>

@@ -18,7 +18,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
     class MultiplayerResultsViewController : BSMLResourceViewController
     {
         public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.RoomScreen.MultiplayerResultsViewController";
-        
+
         public IPreviewBeatmapLevel _selectedLevel;
 
         [UIComponent("level-details-rect")]

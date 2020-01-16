@@ -45,9 +45,9 @@
       <stack id="controls-rect" pref-height="22.5">
         <bg bg="round-rect-panel" >
           <icon-segments id="characteristic-control" select-cell="characteristic-selected" size-delta-y="8" anchor-pos-y="-2"/>
-          <raw-image id="characteristic-control-blocker" size-delta-x="95" size-delta-y="10" anchor-pos-y="5.5"/>
+          <raw-image id="characteristic-control-blocker" size-delta-x="95" size-delta-y="11" anchor-pos-y="5.5"/>
           <text-segments id="difficulty-control" select-cell="difficulty-selected" child-expand-width="true" size-delta-x="-8" size-delta-y="8" anchor-pos-y="-12"/>
-          <raw-image id="difficulty-control-blocker" size-delta-x="95" size-delta-y="10" anchor-pos-y="-5.5"/>
+          <raw-image id="difficulty-control-blocker" size-delta-x="95" size-delta-y="11" anchor-pos-y="-5.5"/>
         </bg>
       </stack>
 
