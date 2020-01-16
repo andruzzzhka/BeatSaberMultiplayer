@@ -66,11 +66,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         [UIComponent("controls-rect")]
         public RectTransform controlsRect;
         [UIComponent("characteristic-control-blocker")]
-        public RectTransform charactertisticControlBlocker;
+        public RawImage charactertisticControlBlocker;
         [UIComponent("characteristic-control")]
         public IconSegmentedControl characteristicControl;
         [UIComponent("difficulty-control-blocker")]
-        public RectTransform difficultyControlBlocker;
+        public RawImage difficultyControlBlocker;
         [UIComponent("difficulty-control")]
         public TextSegmentedControl difficultyControl;
 
@@ -136,6 +136,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             progressBarBG.color = new Color(1f, 1f, 1f, 0.2f);
             progressBarTop.color = new Color(1f, 1f, 1f, 1f);
+
+            charactertisticControlBlocker.color = new Color(1f, 1f, 1f, 0f);
+            difficultyControlBlocker.color = new Color(1f, 1f, 1f, 0f);
 
             cancellationToken = new CancellationTokenSource();
 

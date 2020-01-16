@@ -81,7 +81,7 @@
     <Compile Include="UI\ViewControllers\ModeSelectionScreen\ModeSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\DifficultySelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\PlayingNowViewController.cs" />
-    <Compile Include="UI\ViewControllers\RoomScreen\ResultsViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\MultiplayerResultsViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\LevelPacksUIViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\QuickSettingsViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\PlayerManagementViewController.cs" />
@@ -112,8 +112,8 @@
     <EmbeddedResource Include="UI\ViewControllers\ModeSelectionScreen\ModeSelectionViewController.bsml">
       <DependentUpon>ModeSelectionViewController.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\ResultsViewController.bsml">
-      <DependentUpon>ResultsViewController.cs</DependentUpon>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\MultiplayerResultsViewController.bsml">
+      <DependentUpon>MultiplayerResultsViewController.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.bsml">
       <DependentUpon>SongSelectionViewController.cs</DependentUpon>

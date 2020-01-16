@@ -51,7 +51,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         ModalKeyboard _searchKeyboard;
         SongSelectionViewController _songSelectionViewController;
         DifficultySelectionViewController _difficultySelectionViewController;
-        ResultsViewController _resultsViewController;
+        MultiplayerResultsViewController _resultsViewController;
         PlayingNowViewController _playingNowViewController;
         LevelPacksUIViewController _levelPacksViewController;
 
@@ -1004,7 +1004,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             if (_resultsViewController == null)
             {
-                _resultsViewController = BeatSaberUI.CreateViewController<ResultsViewController>();
+                _resultsViewController = BeatSaberUI.CreateViewController<MultiplayerResultsViewController>();
             }
             if (_roomNavigationController.viewControllers.IndexOf(_resultsViewController) < 0)
             {

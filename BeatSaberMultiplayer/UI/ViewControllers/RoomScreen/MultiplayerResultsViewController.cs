@@ -13,11 +13,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using Image = UnityEngine.UI.Image;
 
-namespace BeatSaberMultiplayer
+namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
-    class ResultsViewController : BSMLResourceViewController
+    class MultiplayerResultsViewController : BSMLResourceViewController
     {
-        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen.ResultsViewController";
+        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.RoomScreen.MultiplayerResultsViewController";
         
         public IPreviewBeatmapLevel _selectedLevel;
 
