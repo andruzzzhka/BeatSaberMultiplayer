@@ -13,6 +13,11 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             _songTime = owner.playerInfo.updateInfo.playerProgress;
         }
 
+        public override void Start()
+        {
+            
+        }
+
         public override void Update()
         {
             if (owner != null)
