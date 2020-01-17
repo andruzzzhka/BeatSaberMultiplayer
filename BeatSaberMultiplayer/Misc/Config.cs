@@ -31,6 +31,10 @@ namespace BeatSaberMultiplayer
         [SerializeField] private int _pushToTalkButton;
         [SerializeField] private string _voiceChatMicrophone;
 
+        [SerializeField] private Vector3 _scoreScreenPosOffset;
+        [SerializeField] private Vector3 _scoreScreenRotOffset;
+        [SerializeField] private Vector3 _scoreScreenScale;
+
 
         private static Config _instance;
 
@@ -335,6 +339,36 @@ namespace BeatSaberMultiplayer
             }
         }
 
+        public Vector3 ScoreScreenPosOffset
+        {
+            get { return _scoreScreenPosOffset; }
+            set
+            {
+                _scoreScreenPosOffset = value;
+                MarkDirty();
+            }
+        }
+
+        public Vector3 ScoreScreenRotOffset
+        {
+            get { return _scoreScreenRotOffset; }
+            set
+            {
+                _scoreScreenRotOffset = value;
+                MarkDirty();
+            }
+        }
+
+        public Vector3 ScoreScreenScale
+        {
+            get { return _scoreScreenScale; }
+            set
+            {
+                _scoreScreenScale = value;
+                MarkDirty();
+            }
+        }
+
         Config()
         {
             _modVersion = string.Empty;
@@ -357,6 +391,10 @@ namespace BeatSaberMultiplayer
             _pushToTalk = true;
             _pushToTalkButton = 6;
             _voiceChatMicrophone = null;
+
+            _scoreScreenPosOffset = Vector3.zero;
+            _scoreScreenRotOffset = Vector3.zero;
+            _scoreScreenScale = Vector3.one;
 
             IsDirty = true;
         }

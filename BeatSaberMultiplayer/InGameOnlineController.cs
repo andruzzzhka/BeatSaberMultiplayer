@@ -444,15 +444,15 @@ namespace BeatSaberMultiplayer
                                 if (_scoreScreen == null)
                                 {
                                     _scoreScreen = new GameObject("ScoreScreen", typeof(RectTransform));
-                                    _scoreScreen.transform.position = new Vector3(0f, 4f, 12f);
-                                    _scoreScreen.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+                                    _scoreScreen.transform.position = new Vector3(0f, 5f, 12f) + Config.Instance.ScoreScreenPosOffset;
+                                    _scoreScreen.transform.rotation = Quaternion.Euler(Config.Instance.ScoreScreenRotOffset);
+                                    _scoreScreen.transform.localScale = Config.Instance.ScoreScreenScale;
 
                                     var rotator = GameObject.FindObjectOfType<FlyingGameHUDRotation>();
 
                                     if(rotator != null)
                                     {
                                         _scoreScreen.transform.SetParent(rotator.transform, true);
-                                        _scoreScreen.transform.position = new Vector3(0f, 5f, 12f);
                                     }
 
                                     var bg = new GameObject("Background", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();
@@ -474,8 +474,10 @@ namespace BeatSaberMultiplayer
                                 for (int i = 0; i < 5; i++)
                                 {
                                     PlayerInfoDisplay buffer = new GameObject("ScoreDisplay " + i).AddComponent<PlayerInfoDisplay>();
-                                    buffer.transform.SetParent(_scoreScreen.transform);
+                                    buffer.transform.SetParent(_scoreScreen.transform, false);
                                     buffer.transform.localPosition = new Vector3(0f, 2.5f - i, 0);
+                                    buffer.transform.localScale = Vector3.one;
+                                    buffer.transform.localRotation = Quaternion.identity;
 
                                     _scoreDisplays.Add(buffer);
                                 }
