@@ -68,7 +68,7 @@
         <button id="play-button" text="PLAY" on-click="play-pressed"/>
       </horizontal>
 
-      <text text="0/0 players ready" font-size="5" align="Center"/>
+      <text id="players-ready-text" text="0/0 players ready" font-size="5" align="Center"/>
     </vertical>
 
     <stack pad="2" pad-bottom="6">
