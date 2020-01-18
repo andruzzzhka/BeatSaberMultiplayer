@@ -3,7 +3,7 @@
   <text id="timer-text" text="0:15" font-size="6.5" align="Left" anchor-pos-y="33" anchor-pos-x="10" size-delta-x="20"/>
 
   <vertical vertical-fit='Unconstrained' horizontal-fit='PreferredSize' spacing='1' anchor-min-y='0.025' anchor-max-y='0.835' anchor-max-x='0.5' anchor-min-x='0.075' size-delta-y='0' child-control-height='false'>
-    <stack id="level-details-rect" pref-height="20" pref-width="80">
+    <stack horizontal-fit="PreferredSize" vertical-fit="PreferredSize" id="level-details-rect" pref-height="20" pref-width="80">
       <raw-image id="level-cover-image" ignore-layout="true" size-delta-x="110" size-delta-y="110"/>
       <text id="song-name-text" text="!NOT SET!" align="Center" font-size="7"/>
     </stack>

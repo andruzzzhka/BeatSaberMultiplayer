@@ -631,7 +631,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 PlayerSpecificSettings playerSettings = playerData.playerSpecificSettings;
                 OverrideEnvironmentSettings environmentOverrideSettings = playerData.overrideEnvironmentSettings;
-                ColorSchemesSettings colorSchemesSettings = playerData.colorSchemesSettings;
+
+                ColorScheme colorSchemesSettings = playerData.colorSchemesSettings.overrideDefaultColors ? playerData.colorSchemesSettings.GetColorSchemeForId(playerData.colorSchemesSettings.selectedColorSchemeId) : null;
 
                 roomInfo.roomState = RoomState.InGame;
 
@@ -655,7 +656,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 practiceSettings.songSpeedMul = modifiers.songSpeedMul;
                 practiceSettings.startInAdvanceAndClearNotes = true;
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings.GetColorSchemeForId(colorSchemesSettings.selectedColorSchemeId), modifiers, playerSettings, startTime > 1f ? practiceSettings : null, "Lobby", false, () => { }, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(levelCompletionResults, difficultyBeatmap, modifiers, startTime > 1f); });
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, startTime > 1f ? practiceSettings : null, "Lobby", false, () => { }, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(levelCompletionResults, difficultyBeatmap, modifiers, startTime > 1f); });
 
                 UpdateDiscordActivity(roomInfo);
             }
