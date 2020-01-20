@@ -12,7 +12,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Scripting;
 
 namespace BeatSaberMultiplayer
 {
@@ -205,7 +204,8 @@ namespace BeatSaberMultiplayer
         {
             if (_receivedMessages.Count > 0)
             {
-                networkClient.Recycle(_receivedMessages);
+                foreach (var msgToRecycle in _receivedMessages)
+                    networkClient.Recycle(msgToRecycle); //To avoid GC allocs
                 _receivedMessages.Clear();
             }
 
@@ -409,7 +409,8 @@ namespace BeatSaberMultiplayer
                     }
                 }
 
-                networkClient.Recycle(_receivedMessages);
+                foreach(var msgToRecycle in _receivedMessages)
+                    networkClient.Recycle(msgToRecycle); //To avoid GC allocs
                 _receivedMessages.Clear();
             }
 
@@ -420,14 +421,6 @@ namespace BeatSaberMultiplayer
 
                 MessageReceived?.Invoke(null);
             }
-
-            /*
-            if((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.F1))
-            {
-                GarbageCollector.GCMode = GarbageCollector.GCMode == GarbageCollector.Mode.Enabled ? GarbageCollector.Mode.Disabled : GarbageCollector.Mode.Enabled;
-                Plugin.log.Notice($"Garbage collector {GarbageCollector.GCMode.ToString()}!");
-            }
-            */
         }
 
         public void LateUpdate()

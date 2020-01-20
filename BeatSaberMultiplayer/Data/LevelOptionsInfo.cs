@@ -191,7 +191,7 @@ namespace BeatSaberMultiplayer.Data
         {
             return obj is LevelOptionsInfo info &&
                    difficulty == info.difficulty &&
-                   EqualityComparer<GameplayModifiersStruct>.Default.Equals(modifiers, info.modifiers) &&
+                   modifiers == info.modifiers &&
                    characteristicName == info.characteristicName;
         }
 
@@ -207,7 +207,7 @@ namespace BeatSaberMultiplayer.Data
         public bool Equals(LevelOptionsInfo other)
         {
             return    difficulty == other.difficulty &&
-                      EqualityComparer<GameplayModifiersStruct>.Default.Equals(modifiers, other.modifiers) &&
+                      modifiers == other.modifiers &&
                       characteristicName == other.characteristicName;
         }
 
@@ -272,6 +272,16 @@ namespace BeatSaberMultiplayer.Data
                    batteryEnergy == other.batteryEnergy &&
                    disappearingArrows == other.disappearingArrows &&
                    ghostNotes == other.ghostNotes;
+        }
+
+        public static bool operator ==(GameplayModifiersStruct c1, GameplayModifiersStruct c2)
+        {
+            return c1.Equals(c2);
+        }
+
+        public static bool operator !=(GameplayModifiersStruct c1, GameplayModifiersStruct c2)
+        {
+            return !c1.Equals(c2);
         }
 
         public override int GetHashCode()

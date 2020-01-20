@@ -26,8 +26,7 @@ namespace BeatSaberMultiplayer
     {
         private const float _PTTReleaseDelay = 0.2f;
         private const string _gameSceneName = "GameCore";
-        private const string _menuSceneName = "MenuCore";
-
+        private const string _menuSceneName = "MenuViewControllers";
 
         public static Quaternion oculusTouchRotOffset = Quaternion.Euler(-40f, 0f, 0f);
         public static Vector3 oculusTouchPosOffset = new Vector3(0f, 0f, 0.055f);
@@ -262,7 +261,7 @@ namespace BeatSaberMultiplayer
                 needToSendUpdates = true;
                 if (Client.Instance.inRadioMode)
                 {
-                    PluginUI.instance.radioFlowCoordinator.ReturnToChannel();
+                    //PluginUI.instance.radioFlowCoordinator.ReturnToChannel();
                 }
                 else
                 {
@@ -444,9 +443,27 @@ namespace BeatSaberMultiplayer
                             {
                                 if (_scoreScreen == null)
                                 {
-                                    _scoreScreen = new GameObject("ScoreScreen");
-                                    _scoreScreen.transform.position = new Vector3(0f, 4f, 12f);
-                                    _scoreScreen.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+                                    _scoreScreen = new GameObject("ScoreScreen", typeof(RectTransform));
+                                    _scoreScreen.transform.position = new Vector3(0f, 5f, 12f) + Config.Instance.ScoreScreenPosOffset;
+                                    _scoreScreen.transform.rotation = Quaternion.Euler(Config.Instance.ScoreScreenRotOffset);
+                                    _scoreScreen.transform.localScale = Config.Instance.ScoreScreenScale;
+
+                                    var rotator = GameObject.FindObjectOfType<FlyingGameHUDRotation>();
+
+                                    if(rotator != null)
+                                    {
+                                        _scoreScreen.transform.SetParent(rotator.transform, true);
+                                    }
+
+                                    var bg = new GameObject("Background", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();
+                                    bg.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+                                    bg.rectTransform.SetParent(_scoreScreen.transform);
+                                    bg.rectTransform.localScale = new Vector3(0.18f, 0.0525f, 1f);
+                                    bg.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                                    bg.rectTransform.anchoredPosition3D = new Vector3(-0.75f, 2.5f, 0.01f);
+                                    bg.sprite = Sprites.whitePixel;
+                                    bg.material = Sprites.NoGlowMat;
+                                    bg.color = new Color(0f, 0f, 0f, 0.5f);
                                 }
 
                                 foreach (var display in _scoreDisplays)
@@ -457,8 +474,10 @@ namespace BeatSaberMultiplayer
                                 for (int i = 0; i < 5; i++)
                                 {
                                     PlayerInfoDisplay buffer = new GameObject("ScoreDisplay " + i).AddComponent<PlayerInfoDisplay>();
-                                    buffer.transform.SetParent(_scoreScreen.transform);
+                                    buffer.transform.SetParent(_scoreScreen.transform, false);
                                     buffer.transform.localPosition = new Vector3(0f, 2.5f - i, 0);
+                                    buffer.transform.localScale = Vector3.one;
+                                    buffer.transform.localRotation = Quaternion.identity;
 
                                     _scoreDisplays.Add(buffer);
                                 }
@@ -606,7 +625,7 @@ namespace BeatSaberMultiplayer
 
             if (_vrInputManager == null)
             {
-                _vrInputManager = PersistentSingleton<VRControllersInputManager>.instance;
+                _vrInputManager = Resources.FindObjectsOfTypeAll<VRController>().FirstOrDefault(x => !(x is OnlineVRController)).GetPrivateField<VRControllersInputManager>("_vrControllersInputManager");
             }
 
             if (Config.Instance.EnableVoiceChat)
@@ -921,15 +940,31 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        public void SongFinished(LevelCompletionResults levelCompletionResults, IDifficultyBeatmap difficultyBeatmap, GameplayModifiers gameplayModifiers, bool practice)
+        public void SongFinished(StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults)
         {
-            if(Client.Instance.inRadioMode)
+            GameplayCoreSceneSetupData sceneData = sender.sceneSetupDataArray.First(x => x is GameplayCoreSceneSetupData) as GameplayCoreSceneSetupData;
+
+            IDifficultyBeatmap difficultyBeatmap = sceneData.difficultyBeatmap;
+
+            SoloFreePlayFlowCoordinator freePlayCoordinator = Resources.FindObjectsOfTypeAll<SoloFreePlayFlowCoordinator>().First();
+
+            PlayerDataModelSO dataModel = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel");
+
+            var playerLevelStats = dataModel.playerData.GetPlayerLevelStatsData(difficultyBeatmap);
+
+            if (Client.Instance.inRoom)
             {
-                PluginUI.instance.radioFlowCoordinator.lastDifficulty = difficultyBeatmap;
-                PluginUI.instance.radioFlowCoordinator.lastResults = levelCompletionResults;
+                PluginUI.instance.roomFlowCoordinator.levelDifficultyBeatmap = difficultyBeatmap;
+                PluginUI.instance.roomFlowCoordinator.levelResults = levelCompletionResults;
+
+
+                PluginUI.instance.roomFlowCoordinator.lastHighscoreValid = playerLevelStats.validScore;
+                PluginUI.instance.roomFlowCoordinator.lastHighscoreForLevel = playerLevelStats.highScore;
+
+                Plugin.log.Debug("Set level results!");
             }
 
-            if (Config.Instance.SpectatorMode || Client.disableScoreSubmission || ScoreSubmission.Disabled || ScoreSubmission.ProlongedDisabled || practice)
+            if (Config.Instance.SpectatorMode || Client.disableScoreSubmission || ScoreSubmission.Disabled || ScoreSubmission.ProlongedDisabled || sceneData.practiceSettings != null)
             {
                 List<string> reasons = new List<string>();
 
@@ -937,7 +972,7 @@ namespace BeatSaberMultiplayer
                 if (Client.disableScoreSubmission) reasons.Add("Multiplayer score submission disabled by another mod");
                 if (ScoreSubmission.Disabled) reasons.Add("Score submission is disabled by "+ ScoreSubmission.ModString);
                 if (ScoreSubmission.ProlongedDisabled) reasons.Add("Score submission is disabled for a prolonged time by " + ScoreSubmission.ProlongedModString);
-                if (practice) reasons.Add("Practice mode");
+                if (sceneData.practiceSettings != null) reasons.Add("Practice mode");
 
                 Plugin.log.Warn("\nScore submission is disabled! Reason:\n" +string.Join(",\n", reasons));
                 return;
@@ -951,67 +986,53 @@ namespace BeatSaberMultiplayer
             else if (Config.Instance.SubmitScores == 1)
             {
                 bool submitScore = false;
-                if (!gameplayModifiers.noFail)
+                if (ScrappedData.Downloaded)
                 {
-                    if (ScrappedData.Downloaded)
+                    ScrappedSong song = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(difficultyBeatmap.level.levelID));
+                    if (song != default)
                     {
-                        ScrappedSong song = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(difficultyBeatmap.level.levelID));
-                        if (song != default)
+                        DifficultyStats stats = song.Diffs.FirstOrDefault(x => x.Diff == difficultyBeatmap.difficulty.ToString().Replace("+", "Plus"));
+                        if (stats != default)
                         {
-                            DifficultyStats stats = song.Diffs.FirstOrDefault(x => x.Diff == difficultyBeatmap.difficulty.ToString().Replace("+", "Plus"));
-                            if (stats != default)
+                            if (stats.Ranked != 0)
                             {
-                                if (stats.Ranked != 0)
-                                {
-                                    submitScore = true;
-                                }
-                                else
-                                    Plugin.log.Warn("Song is unrakned!");
+                                submitScore = true;
                             }
                             else
-                                Plugin.log.Warn("Difficulty not found!");
+                                Plugin.log.Warn("Song is unrakned!");
                         }
                         else
-                            Plugin.log.Warn("Song not found!");
+                            Plugin.log.Warn("Difficulty not found!");
                     }
                     else
-                        Plugin.log.Warn("Scrapped data is not downloaded!");
+                        Plugin.log.Warn("Song not found!");
                 }
                 else
-                    Plugin.log.Warn("No fail enabled, score submission disabled!");
+                    Plugin.log.Warn("Scrapped data is not downloaded!");
 
                 if (!submitScore)
                 {
                     Plugin.log.Warn("Score submission is disabled!");
                     return;
                 }
-            } 
+            }
+            
+            dataModel.playerData.playerAllOverallStatsData.UpdateSoloFreePlayOverallStatsData(levelCompletionResults, difficultyBeatmap);
+            dataModel.Save();
 
-            AchievementsEvaluationHandler achievementsHandler = Resources.FindObjectsOfTypeAll<AchievementsEvaluationHandler>().First();
-            achievementsHandler.ProcessLevelFinishData(difficultyBeatmap, levelCompletionResults);
-            achievementsHandler.ProcessSoloFreePlayLevelFinishData(difficultyBeatmap, levelCompletionResults);
+            if (levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Failed && levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Cleared)
+            {
+                return;
+            }
 
-            SoloFreePlayFlowCoordinator freePlayCoordinator = Resources.FindObjectsOfTypeAll<SoloFreePlayFlowCoordinator>().First();
-
-            PlayerDataModelSO dataModel = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel");
-
-            PlayerData currentLocalPlayer = dataModel.playerData;
-
-            PlayerLevelStatsData playerLevelStatsData = currentLocalPlayer.GetPlayerLevelStatsData(difficultyBeatmap.level.levelID, difficultyBeatmap.difficulty, difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic);
-
-            playerLevelStatsData.IncreaseNumberOfGameplays();
+            playerLevelStats.IncreaseNumberOfGameplays();
             if (levelCompletionResults.levelEndStateType == LevelCompletionResults.LevelEndStateType.Cleared)
             {
                 Plugin.log.Info("Submitting score...");
-                playerLevelStatsData.UpdateScoreData(levelCompletionResults.modifiedScore, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
-                freePlayCoordinator.GetPrivateField<PlatformLeaderboardsModel>("_platformLeaderboardsModel").AddScoreFromComletionResults(difficultyBeatmap, levelCompletionResults);
+                playerLevelStats.UpdateScoreData(levelCompletionResults.modifiedScore, levelCompletionResults.maxCombo, levelCompletionResults.fullCombo, levelCompletionResults.rank);
+                freePlayCoordinator.GetPrivateField<PlatformLeaderboardsModel>("_platformLeaderboardsModel").UploadScore(difficultyBeatmap, levelCompletionResults.rawScore, levelCompletionResults.modifiedScore, levelCompletionResults.fullCombo, levelCompletionResults.goodCutsCount, levelCompletionResults.badCutsCount, levelCompletionResults.missedCount, levelCompletionResults.maxCombo, levelCompletionResults.gameplayModifiers);
                 Plugin.log.Info("Score submitted!");
-
             }
-
-            currentLocalPlayer.playerAllOverallStatsData.soloFreePlayOverallStatsData.UpdateWithLevelCompletionResults(levelCompletionResults);
-
-            dataModel.Save();
         }
 
         IEnumerator WaitForControllers()
@@ -1021,31 +1042,6 @@ namespace BeatSaberMultiplayer
             yield return new WaitUntil(delegate () { return FindObjectOfType<ScoreController>() != null; });
 
             Plugin.log.Debug("Game controllers found!");
-
-            _gameManager = Resources.FindObjectsOfTypeAll<StandardLevelGameplayManager>().First();
-
-            if (_gameManager != null)
-            {
-                try
-                {
-                    if (ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger") != null)
-                    {
-                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").pauseTriggeredEvent -= _gameManager.HandlePauseTriggered;
-                        ReflectionUtil.GetPrivateField<IPauseTrigger>(_gameManager, "_pauseTrigger").pauseTriggeredEvent += ShowMenu;
-                    }
-
-                    if (ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper") != null)
-                    {
-                        ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper").inputFocusWasCapturedEvent -= _gameManager.HandleInputFocusWasCaptured;
-                        ReflectionUtil.GetPrivateField<VRPlatformHelper>(_gameManager, "_vrPlatformHelper").inputFocusWasCapturedEvent += ShowMenu;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Plugin.log.Critical(e);
-                }
-            }
-            Plugin.log.Debug("Disabled pause button!");
 
             _scoreController = FindObjectOfType<ScoreController>();
 

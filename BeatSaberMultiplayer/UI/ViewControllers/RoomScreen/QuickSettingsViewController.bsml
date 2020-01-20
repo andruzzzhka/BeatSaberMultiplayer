@@ -1,0 +1,27 @@
+﻿<bg>
+  <tab-selector tab-tag='settings-tag' anchor-pos-y='-3' />
+
+  <tab tags='settings-tag' tab-name='General'>
+    <vertical pad-top='10' vertical-fit='PreferredSize'>
+      <checkbox text='Show avatars in game' value='avatars-in-game' apply-on-change='true' hover-hint='Show avatars of other players while playing a song' />
+      <checkbox text='Show other players blocks' value='blocks-in-game' apply-on-change='true' hover-hint='Show other players blocks while playing a song&#13;&#10;&lt;color=red&gt;Requires "Show Avatars In Game"&lt;/color&gt;' />
+      <checkbox text='Show avatars in room' value='avatars-in-room' apply-on-change='true' hover-hint='Show avatars of other players while in room' />
+      <checkbox text='Download other players avatars' value='download-avatars' apply-on-change='true' hover-hint='Download other players avatars from ModelSaber' />
+      <checkbox text='Separate avatar for multiplayer' value='separate-avatar' apply-on-change='true' hover-hint='Use avatar specified in "Public avatar" instead of your current avatar for multiplayer'  />
+      <dropdown-list-setting id='public-avatar-setting' text='Public avatar' value='public-avatar-value' options='public-avatar-options' formatter='public-avatar-formatter' apply-on-change='true' />
+      <checkbox text='Spectator mode' value='spectator-mode' apply-on-change='true' hover-hint='&lt;color=red&gt;BETA&lt;/color&gt;&#13;&#10;Watch other players playing a song (e.g. on tournaments)&#13;&#10;&lt;color=red&gt;You can&apos;t play songs yourself while "Spectator Mode" is on!&lt;/color&gt;'  />
+      <dropdown-list-setting text='Submit scores' value='submit-scores-value' apply-on-change='true' options='submit-scores-options' hover-hint='Submit scores to the leaderboard'  />
+    </vertical>
+  </tab>
+
+  <tab tags='settings-tag' tab-name='Voice'>
+    <vertical pad-top='10' vertical-fit='PreferredSize'>
+      <checkbox text='Enable voice chat' value='enable-voice-chat' apply-on-change='true' />
+      <slider-setting text='Voice chat volume' value='voice-chat-volume' min='0' max='100' increment='1' integer-only='true' apply-on-change='true' />
+      <checkbox text='Enable microphone' value='mic-enabled' apply-on-change='true' />
+      <checkbox text='Use push to talk' value='push-to-talk' apply-on-change='true' />
+      <dropdown-list-setting text='Push to talk button' value='ptt-button-value' apply-on-change='true' options='ptt-button-options'/>
+      <dropdown-list-setting id ='mic-select-setting' text='Microphone' value='mic-select-value' apply-on-change='true' options='mic-select-options' hover-hint='Select microphone to use for voice chat'  />
+    </vertical>
+  </tab>
+</bg>

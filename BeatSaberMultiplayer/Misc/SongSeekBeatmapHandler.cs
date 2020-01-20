@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using BS_Utils.Utilities;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -24,7 +25,7 @@ namespace BeatSaberMultiplayer.Misc
                                     "_beatmapObjectCallbackData");
 
                         _beatmapData = _beatmapObjectCallbackController
-                            .GetPrivateField<BeatmapDataModel>("_beatmapDataModel").beatmapData;
+                            .GetPrivateField<BeatmapData>("_beatmapData");
                     }
 
                     if (_beatmapObjectSpawnController == null)

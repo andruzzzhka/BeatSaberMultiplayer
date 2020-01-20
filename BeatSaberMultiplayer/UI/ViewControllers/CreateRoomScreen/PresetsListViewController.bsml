@@ -1,0 +1,20 @@
+﻿<stack vertical-fit='Unconstrained'>
+  <vertical vertical-fit='Unconstrained'>
+    <horizontal horizontal-fit='PreferredSize'>
+      <text text='Select preset' align='Center' font-size='8' />
+    </horizontal>
+    <vertical>
+      <pg-button dir='Up' click-event='presets-list#PageUp'/>
+      <custom-list visible-cells='5' cell-size='10' id='presets-list' contents='presets' select-cell='preset-selected'>
+        <stack vertical-fit='Unconstrained'>
+          <vertical child-expand-width='false' horizontal-fit='Unconstrained' vertical-fit='Unconstrained'>
+            <text text='~preset-name' align='MidlineLeft' font-size='4.75'/>
+            <text id='preset-room-name-text' text='~preset-room-name' align='MidlineLeft'/>
+          </vertical>
+          <raw-image id='bg' tags='hovered' />
+        </stack>
+      </custom-list>
+      <pg-button dir='Down' click-event='presets-list#PageDown'/>
+    </vertical>
+  </vertical>
+</stack>

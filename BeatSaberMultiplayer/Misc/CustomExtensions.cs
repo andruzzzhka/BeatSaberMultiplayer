@@ -42,6 +42,8 @@ namespace BeatSaberMultiplayer.Misc
             else
             {
                 difficultySet = level.beatmapLevelData.difficultyBeatmapSets.FirstOrDefault(x => x.beatmapCharacteristic == characteristic);
+                if(difficultySet == null)
+                    difficultySet = level.beatmapLevelData.difficultyBeatmapSets.FirstOrDefault();
             }
 
             if (difficultySet == null)
@@ -94,7 +96,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public static int FindIndexInArray<T>(this T[] list, T b)
         {
-            for(int i = 0; i < list.Length; i++)
+            for (int i = 0; i < list.Length; i++)
             {
                 if ((list[i] == null && b == null) || (list[i] != null && list[i].Equals(b)))
                     return i;
@@ -102,27 +104,14 @@ namespace BeatSaberMultiplayer.Misc
             return -1;
         }
 
-        public static TextMeshProUGUI CreateLevelParam(Transform parent, Vector2 position, string defaultText = "TEXT", Sprite icon = null, string hintText = "HINT")
+        public static int FindIndexInArray<T>(this T[] list, Predicate<T> predicate)
         {
-            RectTransform copy = (RectTransform)GameObject.Instantiate(Resources.FindObjectsOfTypeAll<LevelParamsPanel>().First().transform.GetChild(0), parent);
-
-            copy.anchorMin = new Vector2(0f, 0f);
-            copy.anchorMax = new Vector2(0f, 0f);
-            copy.anchoredPosition = position;
-
-            TextMeshProUGUI paramText = copy.GetComponentInChildren<TextMeshProUGUI>();
-            paramText.rectTransform.anchoredPosition = new Vector2(4f, 0f);
-            paramText.alignment = TextAlignmentOptions.CaplineLeft;
-            paramText.text = defaultText;
-
-            UnityEngine.UI.Image image = copy.GetComponentInChildren<UnityEngine.UI.Image>();
-            image.rectTransform.anchoredPosition = new Vector2(-4f, 0f);
-            image.rectTransform.sizeDelta = new Vector2(5f, 5f);
-            image.sprite = icon;
-
-            copy.GetComponent<HoverHint>().text = hintText;
-
-            return paramText;
+            for (int i = 0; i < list.Length; i++)
+            {
+                if (predicate(list[i]))
+                    return i;
+            }
+            return -1;
         }
 
         public static TextMeshPro CreateWorldText(Transform parent, string text="TEXT")

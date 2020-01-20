@@ -1,6 +1,9 @@
-﻿using BeatSaberMultiplayer.Data;
+﻿using BeatSaberMarkupLanguage;
+using BeatSaberMarkupLanguage.Attributes;
+using BeatSaberMarkupLanguage.Components;
+using BeatSaberMarkupLanguage.ViewControllers;
+using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
-using CustomUI.BeatSaber;
 using HMUI;
 using Polyglot;
 using System;
@@ -10,466 +13,453 @@ using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
+using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
-    class DifficultySelectionViewController : VRUIViewController
+    class DifficultySelectionViewController : BSMLResourceViewController
     {
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
+
         public event Action discardPressed;
         public event Action levelOptionsChanged;
         public event Action<IBeatmapLevel, BeatmapCharacteristicSO, BeatmapDifficulty> playPressed;
 
-        public BeatmapCharacteristicSO selectedCharacteristic { get; private set; }
-        public BeatmapDifficulty selectedDifficulty { get; private set; }
+        public BeatmapDifficulty selectedDifficulty { get { return _selectedDifficultyBeatmap == null ? BeatmapDifficulty.Hard : _selectedDifficultyBeatmap.difficulty; } }
+        public BeatmapCharacteristicSO selectedCharacteristic { get { return _selectedDifficultyBeatmap.parentDifficultyBeatmapSet?.beatmapCharacteristic; } }
 
-        LevelListTableCell _selectedSongCell;
+        public CancellationTokenSource cancellationToken;
 
-        TextMeshProUGUI _timeParamText;
-        TextMeshProUGUI _bpmParamText;
-        TextMeshProUGUI _blocksParamText;
-        TextMeshProUGUI _obstaclesParamText;
-        TextMeshProUGUI _starsParamText;
-        TextMeshProUGUI _ratingParamText;
+        [UIComponent("diff-selection-view")]
+        public RectTransform diffSelectionView;
+        [UIComponent("loading-indicator")]
+        public RectTransform loadingIndicator;
 
-        TextMeshProUGUI _rankedText;
+        [UIComponent("level-details-rect")]
+        public RectTransform levelDetailsRect;
 
-        IBeatmapLevel _selectedSong;
-        BeatmapCharacteristicSO[] _beatmapCharacteristics;
+        [UIComponent("players-ready-text")]
+        public TextMeshProUGUI playersReadyText;
 
-        TextSegmentedControl _characteristicControl;
-        TextSegmentedControl _difficultyControl;
+        [UIComponent("song-name-text")]
+        public TextMeshProUGUI songNameText;
+        [UIComponent("duration-text")]
+        public TextMeshProUGUI durationText;
+        [UIComponent("bpm-text")]
+        public TextMeshProUGUI bpmText;
+        [UIComponent("nps-text")]
+        public TextMeshProUGUI npsText;
+        [UIComponent("notes-count-text")]
+        public TextMeshProUGUI notesCountText;
+        [UIComponent("obstacles-count-text")]
+        public TextMeshProUGUI obstaclesCountText;
+        [UIComponent("bombs-count-text")]
+        public TextMeshProUGUI bombsCountText;
+        [UIComponent("stars-text")]
+        public TextMeshProUGUI starsText;
+        [UIComponent("rating-text")]
+        public TextMeshProUGUI ratingText;
 
-        Button _cancelButton;
-        Button _playButton;
-        UnityEngine.UI.Image _playBtnGlow;
+        [UIComponent("level-cover-image")]
+        public RawImage levelCoverImage;
 
-        TextMeshProUGUI _playersReadyText;
-                
-        private RectTransform _progressBarRect;
-        private UnityEngine.UI.Image _progressBackground;
-        private UnityEngine.UI.Image _progressBarImage;
-        private TextMeshProUGUI _progressText;
-        private GameObject _loadingSpinner;
+        [UIComponent("controls-rect")]
+        public RectTransform controlsRect;
+        [UIComponent("characteristic-control-blocker")]
+        public RawImage charactertisticControlBlocker;
+        [UIComponent("characteristic-control")]
+        public IconSegmentedControl characteristicControl;
+        [UIComponent("difficulty-control-blocker")]
+        public RawImage difficultyControlBlocker;
+        [UIComponent("difficulty-control")]
+        public TextSegmentedControl difficultyControl;
 
-        private RectTransform _characteristicControlBlocker;
-        private RectTransform _difficultyControlBlocker;
+        [UIComponent("play-button")]
+        public Button playButton;
+        public Glowable playButtonGlow;
+        [UIComponent("cancel-button")]
+        public Button cancelButton;
 
-        protected override void DidActivate(bool firstActivation, ActivationType activationType)
+        [UIComponent("loading-rect")]
+        public RectTransform loadingRect;
+
+        [UIComponent("progress-bar-top")]
+        public RawImage progressBarTop;
+        [UIComponent("progress-bar-bg")]
+        public RawImage progressBarBG;
+        [UIComponent("loading-progress-text")]
+        public TextMeshProUGUI loadingProgressText;
+
+        [UIComponent("buttons-rect")]
+        public RectTransform buttonsRect;
+
+        [UIComponent("max-combo-value")]
+        public TextMeshProUGUI maxComboValue;
+        [UIComponent("highscore-value")]
+        public TextMeshProUGUI highscoreValue;
+        [UIComponent("max-rank-value")]
+        public TextMeshProUGUI maxRankValue;
+        [UIComponent("ranking-value")]
+        public TextMeshProUGUI rankingValue;
+
+        private IBeatmapLevel _selectedLevel;
+        private List<BeatmapCharacteristicSO> _beatmapCharacteristics = new List<BeatmapCharacteristicSO>();
+        private IDifficultyBeatmap _selectedDifficultyBeatmap;
+
+        private Texture2D _defaultArtworkTexture;
+
+        private PlayerDataModelSO _playerDataModel;
+
+        private bool isHost;
+        private bool perPlayerDifficulty;
+
+        protected override void DidActivate(bool firstActivation, ActivationType type)
         {
-            try
+            base.DidActivate(firstActivation, type);
+        }
+
+        [UIAction("#post-parse")]
+        public void SetupViewController()
+        {
+            playButtonGlow = playButton.GetComponent<Glowable>();
+
+            levelDetailsRect.gameObject.AddComponent<Mask>();
+
+            Image maskImage = levelDetailsRect.gameObject.AddComponent<Image>();
+
+            maskImage.material = Sprites.NoGlowMat;
+            maskImage.sprite = Resources.FindObjectsOfTypeAll<Sprite>().First(x => x.name == "RoundRectPanel");
+            maskImage.type = Image.Type.Sliced;
+            maskImage.color = new Color(0f, 0f, 0f, 0.25f);
+
+            levelCoverImage.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+
+            progressBarBG.color = new Color(1f, 1f, 1f, 0.2f);
+            progressBarTop.color = new Color(1f, 1f, 1f, 1f);
+
+            charactertisticControlBlocker.color = new Color(1f, 1f, 1f, 0f);
+            difficultyControlBlocker.color = new Color(1f, 1f, 1f, 0f);
+
+            cancellationToken = new CancellationTokenSource();
+
+            _defaultArtworkTexture = Resources.FindObjectsOfTypeAll<Texture2D>().First(x => x.name == "DefaultSongArtwork");
+
+            _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+        }
+
+        public void SetBeatmapCharacteristic(BeatmapCharacteristicSO beatmapCharacteristicSO)
+        {
+            int num = _beatmapCharacteristics.IndexOf(beatmapCharacteristicSO);
+            if (num != -1)
             {
-                if (firstActivation && activationType == ActivationType.AddedToHierarchy)
-                {
-                    _beatmapCharacteristics = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>();
-
-                    bool isHost = Client.Instance.isHost;
-
-                    _selectedSongCell = Instantiate(Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell")), rectTransform, false);
-                    (_selectedSongCell.transform as RectTransform).anchorMin = new Vector2(0.5f, 0.5f);
-                    (_selectedSongCell.transform as RectTransform).anchorMax = new Vector2(0.5f, 0.5f);
-                    (_selectedSongCell.transform as RectTransform).anchoredPosition = new Vector2(-25f, 17.5f);
-                    _selectedSongCell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
-                    _selectedSongCell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
-                    _selectedSongCell.SetPrivateField("_bought", true);
-                    foreach (var icon in _selectedSongCell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
-                    {
-                        Destroy(icon.gameObject);
-                    }
-
-                    _rankedText = this.CreateText("LOADING...", new Vector2(-1f, -25.5f));
-                    _rankedText.alignment = TextAlignmentOptions.Center;
-
-                    Sprite[] sprites = Resources.FindObjectsOfTypeAll<Sprite>();
-
-                    _timeParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(62f, 42.5f), "--", sprites.FirstOrDefault(x => x.name == "ClockIcon"), "");
-                    _bpmParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(102f, 42.5f), "--", sprites.FirstOrDefault(x => x.name == "MetronomeIcon"), "");
-                    _blocksParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(62f, 35f), "--", sprites.FirstOrDefault(x => x.name == "GameNoteIcon"), "");
-                    _obstaclesParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(102f, 35f), "--", sprites.FirstOrDefault(x => x.name == "ObstacleIcon"), "");
-                    _starsParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(62f, 27.5f), "--", Sprites.starIcon, "");
-                    _ratingParamText = CustomExtensions.CreateLevelParam(rectTransform, new Vector2(102f, 27.5f), "--", Sprites.ratingIcon, "");
-
-                    _playersReadyText = BeatSaberUI.CreateText(rectTransform, "0/0 players ready", new Vector2(0f, 5f));
-                    _playersReadyText.rectTransform.anchorMin = new Vector2(0.5f, 0f);
-                    _playersReadyText.rectTransform.anchorMax = new Vector2(0.5f, 0f);
-                    _playersReadyText.alignment = TextAlignmentOptions.Center;
-                    _playersReadyText.fontSize = 5.5f;
-
-                    _cancelButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
-                    (_cancelButton.transform as RectTransform).anchoredPosition = new Vector2(-30f, -25f);
-                    (_cancelButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
-                    _cancelButton.SetButtonText("CANCEL");
-                    _cancelButton.ToggleWordWrapping(false);
-                    _cancelButton.SetButtonTextSize(5.5f);
-                    _cancelButton.onClick.AddListener(delegate () { discardPressed?.Invoke(); });
-                    _cancelButton.gameObject.SetActive(isHost);
-
-                    _playButton = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
-                    (_playButton.transform as RectTransform).anchoredPosition = new Vector2(30f, -25f);
-                    (_playButton.transform as RectTransform).sizeDelta = new Vector2(28f, 12f);
-                    _playButton.SetButtonText("PLAY");
-                    _playButton.ToggleWordWrapping(false);
-                    _playButton.SetButtonTextSize(5.5f);
-                    _playButton.onClick.AddListener(delegate () { playPressed?.Invoke(_selectedSong, selectedCharacteristic, selectedDifficulty); });
-                    var playGlowContainer = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => x.name == "PlayButton").GetComponentsInChildren<RectTransform>().First(x => x.name == "GlowContainer"), _playButton.transform); //Let's add some glow!
-                    playGlowContainer.transform.SetAsFirstSibling();
-                    _playBtnGlow = playGlowContainer.GetComponentInChildren<UnityEngine.UI.Image>();
-                    _playBtnGlow.color = new Color(0f, 0.7058824f, 1f, 0.7843137f);
-                    _playButton.gameObject.SetActive(isHost);
-
-                    _characteristicControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 34f), new Vector2(110f, 7f), _characteristicControl_didSelectCellEvent);
-                    _characteristicControl.SetTexts(new string[] { "Standard", "No Arrows", "One Saber" });
-
-                    _characteristicControlBlocker = new GameObject("CharacteristicControlBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
-                    _characteristicControlBlocker.SetParent(rectTransform, false);
-                    _characteristicControlBlocker.gameObject.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
-                    _characteristicControlBlocker.anchorMin = new Vector2(0f, 1f);
-                    _characteristicControlBlocker.anchorMax = new Vector2(1f, 1f);
-                    _characteristicControlBlocker.sizeDelta = new Vector2(-30f, 7f);
-                    _characteristicControlBlocker.anchoredPosition = new Vector2(0f, -6f);
-
-                    _difficultyControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 24f), new Vector2(110f, 7f), _difficultyControl_didSelectCellEvent);
-                    _difficultyControl.SetTexts(new string[] { "Easy", "Normal", "Hard", "Expert", "Expert+" });
-
-                    _difficultyControlBlocker = new GameObject("DifficultyControlBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
-                    _difficultyControlBlocker.SetParent(rectTransform, false);
-                    _difficultyControlBlocker.gameObject.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
-                    _difficultyControlBlocker.anchorMin = new Vector2(0f, 1f);
-                    _difficultyControlBlocker.anchorMax = new Vector2(1f, 1f);
-                    _difficultyControlBlocker.sizeDelta = new Vector2(-30f, 7f);
-                    _difficultyControlBlocker.anchoredPosition = new Vector2(0f, -16f);
-
-                    _progressBarRect = new GameObject("ProgressBar", typeof(RectTransform)).GetComponent<RectTransform>();
-
-                    _progressBarRect.SetParent(rectTransform, false);
-                    _progressBarRect.anchorMin = new Vector2(0.5f, 0.5f);
-                    _progressBarRect.anchorMax = new Vector2(0.5f, 0.5f);
-                    _progressBarRect.anchoredPosition = new Vector2(0f, -7.5f);
-                    _progressBarRect.sizeDelta = new Vector2(46f, 5f);
-
-                    _progressBackground = new GameObject("Background", typeof(RectTransform), typeof(UnityEngine.UI.Image)).GetComponent<UnityEngine.UI.Image>();
-                    _progressBackground.rectTransform.SetParent(_progressBarRect, false);
-                    _progressBackground.rectTransform.anchorMin = new Vector2(0f, 0f);
-                    _progressBackground.rectTransform.anchorMax = new Vector2(1f, 1f);
-                    _progressBackground.rectTransform.anchoredPosition = new Vector2(0f, 0f);
-                    _progressBackground.rectTransform.sizeDelta = new Vector2(0f, 0f);
-
-                    _progressBackground.sprite = Sprites.whitePixel;
-                    _progressBackground.material = Sprites.NoGlowMat;
-                    _progressBackground.color = new Color(1f, 1f, 1f, 0.075f);
-
-                    _progressBarImage = new GameObject("ProgressImage", typeof(RectTransform), typeof(UnityEngine.UI.Image)).GetComponent<UnityEngine.UI.Image>();
-                    _progressBarImage.rectTransform.SetParent(_progressBarRect, false);
-                    _progressBarImage.rectTransform.anchorMin = new Vector2(0f, 0f);
-                    _progressBarImage.rectTransform.anchorMax = new Vector2(1f, 1f);
-                    _progressBarImage.rectTransform.anchoredPosition = new Vector2(0f, 0f);
-                    _progressBarImage.rectTransform.sizeDelta = new Vector2(0f, 0f);
-
-                    _progressBarImage.sprite = Sprites.whitePixel;
-                    _progressBarImage.material = Sprites.NoGlowMat;
-                    _progressBarImage.type = UnityEngine.UI.Image.Type.Filled;
-                    _progressBarImage.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
-                    _progressBarImage.fillAmount = 0.5f;
-
-                    _progressText = BeatSaberUI.CreateText(rectTransform, "0.0%", new Vector2(55f, -10f));
-                    _progressText.rectTransform.SetParent(_progressBarRect, true);
-
-                    _loadingSpinner = this.CreateLoadingSpinner();
-                    _playButton.interactable = false;
-                    _progressBarRect.gameObject.SetActive(false);
-                }
-                _progressBarRect.gameObject.SetActive(false);
+                characteristicControl.SelectCellWithNumber(num);
+                SetSelectedCharateristic(null, num);
             }
-            catch (Exception e)
+            else
             {
-                Plugin.log.Critical($"Exception in DifficultySelectionViewController.DidActivate: {e}");
-            }
-        }
-
-        private void _characteristicControl_didSelectCellEvent(int arg2)
-        {
-            if (_selectedSong != null)
-            {
-                selectedCharacteristic = _selectedSong.beatmapCharacteristics[arg2];
-
-                if (_selectedSong.beatmapLevelData != null)
-                {
-                    Dictionary<IDifficultyBeatmap, string> difficulties = _selectedSong.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps.ToDictionary(x => x, x => x.difficulty.ToString().Replace("Plus", "+"));
-
-                    if (_selectedSong is CustomPreviewBeatmapLevel)
-                    {
-                        var songData = SongCore.Collections.RetrieveExtraSongData(SongCore.Collections.hashForLevelID(_selectedSong.levelID));
-                        if (songData != null && songData._difficulties != null)
-                        {
-                            for (int i = 0; i < difficulties.Keys.Count; i++)
-                            {
-                                var diffKey = difficulties.Keys.ElementAt(i);
-
-                                var difficultyLevel = songData._difficulties.FirstOrDefault(x => x._difficulty == diffKey.difficulty);
-                                if (difficultyLevel != null && !string.IsNullOrEmpty(difficultyLevel._difficultyLabel))
-                                {
-                                    difficulties[diffKey] = difficultyLevel._difficultyLabel;
-                                    Plugin.log.Debug($"Found difficulty label \"{difficulties[diffKey]}\" for difficulty {diffKey.difficulty.ToString()}");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Plugin.log.Warn($"Unable to retrieve extra data for song with hash \"{_selectedSong.levelID}\"!");
-                        }
-                    }
-
-                    _difficultyControl.SetTexts(difficulties.Values.ToArray());
-
-                    int closestDifficultyIndex = CustomExtensions.GetClosestDifficultyIndex(difficulties.Keys.ToArray(), selectedDifficulty);
-
-                    _difficultyControl.SelectCellWithNumber(closestDifficultyIndex);
-
-                    _difficultyControl_didSelectCellEvent(closestDifficultyIndex);
-                }
-            }
-        }
-
-        private void _difficultyControl_didSelectCellEvent(int arg2)
-        {
-            if (_selectedSong != null && _selectedSong.beatmapLevelData != null && _selectedSong.beatmapLevelData.difficultyBeatmapSets != null)
-            {
-                IDifficultyBeatmap beatmap = _selectedSong.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps[arg2];
-                selectedDifficulty = beatmap.difficulty;
-
-                _blocksParamText.text = beatmap.beatmapData.notesCount.ToString();
-                _obstaclesParamText.text = beatmap.beatmapData.obstaclesCount.ToString();
-
-                if (ScrappedData.Downloaded)
-                {
-                    ScrappedSong scrappedSong = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(_selectedSong.levelID));
-                    if (scrappedSong != default) {
-                        DifficultyStats stats = scrappedSong.Diffs.FirstOrDefault(x => x.Diff == selectedDifficulty.ToString().Replace("+", "Plus"));
-                        if (stats != default)
-                        {
-                            _starsParamText.text = stats.Stars.ToString();
-                            _rankedText.text = $"<color={(stats.Ranked == 0 ? "red" : "green")}>{(stats.Ranked == 0 ? "UNRANKED" : "RANKED")}</color>";
-                        }
-                        else
-                        {
-                            _starsParamText.text = "--";
-                            _rankedText.text = $"<color=red>UNRANKED</color>";
-                        }
-                        long votes = scrappedSong.Upvotes - scrappedSong.Downvotes;
-                        _ratingParamText.text = (votes < 0 ? votes.ToString() : $"+{votes}");
-                    }
-                    else
-                    {
-                        _starsParamText.text = "--";
-                        _ratingParamText.text = "--";
-                        _rankedText.text = "<color=yellow>SONG NOT FOUND</color>";
-                    }
-                }
-                else
-                {
-                    _starsParamText.text = "--";
-                    _ratingParamText.text = "--";
-                    _rankedText.text = "<color=yellow>SONG NOT FOUND</color>";
-                }
-
-                levelOptionsChanged?.Invoke();
-            }
-        }
-
-        public void SetPlayButtonInteractable(bool interactable)
-        {
-            _playButton.interactable = interactable;
-        }
-        
-        public void SetPlayersReady(int playersReady, int playersTotal)
-        {
-            _playersReadyText.text = $"{playersReady} of {playersTotal} players downloaded song";
-        }
-
-        public void SetProgressBarState(bool enabled, float progress)
-        {
-            _progressBarRect.gameObject.SetActive(enabled);
-            _progressBarImage.fillAmount = progress;
-            _progressText.text = progress.ToString("P");
-        }
-
-        public void SetSelectedSong(SongInfo info)
-        {
-            SetLoadingState(false);
-
-            _selectedSong = null;
-
-            _selectedSongCell.SetText(info.songName);
-            _selectedSongCell.SetSubText("Loading info...");
-
-            _playButton.SetButtonText("PLAY");
-            _playBtnGlow.color = new Color(0f, 0.7058824f, 1f, 0.7843137f);
-
-            SongDownloader.Instance.RequestSongByLevelID(info.hash, (song) =>
-            {
-                _selectedSongCell.SetText($"{song.songName} <size=80%>{song.songSubName}</size>");
-                _selectedSongCell.SetSubText(song.songAuthorName + " <size=80%>[" + song.levelAuthorName + "]</size>");
-                StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverURL, (cover) => { _selectedSongCell.SetIcon(cover); }));
-
-            });
-
-            _timeParamText.transform.parent.gameObject.SetActive(false);
-            _bpmParamText.transform.parent.gameObject.SetActive(false);
-            _blocksParamText.transform.parent.gameObject.SetActive(false);
-            _obstaclesParamText.transform.parent.gameObject.SetActive(false);
-            _starsParamText.transform.parent.gameObject.SetActive(false);
-            _ratingParamText.transform.parent.gameObject.SetActive(false);
-
-            _rankedText.gameObject.SetActive(false);
-
-            _characteristicControl.SetTexts(new string[] { "None" });
-            _characteristicControl.SelectCellWithNumber(0);
-            _difficultyControl.SetTexts(new string[] { "None" });
-            _difficultyControl.SelectCellWithNumber(0);
-        }
-
-        public void SetSelectedSong(IBeatmapLevel level)
-        {
-            SetLoadingState(false);
-
-            _selectedSong = level;
-
-            _selectedSongCell.SetText(_selectedSong.songName + " <size=80%>" + _selectedSong.songSubName + "</size>");
-            _selectedSongCell.SetSubText(_selectedSong.songAuthorName + " <size=80%>[" + _selectedSong.levelAuthorName + "]</size>");
-
-            _playButton.SetButtonText("PLAY");
-            _playBtnGlow.color = new Color(0f, 0.7058824f, 1f, 0.7843137f);
-
-            _selectedSong.GetCoverImageTexture2DAsync(new CancellationToken()).ContinueWith((tex) => {
-                if (!tex.IsFaulted)
-                    _selectedSongCell.SetIcon(tex.Result);
-            }).ConfigureAwait(false);
-
-            _timeParamText.transform.parent.gameObject.SetActive(true);
-            _bpmParamText.transform.parent.gameObject.SetActive(true);
-            _blocksParamText.transform.parent.gameObject.SetActive(true);
-            _obstaclesParamText.transform.parent.gameObject.SetActive(true);
-            _starsParamText.transform.parent.gameObject.SetActive(true);
-            _ratingParamText.transform.parent.gameObject.SetActive(true);
-
-            _rankedText.gameObject.SetActive(true);
-            _rankedText.alignment = TextAlignmentOptions.Center;
-
-            _timeParamText.text = level.beatmapLevelData.audioClip != null ? EssentialHelpers.MinSecDurationText(level.beatmapLevelData.audioClip.length) : "--";
-            _bpmParamText.text = level.beatsPerMinute.ToString();
-            _blocksParamText.text = "--";
-            _obstaclesParamText.text = "--";
-            _starsParamText.text = "--";
-            _ratingParamText.text = "--";
-            _rankedText.text = "LOADING...";
-
-            _characteristicControl.SetTexts(_selectedSong.beatmapCharacteristics.Distinct().Select(x => Localization.Get(x.characteristicNameLocalizationKey)).ToArray());
-
-            int standardCharacteristicIndex = Array.FindIndex(_selectedSong.beatmapCharacteristics.Distinct().ToArray(), x => x.serializedName == "Standard");
-            
-            _characteristicControl.SelectCellWithNumber((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
-            _characteristicControl_didSelectCellEvent((standardCharacteristicIndex == -1 ? 0 : standardCharacteristicIndex));
-        }
-
-        public void SetSelectedSong(IPreviewBeatmapLevel level)
-        {
-            SetLoadingState(false);
-
-            _selectedSong = null;
-
-            _selectedSongCell.SetText(level.songName + " <size=80%>" + level.songSubName + "</size>");
-            _selectedSongCell.SetSubText(level.songAuthorName + " <size=80%>[" + level.levelAuthorName + "]</size>");
-
-            _playButton.SetButtonText("NOT BOUGHT");
-            _playBtnGlow.color = Color.red;
-
-            level.GetCoverImageTexture2DAsync(new CancellationToken()).ContinueWith((tex) => {
-                if (!tex.IsFaulted)
-                    _selectedSongCell.SetIcon(tex.Result);
-            }).ConfigureAwait(false);
-
-            _timeParamText.transform.parent.gameObject.SetActive(true);
-            _bpmParamText.transform.parent.gameObject.SetActive(true);
-            _blocksParamText.transform.parent.gameObject.SetActive(true);
-            _obstaclesParamText.transform.parent.gameObject.SetActive(true);
-            _starsParamText.transform.parent.gameObject.SetActive(true);
-            _ratingParamText.transform.parent.gameObject.SetActive(true);
-
-            _rankedText.gameObject.SetActive(true);
-            _rankedText.alignment = TextAlignmentOptions.Center;
-
-            _timeParamText.text = EssentialHelpers.MinSecDurationText(level.songDuration);
-            _bpmParamText.text = level.beatsPerMinute.ToString();
-            _blocksParamText.text = "--";
-            _obstaclesParamText.text = "--";
-            _starsParamText.text = "--";
-            _ratingParamText.text = "--";
-            _rankedText.text = "LOADING...";
-
-            _characteristicControl.SetTexts(new string[] { "None" });
-            _characteristicControl.SelectCellWithNumber(0);
-            _difficultyControl.SetTexts(new string[] { "None" });
-            _difficultyControl.SelectCellWithNumber(0);
-        }
-
-        public void SetSongDuration(float duration)
-        {
-            _timeParamText.text = EssentialHelpers.MinSecDurationText(duration);
-        }
-
-        public void SetLoadingState(bool loading)
-        {
-            _loadingSpinner.SetActive(loading);
-            _selectedSongCell.gameObject.SetActive(!loading);
-            _playersReadyText.gameObject.SetActive(!loading);
-            _cancelButton.gameObject.SetActive(!loading && Client.Instance.isHost);
-            _playButton.gameObject.SetActive(!loading && Client.Instance.isHost);
-            _characteristicControl.gameObject.SetActive(!loading);
-            _difficultyControl.gameObject.SetActive(!loading);
-
-            _timeParamText.transform.parent.gameObject.SetActive(!loading);
-            _bpmParamText.transform.parent.gameObject.SetActive(!loading);
-            _blocksParamText.transform.parent.gameObject.SetActive(!loading);
-            _obstaclesParamText.transform.parent.gameObject.SetActive(!loading);
-            _starsParamText.transform.parent.gameObject.SetActive(!loading);
-            _ratingParamText.transform.parent.gameObject.SetActive(!loading);
-            _rankedText.gameObject.SetActive(!loading);
-            _rankedText.alignment = TextAlignmentOptions.Center;
-        }
-
-        public void SetBeatmapCharacteristic(BeatmapCharacteristicSO characteristic)
-        {
-            if (_selectedSong.beatmapCharacteristics.Contains(characteristic))
-            {
-                int charIndex = Array.IndexOf(_selectedSong.beatmapCharacteristics, characteristic);
-
-                _characteristicControl.SelectCellWithNumber(charIndex);
-                _characteristicControl_didSelectCellEvent(charIndex);
+                Plugin.log.Error("Unable to set beatmap characteristic! Not found");
             }
         }
 
         public void SetBeatmapDifficulty(BeatmapDifficulty difficulty)
         {
-            if (_selectedSong != null && _selectedSong.beatmapLevelData != null)
+            int num = _selectedLevel.beatmapLevelData.GetDifficultyBeatmapSet(selectedCharacteristic).difficultyBeatmaps.FindIndexInArray(x => x.difficulty == difficulty);
+            if (num != -1)
             {
-                IDifficultyBeatmap[] difficulties = _selectedSong.beatmapLevelData.difficultyBeatmapSets.First(x => x.beatmapCharacteristic == selectedCharacteristic).difficultyBeatmaps;
-
-                if (difficulties.Any(x => x.difficulty == difficulty))
-                {
-                    int diffIndex = Array.IndexOf(difficulties, difficulties.First(x => x.difficulty == difficulty));
-
-                    _difficultyControl.SelectCellWithNumber(diffIndex);
-                    _difficultyControl_didSelectCellEvent(diffIndex);
-                }
+                difficultyControl.SelectCellWithNumber(num);
+                SetSelectedDifficulty(null, num);
             }
+            else
+            {
+                Plugin.log.Error("Unable to set beatmap difficulty! Not found");
+            }
+        }
+
+        public void SetPlayersReady(int playersReady, int playersTotal)
+        {
+            if (playersReadyText != null)
+                playersReadyText.text = $"{playersReady}/{playersTotal} players ready";
+        }
+
+        public void SetLoadingState(bool loading)
+        {
+            diffSelectionView.gameObject.SetActive(!loading);
+            loadingIndicator.gameObject.SetActive(loading);
         }
 
         public void UpdateViewController(bool isHost, bool perPlayerDifficulty)
         {
-            _cancelButton.gameObject.SetActive(isHost);
-            _playButton.gameObject.SetActive(isHost);
-            _characteristicControlBlocker.gameObject.SetActive(!isHost);
-            _difficultyControlBlocker.gameObject.SetActive(!isHost && !perPlayerDifficulty);
+            this.isHost = isHost;
+            this.perPlayerDifficulty = perPlayerDifficulty;
+            charactertisticControlBlocker.gameObject.SetActive(!isHost);
+            difficultyControlBlocker.gameObject.SetActive(!isHost && !perPlayerDifficulty);
+            buttonsRect.gameObject.SetActive(isHost);
+        }
+
+        public void SetSelectedSong(IPreviewBeatmapLevel selectedLevel)
+        {
+            loadingRect.gameObject.SetActive(false);
+            buttonsRect.gameObject.SetActive(isHost);
+
+            if (selectedLevel is IBeatmapLevel)
+            {
+                _selectedLevel = selectedLevel as IBeatmapLevel;
+                controlsRect.gameObject.SetActive(true);
+                charactertisticControlBlocker.gameObject.SetActive(!isHost);
+                difficultyControlBlocker.gameObject.SetActive(!isHost && !perPlayerDifficulty);
+                SetContent(_selectedLevel);
+                playButtonGlow.SetGlow("#5DADE2");
+                playButton.SetButtonText("PLAY");
+            }
+            else
+            {
+                _selectedLevel = null;
+                controlsRect.gameObject.SetActive(false);
+                SetContent(selectedLevel);
+                playButtonGlow.SetGlow("#F73431");
+                playButton.SetButtonText("NOT BOUGHT");
+            }
+        }
+
+        public void SetSelectedSong(SongInfo song)
+        {
+
+            controlsRect.gameObject.SetActive(false);
+            buttonsRect.gameObject.SetActive(false);
+            loadingRect.gameObject.SetActive(true);
+
+            songNameText.text = song.songName;
+
+            durationText.text = "--";
+            bpmText.text = "--";
+            npsText.text = "--";
+            notesCountText.text = "--";
+            obstaclesCountText.text = "--";
+            bombsCountText.text = "--";
+
+            maxComboValue.text = "--";
+            highscoreValue.text = "--";
+            maxRankValue.text = "--";
+
+            rankingValue.text = "--";
+            starsText.text = "--";
+            ratingText.text = "--";
+
+            levelCoverImage.texture = _defaultArtworkTexture;
+
+            SetLoadingState(false);
+
+            SongDownloader.Instance.RequestSongByLevelID(song.hash, (info) =>
+            {
+                songNameText.text = info.songName;
+                durationText.text = info.duration.MinSecDurationText();
+                bpmText.text = info.bpm.ToString();
+
+                long votes = info.upVotes - info.downVotes;
+                ratingText.text = (votes < 0 ? votes.ToString() : $"+{votes}");
+
+                StartCoroutine(LoadScripts.LoadSpriteCoroutine(info.coverURL, (cover) => { levelCoverImage.texture = cover; }));
+            });
+        }
+
+        private async void SetContent(IBeatmapLevel level)
+        {
+            if (level.beatmapLevelData.difficultyBeatmapSets.Any(x => x.beatmapCharacteristic == _playerDataModel.playerData.lastSelectedBeatmapCharacteristic))
+            {
+                _selectedDifficultyBeatmap = level.GetDifficultyBeatmap(_playerDataModel.playerData.lastSelectedBeatmapCharacteristic, _playerDataModel.playerData.lastSelectedBeatmapDifficulty);
+            }
+            else if (level.beatmapLevelData.difficultyBeatmapSets.Length > 0)
+            {
+                _selectedDifficultyBeatmap = level.GetDifficultyBeatmap(level.beatmapLevelData.difficultyBeatmapSets[0].beatmapCharacteristic, _playerDataModel.playerData.lastSelectedBeatmapDifficulty);
+            }
+            else
+                Plugin.log.Critical("Unable to set level! No beatmap characteristics found!");
+
+            UpdateContent();
+
+            _playerDataModel.playerData.SetLastSelectedBeatmapCharacteristic(_selectedDifficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic);
+            _playerDataModel.playerData.SetLastSelectedBeatmapDifficulty(_selectedDifficultyBeatmap.difficulty);
+
+            SetControlData(_selectedLevel.beatmapLevelData.difficultyBeatmapSets, _playerDataModel.playerData.lastSelectedBeatmapCharacteristic);
+
+            levelCoverImage.texture = await level.GetCoverImageTexture2DAsync(cancellationToken.Token);
+
+            SetLoadingState(false);
+        }
+        public void UpdateContent()
+        {
+            if (_selectedLevel != null)
+            {
+                songNameText.text = _selectedLevel.songName;
+                durationText.text = _selectedLevel.beatmapLevelData.audioClip.length.MinSecDurationText();
+                bpmText.text = Mathf.RoundToInt(_selectedLevel.beatsPerMinute).ToString();
+                if (_selectedDifficultyBeatmap != null)
+                {
+                    npsText.text = (_selectedDifficultyBeatmap.beatmapData.notesCount / _selectedLevel.beatmapLevelData.audioClip.length).ToString("0.00");
+                    notesCountText.text = _selectedDifficultyBeatmap.beatmapData.notesCount.ToString();
+                    obstaclesCountText.text = _selectedDifficultyBeatmap.beatmapData.obstaclesCount.ToString();
+                    bombsCountText.text = _selectedDifficultyBeatmap.beatmapData.bombsCount.ToString();
+
+                    var playerLevelStats = _playerDataModel.playerData.GetPlayerLevelStatsData(_selectedDifficultyBeatmap);
+
+                    if (playerLevelStats.validScore)
+                    {
+                        maxComboValue.text = playerLevelStats.maxCombo.ToString();
+                        highscoreValue.text = playerLevelStats.highScore.ToString();
+                        maxRankValue.text = playerLevelStats.maxRank.ToString();
+                    }
+                    else
+                    {
+                        maxComboValue.text = "--";
+                        highscoreValue.text = "--";
+                        maxRankValue.text = "--";
+                    }
+
+                    string levelHash = SongCore.Collections.hashForLevelID(_selectedLevel.levelID);
+
+                    ScrappedSong scrappedSongData = ScrappedData.Songs.FirstOrDefault(x => x.Hash == levelHash);
+
+                    if (scrappedSongData != default)
+                    {
+                        DifficultyStats stats = scrappedSongData.Diffs.FirstOrDefault(x => x.Diff == selectedDifficulty.ToString().Replace("+", "Plus"));
+
+                        if (stats != default)
+                        {
+                            starsText.text = stats.Stars.ToString();
+                            rankingValue.text = $"<color={(stats.Ranked == 0 ? "red" : "green")}>{(stats.Ranked == 0 ? "UNRANKED" : "RANKED")}</color>";
+                        }
+                        else
+                        {
+                            starsText.text = (stats.Stars > float.Epsilon) ? stats.Stars.ToString() : "--";
+                            rankingValue.text = $"<color=red>UNRANKED</color>";
+                        }
+
+                        long votes = scrappedSongData.Upvotes - scrappedSongData.Downvotes;
+                        ratingText.text = (votes < 0 ? votes.ToString() : $"+{votes}");
+
+                    }
+                    else
+                    {
+                        rankingValue.text = $"<color=yellow>NOT FOUND</color>";
+                        starsText.text = "--";
+                        ratingText.text = "--";
+                    }
+                }
+                else
+                {
+                    npsText.text = "--";
+                    notesCountText.text = "--";
+                    obstaclesCountText.text = "--";
+                    bombsCountText.text = "--";
+
+                    maxComboValue.text = "--";
+                    highscoreValue.text = "--";
+                    maxRankValue.text = "--";
+
+                    rankingValue.text = "--";
+                    starsText.text = "--";
+                    ratingText.text = "--";
+                }
+            }
+        }
+
+        public void SetControlData(IDifficultyBeatmapSet[] difficultyBeatmapSets, BeatmapCharacteristicSO selectedBeatmapCharacteristic)
+        {
+            _beatmapCharacteristics.Clear();
+            List<IDifficultyBeatmapSet> list = new List<IDifficultyBeatmapSet>(difficultyBeatmapSets);
+            list.Sort((IDifficultyBeatmapSet a, IDifficultyBeatmapSet b) => a.beatmapCharacteristic.sortingOrder.CompareTo(b.beatmapCharacteristic.sortingOrder));
+            difficultyBeatmapSets = list.ToArray();
+            IconSegmentedControl.DataItem[] array = new IconSegmentedControl.DataItem[difficultyBeatmapSets.Length];
+            int num = 0;
+            for (int i = 0; i < difficultyBeatmapSets.Length; i++)
+            {
+                BeatmapCharacteristicSO beatmapCharacteristic = difficultyBeatmapSets[i].beatmapCharacteristic;
+                array[i] = new IconSegmentedControl.DataItem(beatmapCharacteristic.icon, Localization.Get(beatmapCharacteristic.descriptionLocalizationKey));
+                _beatmapCharacteristics.Add(beatmapCharacteristic);
+                if (beatmapCharacteristic == selectedBeatmapCharacteristic)
+                {
+                    num = i;
+                }
+            }
+            characteristicControl.SetData(array);
+            characteristicControl.SelectCellWithNumber(num);
+            SetSelectedCharateristic(null, num);
+        }
+
+        private async void SetContent(IPreviewBeatmapLevel level)
+        {
+            songNameText.text = level.songName;
+            durationText.text = "--";
+            bpmText.text = Mathf.RoundToInt(level.beatsPerMinute).ToString();
+            npsText.text = "--";
+            notesCountText.text = "--";
+            obstaclesCountText.text = "--";
+            bombsCountText.text = "--";
+
+            levelCoverImage.texture = await level.GetCoverImageTexture2DAsync(cancellationToken.Token);
+
+            SetLoadingState(false);
+        }
+
+        public void SetProgressBarState(bool enabled, float progress, string message = null)
+        {
+            if (enabled)
+            {
+                buttonsRect.gameObject.SetActive(false);
+                controlsRect.gameObject.SetActive(false);
+                loadingRect.gameObject.SetActive(true);
+
+                if (string.IsNullOrEmpty(message))
+                    loadingProgressText.text = $"{(progress * 100).ToString("0.00")}%";
+                else
+                    loadingProgressText.text = message;
+                progressBarTop.rectTransform.sizeDelta = new Vector2(60f * progress, 6f);
+            }
+            else
+            {
+                controlsRect.gameObject.SetActive(_selectedLevel != null);
+                UpdateViewController(isHost, perPlayerDifficulty);
+                loadingRect.gameObject.SetActive(false);
+            }
+
+        }
+
+        [UIAction("characteristic-selected")]
+        public void SetSelectedCharateristic(IconSegmentedControl sender, int index)
+        {
+            _playerDataModel.playerData.SetLastSelectedBeatmapCharacteristic(_beatmapCharacteristics[index]);
+
+            var diffBeatmaps = _selectedLevel.beatmapLevelData.GetDifficultyBeatmapSet(_beatmapCharacteristics[index]).difficultyBeatmaps;
+
+            int diffIndex = CustomExtensions.GetClosestDifficultyIndex(diffBeatmaps, _playerDataModel.playerData.lastSelectedBeatmapDifficulty);
+
+            difficultyControl.SetTexts(diffBeatmaps.Select(x => x.difficulty.ToString().Replace("Plus", "+")).ToArray());
+            difficultyControl.SelectCellWithNumber(diffIndex);
+            SetSelectedDifficulty(null, diffIndex);
+        }
+
+        [UIAction("difficulty-selected")]
+        public void SetSelectedDifficulty(TextSegmentedControl sender, int index)
+        {
+            _selectedDifficultyBeatmap = _selectedLevel.beatmapLevelData.GetDifficultyBeatmapSet(_playerDataModel.playerData.lastSelectedBeatmapCharacteristic).difficultyBeatmaps[index];
+
+            _playerDataModel.playerData.SetLastSelectedBeatmapDifficulty(_selectedDifficultyBeatmap.difficulty);
+
+            UpdateContent();
+
+            levelOptionsChanged?.Invoke();
+        }
+
+        [UIAction("cancel-pressed")]
+        public void CancelPressed()
+        {
+            discardPressed?.Invoke();
+        }
+
+        [UIAction("play-pressed")]
+        public void PlayPressed()
+        {
+            playPressed?.Invoke(_selectedLevel, selectedCharacteristic, selectedDifficulty);
         }
     }
 }

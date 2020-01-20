@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
 using Harmony;
+using IPA.Utilities;
 using System;
 
 namespace BeatSaberMultiplayer.OverriddenClasses
@@ -153,6 +154,29 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             catch (Exception e)
             {
                 Plugin.log.Error("Exception in Harmony patch GameEnergyCounter.AddEnergy: " + e);
+                return true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(PauseController))]
+    [HarmonyPatch("Pause")]
+    class GameplayManagerPausePatch
+    {
+        static bool Prefix(StandardLevelGameplayManager __instance, PauseMenuManager ____pauseMenuManager)
+        {
+            try
+            {
+                if (Client.Instance.connected)
+                {
+                    ____pauseMenuManager.ShowMenu();
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+                Plugin.log.Error("Exception in Harmony patch StandardLevelGameplayManager.Pause: " + e);
                 return true;
             }
         }

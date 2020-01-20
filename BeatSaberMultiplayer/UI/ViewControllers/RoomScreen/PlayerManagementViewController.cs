@@ -1,16 +1,17 @@
-﻿using BeatSaberMultiplayer.Data;
-using BeatSaberMultiplayer.Misc;
-using BeatSaberMultiplayer.UI.UIElements;
-using CustomUI.BeatSaber;
+﻿using BeatSaberMarkupLanguage;
+using BeatSaberMarkupLanguage.Attributes;
+using BeatSaberMarkupLanguage.Components;
+using BeatSaberMarkupLanguage.ViewControllers;
+using BeatSaberMultiplayer.Data;
+using BS_Utils.Utilities;
 using HMUI;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
+using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
@@ -20,307 +21,117 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         void TransferHostButtonWasPressed(PlayerInfo player);
     }
 
-    class PlayerManagementViewController : VRUIViewController, TableView.IDataSource, IPlayerManagementButtons
+    class PlayerManagementViewController : BSMLResourceViewController, IPlayerManagementButtons
     {
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
+
         public event Action gameplayModifiersChanged;
         public event Action<PlayerInfo> transferHostButtonPressed;
 
-        public GameplayModifiers modifiers { get { return _modifiersPanel.gameplayModifiers; } }
+        public GameplayModifiers modifiers { get { return modifiersPanel.gameplayModifiers; } }
 
-        RectTransform _playersTab;
-        RectTransform _modifiersTab;
+        [UIComponent("ping-text")]
+        public TextMeshProUGUI pingText;
 
-        TextSegmentedControl _tabControl;
+        [UIComponent("modifiers-rect")]
+        public RectTransform modifiersTab;
 
-        GameplayModifiersPanelController _modifiersPanel;
-        RectTransform _modifiersPanelBlocker;
+        public GameplayModifiersPanelController modifiersPanel;
 
-        Button _pageUpButton;
-        Button _pageDownButton;
+        [UIComponent("modifiers-panel-blocker")]
+        public Image modifiersPanelBlocker;
+        
+        [UIComponent("modifiers-rect")]
+        public TableView playersTableView;
 
-        TableView _playersTableView;
+        [UIComponent("players-list")]
+        public CustomCellListTableData playersList;
 
-        LeaderboardTableCell _downloadListTableCellInstance;
-        List<PlayerListTableCell> _tableCells = new List<PlayerListTableCell>();
+        [UIValue("players")]
+        List<object> players = new List<object>();
 
-        TextMeshProUGUI _pingText;
-
-        bool _resetPlayerList;
-
-        protected override void DidActivate(bool firstActivation, ActivationType activationType)
+        [UIAction("#post-parse")]
+        protected void SetupViewController()
         {
-            if (firstActivation && activationType == ActivationType.AddedToHierarchy)
+            modifiersPanelBlocker.type = Image.Type.Sliced;
+            modifiersPanelBlocker.color = new Color(0f, 0f, 0f, 0.75f);
+
+            modifiersPanel = Instantiate(Resources.FindObjectsOfTypeAll<GameplayModifiersPanelController>().First(), rectTransform, false);
+            modifiersPanel.gameObject.SetActive(true);
+            modifiersPanel.transform.SetParent(modifiersTab, false);
+            (modifiersPanel.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
+            (modifiersPanel.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
+            (modifiersPanel.transform as RectTransform).anchoredPosition = new Vector2(0f, -23f);
+            (modifiersPanel.transform as RectTransform).sizeDelta = new Vector2(120f, -23f);
+
+            HoverHintController hoverHintController = Resources.FindObjectsOfTypeAll<HoverHintController>().First();
+
+            foreach (var hint in modifiersPanel.GetComponentsInChildren<HoverHint>())
             {
-                _downloadListTableCellInstance = Resources.FindObjectsOfTypeAll<LeaderboardTableCell>().First();
-                
-                _tabControl = BeatSaberUI.CreateTextSegmentedControl(rectTransform, new Vector2(0f, 31f), new Vector2(100f, 7f), _tabControl_didSelectCellEvent);
-                _tabControl.SetTexts(new string[] { "Players", "Modifiers" });
-
-                #region Modifiers tab
-
-                _modifiersTab = new GameObject("ModifiersTab", typeof(RectTransform)).GetComponent<RectTransform>();
-                _modifiersTab.SetParent(rectTransform, false);
-                _modifiersTab.anchorMin = new Vector2(0f, 0f);
-                _modifiersTab.anchorMax = new Vector2(1f, 1f);
-                _modifiersTab.anchoredPosition = new Vector2(0f, 0f);
-                _modifiersTab.sizeDelta = new Vector2(0f, 0f);
-
-                _modifiersPanel = Instantiate(Resources.FindObjectsOfTypeAll<GameplayModifiersPanelController>().First(), rectTransform, false);
-                _modifiersPanel.gameObject.SetActive(true);
-                _modifiersPanel.transform.SetParent(_modifiersTab, false);
-                (_modifiersPanel.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
-                (_modifiersPanel.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                (_modifiersPanel.transform as RectTransform).anchoredPosition = new Vector2(0f, -23f);
-                (_modifiersPanel.transform as RectTransform).sizeDelta = new Vector2(120f, -23f);
-
-                HoverHintController hoverHintController = Resources.FindObjectsOfTypeAll<HoverHintController>().First();
-
-                foreach (var hint in _modifiersPanel.GetComponentsInChildren<HoverHint>())
-                {
-                    hint.SetPrivateField("_hoverHintController", hoverHintController);
-                }
-
-                _modifiersPanel.Awake();
-
-                _modifiersPanel.SetData(GameplayModifiers.defaultModifiers);
-                _modifiersPanel.Refresh();
-
-                var modifierToggles = _modifiersPanel.GetPrivateField<GameplayModifierToggle[]>("_gameplayModifierToggles");
-
-                foreach (var item in modifierToggles)
-                {
-                    item.toggle.onValueChanged.AddListener( (enabled) => { gameplayModifiersChanged?.Invoke(); });
-                }
-                
-                _modifiersPanelBlocker = new GameObject("ModifiersPanelBlocker", typeof(RectTransform)).GetComponent<RectTransform>(); //"If it works it's not stupid"
-                _modifiersPanelBlocker.SetParent(_modifiersTab, false);
-                _modifiersPanelBlocker.gameObject.AddComponent<UnityEngine.UI.Image>().color = new Color(0f, 0f, 0f, 0f);
-                _modifiersPanelBlocker.anchorMin = new Vector2(0f, 0f);
-                _modifiersPanelBlocker.anchorMax = new Vector2(1f, 0f);
-                _modifiersPanelBlocker.pivot = new Vector2(0.5f, 0f);
-                _modifiersPanelBlocker.sizeDelta = new Vector2(-10f, 62f);
-                _modifiersPanelBlocker.anchoredPosition = new Vector2(0f, 0f);
-               
-                #endregion
-
-                #region Players tab
-
-                _playersTab = new GameObject("PlayersTab", typeof(RectTransform)).GetComponent<RectTransform>();
-                _playersTab.SetParent(rectTransform, false);
-                _playersTab.anchorMin = new Vector2(0f, 0f);
-                _playersTab.anchorMax = new Vector2(1f, 1f);
-                _playersTab.anchoredPosition = new Vector2(0f, 0f);
-                _playersTab.sizeDelta = new Vector2(0f, 0f);
-
-                _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "PageUpButton")), _playersTab, false);
-                (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
-                (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -12.5f);
-                (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
-                _pageUpButton.interactable = true;
-                _pageUpButton.onClick.AddListener(delegate ()
-                {
-                    _playersTableView.GetPrivateField<TableViewScroller>("_scroller").PageScrollUp();
-
-                });
-                _pageUpButton.interactable = true;
-
-                _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), _playersTab, false);
-                (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
-                (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
-                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, 1f);
-                (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 6f);
-                _pageDownButton.interactable = true;
-                _pageDownButton.onClick.AddListener(delegate ()
-                {
-                    _playersTableView.GetPrivateField<TableViewScroller>("_scroller").PageScrollDown();
-
-                });
-                _pageDownButton.interactable = true;
-
-                RectTransform container = new GameObject("Content", typeof(RectTransform)).transform as RectTransform;
-                container.SetParent(_playersTab, false);
-                container.anchorMin = new Vector2(0.15f, 0.5f);
-                container.anchorMax = new Vector2(0.85f, 0.5f);
-                container.sizeDelta = new Vector2(0f, 49f);
-                container.anchoredPosition = new Vector2(0f, -3f);
-
-                var tableGameObject = new GameObject("CustomTableView");
-                tableGameObject.SetActive(false);
-                _playersTableView = tableGameObject.AddComponent<TableView>();
-                _playersTableView.gameObject.AddComponent<RectMask2D>();
-                _playersTableView.transform.SetParent(container, false);
-
-                _playersTableView.SetPrivateField("_isInitialized", false);
-                _playersTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-
-                RectTransform viewport = new GameObject("Viewport").AddComponent<RectTransform>();
-                viewport.SetParent(_playersTableView.transform, false);
-                (viewport.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
-                (viewport.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
-                (viewport.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
-                _playersTableView.GetComponent<ScrollRect>().viewport = viewport;
-                _playersTableView.Init();
-
-                tableGameObject.SetActive(true);
-
-                (_playersTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
-                (_playersTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
-                (_playersTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
-                (_playersTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
-
-                //ReflectionUtil.SetPrivateField(_playersTableView, "_pageUpButton", _pageUpButton);
-                //ReflectionUtil.SetPrivateField(_playersTableView, "_pageDownButton", _pageDownButton);
-                
-                _playersTableView.dataSource = this;
-                #endregion
-
-                _pingText = this.CreateText("PING: 0", new Vector2(75f, 22.5f));
-                _pingText.alignment = TextAlignmentOptions.Left;
-
-                _tabControl_didSelectCellEvent(0);
-            }
-            else
-            {
-                for(int i = 0; i < _tableCells.Count; i++)
-                {
-                    Destroy(_tableCells[i].gameObject);
-                }
-                _tableCells.Clear();
-                _playersTableView.ReloadData();
+                hint.SetPrivateField("_hoverHintController", hoverHintController);
             }
 
-            if (activationType == ActivationType.AddedToHierarchy)
-            {
-                SetGameplayModifiers(GameplayModifiers.defaultModifiers);
-            }
-        }
+            modifiersPanel.Awake();
 
-        private void _tabControl_didSelectCellEvent(int selectedIndex)
-        {
-            _playersTab.gameObject.SetActive(selectedIndex == 0);
-            _modifiersTab.gameObject.SetActive(selectedIndex == 1);
+            modifiersPanel.SetData(GameplayModifiers.defaultModifiers);
+            modifiersPanel.Refresh();
+
+            var modifierToggles = modifiersPanel.GetPrivateField<GameplayModifierToggle[]>("_gameplayModifierToggles");
+
+            foreach (var item in modifierToggles)
+            {
+                item.toggle.onValueChanged.AddListener((enabled) => { gameplayModifiersChanged?.Invoke(); });
+            }
+
+            playersList.tableView.ReloadData();
         }
 
         public void Update()
         {
-            if(Time.frameCount % 45 == 0 && _pingText != null && Client.Instance.networkClient != null && Client.Instance.networkClient.Connections.Count > 0)
-                _pingText.text = "PING: "+ Math.Round(Client.Instance.networkClient.Connections[0].AverageRoundtripTime*1000, 2).ToString();
+            if(Time.frameCount % 45 == 0 && pingText != null && Client.Instance.networkClient != null && Client.Instance.networkClient.Connections.Count > 0)
+                pingText.text = "PING: "+ Math.Round(Client.Instance.networkClient.Connections[0].AverageRoundtripTime*1000, 2).ToString();
         }
 
         public void UpdateViewController(bool isHost, bool modifiersInteractable)
         {
-            _modifiersPanelBlocker.gameObject.SetActive(!isHost || !modifiersInteractable);
+            if(modifiersPanelBlocker != null)
+                modifiersPanelBlocker.gameObject.SetActive(!isHost || !modifiersInteractable);
         }
 
         public void UpdatePlayerList(RoomState state)
         {
-            var players = InGameOnlineController.Instance.players;
+            
+            var playersDict = InGameOnlineController.Instance.players;
                 
-            if (players.Count != _tableCells.Count || _resetPlayerList)
+            if (playersDict.Count != players.Count)
             {
-                for (int i = 0; i < _tableCells.Count; i++)
+                while(playersDict.Count > players.Count)
                 {
-                    Destroy(_tableCells[i].gameObject);
+                    players.Add(new PlayerListObject(null, this));
                 }
-                _tableCells.Clear();
-                _playersTableView.RefreshTable(false);
-                _resetPlayerList = false;
+                if (playersDict.Count < players.Count)
+                    players.RemoveRange(playersDict.Count, players.Count - playersDict.Count);
+
+                playersList.tableView.ReloadData();
             }
 
-            PlayerListTableCell buffer;
             int index = 0;
-            foreach (var player in players)
+            foreach(var playerPair in playersDict)
             {
-                if (player.Value == null || player.Value.playerInfo == null)
-                {
-                    _resetPlayerList = true;
-                    break;
-                }
-                if (_tableCells.Count > index)
-                {
-                    buffer = _tableCells[index];
-                    buffer.playerInfo = player.Value.playerInfo;
-                    buffer.buttonsInterface = this;
-                    if (state == RoomState.Preparing)
-                    {
-                        if (player.Value.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
-                        {
-                            buffer.progress = player.Value.playerInfo.updateInfo.playerProgress / 100f;
-                        }
-                        else
-                        {
-                            buffer.progress = 1f;
-                        }
-                    }
-                    else
-                    {
-                        buffer.progress = -1f;
-                    }
-                }
+                (players[index] as PlayerListObject).Update(playerPair.Value.playerInfo, state);
                 index++;
-            }
-        }
-
-        IEnumerator ScrollWithDelay()
-        {
-            yield return null;
-            yield return null;
-
-            _playersTableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
+            }            
         }
 
         public void SetGameplayModifiers(GameplayModifiers modifiers)
         {
-            if (_modifiersPanel != null)
+            
+            if (modifiersPanel != null)
             {
-                _modifiersPanel.SetData(modifiers);
-                _modifiersPanel.Refresh();
-
-                /*
-                 * GameplayModifiersModelSO modifiersModel = Resources.FindObjectsOfTypeAll<GameplayModifiersModelSO>().First();
-
-                var modifiersParams = modifiersModel.GetModifierParams(modifiers);
-
-                foreach (GameplayModifierToggle gameplayModifierToggle in _modifiersPanel.GetPrivateField<GameplayModifierToggle[]>("_gameplayModifierToggles"))
-                {
-                    gameplayModifierToggle.toggle.isOn = modifiersParams.Contains(gameplayModifierToggle.gameplayModifier);
-                }
-                _modifiersPanel.RefreshTotalMultiplierAndRankUI();
-                */
+                modifiersPanel.SetData(modifiers);
+                modifiersPanel.Refresh();
             }
-        }
-
-        public float CellSize()
-        {
-            return 7f;
-        }
-
-        public int NumberOfCells()
-        {
-            return InGameOnlineController.Instance.players.Count;
-        }
-
-        public TableCell CellForIdx(TableView sender, int row)
-        {
-            LeaderboardTableCell _originalCell = Instantiate(_downloadListTableCellInstance);
-
-            PlayerListTableCell _tableCell = _originalCell.gameObject.AddComponent<PlayerListTableCell>();
-
-            _tableCell.Init();
-
-            _tableCell.rank = 0;
-            _tableCell.showFullCombo = false;
-            _tableCell.playerName = string.Empty;
-            _tableCell.progress = 0f;
-            _tableCell.IsTalking = false;
-            _tableCell.NameColor = new Color32(255,255,255,255);
-            _tableCell.playerInfo = null;
-            _tableCell.buttonsInterface = this;
-            _tableCell.Update();
-
-            _tableCells.Add(_tableCell);
-            return _tableCell;
+            
         }
 
         public void MuteButtonWasPressed(PlayerInfo player)
@@ -348,5 +159,104 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 transferHostButtonPressed?.Invoke(player);
             }
         }
+
+        public class PlayerListObject
+        {
+            [UIComponent("speaker-icon")]
+            public Image speakerIcon;
+
+            [UIComponent("control-buttons")]
+            public RectTransform controlButtonsRect;
+
+            [UIComponent("pass-host-button")]
+            public Button passHostButton;
+
+            [UIComponent("mute-button")]
+            public Button muteButton;
+
+            [UIComponent("progress-text")]
+            public TextMeshProUGUI progressText;
+
+            [UIComponent("player-name")]
+            public TextMeshProUGUI playerName;
+
+            public PlayerInfo playerInfo;
+
+            private IPlayerManagementButtons _buttonsInterface;
+            private bool _isMuted;
+
+            private bool _isInitialized;
+
+            public PlayerListObject(PlayerInfo info, IPlayerManagementButtons buttons)
+            {
+                playerInfo = info;
+                _buttonsInterface = buttons;
+            }
+
+            [UIAction("refresh-visuals")]
+            public void Refresh(bool selected, bool highlighted)
+            {
+                if (playerInfo != null)
+                {
+                    playerName.text = playerInfo.playerName;
+                    playerName.color = playerInfo.updateInfo.playerNameColor;
+
+                    passHostButton.onClick.RemoveAllListeners();
+                    passHostButton.onClick.AddListener(() => _buttonsInterface.TransferHostButtonWasPressed(playerInfo));
+                    muteButton.onClick.RemoveAllListeners();
+                    muteButton.onClick.AddListener(() => _buttonsInterface.MuteButtonWasPressed(playerInfo));
+                }
+                _isInitialized = true;
+            }
+
+            public void Update(PlayerInfo info, RoomState state)
+            {
+                if (!_isInitialized)
+                    return;
+
+                if (info.playerId != playerInfo?.playerId)
+                {
+                    playerInfo = info;
+                    Refresh(false, false);
+                }
+                else
+                {
+                    playerInfo.updateInfo = info.updateInfo;
+                }
+
+                speakerIcon.enabled = InGameOnlineController.Instance.VoiceChatIsTalking(playerInfo.playerId);
+
+                controlButtonsRect.gameObject.SetActive(( state == RoomState.SelectingSong || state == RoomState.Results) && !playerInfo.Equals(Client.Instance.playerInfo));
+                passHostButton.interactable = Client.Instance.isHost && !playerInfo.Equals(Client.Instance.playerInfo);
+
+                if (_isMuted && !InGameOnlineController.Instance.mutedPlayers.Contains(playerInfo.playerId))
+                {
+                    _isMuted = false;
+                    muteButton.SetButtonText("MUTE");
+                }
+                else if (!_isMuted && InGameOnlineController.Instance.mutedPlayers.Contains(playerInfo.playerId))
+                {
+                    _isMuted = true;
+                    muteButton.SetButtonText("UNMUTE");
+                }
+
+                progressText.gameObject.SetActive(state == RoomState.Preparing);
+
+                if(playerInfo.updateInfo.playerProgress < 0f)
+                {
+                    progressText.text = "ERROR";
+                }
+                else if (playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs && playerInfo.updateInfo.playerProgress < 100f)
+                {
+                    progressText.text = (playerInfo.updateInfo.playerProgress / 100f).ToString("P");
+                }
+                else
+                {
+                    progressText.text = "DOWNLOADED";
+                }
+            }
+        }
     }
+
+
 }

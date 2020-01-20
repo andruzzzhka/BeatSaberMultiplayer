@@ -434,7 +434,7 @@ namespace ServerHub.Hub
             availableCommands.Add(new Command()
             {
                 name = "version",
-                help = "version - prints versions ofServerHub and installed plugins",
+                help = "version - prints versions of ServerHub and installed plugins",
                 function = (comArgs) => {
                     string versions = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}";
                     foreach (IPlugin plugin in plugins)
@@ -924,7 +924,7 @@ namespace ServerHub.Hub
             availableCommands.Add(new Command()
             {
                 name = "message",
-                help = "message [roomId or *] [displayTime] [fontSize] [text] - stops ServerHub",
+                help = "message [roomId or *] [displayTime] [fontSize] [text] - sends message to specified rooms",
                 function = (comArgs) => {
                     if (HubListener.Listen)
                     {

@@ -1,0 +1,11 @@
+﻿<vertical pad="4" horizontal-fit="PreferredSize" vertical-fit="PreferredSize" spacing="2">
+  <text id="title-text" text="{player} invited you to play!" align="Center"/>
+  <stack horizontal-fit="PreferredSize" vertical-fit="PreferredSize">
+    <loading />
+    <raw-image id="player-avatar" preferred-width="29" preferred-height="29"/>
+  </stack>
+  <horizontal spacing="2" preferred-width="85">
+    <button text="Accept" on-click="accept-pressed" glow-color="#00B140"/>
+    <button text="Decline" on-click="decline-pressed" glow-color="#EE2737"/>
+  </horizontal>
+</vertical>

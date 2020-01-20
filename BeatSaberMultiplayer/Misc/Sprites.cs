@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using BeatSaberMarkupLanguage;
+using System.Linq;
 using UnityEngine;
 
 namespace BeatSaberMultiplayer
@@ -18,7 +19,7 @@ namespace BeatSaberMultiplayer
             }
         }
         private static Material noGlowMat;
-        
+
         public static Material UIScreenMat
         {
             get
@@ -67,45 +68,45 @@ namespace BeatSaberMultiplayer
 
         public static void ConvertSprites()
         {
-            onlineIcon =            CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.OnlineIcon.png");
+            onlineIcon = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.OnlineIcon.png");
             onlineIcon.texture.wrapMode = TextureWrapMode.Clamp;
 
-            lockedRoomIcon =        CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.LockedRoom.png");
+            lockedRoomIcon = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.LockedRoom.png");
             lockedRoomIcon.texture.wrapMode = TextureWrapMode.Clamp;
 
-            roomsIcon =             CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RoomsIcon.png");
+            roomsIcon = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.RoomsIcon.png");
             roomsIcon.texture.wrapMode = TextureWrapMode.Clamp;
 
-            radioIcon =             CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RadioIcon.png");
+            radioIcon = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.RadioIcon.png");
             radioIcon.texture.wrapMode = TextureWrapMode.Clamp;
 
-            whitePixel =            CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.WhitePixel.png");
+            whitePixel = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.WhitePixel.png");
 
-            doubleArrow =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.DoubleArrowIcon.png");
+            doubleArrow = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.DoubleArrowIcon.png");
             doubleArrow.texture.wrapMode = TextureWrapMode.Clamp;
 
-            addToFavorites =        CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.AddToFavorites.png");
+            addToFavorites = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.AddToFavorites.png");
             addToFavorites.texture.wrapMode = TextureWrapMode.Clamp;
 
-            removeFromFavorites =   CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RemoveFromFavorites.png");
+            removeFromFavorites = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.RemoveFromFavorites.png");
             removeFromFavorites.texture.wrapMode = TextureWrapMode.Clamp;
 
-            thumbUp =               CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.ThumbUp.png");
+            thumbUp = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.ThumbUp.png");
             thumbUp.texture.wrapMode = TextureWrapMode.Clamp;
 
-            thumbDown =             CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.ThumbDown.png");
+            thumbDown = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.ThumbDown.png");
             thumbDown.texture.wrapMode = TextureWrapMode.Clamp;
 
-            speakerIcon =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.SpeakerIcon.png");
+            speakerIcon = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.SpeakerIcon.png");
             speakerIcon.texture.wrapMode = TextureWrapMode.Clamp;
 
-            refreshIcon =           CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RefreshIcon.png");
+            refreshIcon = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.RefreshIcon.png");
             refreshIcon.texture.wrapMode = TextureWrapMode.Clamp;
 
-            starIcon =              CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.StarIcon.png");
+            starIcon = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.StarIcon.png");
             starIcon.texture.wrapMode = TextureWrapMode.Clamp;
 
-            ratingIcon =            CustomUI.Utilities.UIUtilities.LoadSpriteFromResources("BeatSaberMultiplayer.Assets.RatingIcon.png");
+            ratingIcon = Utilities.FindSpriteInAssembly("BeatSaberMultiplayer.Assets.RatingIcon.png");
             ratingIcon.texture.wrapMode = TextureWrapMode.Clamp;
         }
     }

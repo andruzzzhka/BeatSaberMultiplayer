@@ -1,0 +1,97 @@
+﻿<stack>
+  <horizontal id="diff-selection-view" spacing="-15" pad-right="6">
+    <vertical horizontal-fit="PreferredSize" pad-left="6" pref-width="100" spacing="2">
+      <stack id="level-details-rect">
+        <raw-image id="level-cover-image" ignore-layout="true" size-delta-x="110" size-delta-y="110"/>
+        <vertical>
+          <text id="song-name-text" text="!NOT SET!" align="Center" font-size="7"/>
+          <horizontal spacing="2">
+            <vertical>
+              <img src="#ClockIcon" preserve-aspect="true"  pref-width="4" pref-height="4"/>
+              <text id="duration-text" text="--" align="Center"/>
+            </vertical>
+            <vertical>
+              <img src="#MetronomeIcon" preserve-aspect="true"  pref-width="4" pref-height="4"/>
+              <text id="bpm-text" text="--" align="Center"/>
+            </vertical>
+            <vertical>
+              <img src="#NPSIcon" preserve-aspect="true"  pref-width="4" pref-height="4"/>
+              <text id="nps-text" text="--" align="Center"/>
+            </vertical>
+            <vertical>
+              <img src="#GameNoteIcon" preserve-aspect="true"  pref-width="4" pref-height="4"/>
+              <text id="notes-count-text" text="--" align="Center"/>
+            </vertical>
+            <vertical>
+              <img src="#ObstacleIcon" preserve-aspect="true"  pref-width="4" pref-height="4"/>
+              <text id="obstacles-count-text" text="--" align="Center"/>
+            </vertical>
+            <vertical>
+              <img src="#BombIcon" preserve-aspect="true"  pref-width="4" pref-height="4"/>
+              <text id="bombs-count-text" text="--" align="Center"/>
+            </vertical>
+            <vertical>
+              <img src="BeatSaberMultiplayer.Assets.StarIcon.png" preserve-aspect="true"  pref-width="4" pref-height="4"/>
+              <text id="stars-text" text="--" align="Center"/>
+            </vertical>
+            <vertical>
+              <img src="BeatSaberMultiplayer.Assets.RatingIcon.png" preserve-aspect="true"  pref-width="4" pref-height="4"/>
+              <text id="rating-text" text="--" align="Center"/>
+            </vertical>
+          </horizontal>
+        </vertical>
+      </stack>
+
+      <stack id="controls-rect" pref-height="22.5">
+        <bg bg="round-rect-panel" >
+          <icon-segments id="characteristic-control" select-cell="characteristic-selected" size-delta-y="8" anchor-pos-y="-2"/>
+          <raw-image id="characteristic-control-blocker" size-delta-x="95" size-delta-y="11" anchor-pos-y="5.5"/>
+          <text-segments id="difficulty-control" select-cell="difficulty-selected" child-expand-width="true" size-delta-x="-8" size-delta-y="8" anchor-pos-y="-12"/>
+          <raw-image id="difficulty-control-blocker" size-delta-x="95" size-delta-y="11" anchor-pos-y="-5.5"/>
+        </bg>
+      </stack>
+
+      <stack id="loading-rect" pref-height="22.5">
+        <bg bg="round-rect-panel" >
+          <vertical vertical-fit='PreferredSize'>
+            <text id='loading-progress-text' text='0.00%' font-size='5.5' align='Center' pref-height='8'/>
+            <stack child-align='MiddleLeft' horizontal-fit='PreferredSize' child-expand-width='false'>
+              <raw-image id='progress-bar-bg' src='BeatSaberMultiplayer.Assets.WhitePixel.png' pref-width='60' pref-height='6' />
+              <raw-image id='progress-bar-top' src='BeatSaberMultiplayer.Assets.WhitePixel.png' ignore-layout='true' size-delta-y='6' anchor-pos-x='-30' pivot-x='0' />
+            </stack>
+          </vertical>
+        </bg>
+      </stack>
+
+      <horizontal id='buttons-rect'>
+        <button id="cancel-button" text="CANCEL" on-click="cancel-pressed" />
+        <button id="play-button" text="PLAY" on-click="play-pressed"/>
+      </horizontal>
+
+      <text id="players-ready-text" text="0/0 players ready" font-size="5" align="Center"/>
+    </vertical>
+
+    <stack pad="2" pad-bottom="6">
+      <bg bg="round-rect-panel" />
+      <vertical>
+        <vertical horizontal-fit="PreferredSize" pad="3">
+          <text text="MAX COMBO" align="Center"/>
+          <text id="max-combo-value" text="--" font-size="3" color="#AEAEAE" align="Center"/>
+        </vertical>
+        <vertical horizontal-fit="PreferredSize" pad="3">
+          <text text="HIGHSCORE" align="Center"/>
+          <text id="highscore-value" text="--" font-size="3" color="#AEAEAE" align="Center"/>
+        </vertical>
+        <vertical horizontal-fit="PreferredSize" pad="3">
+          <text text="MAX RANK" align="Center"/>
+          <text id="max-rank-value" text="--" font-size="3" color="#AEAEAE" align="Center"/>
+        </vertical>
+        <vertical horizontal-fit="PreferredSize" pad="3">
+          <text text="RANKING STATUS" align="Center"/>
+          <text id="ranking-value" text="NOT FOUND" font-size="3" align="Center"/>
+        </vertical>
+      </vertical>
+    </stack>
+  </horizontal>
+  <loading id="loading-indicator" ignore-layout="true" size-delta-y="20" size-delta-x="20"/>
+</stack>

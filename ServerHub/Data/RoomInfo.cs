@@ -20,6 +20,8 @@ namespace ServerHub.Data
         public RoomState roomState;
         [JsonConverter(typeof(StringEnumConverter))]
         public SongSelectionType songSelectionType;
+
+        public bool noHost;
         public PlayerInfo roomHost;
 
         public int players;
@@ -43,10 +45,14 @@ namespace ServerHub.Data
             usePassword = msg.ReadBoolean();
             perPlayerDifficulty = msg.ReadBoolean();
             songSelected = msg.ReadBoolean();
+            noHost = msg.ReadBoolean();
             msg.SkipPadBits();
             roomState = (RoomState)msg.ReadByte();
             songSelectionType = (SongSelectionType)msg.ReadByte();
-            roomHost = new PlayerInfo(msg);
+
+            if(!noHost)
+                roomHost = new PlayerInfo(msg);
+
             players = msg.ReadInt32();
             maxPlayers = msg.ReadInt32();
             try
@@ -77,11 +83,13 @@ namespace ServerHub.Data
             msg.Write(usePassword);
             msg.Write(perPlayerDifficulty);
             msg.Write(songSelected);
+            msg.Write(noHost);
             msg.WritePadBits();
             msg.Write((byte)roomState);
             msg.Write((byte)songSelectionType);
 
-            roomHost.AddToMessage(msg);
+            if(!noHost)
+                roomHost.AddToMessage(msg);
 
             msg.Write(players);
             msg.Write(maxPlayers);

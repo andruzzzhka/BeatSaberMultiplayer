@@ -13,6 +13,7 @@ namespace BeatSaberMultiplayer.Data
         public string name;
         public bool usePassword;
         public bool perPlayerDifficulty;
+        public bool noHost;
 
         public RoomState roomState;
         public SongSelectionType songSelectionType;
@@ -24,8 +25,14 @@ namespace BeatSaberMultiplayer.Data
         public bool songSelected;
         
         public LevelOptionsInfo startLevelInfo;
-        public SongInfo selectedSong;
-        
+        public SongInfo selectedSong
+        {
+            get { return _selectedSong; }
+            set { _selectedSong = value; songSelected = (selectedSong != null && roomState != RoomState.SelectingSong); }
+        }
+        private SongInfo _selectedSong;
+
+
         public RoomInfo()
         {
 
@@ -38,10 +45,14 @@ namespace BeatSaberMultiplayer.Data
             usePassword = msg.ReadBoolean();
             perPlayerDifficulty = msg.ReadBoolean();
             songSelected = msg.ReadBoolean();
+            noHost = msg.ReadBoolean();
             msg.SkipPadBits();
             roomState = (RoomState)msg.ReadByte();
             songSelectionType = (SongSelectionType)msg.ReadByte();
-            roomHost = new PlayerInfo(msg);
+
+            if(!noHost)
+                roomHost = new PlayerInfo(msg);
+
             players = msg.ReadInt32();
             maxPlayers = msg.ReadInt32();
             try
@@ -65,18 +76,18 @@ namespace BeatSaberMultiplayer.Data
 
         public void AddToMessage(NetOutgoingMessage msg)
         {
-            songSelected = selectedSong != null && roomState != RoomState.SelectingSong;
-
             msg.Write(roomId);
             msg.Write(name);
             msg.Write(usePassword);
             msg.Write(perPlayerDifficulty);
             msg.Write(songSelected);
+            msg.Write(noHost);
             msg.WritePadBits();
             msg.Write((byte)roomState);
             msg.Write((byte)songSelectionType);
 
-            roomHost.AddToMessage(msg);
+            if(!noHost)
+                roomHost.AddToMessage(msg);
 
             msg.Write(players);
             msg.Write(maxPlayers);
@@ -92,7 +103,7 @@ namespace BeatSaberMultiplayer.Data
         {
             if (obj is RoomInfo)
             {
-                return (name == ((RoomInfo)obj).name) && (usePassword == ((RoomInfo)obj).usePassword) && (players == ((RoomInfo)obj).players) && (maxPlayers == ((RoomInfo)obj).maxPlayers) && (roomHost.Equals(((RoomInfo)obj).roomHost));
+                return (name == ((RoomInfo)obj).name) && (usePassword == ((RoomInfo)obj).usePassword) && (players == ((RoomInfo)obj).players) && (maxPlayers == ((RoomInfo)obj).maxPlayers);
             }
             else
             {
@@ -110,6 +121,18 @@ namespace BeatSaberMultiplayer.Data
             hashCode = hashCode * -1521134295 + players.GetHashCode();
             hashCode = hashCode * -1521134295 + maxPlayers.GetHashCode();
             return hashCode;
+        }
+
+        public static string StateToActivityState(RoomState state)
+        {
+            switch (state)
+            {
+                case RoomState.InGame: return "Playing";
+                case RoomState.Preparing: return "Preparing";
+                case RoomState.Results: return "Viewing results";
+                case RoomState.SelectingSong: return "Selecting song";
+            }
+            return "Unknown";
         }
     }
 

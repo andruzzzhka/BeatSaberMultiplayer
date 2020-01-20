@@ -1,0 +1,23 @@
+﻿<stack vertical-fit='Unconstrained'>
+  <horizontal id='buttons-rect' horizontal-fit='PreferredSize' spacing='15'>
+    <big-button id='rooms-button' text='Rooms' on-click='rooms-btn-pressed' icon='BeatSaberMultiplayer.Assets.RoomsIcon.png' />
+    <big-button id='radio-button' text='Radio' on-click='radio-btn-pressed' icon='BeatSaberMultiplayer.Assets.RadioIcon.png'/>
+  </horizontal>
+
+  <vertical id='avatars-loading-rect' pad-bottom='6' vertical-fit='PreferredSize'>
+    <text text='Loading avatars...' font-size='5.5' align='Center' pref-height='8'/>
+    <text id='loading-progress-text' text='0 out of 0' font-size='5.5' align='Center' pref-height='8'/>
+    <stack child-align='MiddleLeft' horizontal-fit='PreferredSize' child-expand-width='false'>
+      <raw-image id='progress-bar-bg' src='BeatSaberMultiplayer.Assets.WhitePixel.png' pref-width='60' pref-height='6' />
+      <raw-image id='progress-bar-top' src='BeatSaberMultiplayer.Assets.WhitePixel.png' ignore-layout='true' anchor-pos-x='-30' pivot-x='0' />
+    </stack>
+  </vertical>
+
+  <horizontal id='missing-files-rect'>
+    <text id='missing-files-text' font-size='6.0' align='Center' text='Missing files:' />
+  </horizontal>
+
+  <horizontal pad='4' vertical-fit='Unconstrained'>
+    <text id='version-text' font-size='4.75' align='BottomRight' text='v0.0.0.0' />
+  </horizontal>
+</stack>

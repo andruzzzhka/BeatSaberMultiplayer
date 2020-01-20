@@ -1,0 +1,37 @@
+﻿<bg>
+  <img src="#ClockIcon" preserve-aspect="true" anchor-pos-y="33.25" anchor-pos-x="-50" size-delta-x="8"/>
+  <text id="timer-text" text="0:15" font-size="6.5" align="Left" anchor-pos-y="33" anchor-pos-x="-35" size-delta-x="20"/>
+  <tab-selector tab-tag='leaderboard-tags' anchor-pos-y="-3"/>
+  <tab tags='leaderboard-tags' tab-name='Your results' anchor-max-y='0.875' anchor-min-y='0.05'>
+    <vertical vertical-fit='Unconstrained' horizontal-fit='PreferredSize' spacing='-10' pad-top='2'>
+      <stack id="level-details-rect" pref-height="10" pref-width="110">
+        <raw-image id="level-cover-image" ignore-layout="true" size-delta-x="110" size-delta-y="90" anchor-pos-y="-4"/>
+        <text id="song-name-text" text="!NOT SET!" align="Center" font-size="7"/>
+      </stack>
+      <vertical spacing="-14" pad-bottom="6" pad-top="6">
+        <text text="DIFFICULTY" color="#AEAEAE" align="Center"/>
+        <text id="difficlty-value" text="EXPERT+"  align="Center" font-size="6"/>
+      </vertical>
+      <bg bg="round-rect-panel" size-delta-y="25">
+        <text text="GOOD CUTS" color="#AEAEAE" align="Center" anchor-pos-x="-40" anchor-pos-y="6"/>
+        <text id="good-cuts-value" text="0/712" font-size="8" align="Center" anchor-pos-x="-40" anchor-pos-y="-2"/>
+        <text id="max-combo-value" text="MAX COMBO 0" font-size="3" align="Center" anchor-pos-x="-40" anchor-pos-y="-7"/>
+
+        <text text="SCORE" color="#AEAEAE" align="Center" anchor-pos-x="-9" anchor-pos-y="6"/>
+        <text id="score-value" text="0" color="#36B6FB" font-size="10" align="Center" anchor-pos-x="-9" anchor-pos-y="-2"/>
+
+        <text text="RANK" color="#AEAEAE" align="Center" anchor-pos-x="16.5" anchor-pos-y="6"/>
+        <text id="rank-value" text="E" color="#36B6FB" font-size="10" align="Center" anchor-pos-x="16.5" anchor-pos-y="-2"/>
+
+        <text text="SCORE CHANGE" color="#AEAEAE" align="Center" anchor-pos-x="37.5" anchor-pos-y="6"/>
+        <horizontal horizontal-fit='PreferredSize' spacing='2' anchor-pos-x="37.5" anchor-pos-y="-2">
+          <img id="score-change-icon" src="#ArrowIcon" preserve-aspect="true" pref-width="5"/>
+          <text id="score-change-value" text="-650" color="#F0261F" font-size="6" align="Left"/>
+        </horizontal>
+      </bg>
+    </vertical>
+  </tab>
+  <tab tags='leaderboard-tags' tab-name='Leaderboard'>
+    <leaderboard id='leaderboard-table' anchor-min-x='0.075' anchor-max-x='0.925' size-delta-x='0' anchor-pos-x='0' />
+  </tab>
+</bg>

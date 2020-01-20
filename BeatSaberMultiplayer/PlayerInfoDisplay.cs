@@ -20,7 +20,6 @@ namespace BeatSaberMultiplayer
         private uint _previousScore;
         private uint _currentScore;
         private float _progress;
-        private bool _rainbowName;
         private HSBColor _color;
 
         void Update()
@@ -31,16 +30,6 @@ namespace BeatSaberMultiplayer
                 uint score = (uint)Mathf.Lerp(_previousScore, _currentScore, Mathf.Clamp01(_progress));
 
                 playerScoreText.text = score.ToString();
-
-                if (_rainbowName)
-                {
-                    playerNameText.color = HSBColor.ToColor(_color);
-                    _color.h += 0.125f * Time.deltaTime;
-                    if (_color.h >= 1f)
-                    {
-                        _color.h = 0f;
-                    }
-                }
             }
         }
 
@@ -57,7 +46,7 @@ namespace BeatSaberMultiplayer
             playerScoreText = CustomExtensions.CreateWorldText(transform, "");
             playerScoreText.rectTransform.anchoredPosition = new Vector2(55f, -47.5f);
             playerScoreText.fontSize = 8f;
-            
+
             playerSpeakerIcon = new GameObject("Player Speaker Icon", typeof(Canvas), typeof(CanvasRenderer)).AddComponent<Image>();
             playerSpeakerIcon.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
             playerSpeakerIcon.rectTransform.SetParent(transform);
@@ -80,18 +69,7 @@ namespace BeatSaberMultiplayer
                 _currentScore = _playerScore.score;
                 playerSpeakerIcon.gameObject.SetActive(InGameOnlineController.Instance.VoiceChatIsTalking(_playerScore.id));
                 _progress = 0;
-
-                if (_info.playerFlags.rainbowName && !_rainbowName)
-                {
-                    playerNameText.color = _info.color;
-                    _color = HSBColor.FromColor(_info.color);
-                }
-                else if (!_info.playerFlags.rainbowName && playerNameText.color != _info.color)
-                {
-                    playerNameText.color = _info.color;
-                }
-
-                _rainbowName = _info.playerFlags.rainbowName;
+                playerNameText.color = _info.color;
             }
             else
             {
@@ -99,7 +77,6 @@ namespace BeatSaberMultiplayer
                 playerNameText.text = "";
                 playerScoreText.text = "";
                 playerSpeakerIcon.gameObject.SetActive(false);
-                _rainbowName = false;
             }
         }
 

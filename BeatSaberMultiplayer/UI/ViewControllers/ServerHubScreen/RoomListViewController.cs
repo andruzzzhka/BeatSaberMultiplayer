@@ -1,153 +1,57 @@
-﻿using BeatSaberMultiplayer.Data;
-using BeatSaberMultiplayer.Misc;
+﻿using BeatSaberMarkupLanguage.Attributes;
+using BeatSaberMarkupLanguage.Components;
+using BeatSaberMarkupLanguage.ViewControllers;
+using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
-using CustomUI.BeatSaber;
 using HMUI;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using VRUI;
 
-namespace BeatSaberMultiplayer.UI.ViewControllers
+namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
 {
-    class RoomListViewController : VRUIViewController, TableView.IDataSource
+    class RoomListViewController : BSMLResourceViewController
     {
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
+
         public event Action createRoomButtonPressed;
         public event Action<ServerHubRoom> selectedRoom;
         public event Action refreshPressed;
 
-        private Button _pageUpButton;
-        private Button _pageDownButton;
-        private Button _createRoom;
+        [UIComponent("refresh-btn")]
         private Button _refreshButton;
 
-        TableView _serverTableView;
-        LevelListTableCell _serverTableCellInstance;
+        [UIComponent("rooms-list")]
+        public CustomCellListTableData roomsList;
 
-        List<ServerHubRoom> availableRooms = new List<ServerHubRoom>();
+        [UIValue("rooms")]
+        public List<object> roomInfosList = new List<object>();
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
-            if (firstActivation && type == ActivationType.AddedToHierarchy)
-            {
-                _serverTableCellInstance = Resources.FindObjectsOfTypeAll<LevelListTableCell>().First(x => (x.name == "LevelListTableCell"));
+            base.DidActivate(firstActivation, type);
 
-                _pageUpButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().Last(x => (x.name == "PageUpButton")), rectTransform, false);
-                (_pageUpButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 1f);
-                (_pageUpButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 1f);
-                (_pageUpButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -4.5f);
-                (_pageUpButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
-                _pageUpButton.interactable = true;
-                _pageUpButton.onClick.AddListener(delegate ()
-                {
-                    _serverTableView.GetPrivateField<TableViewScroller>("_scroller").PageScrollUp();
-
-                });
-
-                _pageDownButton = Instantiate(Resources.FindObjectsOfTypeAll<Button>().First(x => (x.name == "PageDownButton")), rectTransform, false);
-                (_pageDownButton.transform as RectTransform).anchorMin = new Vector2(0.5f, 0f);
-                (_pageDownButton.transform as RectTransform).anchorMax = new Vector2(0.5f, 0f);
-                (_pageDownButton.transform as RectTransform).anchoredPosition = new Vector2(0f, -1f);
-                (_pageDownButton.transform as RectTransform).sizeDelta = new Vector2(40f, 10f);
-                _pageDownButton.interactable = true;
-                _pageDownButton.onClick.AddListener(delegate ()
-                {
-                    _serverTableView.GetPrivateField<TableViewScroller>("_scroller").PageScrollDown();
-
-                });
-
-                _refreshButton = this.CreateUIButton("PracticeButton", new Vector2(-25f, 36.5f), new Vector2(6.5f, 6.5f), () => { refreshPressed?.Invoke(); }, "", Sprites.refreshIcon);
-                var _refreshIconLayout = _refreshButton.GetComponentsInChildren<HorizontalLayoutGroup>().First(x => x.name == "Content");
-                _refreshIconLayout.padding = new RectOffset(0, 0, 1, 1);
-
-                _createRoom = BeatSaberUI.CreateUIButton(rectTransform, "CancelButton");
-                _createRoom.SetButtonText("Create room");
-                _createRoom.SetButtonTextSize(3f);
-                (_createRoom.transform as RectTransform).sizeDelta = new Vector2(38f, 6f);
-                (_createRoom.transform as RectTransform).anchoredPosition = new Vector2(0f, 36.5f);
-                _createRoom.onClick.RemoveAllListeners();
-                _createRoom.onClick.AddListener(delegate ()
-                {
-                    createRoomButtonPressed?.Invoke();
-                });
-
-                RectTransform container = new GameObject("Container", typeof(RectTransform)).transform as RectTransform;
-                container.SetParent(rectTransform, false);
-                container.anchorMin = new Vector2(0.3f, 0.5f);
-                container.anchorMax = new Vector2(0.7f, 0.5f);
-                container.sizeDelta = new Vector2(0f, 60f);
-                container.anchoredPosition = new Vector2(0f, -3f);
-
-                var tableGameObject = new GameObject("CustomTableView");
-                tableGameObject.SetActive(false);
-                _serverTableView = tableGameObject.AddComponent<TableView>();
-                _serverTableView.gameObject.AddComponent<RectMask2D>();
-                _serverTableView.transform.SetParent(container, false);
-
-                _serverTableView.SetPrivateField("_isInitialized", false);
-                _serverTableView.SetPrivateField("_preallocatedCells", new TableView.CellsGroup[0]);
-
-                RectTransform viewport = new GameObject("Viewport").AddComponent<RectTransform>();
-                viewport.SetParent(_serverTableView.transform, false);
-                (viewport.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
-                (viewport.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
-                (viewport.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
-                _serverTableView.GetComponent<ScrollRect>().viewport = viewport;
-                _serverTableView.Init();
-
-                (_serverTableView.transform as RectTransform).anchorMin = new Vector2(0f, 0f);
-                (_serverTableView.transform as RectTransform).anchorMax = new Vector2(1f, 1f);
-                (_serverTableView.transform as RectTransform).sizeDelta = new Vector2(0f, 0f);
-                (_serverTableView.transform as RectTransform).anchoredPosition = new Vector3(0f, 0f);
-
-                tableGameObject.SetActive(true);
-
-                _serverTableView.didSelectCellWithIdxEvent += ServerTableView_DidSelectRow;
-                _serverTableView.dataSource = this;
-            }
-            else
-            {
-                _serverTableView.ReloadData();
-            }
-
+            roomsList.tableView.ClearSelection();
         }
 
         public void SetRooms(List<ServerHubRoom> rooms)
         {
-            int prevCount = availableRooms.Count;
-            if (rooms == null)
-            {
-                availableRooms.Clear();
-            }
-            else
-            {
-                availableRooms = rooms.OrderByDescending(y => y.roomInfo.players).ToList();
-            }
+            roomInfosList.Clear();
 
-            if (_serverTableView.dataSource != this)
+            if (rooms != null)
             {
-                _serverTableView.dataSource = this;
-            }
-            else
-            {
-                _serverTableView.RefreshTable(false);
-                if (prevCount == 0 && availableRooms.Count > 0)
+                var availableRooms = rooms.OrderByDescending(y => y.roomInfo.players);
+
+                foreach (ServerHubRoom room in availableRooms)
                 {
-                    StartCoroutine(ScrollWithDelay());
+                    roomInfosList.Add(new RoomListObject(room));
                 }
             }
 
-        }
-
-        IEnumerator ScrollWithDelay()
-        {
-            yield return null;
-            yield return null;
-
-            _serverTableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
+            roomsList.tableView.ReloadData();
         }
 
         public void SetRefreshButtonState(bool enabled)
@@ -155,49 +59,78 @@ namespace BeatSaberMultiplayer.UI.ViewControllers
             _refreshButton.interactable = enabled;
         }
 
-        private void ServerTableView_DidSelectRow(TableView sender, int row)
+        [UIAction("room-selected")]
+        private void RoomSelected(TableView sender, RoomListObject obj)
         {
-            selectedRoom?.Invoke(availableRooms[row]);
+            selectedRoom?.Invoke(obj.room);
         }
 
-        public TableCell CellForIdx(TableView sender, int row)
+        [UIAction("create-room-btn-pressed")]
+        private void CreateRoomBtnPressed()
         {
-            LevelListTableCell cell = Instantiate(_serverTableCellInstance);
-            cell.reuseIdentifier = "ServerTableCell";
+            createRoomButtonPressed?.Invoke();
+        }
 
-            RoomInfo room = availableRooms[row].roomInfo;
-            
-            if (room.usePassword)
+        [UIAction("refresh-btn-pressed")]
+        private void RefreshBtnPressed()
+        {
+            refreshPressed?.Invoke();
+        }
+
+        public class RoomListObject
+        {
+            public ServerHubRoom room;
+
+            [UIValue("room-name")]
+            private string roomName;
+
+            [UIValue("room-state")]
+            private string roomStateString;
+
+            [UIComponent("locked-icon")]
+            private RawImage lockedIcon;
+            private bool locked;
+
+            [UIComponent("bg")]
+            private RawImage background;
+
+            [UIComponent("room-state-text")]
+            private TextMeshProUGUI roomStateText;
+
+            public RoomListObject(ServerHubRoom room)
             {
-                cell.SetIcon(Sprites.lockedRoomIcon.texture);
+                this.room = room;
+                roomName = $"({room.roomInfo.players}/{((room.roomInfo.maxPlayers == 0) ? "INF" : room.roomInfo.maxPlayers.ToString())}) {room.roomInfo.name}";
+                switch (room.roomInfo.roomState)
+                {
+                    case RoomState.InGame:
+                        roomStateString = "In game";
+                        break;
+                    case RoomState.Preparing:
+                        roomStateString = "Preparing";
+                        break;
+                    case RoomState.Results:
+                        roomStateString = "Results";
+                        break;
+                    case RoomState.SelectingSong:
+                        roomStateString = "Selecting song";
+                        break;
+                    default:
+                        roomStateString = room.roomInfo.roomState.ToString();
+                        break;
+                }
+                locked = room.roomInfo.usePassword;
             }
-            else
+
+            [UIAction("refresh-visuals")]
+            public void Refresh(bool selected, bool highlighted)
             {
-                cell.GetComponentsInChildren<UnityEngine.UI.RawImage>(true).First(x => x.name == "CoverImage").enabled = false;
+                lockedIcon.texture = Sprites.lockedRoomIcon.texture;
+                lockedIcon.enabled = locked;
+                background.texture = Sprites.whitePixel.texture;
+                background.color = new Color(1f, 1f, 1f, 0.125f);
+                roomStateText.color = new Color(0.65f, 0.65f, 0.65f, 1f);
             }
-            cell.SetText($"({room.players}/{((room.maxPlayers == 0)? "INF":room.maxPlayers.ToString())})" + room.name);
-            cell.SetSubText($"{room.roomState.ToString()}");
-
-            cell.SetPrivateField("_beatmapCharacteristicAlphas", new float[0]);
-            cell.SetPrivateField("_beatmapCharacteristicImages", new UnityEngine.UI.Image[0]);
-            cell.SetPrivateField("_bought", true);
-            foreach (var icon in cell.GetComponentsInChildren<UnityEngine.UI.Image>().Where(x => x.name.StartsWith("LevelTypeIcon")))
-            {
-                Destroy(icon.gameObject);
-            }
-
-            return cell;
         }
-
-        public int NumberOfCells()
-        {
-            return availableRooms.Count;
-        }
-
-        public float CellSize()
-        {
-            return 10f;
-        }
-
     }
 }

@@ -1,7 +1,10 @@
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.OverriddenClasses;
+using BeatSaberMultiplayer.VOIP;
+using BS_Utils.Utilities;
 using System;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -26,9 +29,10 @@ namespace BeatSaberMultiplayer
         private PlayerUpdate _syncStartInfo;
         private PlayerUpdate _syncEndInfo;
 
-        private AudioClip _voipClip;
+        private bool _voipPlaying;
+        private FifoFloatStream _voipFragQueue = new FifoFloatStream();
+        private float[] _voipBuffer;
         private int _lastVoipFragIndex;
-        private int _voipWritePos;
         private int _silentFrames;
         private int _voipDelayCounter;
 
@@ -43,10 +47,10 @@ namespace BeatSaberMultiplayer
 
             voipSource = gameObject.AddComponent<AudioSource>();
 
-            _voipClip = AudioClip.Create("VoIP Clip", 161280, 1, 16000, false);
-            voipSource.clip = _voipClip;
+            voipSource.clip = null;
             voipSource.spatialize = Config.Instance.SpatialAudio;
             voipSource.loop = true;
+            voipSource.Play();
 
             if (playerInfo != null)
             {
@@ -129,7 +133,7 @@ namespace BeatSaberMultiplayer
 
         public void SetBlocksState(bool active)
         {
-            if(active && beatmapCallbackController == null && audioTimeController == null && beatmapSpawnController == null && _leftSaber == null && _rightSaber == null)
+            if(active && !playerInfo.updateInfo.playerLevelOptions.characteristicName.ToLower().Contains("degree") && beatmapCallbackController == null && audioTimeController == null && beatmapSpawnController == null && _leftSaber == null && _rightSaber == null)
             {
                 SpawnBeatmapControllers();
                 SpawnSabers();
@@ -154,14 +158,12 @@ namespace BeatSaberMultiplayer
 
             if (voipSource != null)
             {
-                if(voipSource.timeSamples > _voipWritePos && !(voipSource.timeSamples > _voipClip.samples / 2 && _voipWritePos < _voipClip.samples / 2))
+                if(_voipFragQueue.Length <= 0)
                 {
-                    voipSource.Stop();
-                    Plugin.log.Warn("We read past received data!");
-                    voipSource.timeSamples = 0;
+                    _voipPlaying = false;
                 }
 
-                if (voipSource.isPlaying)
+                if (_voipPlaying)
                 {
                     _silentFrames = 0;
                 }
@@ -184,6 +186,7 @@ namespace BeatSaberMultiplayer
 
         public void FixedUpdate()
         {
+            
             if (playerInfo != null && playerInfo.updateInfo != default)
             {
                 if (!noInterpolation)
@@ -214,16 +217,6 @@ namespace BeatSaberMultiplayer
                     float lerpedPlayerProgress = Mathf.Lerp(_syncStartInfo.playerProgress, _syncEndInfo.playerProgress, lerpProgress);
 
                     playerInfo.updateInfo.playerProgress = lerpedPlayerProgress;
-
-                    /*
-                    if(playerInfo.updateInfo.playerProgress < lerpedPlayerProgress && Mathf.Abs(playerInfo.updateInfo.playerProgress - lerpedPlayerProgress) < 0.5f)
-                    {
-                        playerInfo.updateInfo.playerProgress = lerpedPlayerProgress;
-                    }
-                    else
-                    {
-                        playerInfo.updateInfo.playerProgress = _syncStartInfo.playerProgress;
-                    }*/
                 }
 
                 _overrideHeadPos = true;
@@ -231,6 +224,7 @@ namespace BeatSaberMultiplayer
                 _headPos = playerInfo.updateInfo.headPos + Vector3.right * avatarOffset;
                 transform.position = _headPos;
             }
+            
         }
 
         public void OnDestroy()
@@ -360,69 +354,50 @@ namespace BeatSaberMultiplayer
 #if DEBUG && VERBOSE
                     Plugin.log.Info($"Starting from scratch! ((_lastVoipFragIndex + 1) != fragIndex): {(_lastVoipFragIndex + 1) != fragIndex}, (_silentFrames > 20): {_silentFrames > 20}, _lastVoipFragIndex: {_lastVoipFragIndex}, fragIndex: {fragIndex}");
 #endif
-
-                    _lastVoipFragIndex = fragIndex;
-
-                    _voipClip.SetData(data, 0);
-                    _voipWritePos = data.Length;
-
-                    _silentFrames = 0;
+                    _voipFragQueue.Flush();
                     _voipDelayCounter = 0;
                 }
                 else
                 {
-                    _lastVoipFragIndex = fragIndex;
-                    
-                    if (_voipWritePos + data.Length > _voipClip.samples)
-                    {
-                        if (_voipWritePos < _voipClip.samples)
-                        {
-                            _voipClip.SetData(data, _voipWritePos);
-
-                            int remaining = data.Length - (_voipClip.samples - _voipWritePos);
-
-                            float[] buffer = new float[remaining];
-
-                            Buffer.BlockCopy(data, data.Length - remaining, buffer, 0, remaining);
-
-                            _voipClip.SetData(buffer, 0);
-
-                            _voipWritePos = remaining;
-                        }
-                        else
-                        {
-                            _voipClip.SetData(data, 0);
-                            _voipWritePos = data.Length;
-                        }
-                    }
-                    else
-                    {
-                        if (voipSource.timeSamples > _voipWritePos - 256 && !(voipSource.timeSamples > _voipClip.samples / 2 && _voipWritePos < _voipClip.samples / 2))
-                        {
-                            voipSource.timeSamples = _voipWritePos - (_voipClip.frequency / 15);
-                        }
-                        _voipClip.SetData(data, _voipWritePos);
-                        _voipWritePos += data.Length;
-
-                    }
-
 #if DEBUG && VERBOSE
                     Plugin.log.Info($"New data ({data.Length}) at pos {_voipFrames} while playing at {voipSource.timeSamples}, Overlap: {voipSource.timeSamples > _voipFrames && !(voipSource.timeSamples > _voipClip.samples/2 && _voipFrames < _voipClip.samples / 2)}, Delay: {_voipFrames - voipSource.timeSamples}, Speed: {voipSource.timeSamples - lastPlayPos}, Frames: {Time.frameCount - lastFrame}");
 
                     lastPlayPos = voipSource.timeSamples;
                     lastFrame = Time.frameCount;
 #endif
-
                     _voipDelayCounter++;
 
-                    if (!voipSource.isPlaying && _voipDelayCounter >= _voipDelay)
+                    if (!_voipPlaying && _voipDelayCounter >= _voipDelay)
                     {
-                        voipSource.timeSamples = 0;
-                        voipSource.Play();
+                        _voipPlaying = true;
                     }
-                    _silentFrames = 0;
                 }
+
+                _lastVoipFragIndex = fragIndex;
+                _silentFrames = 0;
+
+                _voipFragQueue.Write(data, 0, data.Length);
             }
+        }
+
+        void OnAudioFilterRead(float[] data, int channels)
+        {
+            if (!_voipPlaying)
+                return;
+
+            int sampleRate = AudioSettings.outputSampleRate;
+
+            int dataLen = data.Length / channels;
+
+            if (_voipBuffer == null || _voipBuffer.Length < Mathf.CeilToInt(dataLen / (sampleRate / 16000f)))
+            {
+                _voipBuffer = new float[Mathf.CeilToInt(dataLen / (AudioSettings.outputSampleRate / 16000f))];
+                Plugin.log.Debug($"Created new VoIP player buffer! Size: {dataLen}, Channels: {channels}, Resampling rate: {sampleRate / 16000f}x");
+            }
+
+            int read = _voipFragQueue.Read(_voipBuffer, 0, Mathf.CeilToInt(dataLen / (sampleRate / 16000f)));
+
+            AudioUtils.Resample(_voipBuffer, data, read, data.Length, 16000, sampleRate, channels);
         }
 
         public void SetVoIPVolume(float newVolume)

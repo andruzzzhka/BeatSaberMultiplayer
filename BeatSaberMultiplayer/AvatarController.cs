@@ -107,7 +107,7 @@ namespace BeatSaberMultiplayer
 #if DEBUG
             Plugin.log.Info($"Found avatar, isLoaded={defaultAvatarInstance.IsLoaded}");
 #endif
-            if (!defaultAvatarInstance.IsLoaded)
+            if (defaultAvatarInstance != null && !defaultAvatarInstance.IsLoaded)
             {
                 defaultAvatarInstance.Load(null);
             }

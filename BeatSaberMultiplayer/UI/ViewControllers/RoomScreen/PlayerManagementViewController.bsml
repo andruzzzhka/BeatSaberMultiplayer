@@ -1,0 +1,31 @@
+﻿<bg>
+  <text id="ping-text" text="PING: 0,00" align="Left" anchor-pos-y="33.5" anchor-pos-x="40" size-delta-x="20" />
+  <tab-selector tab-tag='management-tag' anchor-pos-y='-3' />
+
+  <tab tags='management-tag' tab-name='Players'>
+    <vertical pad-top='10' vertical-fit='PreferredSize'>
+      <page-button direction='Up' click-event='players-list#PageUp'/>
+      <custom-list visible-cells='9' cell-size='6' id='players-list' contents='players' pref-width='100'>
+        <horizontal>
+          <horizontal child-expand-width='false' child-control-width='false' spacing='3'>
+            <img id='speaker-icon' src='BeatSaberMultiplayer.Assets.SpeakerIcon.png' size-delta-x='6' size-delta-y='6' preserve-aspect='true'/>
+            <text id='player-name' align='MidlineLeft' font-size='4' size-delta-x='50' />
+          </horizontal>
+          <horizontal id='control-buttons' child-expand-width='false' child-control-width='false' spacing='2'>
+            <button id='pass-host-button' text='PASS&#10;&#13;HOST' stroke-type='Clean' font-size='3' word-wrapping='false' pref-height='5.75' pref-width='6' />
+            <button id='mute-button' text='MUTE' stroke-type='Clean' font-size='3.75' word-wrapping='false' pref-height='5.75' size-delta-x='6'  pref-width='6'/>
+          </horizontal>
+          <text id='progress-text' text='DOWNLOADED' />
+        </horizontal>
+      </custom-list>
+      <page-button direction='Down' click-event='players-list#PageDown'/>
+    </vertical>
+  </tab>
+
+  <tab tags='management-tag' tab-name='Modifiers'>
+    <bg id='modifiers-rect'/>
+    <img id='modifiers-panel-blocker' src='#RoundRectPanel' anchor-min-x='0.042' anchor-max-x='0.958' size-delta-x='0' anchor-min-y='0.1525' anchor-max-y='0.7125' size-delta-y='0'>
+      <img src='BeatSaberMultiplayer.Assets.LockedRoom.png'/>
+    </img>
+  </tab>
+</bg>

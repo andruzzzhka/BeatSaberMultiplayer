@@ -1,22 +1,23 @@
 ﻿using BeatSaberMultiplayer.Data;
-using BeatSaberMultiplayer.UI.ViewControllers;
-using CustomUI.BeatSaber;
-using CustomUI.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-using VRUI;
 using Lidgren.Network;
 using BS_Utils.Gameplay;
 using System.Reflection;
+using BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen;
+using HMUI;
+using BeatSaberMarkupLanguage;
+using BS_Utils.Utilities;
+using UnityEngine.Networking;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
 
-    struct ServerHubRoom
+    public struct ServerHubRoom
     {
         public string ip;
         public int port;
@@ -32,8 +33,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
     class ServerHubFlowCoordinator : FlowCoordinator
     {
-        MultiplayerNavigationController _serverHubNavigationController;
-
         RoomListViewController _roomListViewController;
 
         List<ServerHubClient> _serverHubClients = new List<ServerHubClient>();
@@ -47,12 +46,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (firstActivation && activationType == ActivationType.AddedToHierarchy)
             {
                 title = "Online Multiplayer";
-
-                _serverHubNavigationController = BeatSaberUI.CreateViewController<MultiplayerNavigationController>();
-                _serverHubNavigationController.didFinishEvent += () => {
-                    PluginUI.instance.modeSelectionFlowCoordinator.InvokeMethod("DismissFlowCoordinator", this, null, false);
-                };
-
+                
                 _roomListViewController = BeatSaberUI.CreateViewController<RoomListViewController>();
 
                 _roomListViewController.createRoomButtonPressed += CreateRoomPressed;
@@ -60,10 +54,20 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _roomListViewController.refreshPressed += RefreshPresed;
             }
 
-            SetViewControllerToNavigationConctroller(_serverHubNavigationController, _roomListViewController);
-            ProvideInitialViewControllers(_serverHubNavigationController, null, null);
+            showBackButton = true;
 
+            ProvideInitialViewControllers(_roomListViewController, null, null);
+
+            StartCoroutine(GetServersFromRepositories());
             StartCoroutine(UpdateRoomsListCoroutine());
+        }
+
+        protected override void BackButtonWasPressed(ViewController topViewController)
+        {
+            if(topViewController == _roomListViewController)
+            {
+                PluginUI.instance.modeSelectionFlowCoordinator.InvokeMethod("DismissFlowCoordinator", this, null, false);
+            }
         }
 
         private void RefreshPresed()
@@ -73,14 +77,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void CreateRoomPressed()
         {
-            if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
-            {
-                PresentFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, false, false);
-                PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients);
+            PresentFlowCoordinator(PluginUI.instance.roomCreationFlowCoordinator, null, false, false);
+            PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients);
 
-                PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent -= RoomCreationFlowCoordinator_didFinishEvent;
-                PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent += RoomCreationFlowCoordinator_didFinishEvent;
-            }
+            PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent -= RoomCreationFlowCoordinator_didFinishEvent;
+            PluginUI.instance.roomCreationFlowCoordinator.didFinishEvent += RoomCreationFlowCoordinator_didFinishEvent;
         }
 
         private void RoomCreationFlowCoordinator_didFinishEvent(bool immediately)
@@ -102,14 +103,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void JoinRoom(string ip, int port, uint roomId, bool usePassword, string pass = "")
         {
-            if (!mainScreenViewControllers.Any(x => x.GetPrivateField<bool>("_isInTransition")))
-            {
-                PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
-                PluginUI.instance.roomFlowCoordinator.JoinRoom(ip, port, roomId, usePassword, pass);
-                Client.Instance.inRadioMode = false;
-                PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
-                PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
-            }
+            PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
+            PluginUI.instance.roomFlowCoordinator.JoinRoom(ip, port, roomId, usePassword, pass);
+            Client.Instance.inRadioMode = false;
+            PluginUI.instance.roomFlowCoordinator.didFinishEvent -= RoomFlowCoordinator_didFinishEvent;
+            PluginUI.instance.roomFlowCoordinator.didFinishEvent += RoomFlowCoordinator_didFinishEvent;
         }
 
         private void RoomFlowCoordinator_didFinishEvent()
@@ -129,6 +127,74 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             UpdateRoomsList();
         }
 
+        protected IEnumerator GetServersFromRepositories()
+        {
+            Plugin.log.Warn("Starting GetServersFromRepositories");
+            if (Config.Instance?.ServerRepositories == null)
+                yield break;
+            List<RepositoryServer> repoServers = new List<RepositoryServer>();
+            int repositoriesUsed = 0;
+            int serversAdded = 0;
+            foreach (string serverRepoPath in Config.Instance.ServerRepositories)
+            {
+                Uri repoUri = null;
+                try
+                {
+                    repoUri = new Uri(serverRepoPath, UriKind.Absolute);
+                }
+                catch (Exception ex)
+                {
+                    Plugin.log.Warn($"Invalid server repository URL: {serverRepoPath}");
+                    Plugin.log.Debug(ex);
+                    continue;
+                }
+                UnityWebRequest www = UnityWebRequest.Get(repoUri);
+                yield return www.SendWebRequest();
+                if (www.isNetworkError || www.isHttpError)
+                {
+                    Plugin.log.Warn($"Error getting Server Repository: {serverRepoPath}");
+                    Plugin.log.Debug(www.error);
+                }
+                else
+                {
+                    string serverRepoJsonStr = www.downloadHandler.text;
+                    try
+                    {
+                        ServerRepository repo = ServerRepository.FromJson(serverRepoJsonStr);
+                        bool repositoryUsed = false;
+                        foreach (var server in repo.Servers)
+                        {
+                            Plugin.log.Critical($"Server: {server.ToString()}");
+                            if (server.IsValid)
+                            {
+                                repoServers.Add(server);
+                                serversAdded++;
+                                repositoryUsed = true;
+                            }
+                            else
+                                Plugin.log.Warn($"Invalid server ({server.ToString()}) in repository {repo.RepositoryName}");
+                        }
+                        if (repositoryUsed)
+                            repositoriesUsed++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Plugin.log.Warn($"Error parsing ServerRepository from {serverRepoPath}");
+                    }
+                }
+            }
+            if (serversAdded > 0)
+            {
+                RepositoryServers = repoServers.ToArray();
+                Plugin.log.Debug($"Finished getting {(serversAdded == 1 ? $"{serversAdded} server" : $"{serversAdded} servers")} from {(repositoriesUsed == 1 ? $"{repositoriesUsed} server" : $"{repositoriesUsed} servers")}.");
+            }
+            else
+                Plugin.log.Debug("Did not get any servers from server repositories.");
+            yield return UpdateRoomsListCoroutine();
+        }
+
+        public RepositoryServer[] RepositoryServers { get; private set; }
+
         public void UpdateRoomsList()
         {
             Plugin.log.Info("Updating rooms list...");
@@ -144,6 +210,29 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _serverHubClients.Clear();
             _roomsList.Clear();
 
+            // Store server addresses so duplicates aren't added.
+            HashSet<string> serverAddresses = new HashSet<string>();
+            if ((RepositoryServers?.Length ?? 0) > 0)
+            {
+                for (int i = 0; i < RepositoryServers.Length; i++)
+                {
+                    RepositoryServer repositoryServer = RepositoryServers[i];
+                    string fullAddress = repositoryServer.ServerAddress + ":" + repositoryServer.ServerPort.ToString();
+                    if (repositoryServer == null || !repositoryServer.IsValid)
+                        continue;
+                    if (serverAddresses.Contains(repositoryServer.ServerAddress))
+                        continue;
+                    serverAddresses.Add(fullAddress);
+                    ServerHubClient client = repositoryServer.ToServerHubClient();
+                    if (client != null)
+                    {
+                        client.ReceivedRoomsList += ReceivedRoomsList;
+                        client.ServerHubException += ServerHubException;
+                        _serverHubClients.Add(client);
+                    }
+                }
+            }
+
             for (int i = 0; i < Config.Instance.ServerHubIPs.Length ; i++)
             {
                 string ip = Config.Instance.ServerHubIPs[i];
@@ -152,6 +241,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     port = Config.Instance.ServerHubPorts[i];
                 }
+                string fullAddress = ip + ":" + port.ToString();
+                if (serverAddresses.Contains(fullAddress) || port < 1 || port > 65535)
+                    continue;
+                serverAddresses.Add(fullAddress);
                 ServerHubClient client = new GameObject("ServerHubClient").AddComponent<ServerHubClient>();
                 client.ip = ip;
                 client.port = port;
@@ -161,7 +254,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
             _roomListViewController.SetRooms(null);
-            _serverHubNavigationController.SetLoadingState(true);
             _roomListViewController.SetRefreshButtonState(false);
             _serverHubClients.ForEach(x => x.GetRooms());
 
@@ -171,14 +263,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         private void ReceivedRoomsList(ServerHubClient sender, List<RoomInfo> rooms)
         {
             _roomsList.AddRange(rooms.Select(x => new ServerHubRoom(sender.ip, sender.port, x)));
+            int roomsCount = rooms.Count;
             HMMainThreadDispatcher.instance.Enqueue(delegate ()
             {
                 if (!string.IsNullOrEmpty(sender.serverHubName))
-                    Plugin.log.Info($"Received rooms from \"{sender.serverHubName}\" ({sender.ip}:{sender.port})! Total rooms count: {_roomsList.Count}");
+                    Plugin.log.Info($"Received {roomsCount} rooms from \"{sender.serverHubName}\" ({sender.ip}:{sender.port})! Total rooms count: {_roomsList.Count}");
                 else
-                    Plugin.log.Info($"Received rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
+                    Plugin.log.Info($"Received {roomsCount} rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
                 _roomListViewController.SetRooms(_roomsList);
-                _serverHubNavigationController.SetLoadingState(false);
                 _roomListViewController.SetRefreshButtonState(true);
             });
         }
@@ -192,9 +284,26 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         }
     }
 
+    public static class ServerHubExtensions
+    {
+        /// <summary>
+        /// Converts a <see cref="RepositoryServer"/> to a <see cref="ServerHubClient"/>. Returns null if the <see cref="RepositoryServer"/> has invalid values.
+        /// </summary>
+        /// <param name="server"></param>
+        /// <returns></returns>
+        public static ServerHubClient ToServerHubClient(this RepositoryServer server)
+        {
+            if (string.IsNullOrEmpty(server?.ServerAddress) || server.ServerPort < 1 || server.ServerPort > 65535)
+                return null;
+            ServerHubClient client = new GameObject($"ServerHubClient.{server.ServerName}").AddComponent<ServerHubClient>();
+            client.ip = server.ServerAddress;
+            client.port = server.ServerPort;
+            client.serverHubName = server.ServerName;
+            return client;
+        }
+    }
 
-
-    class ServerHubClient : MonoBehaviour
+    public class ServerHubClient : MonoBehaviour
     {
         private NetClient NetworkClient;
 

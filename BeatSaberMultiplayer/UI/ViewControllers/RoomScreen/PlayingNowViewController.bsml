@@ -1,0 +1,26 @@
+﻿<bg>
+  <img src="#ClockIcon" preserve-aspect="true" anchor-pos-y="33.25" anchor-pos-x="-5" size-delta-x="8"/>
+  <text id="timer-text" text="0:15" font-size="6.5" align="Left" anchor-pos-y="33" anchor-pos-x="10" size-delta-x="20"/>
+
+  <vertical vertical-fit='Unconstrained' horizontal-fit='PreferredSize' spacing='1' anchor-min-y='0.025' anchor-max-y='0.835' anchor-max-x='0.5' anchor-min-x='0.075' size-delta-y='0' child-control-height='false'>
+    <stack horizontal-fit="PreferredSize" vertical-fit="PreferredSize" id="level-details-rect" pref-height="20" pref-width="80">
+      <raw-image id="level-cover-image" ignore-layout="true" size-delta-x="110" size-delta-y="110"/>
+      <text id="song-name-text" text="!NOT SET!" align="Center" font-size="7"/>
+    </stack>
+    <bg bg="round-rect-panel" size-delta-y="18.5" pref-height="18.5">
+      <vertical vertical-fit='PreferredSize'>
+        <text id='loading-progress-text' text='0:00/3:14' font-size='5.5' align='Center' pref-height='8'/>
+        <stack child-align='MiddleLeft' horizontal-fit='PreferredSize' child-expand-width='false'>
+          <raw-image id='progress-bar-bg' src='BeatSaberMultiplayer.Assets.WhitePixel.png' pref-width='60' pref-height='6' />
+          <raw-image id='progress-bar-top' src='BeatSaberMultiplayer.Assets.WhitePixel.png' ignore-layout='true' size-delta-y='6' anchor-pos-x='-30' pivot-x='0' />
+        </stack>
+      </vertical>
+    </bg>
+    <bg id="difficulty-control-rect" pref-height="8" size-delta-y="8">
+      <text-segments id="difficulty-control" select-cell="difficulty-selected" child-expand-width="true" size-delta-x='0' size-delta-y='8' />
+    </bg>
+    <button id="play-now-button" text="PLAY NOW" on-click="play-now-pressed" pref-height="8"/>
+  </vertical>
+
+  <leaderboard id='leaderboard-table' anchor-min-x='0.5' anchor-max-x='0.925' size-delta-x='0' anchor-pos-x='8' />
+</bg>

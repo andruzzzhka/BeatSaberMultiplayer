@@ -14,18 +14,9 @@ output/
 *.userprefs
 
 # Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-[Ll]ogs/
-[Ll]ibs/
+BeatSaberMultiplayer.dll
+obj
+/ServerHub/bin
 
 # Visual Studio 2015 cache/options directory
 .vs/
@@ -267,3 +258,4 @@ __pycache__/
 /Output/NewAPI
 /Output
 /BeatSaberMultiplayer.plog
+/BeatSaberMultiplayer/bin/Debug/MainAssembly.dll
