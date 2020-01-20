@@ -48,7 +48,7 @@ namespace BeatSaberMultiplayer
             },
             {
                 "0.7.0.0",
-                new string[] { "bs.tigersserver.xyz", "bbbear-wgzeyu.gtxcn.com", "bs-zhm.tk" }
+                new string[] { "bs.tigersserver.xyz", "bbbear-wgzeyu.gtxcn.com", "bs-zhm.tk", "pantie.xicp.net" }
             }
         };
 
