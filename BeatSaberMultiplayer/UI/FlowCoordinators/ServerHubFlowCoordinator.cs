@@ -12,6 +12,7 @@ using BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen;
 using HMUI;
 using BeatSaberMarkupLanguage;
 using BS_Utils.Utilities;
+using UnityEngine.Networking;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
@@ -57,6 +58,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             ProvideInitialViewControllers(_roomListViewController, null, null);
 
+            StartCoroutine(GetServersFromRepositories());
             StartCoroutine(UpdateRoomsListCoroutine());
         }
 
@@ -125,6 +127,74 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             UpdateRoomsList();
         }
 
+        protected IEnumerator GetServersFromRepositories()
+        {
+            Plugin.log.Warn("Starting GetServersFromRepositories");
+            if (Config.Instance?.ServerRepositories == null)
+                yield break;
+            List<RepositoryServer> repoServers = new List<RepositoryServer>();
+            int repositoriesUsed = 0;
+            int serversAdded = 0;
+            foreach (string serverRepoPath in Config.Instance.ServerRepositories)
+            {
+                Uri repoUri = null;
+                try
+                {
+                    repoUri = new Uri(serverRepoPath, UriKind.Absolute);
+                }
+                catch (Exception ex)
+                {
+                    Plugin.log.Warn($"Invalid server repository URL: {serverRepoPath}");
+                    Plugin.log.Debug(ex);
+                    continue;
+                }
+                UnityWebRequest www = UnityWebRequest.Get(repoUri);
+                yield return www.SendWebRequest();
+                if (www.isNetworkError || www.isHttpError)
+                {
+                    Plugin.log.Warn($"Error getting Server Repository: {serverRepoPath}");
+                    Plugin.log.Debug(www.error);
+                }
+                else
+                {
+                    string serverRepoJsonStr = www.downloadHandler.text;
+                    try
+                    {
+                        ServerRepository repo = ServerRepository.FromJson(serverRepoJsonStr);
+                        bool repositoryUsed = false;
+                        foreach (var server in repo.Servers)
+                        {
+                            Plugin.log.Critical($"Server: {server.ToString()}");
+                            if (server.IsValid)
+                            {
+                                repoServers.Add(server);
+                                serversAdded++;
+                                repositoryUsed = true;
+                            }
+                            else
+                                Plugin.log.Warn($"Invalid server ({server.ToString()}) in repository {repo.RepositoryName}");
+                        }
+                        if (repositoryUsed)
+                            repositoriesUsed++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Plugin.log.Warn($"Error parsing ServerRepository from {serverRepoPath}");
+                    }
+                }
+            }
+            if (serversAdded > 0)
+            {
+                RepositoryServers = repoServers.ToArray();
+                Plugin.log.Debug($"Finished getting {(serversAdded == 1 ? $"{serversAdded} server" : $"{serversAdded} servers")} from {(repositoriesUsed == 1 ? $"{repositoriesUsed} server" : $"{repositoriesUsed} servers")}.");
+            }
+            else
+                Plugin.log.Debug("Did not get any servers from server repositories.");
+            yield return UpdateRoomsListCoroutine();
+        }
+
+        public RepositoryServer[] RepositoryServers { get; private set; }
+
         public void UpdateRoomsList()
         {
             Plugin.log.Info("Updating rooms list...");
@@ -140,6 +210,29 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             _serverHubClients.Clear();
             _roomsList.Clear();
 
+            // Store server addresses so duplicates aren't added.
+            HashSet<string> serverAddresses = new HashSet<string>();
+            if ((RepositoryServers?.Length ?? 0) > 0)
+            {
+                for (int i = 0; i < RepositoryServers.Length; i++)
+                {
+                    RepositoryServer repositoryServer = RepositoryServers[i];
+                    string fullAddress = repositoryServer.ServerAddress + ":" + repositoryServer.ServerPort.ToString();
+                    if (repositoryServer == null || !repositoryServer.IsValid)
+                        continue;
+                    if (serverAddresses.Contains(repositoryServer.ServerAddress))
+                        continue;
+                    serverAddresses.Add(fullAddress);
+                    ServerHubClient client = repositoryServer.ToServerHubClient();
+                    if (client != null)
+                    {
+                        client.ReceivedRoomsList += ReceivedRoomsList;
+                        client.ServerHubException += ServerHubException;
+                        _serverHubClients.Add(client);
+                    }
+                }
+            }
+
             for (int i = 0; i < Config.Instance.ServerHubIPs.Length ; i++)
             {
                 string ip = Config.Instance.ServerHubIPs[i];
@@ -148,6 +241,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     port = Config.Instance.ServerHubPorts[i];
                 }
+                string fullAddress = ip + ":" + port.ToString();
+                if (serverAddresses.Contains(fullAddress) || port < 1 || port > 65535)
+                    continue;
+                serverAddresses.Add(fullAddress);
                 ServerHubClient client = new GameObject("ServerHubClient").AddComponent<ServerHubClient>();
                 client.ip = ip;
                 client.port = port;
@@ -166,12 +263,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         private void ReceivedRoomsList(ServerHubClient sender, List<RoomInfo> rooms)
         {
             _roomsList.AddRange(rooms.Select(x => new ServerHubRoom(sender.ip, sender.port, x)));
+            int roomsCount = rooms.Count;
             HMMainThreadDispatcher.instance.Enqueue(delegate ()
             {
                 if (!string.IsNullOrEmpty(sender.serverHubName))
-                    Plugin.log.Info($"Received rooms from \"{sender.serverHubName}\" ({sender.ip}:{sender.port})! Total rooms count: {_roomsList.Count}");
+                    Plugin.log.Info($"Received {roomsCount} rooms from \"{sender.serverHubName}\" ({sender.ip}:{sender.port})! Total rooms count: {_roomsList.Count}");
                 else
-                    Plugin.log.Info($"Received rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
+                    Plugin.log.Info($"Received {roomsCount} rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
                 _roomListViewController.SetRooms(_roomsList);
                 _roomListViewController.SetRefreshButtonState(true);
             });
@@ -186,7 +284,24 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         }
     }
 
-
+    public static class ServerHubExtensions
+    {
+        /// <summary>
+        /// Converts a <see cref="RepositoryServer"/> to a <see cref="ServerHubClient"/>. Returns null if the <see cref="RepositoryServer"/> has invalid values.
+        /// </summary>
+        /// <param name="server"></param>
+        /// <returns></returns>
+        public static ServerHubClient ToServerHubClient(this RepositoryServer server)
+        {
+            if (string.IsNullOrEmpty(server?.ServerAddress) || server.ServerPort < 1 || server.ServerPort > 65535)
+                return null;
+            ServerHubClient client = new GameObject($"ServerHubClient.{server.ServerName}").AddComponent<ServerHubClient>();
+            client.ip = server.ServerAddress;
+            client.port = server.ServerPort;
+            client.serverHubName = server.ServerName;
+            return client;
+        }
+    }
 
     public class ServerHubClient : MonoBehaviour
     {

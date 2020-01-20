@@ -11,6 +11,7 @@ namespace BeatSaberMultiplayer
     public class Config {
 
         [SerializeField] private string _modVersion;
+        [SerializeField] private string[] _serverRepositories;
         [SerializeField] private string[] _serverHubIPs;
         [SerializeField] private int[] _serverHubPorts;
         [SerializeField] private bool _showAvatarsInGame;
@@ -50,6 +51,11 @@ namespace BeatSaberMultiplayer
                 "0.7.0.0",
                 new string[] { "bs.tigersserver.xyz", "bbbear-wgzeyu.gtxcn.com", "bs-zhm.tk", "pantie.xicp.net" }
             }
+        };
+
+        private static readonly List<string> newServerRepositories = new List<string>()
+        {
+            "https://raw.githubusercontent.com/Zingabopp/BeatSaberMultiplayerServerRepo/master/CompatibleServers.json"
         };
 
         public static bool Load()
@@ -118,6 +124,18 @@ namespace BeatSaberMultiplayer
                     _instance.ServerHubPorts = _instance.ServerHubPorts.Concat(Enumerable.Repeat(3700, hubs.Count)).ToArray();
 
                     Plugin.log.Info($"Added {hubs.Count} new ServerHubs to config!");
+
+                    List<string> repos = new List<string>();
+                    if (_instance._serverRepositories.Length != 0)
+                    {
+                        repos.AddRange(_instance._serverRepositories);
+                    }
+                    foreach (var newRepo in newServerRepositories)
+                    {
+                        Plugin.log.Warn($"Adding repo: {newRepo}");
+                        repos.Add(newRepo);
+                    }
+                    _instance.ServerRepositories = repos.ToArray();
                 }
             }
             _instance.ModVersion = IPA.Loader.PluginManager.GetPluginFromId("BeatSaberMultiplayer").Metadata.Version.ToString();
@@ -148,10 +166,20 @@ namespace BeatSaberMultiplayer
                 MarkDirty();
             }
         }
-        
+
+        public string[] ServerRepositories
+        {
+            get { return _serverRepositories; }
+            set
+            {
+                _serverRepositories = value;
+                MarkDirty();
+            }
+        }
+
         /// <summary>
-         /// Remember to Save after changing the value
-         /// </summary>
+        /// Remember to Save after changing the value
+        /// </summary>
         public string[] ServerHubIPs
         {
             get { return _serverHubIPs; }
@@ -372,6 +400,7 @@ namespace BeatSaberMultiplayer
         Config()
         {
             _modVersion = string.Empty;
+            _serverRepositories = new string[0];
             _serverHubIPs = new string[0];
             _serverHubPorts = new int[0];
             _showAvatarsInGame = false;
