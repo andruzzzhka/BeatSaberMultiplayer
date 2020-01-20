@@ -15,7 +15,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;LOCALRADIO; UNITY_STANDALONE</DefineConstants>
@@ -27,6 +27,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE;UNITY_STANDALONE</DefineConstants>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AvatarController.cs" />
@@ -34,7 +36,7 @@
     <Compile Include="Data\BeatSaverAPIResult.cs" />
     <Compile Include="Data\ChannelInfo.cs" />
     <Compile Include="Data\ExtraPlayerFlags.cs" />
-    <Compile Include="Data\ModelSaberAPI.cs" />
+    <Compile Include="Misc\ModelSaberAPI.cs" />
     <Compile Include="Data\PlayerInfo.cs" />
     <Compile Include="Data\RoomInfo.cs" />
     <Compile Include="Data\RoomPreset.cs" />
@@ -223,6 +225,7 @@
     <Reference Include="MainAssembly, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\MainAssembly.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json.12.0.0.0">
       <HintPath>..\Refs\Newtonsoft.Json.12.0.0.0.dll</HintPath>

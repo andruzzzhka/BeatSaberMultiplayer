@@ -109,12 +109,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _scoreData.RemoveRange(scores.Count, _scoreData.Count - scores.Count);
             }
 
+            scores.Sort();
+
             for (int i = 0; i < scores.Count; i++)
             {
                 if (_scoreData.Count <= i)
                 {
                     _scoreData.Add(new LeaderboardTableView.ScoreData((int)scores[i].score, scores[i].name, i + 1, false));
-                    Plugin.log.Debug("Added new ScoreData!");
                 }
                 else
                 {

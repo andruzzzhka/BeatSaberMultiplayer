@@ -204,7 +204,8 @@ namespace BeatSaberMultiplayer
         {
             if (_receivedMessages.Count > 0)
             {
-                networkClient.Recycle(_receivedMessages);
+                foreach (var msgToRecycle in _receivedMessages)
+                    networkClient.Recycle(msgToRecycle); //To avoid GC allocs
                 _receivedMessages.Clear();
             }
 
@@ -408,7 +409,8 @@ namespace BeatSaberMultiplayer
                     }
                 }
 
-                networkClient.Recycle(_receivedMessages);
+                foreach(var msgToRecycle in _receivedMessages)
+                    networkClient.Recycle(msgToRecycle); //To avoid GC allocs
                 _receivedMessages.Clear();
             }
 

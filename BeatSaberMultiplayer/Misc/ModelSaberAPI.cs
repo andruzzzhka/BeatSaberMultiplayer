@@ -166,12 +166,14 @@ namespace BeatSaberMultiplayer.Misc
                         {
                             AutoResetEvent wh = new AutoResetEvent(false);
 
-                            avatar.Load(async (loadedAvatar, result) =>
-                            {
-                                if (result == CustomAvatar.AvatarLoadResult.Completed)
-                                    await HashAvatar(avatar).ConfigureAwait(false);
-                                wh.Set();
-                            });
+                            HMMainThreadDispatcher.instance.Enqueue(() => {
+                                avatar.Load(async (loadedAvatar, result) =>
+                                {
+                                    if (result == CustomAvatar.AvatarLoadResult.Completed)
+                                        await HashAvatar(avatar).ConfigureAwait(false);
+                                    wh.Set();
+                                });
+                            });                            
 
                             await Task.Run(() => wh.WaitOne()).ConfigureAwait(false);
                             calculatedHashesCount++;

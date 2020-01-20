@@ -656,7 +656,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 practiceSettings.songSpeedMul = modifiers.songSpeedMul;
                 practiceSettings.startInAdvanceAndClearNotes = true;
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, startTime > 1f ? practiceSettings : null, "Lobby", false, () => { }, (StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults) => { InGameOnlineController.Instance.SongFinished(levelCompletionResults, difficultyBeatmap, modifiers, startTime > 1f); });
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, startTime > 1f ? practiceSettings : null, "Lobby", false, () => { }, InGameOnlineController.Instance.SongFinished);
 
                 UpdateDiscordActivity(roomInfo);
             }

@@ -59,7 +59,10 @@ namespace BeatSaberMultiplayer.Data
             return id == other.id &&
                     name == other.name &&
                     score == other.score &&
-                    EqualityComparer<Color32>.Default.Equals(color, other.color) &&
+                    color.r == other.color.r &&
+                    color.g == other.color.g &&
+                    color.b == other.color.b &&
+                    color.a == other.color.a &&
                     playerFlags.Equals(other.playerFlags);
         }
 
@@ -265,9 +268,9 @@ namespace BeatSaberMultiplayer.Data
             msg.Write(playerProgress);
 
             if (playerLevelOptions == default)
-                new LevelOptionsInfo(BeatmapDifficulty.Hard, GameplayModifiers.defaultModifiers, "Standard").AddToMessage(msg);
-            else
-                playerLevelOptions.AddToMessage(msg);
+                playerLevelOptions = new LevelOptionsInfo(BeatmapDifficulty.Hard, GameplayModifiers.defaultModifiers, "Standard");
+
+            playerLevelOptions.AddToMessage(msg);
 
             playerFlags.AddToMessage(msg);
 
@@ -294,7 +297,10 @@ namespace BeatSaberMultiplayer.Data
         public override bool Equals(object obj)
         {
             return obj is PlayerUpdate info &&
-                   EqualityComparer<Color32>.Default.Equals(playerNameColor, info.playerNameColor) &&
+                   playerNameColor.r == info.playerNameColor.r &&
+                   playerNameColor.g == info.playerNameColor.g &&
+                   playerNameColor.b == info.playerNameColor.b &&
+                   playerNameColor.a == info.playerNameColor.a &&
                    playerState == info.playerState &&
                    playerScore == info.playerScore &&
                    playerCutBlocks == info.playerCutBlocks &&
@@ -302,7 +308,7 @@ namespace BeatSaberMultiplayer.Data
                    playerTotalBlocks == info.playerTotalBlocks &&
                    playerEnergy == info.playerEnergy &&
                    playerProgress == info.playerProgress &&
-                   EqualityComparer<LevelOptionsInfo>.Default.Equals(playerLevelOptions, info.playerLevelOptions) &&
+                   playerLevelOptions == info.playerLevelOptions &&
                    fullBodyTracking == info.fullBodyTracking &&
                    headPos.Equals(info.headPos) &&
                    rightHandPos.Equals(info.rightHandPos) &&
@@ -320,7 +326,10 @@ namespace BeatSaberMultiplayer.Data
 
         public bool Equals(PlayerUpdate info)
         {
-            return EqualityComparer<Color32>.Default.Equals(playerNameColor, info.playerNameColor) &&
+            return playerNameColor.r == info.playerNameColor.r &&
+                   playerNameColor.g == info.playerNameColor.g &&
+                   playerNameColor.b == info.playerNameColor.b &&
+                   playerNameColor.a == info.playerNameColor.a &&
                    playerState == info.playerState &&
                    playerScore == info.playerScore &&
                    playerCutBlocks == info.playerCutBlocks &&
@@ -328,7 +337,7 @@ namespace BeatSaberMultiplayer.Data
                    playerTotalBlocks == info.playerTotalBlocks &&
                    playerEnergy == info.playerEnergy &&
                    playerProgress == info.playerProgress &&
-                   EqualityComparer<LevelOptionsInfo>.Default.Equals(playerLevelOptions, info.playerLevelOptions) &&
+                   playerLevelOptions == info.playerLevelOptions &&
                    fullBodyTracking == info.fullBodyTracking &&
                    headPos.Equals(info.headPos) &&
                    rightHandPos.Equals(info.rightHandPos) &&

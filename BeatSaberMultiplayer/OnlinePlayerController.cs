@@ -186,6 +186,7 @@ namespace BeatSaberMultiplayer
 
         public void FixedUpdate()
         {
+            
             if (playerInfo != null && playerInfo.updateInfo != default)
             {
                 if (!noInterpolation)
@@ -216,16 +217,6 @@ namespace BeatSaberMultiplayer
                     float lerpedPlayerProgress = Mathf.Lerp(_syncStartInfo.playerProgress, _syncEndInfo.playerProgress, lerpProgress);
 
                     playerInfo.updateInfo.playerProgress = lerpedPlayerProgress;
-
-                    /*
-                    if(playerInfo.updateInfo.playerProgress < lerpedPlayerProgress && Mathf.Abs(playerInfo.updateInfo.playerProgress - lerpedPlayerProgress) < 0.5f)
-                    {
-                        playerInfo.updateInfo.playerProgress = lerpedPlayerProgress;
-                    }
-                    else
-                    {
-                        playerInfo.updateInfo.playerProgress = _syncStartInfo.playerProgress;
-                    }*/
                 }
 
                 _overrideHeadPos = true;
@@ -233,6 +224,7 @@ namespace BeatSaberMultiplayer
                 _headPos = playerInfo.updateInfo.headPos + Vector3.right * avatarOffset;
                 transform.position = _headPos;
             }
+            
         }
 
         public void OnDestroy()
