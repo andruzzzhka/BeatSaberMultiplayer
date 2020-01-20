@@ -41,6 +41,7 @@
     <Compile Include="Data\RoomInfo.cs" />
     <Compile Include="Data\RoomPreset.cs" />
     <Compile Include="Data\RoomSettings.cs" />
+    <Compile Include="Data\ServerRepository.cs" />
     <Compile Include="Data\SongInfo.cs" />
     <Compile Include="Data\LevelOptionsInfo.cs" />
     <Compile Include="InGameOnlineController.cs" />
