@@ -14,7 +14,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 {
     class RoomCreationServerHubsListViewController : BSMLResourceViewController
     {
-        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen.RoomCreationServerHubsListViewController";
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
         public event Action didFinishEvent;
         public event Action<ServerHubClient> selectedServerHub;

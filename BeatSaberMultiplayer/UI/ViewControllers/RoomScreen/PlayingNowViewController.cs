@@ -19,7 +19,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
     class PlayingNowViewController : BSMLResourceViewController
     {
-        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.RoomScreen.PlayingNowViewController";
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
         public event Action playNowPressed;
 

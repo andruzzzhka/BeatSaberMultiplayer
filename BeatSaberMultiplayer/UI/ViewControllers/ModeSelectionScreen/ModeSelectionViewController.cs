@@ -11,7 +11,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
 {
     class ModeSelectionViewController : BSMLResourceViewController
     {
-        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen.ModeSelectionViewController";
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
         public event Action didSelectRooms;
         public event Action didSelectRadio;

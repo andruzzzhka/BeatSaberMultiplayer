@@ -10,9 +10,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
     class LevelPacksUIViewController : BSMLResourceViewController
     {
-        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.RoomScreen.LevelPacksUIViewController";
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
-		public event Action<IAnnotatedBeatmapLevelCollection> packSelected; 
+        public event Action<IAnnotatedBeatmapLevelCollection> packSelected; 
 
         [UIComponent("packs-list-table")]
         CustomListTableData levelPacksTableData;

@@ -13,7 +13,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 {
     class PresetsListViewController : BSMLResourceViewController
     {
-        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen.PresetsListViewController";
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
         public event Action<RoomPreset> didFinishEvent;
 

@@ -19,7 +19,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
     class SongSelectionViewController : BSMLResourceViewController, TableView.IDataSource
     {
-        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.RoomScreen.SongSelectionViewController";
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
         public event Action<IPreviewBeatmapLevel> SongSelected;
         public event Action<string> SearchPressed;

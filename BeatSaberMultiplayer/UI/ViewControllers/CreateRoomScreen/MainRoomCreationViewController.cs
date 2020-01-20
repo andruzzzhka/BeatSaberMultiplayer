@@ -12,7 +12,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 {
     class MainRoomCreationViewController : BSMLResourceViewController
     {
-        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen.MainRoomCreationViewController";
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
         public event Action didFinishEvent;
         public event Action<RoomSettings> CreatedRoom;

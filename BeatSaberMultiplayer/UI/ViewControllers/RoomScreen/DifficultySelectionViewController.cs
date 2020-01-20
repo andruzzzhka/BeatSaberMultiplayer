@@ -19,7 +19,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
     class DifficultySelectionViewController : BSMLResourceViewController
     {
-        public override string ResourceName => "BeatSaberMultiplayer.UI.ViewControllers.RoomScreen.DifficultySelectionViewController";
+        public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
         public event Action discardPressed;
         public event Action levelOptionsChanged;
