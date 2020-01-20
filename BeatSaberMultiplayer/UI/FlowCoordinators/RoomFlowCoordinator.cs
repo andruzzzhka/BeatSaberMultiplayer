@@ -215,13 +215,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             SetLeftScreenViewController(_playerManagementViewController);
             PluginUI.instance.SetLobbyDiscordActivity();
             didFinishEvent?.Invoke();
-
-#if UMBRA_FIX_SCORESABER
-            if (IPA.Loader.PluginManager.GetPluginFromId("ScoreSaber") != null)
-            {
-                Resources.FindObjectsOfTypeAll<LevelSelectionNavigationController>().First().GetPrivateField<StandardLevelDetailViewController>("_levelDetailViewController").GetPrivateField<StandardLevelDetailView>("_standardLevelDetailView").SetPrivateField("_selectedDifficultyBeatmap", null);
-            }
-#endif
         }
 
         private void ConnectedToServerHub()
@@ -663,16 +656,18 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 practiceSettings.songSpeedMul = modifiers.songSpeedMul;
                 practiceSettings.startInAdvanceAndClearNotes = true;
 
-#if UMBRA_FIX_SCORESABER
-                
-                if (IPA.Loader.PluginManager.GetPluginFromId("ScoreSaber") != null)
-                {
-                    ScoreSaberInteraction.FixScoreSaber(difficultyBeatmap);
-                    ScoreSaberInteraction.InitAndSignIn();
+                var scoreSaber = IPA.Loader.PluginManager.GetPluginFromId("ScoreSaber");
 
-                    Plugin.log.Info("Hopefully ScoreSaber fix doesn't break anything :)");
+                if (scoreSaber != null)
+                {
+                    if (scoreSaber.Metadata.Version.CompareTo(new SemVer.Version(2, 2, 8)) < 0)
+                    {
+                        ScoreSaberInteraction.FixScoreSaber(difficultyBeatmap);
+                        Plugin.log.Info($"Applying fix for outdated ScoreSaber version!");
+                    }
+
+                    ScoreSaberInteraction.InitAndSignIn();
                 }
-#endif
 
                 menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, startTime > 1f ? practiceSettings : null, "Lobby", false, () => { }, InGameOnlineController.Instance.SongFinished);
 
