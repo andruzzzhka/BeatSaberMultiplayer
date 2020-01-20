@@ -14,7 +14,7 @@
         "BeatSaberMarkupLanguage": "^1.1.0",
         "DiscordCore":  "^1.0.0"
     },
-    "loadAfter": [],
+    "loadAfter": [ "ScoreSaber" ],
     "links": {
         "project-source": "https://github.com/andruzzzhka/BeatSaberMultiplayer",
         "donate": "https://ko-fi.com/andruzzzhka"

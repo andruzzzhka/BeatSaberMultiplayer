@@ -215,6 +215,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             SetLeftScreenViewController(_playerManagementViewController);
             PluginUI.instance.SetLobbyDiscordActivity();
             didFinishEvent?.Invoke();
+
+#if UMBRA_FIX_SCORESABER
+            if (IPA.Loader.PluginManager.GetPluginFromId("ScoreSaber") != null)
+            {
+                Resources.FindObjectsOfTypeAll<LevelSelectionNavigationController>().First().GetPrivateField<StandardLevelDetailViewController>("_levelDetailViewController").GetPrivateField<StandardLevelDetailView>("_standardLevelDetailView").SetPrivateField("_selectedDifficultyBeatmap", null);
+            }
+#endif
         }
 
         private void ConnectedToServerHub()
@@ -655,6 +662,17 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 practiceSettings.startSongTime = startTime + 1.5f;
                 practiceSettings.songSpeedMul = modifiers.songSpeedMul;
                 practiceSettings.startInAdvanceAndClearNotes = true;
+
+#if UMBRA_FIX_SCORESABER
+                
+                if (IPA.Loader.PluginManager.GetPluginFromId("ScoreSaber") != null)
+                {
+                    ScoreSaberInteraction.FixScoreSaber(difficultyBeatmap);
+                    ScoreSaberInteraction.InitAndSignIn();
+
+                    Plugin.log.Info("Hopefully ScoreSaber fix doesn't break anything :)");
+                }
+#endif
 
                 menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, startTime > 1f ? practiceSettings : null, "Lobby", false, () => { }, InGameOnlineController.Instance.SongFinished);
 
@@ -1217,7 +1235,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        #region Discord rich presence stuff
+#region Discord rich presence stuff
         public void UpdateDiscordActivity(RoomInfo roomInfo)
         {
             ActivityParty partyInfo = new ActivityParty()
@@ -1307,7 +1325,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             return "empty";
         }
-        #endregion
+#endregion
 
     }
 }

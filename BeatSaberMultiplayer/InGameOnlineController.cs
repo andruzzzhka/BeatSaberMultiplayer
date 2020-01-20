@@ -942,8 +942,6 @@ namespace BeatSaberMultiplayer
 
         public void SongFinished(StandardLevelScenesTransitionSetupDataSO sender, LevelCompletionResults levelCompletionResults)
         {
-            Plugin.log.Debug("Song finished!");
-
             GameplayCoreSceneSetupData sceneData = sender.sceneSetupDataArray.First(x => x is GameplayCoreSceneSetupData) as GameplayCoreSceneSetupData;
 
             IDifficultyBeatmap difficultyBeatmap = sceneData.difficultyBeatmap;
@@ -988,34 +986,29 @@ namespace BeatSaberMultiplayer
             else if (Config.Instance.SubmitScores == 1)
             {
                 bool submitScore = false;
-                if (!levelCompletionResults.gameplayModifiers.noFail)
+                if (ScrappedData.Downloaded)
                 {
-                    if (ScrappedData.Downloaded)
+                    ScrappedSong song = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(difficultyBeatmap.level.levelID));
+                    if (song != default)
                     {
-                        ScrappedSong song = ScrappedData.Songs.FirstOrDefault(x => x.Hash == SongCore.Collections.hashForLevelID(difficultyBeatmap.level.levelID));
-                        if (song != default)
+                        DifficultyStats stats = song.Diffs.FirstOrDefault(x => x.Diff == difficultyBeatmap.difficulty.ToString().Replace("+", "Plus"));
+                        if (stats != default)
                         {
-                            DifficultyStats stats = song.Diffs.FirstOrDefault(x => x.Diff == difficultyBeatmap.difficulty.ToString().Replace("+", "Plus"));
-                            if (stats != default)
+                            if (stats.Ranked != 0)
                             {
-                                if (stats.Ranked != 0)
-                                {
-                                    submitScore = true;
-                                }
-                                else
-                                    Plugin.log.Warn("Song is unrakned!");
+                                submitScore = true;
                             }
                             else
-                                Plugin.log.Warn("Difficulty not found!");
+                                Plugin.log.Warn("Song is unrakned!");
                         }
                         else
-                            Plugin.log.Warn("Song not found!");
+                            Plugin.log.Warn("Difficulty not found!");
                     }
                     else
-                        Plugin.log.Warn("Scrapped data is not downloaded!");
+                        Plugin.log.Warn("Song not found!");
                 }
                 else
-                    Plugin.log.Warn("No fail enabled, score submission disabled!");
+                    Plugin.log.Warn("Scrapped data is not downloaded!");
 
                 if (!submitScore)
                 {

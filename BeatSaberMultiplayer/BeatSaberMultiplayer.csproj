@@ -18,7 +18,7 @@
     <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;LOCALRADIO; UNITY_STANDALONE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;LOCALRADIO; UNITY_STANDALONE; UMBRA_FIX_SCORESABER</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -26,7 +26,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;UNITY_STANDALONE</DefineConstants>
+    <DefineConstants>TRACE;UNITY_STANDALONE; UMBRA_FIX_SCORESABER</DefineConstants>
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
@@ -58,6 +58,7 @@
     <Compile Include="Misc\SongDownloader.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
+    <Compile Include="Misc\ScoreSaberInteraction.cs" />
     <Compile Include="OverriddenClasses\HarmonyPatches.cs" />
     <Compile Include="OverriddenClasses\OnlineAudioTimeController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapCallbackController.cs" />
@@ -247,6 +248,10 @@
     </Reference>
     <Reference Include="RumbleEnhancer">
       <HintPath>..\Refs\RumbleEnhancer.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ScoreSaber">
+      <HintPath>..\Refs\ScoreSaber.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SemVer.1.2.0.0">
