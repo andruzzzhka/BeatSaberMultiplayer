@@ -62,6 +62,22 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             if (firstActivation)
             {
+                if (Plugin.DownloaderExists)
+                {
+                    downloader = new SongDownloaderInterop();
+                    if (downloader == null)
+                        Plugin.log.Warn($"{nameof(SongDownloaderInterop)} could not be created.");
+                    else
+                    {
+                        MoreSongsAvailable = downloader.CanCreate;
+                        Plugin.log.Info($"{nameof(MoreSongsAvailable)} is {MoreSongsAvailable}");
+                    }
+                }
+                else
+                {
+                    Plugin.log.Warn($"SongDownloader not found, More Songs button won't be created.");
+                    MoreSongsAvailable = false;
+                }
                 _songsTableView.tableView.didSelectCellWithIdxEvent += SongsTableView_DidSelectRow;
                 _songsTableView.tableView.dataSource = this;
 
