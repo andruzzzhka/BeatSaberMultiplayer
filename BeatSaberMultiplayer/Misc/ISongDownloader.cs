@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using HMUI;
 
-namespace BeatSaberMultiplayerLite.Misc
+namespace BeatSaberMultiplayer.Misc
 {
     public interface ISongDownloader
     {

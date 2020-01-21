@@ -7,9 +7,9 @@ using BeatSaverDownloader;
 using BeatSaberMarkupLanguage;
 using HMUI;
 using BeatSaverDownloader.UI;
-using BeatSaberMultiplayerLite.OverriddenClasses;
+using BeatSaberMultiplayer.OverriddenClasses;
 
-namespace BeatSaberMultiplayerLite.Misc
+namespace BeatSaberMultiplayer.Misc
 {
     internal class SongDownloaderInterop : ISongDownloader
     {
