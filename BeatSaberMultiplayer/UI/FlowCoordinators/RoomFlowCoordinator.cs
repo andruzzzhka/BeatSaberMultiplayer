@@ -660,12 +660,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 if (scoreSaber != null)
                 {
-                    if (scoreSaber.Metadata.Version.CompareTo(new SemVer.Version(2, 2, 8)) < 0)
-                    {
-                        ScoreSaberInteraction.FixScoreSaber(difficultyBeatmap);
-                        Plugin.log.Info($"Applying fix for outdated ScoreSaber version!");
-                    }
-
                     ScoreSaberInteraction.InitAndSignIn();
                 }
 
