@@ -18,7 +18,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
         public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
         public event Action createRoomButtonPressed;
-        public event Action<ServerHubRoom> selectedRoom;
+        public event Action<ServerHubRoom, string> selectedRoom;
         public event Action refreshPressed;
 
         [UIComponent("refresh-btn")]
@@ -27,14 +27,26 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
         [UIComponent("rooms-list")]
         public CustomCellListTableData roomsList;
 
+        [UIComponent("password-keyboard")]
+        ModalKeyboard _passwordKeyboard;
+
         [UIValue("rooms")]
         public List<object> roomInfosList = new List<object>();
+
+        private ServerHubRoom _selectedRoom;
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
             base.DidActivate(firstActivation, type);
 
             roomsList.tableView.ClearSelection();
+        }
+
+        protected override void DidDeactivate(DeactivationType deactivationType)
+        {
+            if(_passwordKeyboard != null)
+                _passwordKeyboard.modalView.Hide(false);
+            base.DidDeactivate(deactivationType);
         }
 
         public void SetRooms(List<ServerHubRoom> rooms)
@@ -62,7 +74,21 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
         [UIAction("room-selected")]
         private void RoomSelected(TableView sender, RoomListObject obj)
         {
-            selectedRoom?.Invoke(obj.room);
+            if (!obj.room.roomInfo.usePassword)
+            {
+                selectedRoom?.Invoke(obj.room, null);
+            }
+            else
+            {
+                _selectedRoom = obj.room;
+                _passwordKeyboard.modalView.Show(true);
+            }
+        }
+
+        [UIAction("join-pressed")]
+        private void PasswordEntered(string pass)
+        {
+            selectedRoom?.Invoke(_selectedRoom, pass);
         }
 
         [UIAction("create-room-btn-pressed")]

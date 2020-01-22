@@ -48,7 +48,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         RoomNavigationController _roomNavigationController;
 
-        ModalKeyboard _searchKeyboard;
         SongSelectionViewController _songSelectionViewController;
         DifficultySelectionViewController _difficultySelectionViewController;
         MultiplayerResultsViewController _resultsViewController;
@@ -153,6 +152,10 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 {
                     ConnectedToServerHub();
                 }
+            }
+            else
+            {
+                _roomNavigationController.DisplayError("Unable to join room:\nPassword is required!");
             }
         }
 

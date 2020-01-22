@@ -21,4 +21,6 @@
       <pg-button dir='Down' click-event='rooms-list#PageDown'/>
     </vertical>
   </vertical>
+
+  <modal-keyboard id='password-keyboard' clear-on-open='true' on-enter='join-pressed' />
 </stack>

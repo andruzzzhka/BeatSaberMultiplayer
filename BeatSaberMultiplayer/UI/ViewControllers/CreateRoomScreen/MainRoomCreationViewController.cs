@@ -1,5 +1,6 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components;
+using BeatSaberMarkupLanguage.Components.Settings;
 using BeatSaberMarkupLanguage.Parser;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
@@ -46,6 +47,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         [UIComponent("preset-name-keyboard")]
         private ModalKeyboard _presetNameKeyboard;
+        [UIComponent("room-name-keyboard")]
+        private StringSetting _roomNameKeyboard;
+        [UIComponent("password-keyboard")]
+        private StringSetting _passwordKeyboard;
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
@@ -59,6 +64,17 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
             _createRoomButton.interactable = PluginUI.instance.roomCreationFlowCoordinator.CheckRequirements();
             parserParams.EmitEvent("cancel");
+        }
+
+        protected override void DidDeactivate(DeactivationType deactivationType)
+        {
+            if (_presetNameKeyboard != null)
+                _presetNameKeyboard.modalView.Hide(false);
+            if (_roomNameKeyboard != null)
+                _roomNameKeyboard.modalKeyboard.modalView.Hide(false);
+            if (_passwordKeyboard != null)
+                _passwordKeyboard.modalKeyboard.modalView.Hide(false);
+            base.DidDeactivate(deactivationType);
         }
 
         public void ApplyRoomSettings(RoomSettings settings)

@@ -96,9 +96,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        private void RoomSelected(ServerHubRoom selectedRoom)
+        private void RoomSelected(ServerHubRoom selectedRoom, string password)
         {
-            JoinRoom(selectedRoom.ip, selectedRoom.port, selectedRoom.roomInfo.roomId, selectedRoom.roomInfo.usePassword);
+            JoinRoom(selectedRoom.ip, selectedRoom.port, selectedRoom.roomInfo.roomId, selectedRoom.roomInfo.usePassword, password);
         }
 
         public void JoinRoom(string ip, int port, uint roomId, bool usePassword, string pass = "")
