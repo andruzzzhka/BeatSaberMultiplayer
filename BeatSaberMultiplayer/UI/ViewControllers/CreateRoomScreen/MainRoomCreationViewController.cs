@@ -81,7 +81,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         {
             _roomName = settings.Name;
 
-            _usePassword = settings.UsePassword;
+            _usePassword = settings.UsePassword && !string.IsNullOrEmpty(settings.Password);
             _roomPassword = settings.Password;
             _allowPerPlayerDifficulty = settings.PerPlayerDifficulty;
             _maxPlayers = settings.MaxPlayers;
@@ -163,7 +163,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
         [UIAction("create-room-btn-pressed")]
         private void CreateRoomBtnPressed()
         {
-            CreatedRoom?.Invoke(new RoomSettings() { Name = _roomName, UsePassword = _usePassword, Password = _roomPassword, PerPlayerDifficulty = _allowPerPlayerDifficulty, MaxPlayers = _maxPlayers, SelectionType = _songSelectionType, ResultsShowTime = _resultsShowTime });
+            CreatedRoom?.Invoke(new RoomSettings() { Name = _roomName, UsePassword = _usePassword && !string.IsNullOrEmpty(_roomPassword), Password = _roomPassword, PerPlayerDifficulty = _allowPerPlayerDifficulty, MaxPlayers = _maxPlayers, SelectionType = _songSelectionType, ResultsShowTime = _resultsShowTime });
         }
     }
 }

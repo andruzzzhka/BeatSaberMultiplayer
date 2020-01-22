@@ -103,6 +103,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void JoinRoom(string ip, int port, uint roomId, bool usePassword, string pass = "")
         {
+            pass = pass?.ToUpper();
             PresentFlowCoordinator(PluginUI.instance.roomFlowCoordinator, null, false, false);
             PluginUI.instance.roomFlowCoordinator.JoinRoom(ip, port, roomId, usePassword, pass);
             Client.Instance.inRadioMode = false;
