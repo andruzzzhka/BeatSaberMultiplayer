@@ -133,8 +133,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             TableViewScroller scroller = SongListScroller;
             if (position >= 0 && position <= scroller.scrollableSize)
             {
-                GetTableViewScrollerTargetPosition(ref scroller) = position;                
+                float offset = 0.01f;
+                if (position + offset > scroller.scrollableSize)
+                    offset = -0.01f;
+                if (position + offset < 0)
+                    offset = 0;
+                GetTableViewScrollerTargetPosition(ref scroller) = position + offset; // Need this so the list isn't blank when returning from a song
                 SetScrollPosition(ref scroller, position);
+                scroller.enabled = true;
                 return true;
             }
             return false;
