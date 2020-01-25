@@ -68,10 +68,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.CreateRoomScreen
 
         protected override void DidDeactivate(DeactivationType deactivationType)
         {
+            parserParams.EmitEvent("closeAllMPModals");
             if (_presetNameKeyboard != null)
                 _presetNameKeyboard.modalView.Hide(false);
             if (_roomNameKeyboard != null)
+            {
+                Plugin.log.Warn($"Hiding modal keyboard");
                 _roomNameKeyboard.modalKeyboard.modalView.Hide(false);
+            }
             if (_passwordKeyboard != null)
                 _passwordKeyboard.modalKeyboard.modalView.Hide(false);
             base.DidDeactivate(deactivationType);

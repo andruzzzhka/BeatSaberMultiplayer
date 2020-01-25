@@ -22,5 +22,5 @@
     </vertical>
   </vertical>
 
-  <modal-keyboard id='password-keyboard' clear-on-open='true' on-enter='join-pressed' />
+  <modal-keyboard id='password-keyboard' clear-on-open='true' on-enter='join-pressed' hide-event='closeAllMPModals'/>
 </stack>

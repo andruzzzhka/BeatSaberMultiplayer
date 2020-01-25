@@ -26,5 +26,5 @@
 
   <text id='host-selects-song-text' text='Host is selecting song...' font-size='7.5' align='Center' />
 
-  <modal-keyboard id='search-keyboard' value='search-value' clear-on-open='true' on-enter='search-pressed' />
+  <modal-keyboard id='search-keyboard' value='search-value' clear-on-open='true' on-enter='search-pressed' hide-event='closeAllMPModals'/>
 </stack>
