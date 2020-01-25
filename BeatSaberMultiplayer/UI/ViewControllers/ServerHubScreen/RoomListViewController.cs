@@ -48,8 +48,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
         protected override void DidDeactivate(DeactivationType deactivationType)
         {
             parserParams.EmitEvent("closeAllMPModals");
-            if (_passwordKeyboard != null)
-                _passwordKeyboard.modalView.Hide(false);
             base.DidDeactivate(deactivationType);
         }
 
