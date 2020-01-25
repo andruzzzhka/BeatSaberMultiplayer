@@ -74,8 +74,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         protected override void DidDeactivate(DeactivationType deactivationType)
         {
-            if (_searchKeyboard != null)
-                _searchKeyboard.modalView.Hide(false);
+            _parserParams.EmitEvent("closeAllMPModals");
             base.DidDeactivate(deactivationType);
         }
 

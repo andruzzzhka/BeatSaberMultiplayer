@@ -1,5 +1,6 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components;
+using BeatSaberMarkupLanguage.Parser;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
@@ -20,6 +21,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
         public event Action createRoomButtonPressed;
         public event Action<ServerHubRoom, string> selectedRoom;
         public event Action refreshPressed;
+        [UIParams]
+        private BSMLParserParams parserParams;
 
         [UIComponent("refresh-btn")]
         private Button _refreshButton;
@@ -44,8 +47,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ServerHubScreen
 
         protected override void DidDeactivate(DeactivationType deactivationType)
         {
-            if(_passwordKeyboard != null)
-                _passwordKeyboard.modalView.Hide(false);
+            parserParams.EmitEvent("closeAllMPModals");
             base.DidDeactivate(deactivationType);
         }
 
