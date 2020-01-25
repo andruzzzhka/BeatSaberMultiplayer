@@ -131,7 +131,7 @@ namespace BeatSaberMultiplayer
                 active = false;
                 return;
             }
-            BS_Utils.Gameplay.ScoreSubmission.DisableSubmission("Beat Saber Multiplayer Lite");
+            BS_Utils.Gameplay.ScoreSubmission.DisableSubmission("Beat Saber Multiplayer");
             StartCoroutine(Delay(5, () => {
                 active = true;
             }));

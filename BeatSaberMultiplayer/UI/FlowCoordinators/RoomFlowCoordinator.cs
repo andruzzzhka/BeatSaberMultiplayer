@@ -673,7 +673,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     ScoreSaberInteraction.InitAndSignIn();
                 }
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, practiceSettings : practiceSettings, "Lobby", false, () => { }, InGameOnlineController.Instance.SongFinished);
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, practiceSettings, "Lobby", false, () => { }, InGameOnlineController.Instance.SongFinished);
                 UpdateDiscordActivity(roomInfo);
             }
             else
