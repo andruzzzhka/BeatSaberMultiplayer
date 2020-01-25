@@ -36,6 +36,8 @@
     <Compile Include="Data\BeatSaverAPIResult.cs" />
     <Compile Include="Data\ChannelInfo.cs" />
     <Compile Include="Data\ExtraPlayerFlags.cs" />
+    <Compile Include="IPAUtilities\Accessor.cs" />
+    <Compile Include="IPAUtilities\ReflectionUtil.cs" />
     <Compile Include="Misc\ModelSaberAPI.cs" />
     <Compile Include="Data\PlayerInfo.cs" />
     <Compile Include="Data\RoomInfo.cs" />
