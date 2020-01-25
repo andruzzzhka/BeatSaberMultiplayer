@@ -279,9 +279,9 @@ namespace BeatSaberMultiplayer
             {
                 StartCoroutine(WaitForControllers());
                 needToSendUpdates = true;
+                if (Config.Instance.SubmitScores == 0 || Config.Instance.SpectatorMode || Client.disableScoreSubmission)
+                    BS_Utils.Gameplay.ScoreSubmission.DisableSubmission("Beat Saber Multiplayer Lite");
             }
-            if (Config.Instance.SubmitScores == 0 || Config.Instance.SpectatorMode || Client.disableScoreSubmission)
-                BS_Utils.Gameplay.ScoreSubmission.DisableSubmission("Beat Saber Multiplayer Lite");
         }
 
         public void PacketReceived(NetIncomingMessage msg)
