@@ -792,10 +792,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void PopAllViewControllers()
         {
-            HideSongsList();
-            HideDifficultySelection();
-            HideInGameLeaderboard();
+            if (_hostLeaveDialog.isInViewControllerHierarchy)
+                DismissViewController(_hostLeaveDialog, null, true);
+            if (_passHostDialog.isInViewControllerHierarchy)
+                DismissViewController(_passHostDialog, null, true);
             HideResultsLeaderboard();
+            HideInGameLeaderboard();
+            HideDifficultySelection();
+            HideSongsList();
         }
 
         public void ShowSongsList(string lastLevelId = "")
