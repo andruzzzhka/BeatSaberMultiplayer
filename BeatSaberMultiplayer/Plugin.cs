@@ -53,6 +53,15 @@ namespace BeatSaberMultiplayer
                 log.Warn("Unable to load presets! Exception: " + e);
             }
 
+            try
+            {
+                AvatarsHashCache.Load();
+            }
+            catch (Exception e)
+            {
+                log.Warn("Unable to load avatar hashes! Exception: " + e);
+            }
+
             Sprites.ConvertSprites();
 
             ScrappedData.Instance.DownloadScrappedData(null);

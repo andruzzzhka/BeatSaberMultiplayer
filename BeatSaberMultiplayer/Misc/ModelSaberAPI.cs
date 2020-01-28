@@ -170,7 +170,7 @@ namespace BeatSaberMultiplayer.Misc
                                 avatar.Load(async (loadedAvatar, result) =>
                                 {
                                     if (result == CustomAvatar.AvatarLoadResult.Completed)
-                                        await HashAvatar(avatar).ConfigureAwait(false);
+                                        await AvatarsHashCache.GetHashForAvatar(avatar).ConfigureAwait(false);
                                     wh.Set();
                                 });
                             });                            
@@ -180,7 +180,7 @@ namespace BeatSaberMultiplayer.Misc
                         }
                         else
                         {
-                            await HashAvatar(avatar).ConfigureAwait(false);
+                            await AvatarsHashCache.GetHashForAvatar(avatar).ConfigureAwait(false);
                             calculatedHashesCount++;
                         }
 
@@ -197,22 +197,6 @@ namespace BeatSaberMultiplayer.Misc
                 }
                 isCalculatingHashes = false;
             }
-        }
-
-        private static async Task HashAvatar(CustomAvatar.CustomAvatar avatar)
-        {
-            await Task.Run(() =>
-            {
-                string hash;
-                if (SongDownloader.CreateMD5FromFile(avatar.FullPath, out hash))
-                {
-                    if (!cachedAvatars.ContainsKey(hash))
-                    {
-                        cachedAvatars.Add(hash, avatar);
-                        Plugin.log.Debug("Hashed avatar " + avatar.Name + "! Hash: " + hash);
-                    }
-                }
-            }).ConfigureAwait(false);
         }
     }
 }
