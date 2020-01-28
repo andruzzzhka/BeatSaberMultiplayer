@@ -154,7 +154,7 @@ namespace BeatSaberMultiplayer.Misc
             if (cachedAvatars.Count != CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count && !isCalculatingHashes)
             {
                 isCalculatingHashes = true;
-                Plugin.log.Debug($"Hashing all avatars... {cachedAvatars.Count} of {CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count} avatars hashed");
+                Plugin.log.Debug($"Hashing avatars... {CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count} avatars found");
                 try
                 {
                     cachedAvatars.Clear();
@@ -170,7 +170,10 @@ namespace BeatSaberMultiplayer.Misc
                                 avatar.Load(async (loadedAvatar, result) =>
                                 {
                                     if (result == CustomAvatar.AvatarLoadResult.Completed)
-                                        await AvatarsHashCache.GetHashForAvatar(avatar).ConfigureAwait(false);
+                                    {
+                                        string hash = await AvatarsHashCache.GetHashForAvatar(avatar).ConfigureAwait(false);
+                                        cachedAvatars.Add(hash, avatar);
+                                    }
                                     wh.Set();
                                 });
                             });                            
@@ -180,7 +183,8 @@ namespace BeatSaberMultiplayer.Misc
                         }
                         else
                         {
-                            await AvatarsHashCache.GetHashForAvatar(avatar).ConfigureAwait(false);
+                            string hash = await AvatarsHashCache.GetHashForAvatar(avatar).ConfigureAwait(false);
+                            cachedAvatars.Add(hash, avatar);
                             calculatedHashesCount++;
                         }
 
