@@ -4,6 +4,7 @@
       <horizontal id='select-btns-rect' horizontal-fit='PreferredSize'>
         <button text='Search' on-click='search-btn-pressed' />
         <button text='Sort by' on-click='sort-btn-pressed' />
+        <button text='More Songs' on-click='more-btn-pressed' active='~more-btn-active'/>
       </horizontal>
       <horizontal id='sort-btns-rect' horizontal-fit='PreferredSize'>
         <button text='Default' on-click='def-sort-btn-pressed' />

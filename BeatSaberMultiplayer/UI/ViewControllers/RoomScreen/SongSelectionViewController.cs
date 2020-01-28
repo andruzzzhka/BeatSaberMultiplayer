@@ -20,10 +20,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
     class SongSelectionViewController : BSMLResourceViewController, TableView.IDataSource
     {
         public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
-
+        public RoomFlowCoordinator ParentFlowCoordinator { get; internal set; }
         public event Action<IPreviewBeatmapLevel> SongSelected;
         public event Action<string> SearchPressed;
         public event Action<SortMode> SortPressed;
+        private ISongDownloader downloader;
 
         [UIParams]
         BSMLParserParams _parserParams;
@@ -49,10 +50,23 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         [UIValue("search-value")]
         string searchValue;
-
+        private bool _moreSongsAvailable = true;
+        [UIValue("more-btn-active")]
+        public bool MoreSongsAvailable
+        {
+            get { return _moreSongsAvailable; }
+            set
+            {
+                if (_moreSongsAvailable == value)
+                    return;
+                _moreSongsAvailable = value;
+                NotifyPropertyChanged();
+            }
+        }
         private LevelListTableCell songListTableCellInstance;
         private PlayerDataModelSO _playerDataModel;
         private AdditionalContentModel _additionalContentModel;
+        private Action _moreSongsAction;
 
         List<IPreviewBeatmapLevel> availableSongs = new List<IPreviewBeatmapLevel>();
 
@@ -62,6 +76,22 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             if (firstActivation)
             {
+                if (Plugin.DownloaderExists)
+                {
+                    downloader = new SongDownloaderInterop();
+                    if (downloader == null)
+                        Plugin.log.Warn($"{nameof(SongDownloaderInterop)} could not be created.");
+                    else
+                    {
+                        MoreSongsAvailable = downloader.CanCreate;
+                        Plugin.log.Info($"{nameof(MoreSongsAvailable)} is {MoreSongsAvailable}");
+                    }
+                }
+                else
+                {
+                    Plugin.log.Warn($"SongDownloader not found, More Songs button won't be created.");
+                    MoreSongsAvailable = false;
+                }
                 _songsTableView.tableView.didSelectCellWithIdxEvent += SongsTableView_DidSelectRow;
                 _songsTableView.tableView.dataSource = this;
 
@@ -130,6 +160,17 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                         _sortBtnsRect.gameObject.SetActive(false);
                     }; break;
             }
+        }
+
+        [UIAction("more-btn-pressed")]
+        public void MoreButtonPressed()
+        {
+            downloader?.PresentDownloaderFlowCoordinator(ParentFlowCoordinator, MoreSongsFinishedCallback);
+        }
+
+        public void MoreSongsFinishedCallback()
+        {
+            Plugin.log.Info("More Songs Finished");
         }
 
         [UIAction("sort-btn-pressed")]
