@@ -1,4 +1,5 @@
 ﻿using BeatSaberMultiplayer.Misc;
+using BeatSaberMultiplayer.OverriddenClasses;
 using BeatSaberMultiplayer.UI;
 using BS_Utils.Gameplay;
 using Discord;
@@ -55,18 +56,18 @@ namespace BeatSaberMultiplayer
             Sprites.ConvertSprites();
 
             ScrappedData.Instance.DownloadScrappedData(null);
-            if (IPA.Loader.PluginManager.GetPluginFromId("BeatSaverDownloader") != null)
-                DownloaderExists = true;
 
             try
             {
-                var harmony = HarmonyInstance.Create("com.andruzzzhka.BeatSaberMultiplayer");
-                harmony.PatchAll(Assembly.GetExecutingAssembly());
+                HarmonyPatcher.Patch();
             }
             catch (Exception e)
             {
                 Plugin.log.Error("Unable to patch assembly! Exception: " + e);
             }
+
+            if (IPA.Loader.PluginManager.GetPluginFromId("BeatSaverDownloader") != null)
+                DownloaderExists = true;
 
             discord = DiscordManager.Instance.CreateInstance(new DiscordSettings() { modId = "BeatSaberMultiplayer", modName = "Beat Saber Multiplayer", modIcon = Sprites.onlineIcon, handleInvites = true, appId = 661577830919962645 });
 

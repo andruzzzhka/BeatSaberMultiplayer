@@ -70,9 +70,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _lastSelectedCollection = value;
 #if DEBUG
                 if (value == null)
-                    Plugin.LogLocation($"LastSelectedCollection set to <NULL>");
+                    Plugin.log.Debug($"LastSelectedCollection set to <NULL>");
                 else
-                    Plugin.LogLocation($"LastSelectedCollection set to {value.collectionName}");
+                    Plugin.log.Debug($"LastSelectedCollection set to {value.collectionName}");
 #endif
             }
         }
@@ -86,7 +86,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     return;
                 _lastSortMode = value;
 #if DEBUG
-                Plugin.LogLocation($"LastSortMode set to {value.ToString()}");
+                Plugin.log.Debug($"LastSortMode set to {value.ToString()}");
 #endif
             }
         }
@@ -101,9 +101,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _lastSearchRequest = value;
 #if DEBUG
                 if (string.IsNullOrEmpty(value))
-                    Plugin.LogLocation($"LastSearchRequest set to {(value == null ? "<NULL>" : "<Empty>")}");
+                    Plugin.log.Debug($"LastSearchRequest set to {(value == null ? "<NULL>" : "<Empty>")}");
                 else
-                    Plugin.LogLocation($"LastSearchRequest set to {value}");
+                    Plugin.log.Debug($"LastSearchRequest set to {value}");
 #endif
             }
         }
@@ -119,9 +119,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _lastSelectedSong = value;
 #if DEBUG
                 if (string.IsNullOrEmpty(value))
-                    Plugin.LogLocation($"LastSelectedSong set to {(value == null ? "<NULL>" : "<Empty>")}");
+                    Plugin.log.Debug($"LastSelectedSong set to {(value == null ? "<NULL>" : "<Empty>")}");
                 else
-                    Plugin.LogLocation($"LastSelectedSong set to {value}");
+                    Plugin.log.Debug($"LastSelectedSong set to {value}");
 #endif
             }
         }
@@ -136,7 +136,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     return;
                 _lastScrollPosition = value;
 #if DEBUG
-                    Plugin.LogLocation($"{nameof(LastScrollPosition)} set to {value}");
+                    Plugin.log.Debug($"{nameof(LastScrollPosition)} set to {value}");
 #endif
             }
         }

@@ -2,9 +2,35 @@
 using Harmony;
 using IPA.Utilities;
 using System;
+using System.Collections.Generic;
 
 namespace BeatSaberMultiplayer.OverriddenClasses
 {
+    public static class HarmonyPatcher
+    {
+        static Type[] patchTypes = new Type[] { typeof(SpectatorNoteWasCutEventPatch), typeof(SpectatorNoteWasMissedEventPatch), typeof(SpectatorGameEnergyCounterPatch), typeof(GameplayManagerPausePatch) };
+        static HarmonyInstance instance;
+
+        public static void Patch()
+        {   
+            if(instance == null)
+                instance = HarmonyInstance.Create("com.andruzzzhka.BeatSaberMultiplayer");
+
+            Plugin.log.Debug("Patching...");
+            foreach (var type in patchTypes)
+            {
+                List<HarmonyMethod> harmonyMethods = type.GetHarmonyMethods();
+                if (harmonyMethods != null && harmonyMethods.Count > 0)
+                {
+                    HarmonyMethod attributes = HarmonyMethod.Merge(harmonyMethods);
+                    PatchProcessor patchProcessor = new PatchProcessor(instance, type, attributes);
+                    patchProcessor.Patch();
+                }
+            }
+            Plugin.log.Info("Applied Harmony patches!");
+        }
+    }
+
     [HarmonyPatch(typeof(BeatmapObjectSpawnController))]
     [HarmonyPatch("HandleNoteWasCut")]
     [HarmonyPatch(new Type[] { typeof(NoteController), typeof(NoteCutInfo) })]

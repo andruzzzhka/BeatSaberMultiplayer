@@ -190,10 +190,8 @@
       <HintPath>..\Refs\0Harmony.1.2.0.1.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="BeatSaverDownloader, Version=5.0.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="BeatSaverDownloader">
       <HintPath>..\Refs\BeatSaverDownloader.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="BSML, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

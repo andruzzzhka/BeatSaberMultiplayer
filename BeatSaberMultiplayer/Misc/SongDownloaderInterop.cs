@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BeatSaverDownloader;
 using BeatSaberMarkupLanguage;
 using HMUI;
-using BeatSaverDownloader.UI;
 using BeatSaberMultiplayer.OverriddenClasses;
 
 namespace BeatSaberMultiplayer.Misc
@@ -32,8 +26,7 @@ namespace BeatSaberMultiplayer.Misc
                 return _coordinator;
             }catch(Exception ex)
             {
-                Plugin.log.Error($"Error creating MoreSongsFlowCoordinator: {ex.Message}");
-                Plugin.log.Debug(ex);
+                Plugin.log.Error($"Error creating MoreSongsFlowCoordinator: {ex}");
                 return null;
             }
         }
