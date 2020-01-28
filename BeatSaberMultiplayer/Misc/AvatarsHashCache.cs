@@ -18,7 +18,7 @@ namespace BeatSaberMultiplayer.Misc
 
     public static class AvatarsHashCache
     {
-        public static string hashesFilePath { get; private set; } = Path.Combine(Application.persistentDataPath, "customAvatarsHashes.json");
+        public static string hashesFilePath { get; private set; } = Path.Combine(Application.persistentDataPath, "AvatarHashData.dat");
 
         private static Dictionary<string, HashData> _hashes = new Dictionary<string, HashData>();
 
