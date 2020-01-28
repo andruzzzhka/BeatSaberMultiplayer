@@ -10,7 +10,6 @@ using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components;
-using IPA.Utilities;
 using BeatSaberMarkupLanguage.Parser;
 
 namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
@@ -20,6 +19,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
     class SongSelectionViewController : BSMLResourceViewController, TableView.IDataSource
     {
         public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
+        
+        IPAUtilities.PropertyAccessor<TableViewScroller, float>.Setter SetScrollPosition = IPAUtilities.PropertyAccessor<TableViewScroller, float>.GetSetter("position");
+        IPAUtilities.FieldAccessor<TableViewScroller, float>.Accessor GetTableViewScrollerTargetPosition = IPAUtilities.FieldAccessor<TableViewScroller, float>.GetAccessor("_targetPosition");
+        IPAUtilities.FieldAccessor<TableView, TableViewScroller>.Accessor GetTableViewScroller = IPAUtilities.FieldAccessor<TableView, TableViewScroller>.GetAccessor("_scroller");
+
         public RoomFlowCoordinator ParentFlowCoordinator { get; internal set; }
         public event Action<IPreviewBeatmapLevel> SongSelected;
         public event Action<string> SearchPressed;
@@ -63,6 +67,21 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 NotifyPropertyChanged();
             }
         }
+        
+        private TableViewScroller _songListScroller;
+        public TableViewScroller SongListScroller
+        {
+            get
+            {
+                if (_songListScroller == null)
+                {
+                    _songListScroller = GetTableViewScroller(ref _songsTableView.tableView);
+                    _songListScroller.positionDidChangeEvent += _songListScroller_positionDidChangeEvent;
+                }
+                return _songListScroller;
+            }
+        }
+        
         private LevelListTableCell songListTableCellInstance;
         private PlayerDataModelSO _playerDataModel;
         private AdditionalContentModel _additionalContentModel;
@@ -114,16 +133,43 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             _songsTableView.tableView.ReloadData();
             _songsTableView.tableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
-
             Plugin.log.Debug($"Set list of {levels.Count} levels!");
         }
 
         public void ScrollToLevel(string levelId)
         {
+            if (string.IsNullOrEmpty(levelId))
+                return;
             if (availableSongs.Any(x => x.levelID == levelId))
             {
                 int row = availableSongs.FindIndex(x => x.levelID == levelId);
                 _songsTableView.tableView.ScrollToCellWithIdx(row, TableViewScroller.ScrollPositionType.Beginning, false);
+            }
+        }
+
+        public bool ScrollToPosition(float position)
+        {
+            TableViewScroller scroller = SongListScroller;
+            if (position >= 0 && position <= scroller.scrollableSize)
+            {
+                float offset = 0.01f;
+                if (position + offset > scroller.scrollableSize)
+                    offset = -0.01f;
+                if (position + offset < 0)
+                    offset = 0;
+                GetTableViewScrollerTargetPosition(ref scroller) = position + offset; // Need this so the list isn't blank when returning from a song
+                SetScrollPosition(ref scroller, position);
+                scroller.enabled = true;
+                return true;
+            }
+            return false;
+        }
+
+        public void ScrollToIndex(int index, bool animated = false)
+        {
+            if (index >= 0 && index < _songsTableView.tableView.numberOfCells)
+            {
+                _songsTableView.tableView.ScrollToCellWithIdx(index, TableViewScroller.ScrollPositionType.Center, animated);
             }
         }
 
@@ -243,9 +289,15 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             tableCell.SetDataFromLevelAsync(availableSongs[idx], _playerDataModel.playerData.favoritesLevelIds.Contains(availableSongs[idx].levelID));
             tableCell.RefreshAvailabilityAsync(_additionalContentModel, availableSongs[idx].levelID);
-
+            
             tableCell.reuseIdentifier = _songsTableView.reuseIdentifier;
             return tableCell;
+        }
+
+
+        private void _songListScroller_positionDidChangeEvent(TableViewScroller arg1, float arg2)
+        {
+            ParentFlowCoordinator.LastScrollPosition = arg2;
         }
 
         [UIAction("fast-scroll-down-pressed")]

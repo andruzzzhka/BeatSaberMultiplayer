@@ -59,12 +59,89 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         BeatmapCharacteristicSO[] _beatmapCharacteristics;
 
-        IAnnotatedBeatmapLevelCollection _lastSelectedCollection;
-        SortMode _lastSortMode;
-        string _lastSearchRequest;
+        private IAnnotatedBeatmapLevelCollection _lastSelectedCollection;
+        IAnnotatedBeatmapLevelCollection LastSelectedCollection
+        {
+            get { return _lastSelectedCollection; }
+            set
+            {
+                if (_lastSelectedCollection == value)
+                    return;
+                _lastSelectedCollection = value;
+#if DEBUG
+                if (value == null)
+                    Plugin.LogLocation($"LastSelectedCollection set to <NULL>");
+                else
+                    Plugin.LogLocation($"LastSelectedCollection set to {value.collectionName}");
+#endif
+            }
+        }
+        private SortMode _lastSortMode;
+        SortMode LastSortMode
+        {
+            get { return _lastSortMode; }
+            set
+            {
+                if (_lastSortMode == value)
+                    return;
+                _lastSortMode = value;
+#if DEBUG
+                Plugin.LogLocation($"LastSortMode set to {value.ToString()}");
+#endif
+            }
+        }
+        private string _lastSearchRequest;
+        string LastSearchRequest
+        {
+            get { return _lastSearchRequest; }
+            set
+            {
+                if (_lastSearchRequest == value)
+                    return;
+                _lastSearchRequest = value;
+#if DEBUG
+                if (string.IsNullOrEmpty(value))
+                    Plugin.LogLocation($"LastSearchRequest set to {(value == null ? "<NULL>" : "<Empty>")}");
+                else
+                    Plugin.LogLocation($"LastSearchRequest set to {value}");
+#endif
+            }
+        }
+
+        private string _lastSelectedSong;
+        string LastSelectedSong
+        {
+            get { return _lastSelectedSong; }
+            set
+            {
+                if (_lastSelectedSong == value)
+                    return;
+                _lastSelectedSong = value;
+#if DEBUG
+                if (string.IsNullOrEmpty(value))
+                    Plugin.LogLocation($"LastSelectedSong set to {(value == null ? "<NULL>" : "<Empty>")}");
+                else
+                    Plugin.LogLocation($"LastSelectedSong set to {value}");
+#endif
+            }
+        }
+
+        private float _lastScrollPosition;
+        public float LastScrollPosition
+        {
+            get { return _lastScrollPosition; }
+            set
+            {
+                if (_lastScrollPosition == value)
+                    return;
+                _lastScrollPosition = value;
+#if DEBUG
+                    Plugin.LogLocation($"{nameof(LastScrollPosition)} set to {value}");
+#endif
+            }
+        }
 
         RoomInfo roomInfo;
-        string lastSelectedSong;
 
         float currentTime;
         float totalTime;
@@ -206,9 +283,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             InGameOnlineController.Instance.DestroyPlayerControllers();
             InGameOnlineController.Instance.VoiceChatStopRecording();
             PreviewPlayer.CrossfadeToDefault();
-            lastSelectedSong = "";
-            _lastSortMode = SortMode.Default;
-            _lastSearchRequest = "";
+            LastSelectedSong = "";
+            LastSortMode = SortMode.Default;
+            LastSearchRequest = "";
             levelDifficultyBeatmap = null;
             levelResults = null;
             lastHighscoreForLevel = 0;
@@ -258,7 +335,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 InGameOnlineController.Instance.DestroyPlayerControllers();
                 PreviewPlayer.CrossfadeToDefault();
                 joined = false;
-                lastSelectedSong = "";
+                LastSelectedSong = "";
 
                 _roomNavigationController.DisplayError(reason);
             }
@@ -515,7 +592,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     {
                         PopAllViewControllers();
                         if (roomInfo.songSelectionType == SongSelectionType.Manual)
-                            ShowSongsList(lastSelectedSong);
+                            ShowSongsList(LastSelectedSong);
                     }
                     break;
                 case RoomState.Preparing:
@@ -673,7 +750,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     ScoreSaberInteraction.InitAndSignIn();
                 }
 
-                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, practiceSettings, "Lobby", false, () => { }, InGameOnlineController.Instance.SongFinished);
+                menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, practiceSettings: practiceSettings, "Lobby", false, () => { }, InGameOnlineController.Instance.SongFinished);
                 UpdateDiscordActivity(roomInfo);
             }
             else
@@ -697,25 +774,56 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _songSelectionViewController = BeatSaberUI.CreateViewController<SongSelectionViewController>();
                 _songSelectionViewController.ParentFlowCoordinator = this;
                 _songSelectionViewController.SongSelected += SongSelected;
-                _songSelectionViewController.SortPressed += (sortMode) => { SetSongs(_lastSelectedCollection, sortMode, _lastSearchRequest); };
-                _songSelectionViewController.SearchPressed += (value) => { SetSongs(_lastSelectedCollection, _lastSortMode, value); };
+                _songSelectionViewController.SortPressed += (sortMode) => { SetSongs(LastSelectedCollection, sortMode, LastSearchRequest); };
+                _songSelectionViewController.SearchPressed += (value) => { SetSongs(LastSelectedCollection, LastSortMode, value); };
             }
 
 
             if (_levelPacksViewController == null)
             {
+
                 _levelPacksViewController = BeatSaberUI.CreateViewController<LevelPacksUIViewController>();
-                _levelPacksViewController.packSelected += (IAnnotatedBeatmapLevelCollection pack) => { _lastSelectedCollection = pack; _lastSortMode = SortMode.Default; _lastSearchRequest = ""; SetSongs(_lastSelectedCollection, _lastSortMode, _lastSearchRequest); };
+                _levelPacksViewController.packSelected += (IAnnotatedBeatmapLevelCollection pack) => {
+                    float scrollPosition = LastScrollPosition;
+                    if (LastSelectedCollection != pack)
+                    {
+                        LastSelectedCollection = pack;
+                        LastSortMode = SortMode.Default;
+                        LastSearchRequest = "";
+                    }
+                    SetSongs(LastSelectedCollection, LastSortMode, LastSearchRequest);
+                    if (_songSelectionViewController.ScrollToPosition(scrollPosition))
+                    {
+#if DEBUG
+                        Plugin.log.Debug($"Scrolling to {scrollPosition} / {_songSelectionViewController.SongListScroller.scrollableSize}");
+#endif
+                    }
+                    else
+                    {
+                        Plugin.log.Debug($"Couldn't scroll to {scrollPosition}, max is {_songSelectionViewController.SongListScroller.scrollableSize}");
+                        _songSelectionViewController.ScrollToLevel(LastSelectedSong);
+                    }
+                };
             }
 
             if (_roomNavigationController.viewControllers.IndexOf(_songSelectionViewController) < 0)
             {
+                float scrollPosition = LastScrollPosition;
                 PushViewControllerToNavigationController(_roomNavigationController, _songSelectionViewController, null, true);
-                SetSongs(_lastSelectedCollection, _lastSortMode, _lastSearchRequest);
-
-                if (!string.IsNullOrEmpty(lastLevelId))
+                SetSongs(LastSelectedCollection, LastSortMode, LastSearchRequest);
+                if (_songSelectionViewController.ScrollToPosition(scrollPosition))
                 {
-                    _songSelectionViewController.ScrollToLevel(lastLevelId);
+#if DEBUG
+                    Plugin.log.Debug($"Scrolled to {scrollPosition}");
+#endif
+                }
+                else 
+                {
+                    Plugin.log.Debug($"Couldn't scroll to {scrollPosition}, max is {_songSelectionViewController.SongListScroller.scrollableSize}");
+                    if (!string.IsNullOrEmpty(lastLevelId))
+                        _songSelectionViewController.ScrollToLevel(lastLevelId);
+                    else
+                        _songSelectionViewController.ScrollToLevel(LastSelectedSong);
                 }
             }
 
@@ -751,15 +859,15 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void SetSongs(IAnnotatedBeatmapLevelCollection selectedCollection, SortMode sortMode, string searchRequest)
         {
-            _lastSortMode = sortMode;
-            _lastSearchRequest = searchRequest;
-            _lastSelectedCollection = selectedCollection;
+            LastSortMode = sortMode;
+            LastSearchRequest = searchRequest;
+            LastSelectedCollection = selectedCollection;
 
             List<IPreviewBeatmapLevel> levels = new List<IPreviewBeatmapLevel>();
 
-            if (_lastSelectedCollection != null)
+            if (LastSelectedCollection != null)
             {
-                levels = _lastSelectedCollection.beatmapLevelCollection.beatmapLevels.ToList();
+                levels = LastSelectedCollection.beatmapLevelCollection.beatmapLevels.ToList();
 
                 if (string.IsNullOrEmpty(searchRequest))
                 {
@@ -829,7 +937,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         private void SongSelected(IPreviewBeatmapLevel song)
         {
-            lastSelectedSong = song.levelID;
+            LastSelectedSong = song.levelID;
             Client.Instance.SetSelectedSong(new SongInfo(song));
             UpdateLevelOptions();
         }
