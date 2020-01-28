@@ -232,7 +232,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             else
             {
-                _roomNavigationController.DisplayError("Unable to join room:\nPassword is required!");
+                DisplayError("Unable to join room:\nPassword is required!");
             }
         }
 
@@ -325,7 +325,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 PreviewPlayer.CrossfadeToDefault();
                 joined = false;
 
-                _roomNavigationController.DisplayError("Lost connection to the ServerHub!");
+                DisplayError("Lost connection to the ServerHub!");
             }
             else if (msg.LengthBytes > 3)
             {
@@ -337,11 +337,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 joined = false;
                 LastSelectedSong = "";
 
-                _roomNavigationController.DisplayError(reason);
+                DisplayError(reason);
             }
             else
             {
-                _roomNavigationController.DisplayError("ServerHub refused connection!");
+                DisplayError("ServerHub refused connection!");
             }
         }
 
@@ -384,22 +384,22 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             break;
                         case 1:
                             {
-                                _roomNavigationController.DisplayError("Unable to join room!\nRoom not found");
+                                DisplayError("Unable to join room!\nRoom not found");
                             }
                             break;
                         case 2:
                             {
-                                _roomNavigationController.DisplayError("Unable to join room!\nIncorrect password");
+                                DisplayError("Unable to join room!\nIncorrect password");
                             }
                             break;
                         case 3:
                             {
-                                _roomNavigationController.DisplayError("Unable to join room!\nToo much players");
+                                DisplayError("Unable to join room!\nToo much players");
                             }
                             break;
                         default:
                             {
-                                _roomNavigationController.DisplayError("Unable to join room!\nUnknown error");
+                                DisplayError("Unable to join room!\nUnknown error");
                             }
                             break;
 
@@ -420,13 +420,34 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     {
                         case CommandType.GetRoomInfo:
                             {
+                                Plugin.log.Info("(1)");
+
                                 roomInfo = new RoomInfo(msg);
+                                Plugin.log.Info("(2)");
 
                                 Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Room;
+                                Plugin.log.Info("(3)");
 
                                 Client.Instance.isHost = Client.Instance.playerInfo.Equals(roomInfo.roomHost);
 
+                                Plugin.log.Info("(4)");
+
+                                if (Client.Instance.isHost)
+                                {
+                                    Plugin.log.Info("We are now host of the room!");
+                                }
+                                else
+                                {
+                                    Plugin.log.Info($"RoomInfo is null: {roomInfo == null}");
+                                    Plugin.log.Info($"RoomHost is null: {roomInfo.roomHost == null}");
+                                    Plugin.log.Info($"PlayerName is null: {roomInfo.roomHost.playerName == null}");
+
+                                }
+
+                                Plugin.log.Info("(5)");
+
                                 UpdateUI(roomInfo.roomState);
+                                Plugin.log.Info("(6)");
                             }
                             break;
                         case CommandType.SetSelectedSong:
@@ -492,6 +513,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
                                 roomInfo.roomHost = new PlayerInfo(msg);
                                 Client.Instance.isHost = Client.Instance.playerInfo.Equals(roomInfo.roomHost);
+
+                                if (Client.Instance.isHost)
+                                {
+                                    Plugin.log.Info("We are now host of the room!");
+                                }
+                                else
+                                {
+                                    Plugin.log.Info($"Host is transfered to \"{roomInfo.roomHost.playerName}\"!");
+
+                                }
 
                                 if (Client.Instance.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
                                     return;
@@ -1339,6 +1370,16 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             _playingNowViewController.SetSong(beatmapLevel, characteristic, (roomInfo.perPlayerDifficulty ? playerData.playerData.lastSelectedBeatmapDifficulty : roomInfo.startLevelInfo.difficulty));
                         }
                     });
+            }
+        }
+
+        public void DisplayError(string error, bool hideSideScreens = true)
+        {
+            _roomNavigationController.DisplayError(error);
+            if (hideSideScreens)
+            {
+                SetLeftScreenViewController(null);
+                SetRightScreenViewController(null);
             }
         }
 

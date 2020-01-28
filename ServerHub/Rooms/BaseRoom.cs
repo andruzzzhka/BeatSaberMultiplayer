@@ -529,12 +529,15 @@ namespace ServerHub.Rooms
         {
             roomHost = newHost;
 
-            NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
+            if (roomClients.Count > 0)
+            {
+                NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
 
-            outMsg.Write((byte)CommandType.TransferHost);
-            roomHost.AddToMessage(outMsg);
+                outMsg.Write((byte)CommandType.TransferHost);
+                roomHost.AddToMessage(outMsg);
 
-            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+            }
         }
 
         public virtual void ReadyStateChanged(PlayerInfo sender, bool ready)

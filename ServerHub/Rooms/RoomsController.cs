@@ -174,7 +174,10 @@ namespace ServerHub.Rooms
         public static void AddClient(BaseRoom room, Client client)
         {
             if (room.GetRoomInfo().players == 0 && room.noHost)
+            {
                 room.ForceTransferHost(client.playerInfo);
+                room.noHost = false;
+            }
 
             room.roomClients.Add(client);
         }
