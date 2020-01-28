@@ -38,6 +38,7 @@
     <Compile Include="Data\ExtraPlayerFlags.cs" />
     <Compile Include="IPAUtilities\Accessor.cs" />
     <Compile Include="IPAUtilities\ReflectionUtil.cs" />
+    <Compile Include="Misc\ISongDownloader.cs" />
     <Compile Include="Misc\ModelSaberAPI.cs" />
     <Compile Include="Data\PlayerInfo.cs" />
     <Compile Include="Data\RoomInfo.cs" />
@@ -51,6 +52,7 @@
     <Compile Include="Misc\ScrappedData.cs" />
     <Compile Include="Misc\ScrappedSong.cs" />
     <Compile Include="Misc\SimpleJSON.cs" />
+    <Compile Include="Misc\SongDownloaderInterop.cs" />
     <Compile Include="Misc\Sprites.cs" />
     <Compile Include="Misc\Config.cs" />
     <Compile Include="Misc\CustomExtensions.cs" />
@@ -62,6 +64,7 @@
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
     <Compile Include="Misc\ScoreSaberInteraction.cs" />
+    <Compile Include="OverriddenClasses\CustomMoreSongsFlowCoordinator.cs" />
     <Compile Include="OverriddenClasses\HarmonyPatches.cs" />
     <Compile Include="OverriddenClasses\OnlineAudioTimeController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapCallbackController.cs" />
@@ -185,6 +188,11 @@
   <ItemGroup>
     <Reference Include="0Harmony.1.2.0.1">
       <HintPath>..\Refs\0Harmony.1.2.0.1.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BeatSaverDownloader, Version=5.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refs\BeatSaverDownloader.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="BSML, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">

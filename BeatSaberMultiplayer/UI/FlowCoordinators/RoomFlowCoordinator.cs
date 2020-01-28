@@ -772,6 +772,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (_songSelectionViewController == null)
             {
                 _songSelectionViewController = BeatSaberUI.CreateViewController<SongSelectionViewController>();
+                _songSelectionViewController.ParentFlowCoordinator = this;
                 _songSelectionViewController.SongSelected += SongSelected;
                 _songSelectionViewController.SortPressed += (sortMode) => { SetSongs(LastSelectedCollection, sortMode, LastSearchRequest); };
                 _songSelectionViewController.SearchPressed += (value) => { SetSongs(LastSelectedCollection, LastSortMode, value); };

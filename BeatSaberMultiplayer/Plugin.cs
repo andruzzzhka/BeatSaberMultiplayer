@@ -22,6 +22,7 @@ namespace BeatSaberMultiplayer
 
         private static bool joinAfterRestart;
         private static string joinSecret;
+        public static bool DownloaderExists { get; private set; }
 
         public void Init(IPA.Logging.Logger logger)
         {
@@ -54,6 +55,8 @@ namespace BeatSaberMultiplayer
             Sprites.ConvertSprites();
 
             ScrappedData.Instance.DownloadScrappedData(null);
+            if (IPA.Loader.PluginManager.GetPluginFromId("BeatSaverDownloader") != null)
+                DownloaderExists = true;
 
             try
             {
