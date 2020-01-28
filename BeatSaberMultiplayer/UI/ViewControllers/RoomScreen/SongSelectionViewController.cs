@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
+using BeatSaberMultiplayer.Interop;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components;
@@ -28,7 +29,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public event Action<IPreviewBeatmapLevel> SongSelected;
         public event Action<string> SearchPressed;
         public event Action<SortMode> SortPressed;
-        private ISongDownloader downloader;
+        private BeatSaverDownloaderInterop downloader;
 
         [UIParams]
         BSMLParserParams _parserParams;
@@ -97,13 +98,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             {
                 if (Plugin.DownloaderExists)
                 {
-                    downloader = new SongDownloaderInterop();
+                    downloader = new BeatSaverDownloaderInterop();
                     if (downloader == null)
-                        Plugin.log.Warn($"{nameof(SongDownloaderInterop)} could not be created.");
+                        Plugin.log.Warn($"{nameof(BeatSaverDownloaderInterop)} could not be created.");
                     else
                     {
                         MoreSongsAvailable = downloader.CanCreate;
-                        Plugin.log.Info($"{nameof(MoreSongsAvailable)} is {MoreSongsAvailable}");
+                        Plugin.log.Debug($"{nameof(MoreSongsAvailable)} is {MoreSongsAvailable}");
                     }
                 }
                 else
@@ -211,12 +212,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         [UIAction("more-btn-pressed")]
         public void MoreButtonPressed()
         {
-            downloader?.PresentDownloaderFlowCoordinator(ParentFlowCoordinator, MoreSongsFinishedCallback);
-        }
-
-        public void MoreSongsFinishedCallback()
-        {
-            Plugin.log.Info("More Songs Finished");
+            downloader?.PresentDownloaderFlowCoordinator(ParentFlowCoordinator, null);
         }
 
         [UIAction("sort-btn-pressed")]

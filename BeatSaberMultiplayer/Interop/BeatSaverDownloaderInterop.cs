@@ -3,9 +3,9 @@ using BeatSaberMarkupLanguage;
 using HMUI;
 using BeatSaberMultiplayer.OverriddenClasses;
 
-namespace BeatSaberMultiplayer.Misc
+namespace BeatSaberMultiplayer.Interop
 {
-    internal class SongDownloaderInterop : ISongDownloader
+    internal class BeatSaverDownloaderInterop
     {
         private FlowCoordinator _coordinator;
         public bool CanCreate { get { return CustomMoreSongsFlowCoordinator.CanCreate; } }

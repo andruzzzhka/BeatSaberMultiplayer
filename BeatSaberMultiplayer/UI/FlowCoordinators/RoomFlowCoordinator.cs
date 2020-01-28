@@ -1,6 +1,7 @@
 ﻿using BeatSaberMarkupLanguage;
 using BeatSaberMarkupLanguage.Components;
 using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Interop;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.ViewControllers.RoomScreen;
 using BS_Utils.Utilities;
@@ -420,34 +421,12 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     {
                         case CommandType.GetRoomInfo:
                             {
-                                Plugin.log.Info("(1)");
-
                                 roomInfo = new RoomInfo(msg);
-                                Plugin.log.Info("(2)");
 
                                 Client.Instance.playerInfo.updateInfo.playerState = PlayerState.Room;
-                                Plugin.log.Info("(3)");
-
                                 Client.Instance.isHost = Client.Instance.playerInfo.Equals(roomInfo.roomHost);
 
-                                Plugin.log.Info("(4)");
-
-                                if (Client.Instance.isHost)
-                                {
-                                    Plugin.log.Info("We are now host of the room!");
-                                }
-                                else
-                                {
-                                    Plugin.log.Info($"RoomInfo is null: {roomInfo == null}");
-                                    Plugin.log.Info($"RoomHost is null: {roomInfo.roomHost == null}");
-                                    Plugin.log.Info($"PlayerName is null: {roomInfo.roomHost.playerName == null}");
-
-                                }
-
-                                Plugin.log.Info("(5)");
-
                                 UpdateUI(roomInfo.roomState);
-                                Plugin.log.Info("(6)");
                             }
                             break;
                         case CommandType.SetSelectedSong:
@@ -513,16 +492,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             {
                                 roomInfo.roomHost = new PlayerInfo(msg);
                                 Client.Instance.isHost = Client.Instance.playerInfo.Equals(roomInfo.roomHost);
-
-                                if (Client.Instance.isHost)
-                                {
-                                    Plugin.log.Info("We are now host of the room!");
-                                }
-                                else
-                                {
-                                    Plugin.log.Info($"Host is transfered to \"{roomInfo.roomHost.playerName}\"!");
-
-                                }
 
                                 if (Client.Instance.playerInfo.updateInfo.playerState == PlayerState.DownloadingSongs)
                                     return;
@@ -778,7 +747,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 if (scoreSaber != null)
                 {
-                    ScoreSaberInteraction.InitAndSignIn();
+                    ScoreSaberInterop.InitAndSignIn();
                 }
 
                 menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, practiceSettings: practiceSettings, "Lobby", false, () => { }, InGameOnlineController.Instance.SongFinished);
@@ -792,9 +761,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void PopAllViewControllers()
         {
-            if (_hostLeaveDialog.isInViewControllerHierarchy)
+            if (_hostLeaveDialog.isInViewControllerHierarchy && !_hostLeaveDialog.GetPrivateField<bool>("_isInTransition"))
                 DismissViewController(_hostLeaveDialog, null, true);
-            if (_passHostDialog.isInViewControllerHierarchy)
+            if (_passHostDialog.isInViewControllerHierarchy && !_passHostDialog.GetPrivateField<bool>("_isInTransition"))
                 DismissViewController(_passHostDialog, null, true);
             HideResultsLeaderboard();
             HideInGameLeaderboard();
