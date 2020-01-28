@@ -3,12 +3,13 @@ using Harmony;
 using IPA.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace BeatSaberMultiplayer.OverriddenClasses
 {
     public static class HarmonyPatcher
     {
-        static Type[] patchTypes = new Type[] { typeof(SpectatorNoteWasCutEventPatch), typeof(SpectatorNoteWasMissedEventPatch), typeof(SpectatorGameEnergyCounterPatch), typeof(GameplayManagerPausePatch) };
         static HarmonyInstance instance;
 
         public static void Patch()
@@ -17,7 +18,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                 instance = HarmonyInstance.Create("com.andruzzzhka.BeatSaberMultiplayer");
 
             Plugin.log.Debug("Patching...");
-            foreach (var type in patchTypes)
+            foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(x => x.IsClass && x.Namespace == "BeatSaberMultiplayer.OverriddenClasses"))
             {
                 List<HarmonyMethod> harmonyMethods = type.GetHarmonyMethods();
                 if (harmonyMethods != null && harmonyMethods.Count > 0)
@@ -25,6 +26,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     HarmonyMethod attributes = HarmonyMethod.Merge(harmonyMethods);
                     PatchProcessor patchProcessor = new PatchProcessor(instance, type, attributes);
                     patchProcessor.Patch();
+                    Plugin.log.Debug($"Patched {attributes.declaringType}.{attributes.methodName}!");
                 }
             }
             Plugin.log.Info("Applied Harmony patches!");
