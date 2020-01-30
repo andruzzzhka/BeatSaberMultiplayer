@@ -1,31 +1,45 @@
-﻿<stack vertical-fit='Unconstrained'>
-  <vertical id='song-list-rect' vertical-fit='Unconstrained'>
-    <stack>
-      <horizontal id='select-btns-rect' horizontal-fit='PreferredSize'>
-        <button text='Search' on-click='search-btn-pressed' />
-        <button text='Sort by' on-click='sort-btn-pressed' />
-        <button text='More Songs' on-click='more-btn-pressed' active='~more-btn-active'/>
-      </horizontal>
-      <horizontal id='sort-btns-rect' horizontal-fit='PreferredSize'>
-        <button text='Default' on-click='def-sort-btn-pressed' />
-        <button text='Newest' on-click='new-sort-btn-pressed' />
-        <button id='diff-sort-btn' text='Difficulty' on-click='diff-sort-btn-pressed' />
-      </horizontal>
-    </stack>
-    <vertical>
-      <horizontal spacing='-6'>
-        <pg-button dir='Up' pref-width='8' icon='BeatSaberMultiplayer.Assets.DoubleArrowIcon.png' on-click='fast-scroll-up-pressed' />
-        <pg-button dir='Up' click-event='song-list#PageUp'/>
-      </horizontal>
-      <list id='song-list' list-style='List' visible-cells='6' />
-      <horizontal spacing='-6'>
-        <pg-button dir='Down' pref-width='8' icon='BeatSaberMultiplayer.Assets.DoubleArrowIcon.png' on-click='fast-scroll-down-pressed' />
-        <pg-button dir='Down' click-event='song-list#PageDown'/>
-      </horizontal>
+﻿<stack vertical-fit='Unconstrained' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xsi:schemaLocation='https://monkeymanboy.github.io/BSML-Docs/ https://raw.githubusercontent.com/monkeymanboy/BSML-Docs/gh-pages/BSMLSchema.xsd'>
+  <horizontal horizontal-fit='PreferredSize'>
+    <vertical id='song-list-rect' vertical-fit='Unconstrained' horizontal-fit='PreferredSize' pref-width='115' pad-left='30' spacing='1'>
+      <stack>
+        <horizontal id='select-btns-rect' horizontal-fit='PreferredSize' spacing='1'>
+          <button text='Search' on-click='search-btn-pressed' />
+          <button text='Sort by' on-click='sort-btn-pressed' />
+        </horizontal>
+        <horizontal id='sort-btns-rect' horizontal-fit='PreferredSize' spacing='1'>
+          <button text='Default' on-click='def-sort-btn-pressed' />
+          <button text='Newest' on-click='new-sort-btn-pressed' />
+          <button id='diff-sort-btn' text='Difficulty' on-click='diff-sort-btn-pressed' />
+        </horizontal>
+      </stack>
+      <vertical>
+        <horizontal spacing='-6'>
+          <pg-button dir='Up' pref-width='8' icon='BeatSaberMultiplayer.Assets.DoubleArrowIcon.png' on-click='fast-scroll-up-pressed' />
+          <pg-button dir='Up' click-event='song-list#PageUp'/>
+        </horizontal>
+        <list id='song-list' list-style='List' visible-cells='6' />
+        <horizontal spacing='-6'>
+          <pg-button dir='Down' pref-width='8' icon='BeatSaberMultiplayer.Assets.DoubleArrowIcon.png' on-click='fast-scroll-down-pressed' />
+          <pg-button dir='Down' click-event='song-list#PageDown'/>
+        </horizontal>
+      </vertical>
     </vertical>
-  </vertical>
 
-  <text id='host-selects-song-text' text='Host is selecting song...' font-size='7.5' align='Center' />
+    <vertical vertical-fit='PreferredSize' spacing='4'>
+      <button text='More Songs' on-click='more-btn-pressed' active='~more-btn-active' pref-width='35'/>
+      <vertical vertical-fit='PreferredSize' active='~requests-btn-active' spacing='2'>
+        <button text='Player requests' on-click='requests-btn-pressed' pref-width='35'/>
+        <text text='~requests-text' alignment='Center' font-size='5'/>
+      </vertical>
+      <button text='Reuqest' on-click='request-song-pressed' active='~request-song-active' pref-width='35'/>
+    </vertical>
+
+  </horizontal>
+
+  <vertical id='host-selects-song-rect'>
+    <text text='Host is selecting song...' font-size='7.5' align='Center' />
+    <button text='Request song' on-click='request-mode-pressed'/>
+  </vertical>
 
   <modal-keyboard id='search-keyboard' value='search-value' clear-on-open='true' on-enter='search-pressed' hide-event='closeAllMPModals'/>
 </stack>

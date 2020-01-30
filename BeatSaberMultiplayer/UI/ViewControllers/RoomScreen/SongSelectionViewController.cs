@@ -17,10 +17,12 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
     public enum TopButtonsState { Select, SortBy, Search, Mode };
 
-    class SongSelectionViewController : BSMLResourceViewController, TableView.IDataSource
+    class SongSelectionViewController : HotReloadableViewController, TableView.IDataSource
     {
         public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
-        
+
+        public override string ContentFilePath => @"C:\Users\andru_000\Source\Repos\BeatSaberMultiplayer\BeatSaberMultiplayer\UI\ViewControllers\RoomScreen\SongSelectionViewController.bsml";
+
         IPAUtilities.PropertyAccessor<TableViewScroller, float>.Setter SetScrollPosition = IPAUtilities.PropertyAccessor<TableViewScroller, float>.GetSetter("position");
         IPAUtilities.FieldAccessor<TableViewScroller, float>.Accessor GetTableViewScrollerTargetPosition = IPAUtilities.FieldAccessor<TableViewScroller, float>.GetAccessor("_targetPosition");
         IPAUtilities.FieldAccessor<TableView, TableViewScroller>.Accessor GetTableViewScroller = IPAUtilities.FieldAccessor<TableView, TableViewScroller>.GetAccessor("_scroller");
@@ -29,13 +31,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public event Action<IPreviewBeatmapLevel> SongSelected;
         public event Action<string> SearchPressed;
         public event Action<SortMode> SortPressed;
+        public event Action RequestsPressed;
         private BeatSaverDownloaderInterop downloader;
 
         [UIParams]
         BSMLParserParams _parserParams;
 
-        [UIComponent("host-selects-song-text")]
-        TextMeshProUGUI _hostIsSelectingSongText;
+        [UIComponent("host-selects-song-rect")]
+        RectTransform _hostIsSelectingSongText;
 
         [UIComponent("song-list")]
         CustomListTableData _songsTableView;
@@ -55,6 +58,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         [UIValue("search-value")]
         string searchValue;
+
         private bool _moreSongsAvailable = true;
         [UIValue("more-btn-active")]
         public bool MoreSongsAvailable
@@ -68,7 +72,33 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 NotifyPropertyChanged();
             }
         }
-        
+
+        [UIValue("requests-btn-active")]
+        public bool RequestsAvailable
+        {
+            get { return isHost; }
+        }
+
+        [UIValue("request-song-active")]
+        public bool RequestSongAvailable
+        {
+            get { return !isHost && requestMode; }
+        }
+
+        private string _requestsText = "In queue: 0";
+        [UIValue("requests-text")]
+        public string RequestsText
+        {
+            get { return _requestsText; }
+            set
+            {
+                if (_requestsText == value)
+                    return;
+                _requestsText = value;
+                NotifyPropertyChanged();
+            }
+        }
+
         private TableViewScroller _songListScroller;
         public TableViewScroller SongListScroller
         {
@@ -82,11 +112,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 return _songListScroller;
             }
         }
-        
+
         private LevelListTableCell songListTableCellInstance;
         private PlayerDataModelSO _playerDataModel;
         private AdditionalContentModel _additionalContentModel;
         private Action _moreSongsAction;
+
+        private bool isHost;
+        private bool requestMode;
 
         List<IPreviewBeatmapLevel> availableSongs = new List<IPreviewBeatmapLevel>();
 
@@ -109,9 +142,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 }
                 else
                 {
-                    Plugin.log.Warn($"SongDownloader not found, More Songs button won't be created.");
+                    Plugin.log.Warn($"BeatSaverDownloader not found, More Songs button won't be created.");
                     MoreSongsAvailable = false;
                 }
+
                 _songsTableView.tableView.didSelectCellWithIdxEvent += SongsTableView_DidSelectRow;
                 _songsTableView.tableView.dataSource = this;
 
@@ -176,8 +210,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void UpdateViewController(bool isHost)
         {
-            _songListRect.gameObject.SetActive(isHost);
-            _hostIsSelectingSongText.gameObject.SetActive(!isHost);
+            this.isHost = isHost;
+            NotifyPropertyChanged();
+            _songListRect.gameObject.SetActive(isHost || requestMode);
+            _hostIsSelectingSongText.gameObject.SetActive(!isHost && !requestMode);
         }
 
         public void SelectTopButtons(TopButtonsState _newState)
@@ -209,10 +245,23 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
         }
 
+        [UIAction("request-mode-pressed")]
+        public void RequestModePressed()
+        {
+            requestMode = true;
+            NotifyPropertyChanged();
+        }
+
         [UIAction("more-btn-pressed")]
         public void MoreButtonPressed()
         {
             downloader?.PresentDownloaderFlowCoordinator(ParentFlowCoordinator, null);
+        }
+
+        [UIAction("requests-btn-pressed")]
+        public void RequestsButtonPressed()
+        {
+            RequestsPressed?.Invoke();
         }
 
         [UIAction("sort-btn-pressed")]

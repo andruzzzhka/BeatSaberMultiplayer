@@ -34,9 +34,9 @@
     <Compile Include="AvatarController.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Data\BeatSaverAPIResult.cs" />
-    <Compile Include="Data\ChannelInfo.cs" />
     <Compile Include="Data\ExtraPlayerFlags.cs" />
     <Compile Include="Interop\BeatSaverVotingInterop.cs" />
+    <Compile Include="Interop\IDismissable.cs" />
     <Compile Include="IPAUtilities\Accessor.cs" />
     <Compile Include="IPAUtilities\ReflectionUtil.cs" />
     <Compile Include="Misc\AvatarsHashCache.cs" />
@@ -94,6 +94,7 @@
     <Compile Include="UI\ViewControllers\RoomScreen\LevelPacksUIViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\QuickSettingsViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\PlayerManagementViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\RequestsViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
@@ -123,6 +124,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewControllers\RoomScreen\MultiplayerResultsViewController.bsml">
       <DependentUpon>MultiplayerResultsViewController.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\RequestsViewController.bsml">
+      <DependentUpon>RequestsViewController.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.bsml">
       <DependentUpon>SongSelectionViewController.cs</DependentUpon>
@@ -274,6 +278,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\SongCore.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="SongRequestManager">
+      <HintPath>..\Refs\SongRequestManager.dll</HintPath>
     </Reference>
     <Reference Include="SteamVR, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

@@ -23,6 +23,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public IPreviewBeatmapLevel selectedLevel;
 
+        [UIComponent("results-tab")]
+        public RectTransform resultsTab;
+
         [UIComponent("level-details-rect")]
         public RectTransform levelDetailsRect;
 

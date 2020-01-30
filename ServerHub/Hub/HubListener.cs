@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace ServerHub.Hub
 {
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions, GetPlayerUpdates }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions, GetPlayerUpdates, RequestSong, RemoveRequestedSong, GetRequestedSongs }
 
     public static class HubListener
     {
@@ -344,6 +344,36 @@ namespace ServerHub.Hub
                                                     else
                                                     {
                                                         joinedRoom.SetSelectedSong(client.playerInfo, new SongInfo(msg));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    case CommandType.RequestSong:
+                                        {
+                                            if (client != null && client.joinedRoomID != 0)
+                                            {
+                                                BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                                if (joinedRoom != null)
+                                                {
+                                                    if (msg.LengthBytes > 16)
+                                                    {
+                                                        joinedRoom.RequestSong(client.playerInfo, new SongInfo(msg));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    case CommandType.RemoveRequestedSong:
+                                        {
+                                            if (client != null && client.joinedRoomID != 0)
+                                            {
+                                                BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                                if (joinedRoom != null)
+                                                {
+                                                    if (msg.LengthBytes > 16)
+                                                    {
+                                                        joinedRoom.RemoveRequestedSong(client.playerInfo, new SongInfo(msg));
                                                     }
                                                 }
                                             }

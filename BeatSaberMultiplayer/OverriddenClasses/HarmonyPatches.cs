@@ -10,7 +10,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 {
     public static class HarmonyPatcher
     {
-        static HarmonyInstance instance;
+        public static HarmonyInstance instance;
 
         public static void Patch()
         {   
