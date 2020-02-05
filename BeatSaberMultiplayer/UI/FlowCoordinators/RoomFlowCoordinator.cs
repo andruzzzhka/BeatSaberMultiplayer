@@ -295,6 +295,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             lastHighscoreForLevel = 0;
             lastHighscoreValid = false;
             Client.Instance.inRoom = false;
+            _requestedSongs.Clear();
             PopAllViewControllers();
             SetLeftScreenViewController(_playerManagementViewController);
             PluginUI.instance.SetLobbyDiscordActivity();
@@ -805,9 +806,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _songSelectionViewController = BeatSaberUI.CreateViewController<SongSelectionViewController>();
                 _songSelectionViewController.ParentFlowCoordinator = this;
                 _songSelectionViewController.SongSelected += SongSelected;
+                _songSelectionViewController.RequestModePressed += RequestModePressed;
+                _songSelectionViewController.RequestSongPressed += RequestSongPressed;
                 _songSelectionViewController.SortPressed += (sortMode) => { SetSongs(LastSelectedCollection, sortMode, LastSearchRequest); };
                 _songSelectionViewController.SearchPressed += (value) => { SetSongs(LastSelectedCollection, LastSortMode, value); };
-                _songSelectionViewController.RequestsPressed += () => { ShowRequestsList(); };
+                _songSelectionViewController.PlayerRequestsPressed += () => { ShowRequestsList(); };
             }
 
 
@@ -859,7 +862,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
 
-            if (Client.Instance.isHost)
+            if (Client.Instance.isHost || _songSelectionViewController.requestMode)
             {
                 _levelPacksViewController.gameObject.SetActive(true);
                 SetBottomScreenViewController(_levelPacksViewController);
@@ -871,7 +874,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
 
-            _songSelectionViewController.UpdateViewController(Client.Instance.isHost);
+            _songSelectionViewController.UpdateViewController(Client.Instance.isHost, _requestedSongs.Count);
+        }
+
+        private void RequestModePressed()
+        {
+            _levelPacksViewController.gameObject.SetActive(true);
+            SetBottomScreenViewController(_levelPacksViewController);
         }
 
         public void HideSongsList()
@@ -965,12 +974,25 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             UpdateLevelOptions();
         }
 
+        private void RequestSongPressed(IPreviewBeatmapLevel song)
+        {
+            LastSelectedSong = song.levelID;
+            Client.Instance.RequestSong(new SongInfo(song));
+        }
+
         public void ShowRequestsList()
         {
             if (_requestsViewController == null)
             {
                 _requestsViewController = BeatSaberUI.CreateViewController<RequestsViewController>();
                 _requestsViewController.BackPressed += () => { ShowSongsList(); };
+                _requestsViewController.SongSelected += (SongInfo song) => {
+                    LastSelectedSong = song.levelId; 
+                    Client.Instance.SetSelectedSong(song);
+                    Client.Instance.RemoveRequestedSong(song);
+                    UpdateLevelOptions();  
+                };
+                _requestsViewController.RemovePressed += (SongInfo info) => { Client.Instance.RemoveRequestedSong(info); };
             }
 
             SetViewControllerToNavigationConctroller(_roomNavigationController, _requestsViewController);

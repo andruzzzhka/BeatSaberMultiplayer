@@ -788,7 +788,32 @@ namespace BeatSaberMultiplayer
                 info.AddToMessage(outMsg);
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
-                Plugin.log.Debug("Requested ChannelInfo...");
+            }
+        }
+
+        public void RequestSong(SongInfo info)
+        {
+            if (connected && networkClient != null)
+            {
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.RequestSong);
+                info.AddToMessage(outMsg);
+
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                Plugin.log.Debug($"Sent request for song \"{info.songName}\"!");
+            }
+        }
+
+        public void RemoveRequestedSong(SongInfo info)
+        {
+            if (connected && networkClient != null)
+            {
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.RemoveRequestedSong);
+                info.AddToMessage(outMsg);
+
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                Plugin.log.Debug($"Sent remove request for song \"{info.songName}\"!");
             }
         }
     }

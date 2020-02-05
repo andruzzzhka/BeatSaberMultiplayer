@@ -29,6 +29,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         [UIComponent("song-list")]
         CustomListTableData _songsTableView;
 
+        [UIComponent("play-btn")]
+        Button _playButton;
+        [UIComponent("remove-btn")]
+        Button _removeButton;
+
         private LevelListTableCell songListTableCellInstance;
         private AdditionalContentModel _additionalContentModel;
         private BeatmapLevelsModel _beatmapLevelsModel;
@@ -36,12 +41,6 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         List<SongInfo> requestedSongs = new List<SongInfo>();
 
         SongInfo _selectedSong;
-
-        [UIValue("ctrl-btns-active")]
-        public bool ControlBurronsActive
-        {
-            get { return _selectedSong != null; }
-        }
 
         protected override void DidActivate(bool firstActivation, ActivationType type)
         {
@@ -57,7 +56,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
 
             _selectedSong = null;
-            NotifyPropertyChanged();
+            _playButton.interactable = false;
+            _removeButton.interactable = false;
         }
 
         public void SetSongs(List<SongInfo> songs)
@@ -77,10 +77,19 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     _songsTableView.tableView.SelectCellWithIdx(index, false);
                 }
                 else
+                {
                     _songsTableView.tableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
+                    _selectedSong = null;
+                    _playButton.interactable = false;
+                    _removeButton.interactable = false;
+                }
             }
             else
+            {
                 _songsTableView.tableView.ScrollToCellWithIdx(0, TableViewScroller.ScrollPositionType.Beginning, false);
+                _playButton.interactable = false;
+                _removeButton.interactable = false;
+            }
 
             Plugin.log.Debug($"Set list of {songs.Count} songs!");
         }
@@ -106,7 +115,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         private void SongsTableView_DidSelectRow(TableView arg1, int arg2)
         {
             _selectedSong = requestedSongs[arg2];
-            NotifyPropertyChanged();
+            _playButton.interactable = true;
+            _removeButton.interactable = true;
         }
 
         public float CellSize()
