@@ -715,6 +715,7 @@ namespace ServerHub.Hub
                         {
                             Settings.Instance.Misc.PlayerColors.Add(playerId, new Color32(r, g, b));
                         }
+                        Settings.Instance.Save();
 
                         return $"Set {playerId} to R: {r}, G: {g}, B: {b}";
                     }

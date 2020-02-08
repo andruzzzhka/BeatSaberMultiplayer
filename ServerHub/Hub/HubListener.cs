@@ -109,14 +109,18 @@ namespace ServerHub.Hub
             }
             _ticksLength.Add(DateTime.UtcNow.Subtract(_lastTick).Ticks/(float)TimeSpan.TicksPerMillisecond);
             _lastTick = DateTime.UtcNow;
-            List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
 
-            string titleBuffer = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total {(Settings.Instance.Server.ShowTickrateInTitle ? $", {Tickrate.ToString("0.0")} tickrate" : "")}";
-
-            if (_currentTitle != titleBuffer)
+            if (Settings.Instance.Server.ShowWindowTitle)
             {
-                _currentTitle = titleBuffer;
-                Console.Title = _currentTitle;
+                List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
+
+                string titleBuffer = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total {(Settings.Instance.Server.ShowTickrateInTitle ? $", {Tickrate.ToString("0.0")} tickrate" : "")}";
+
+                if (_currentTitle != titleBuffer)
+                {
+                    _currentTitle = titleBuffer;
+                    Console.Title = _currentTitle;
+                }
             }
 
             List<Client> allClients = hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioChannels.SelectMany(x => x.radioClients)).ToList();
