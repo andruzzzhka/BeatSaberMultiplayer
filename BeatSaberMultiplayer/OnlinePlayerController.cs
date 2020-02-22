@@ -57,7 +57,7 @@ namespace BeatSaberMultiplayer
                 Plugin.log.Debug($"Starting player controller for {playerInfo.playerName}:{playerInfo.playerId}...");
 
                 _syncStartInfo = playerInfo.updateInfo;
-                _syncStartInfo = playerInfo.updateInfo;
+                _syncEndInfo = playerInfo.updateInfo;
             }
         }
 
@@ -255,13 +255,37 @@ namespace BeatSaberMultiplayer
             if (playerInfo == null)
                 return;
 
+            syncTime = 0;
+            syncDelay = Time.time - lastSynchronizationTime;
+
+            if (syncDelay > 0.5f)
+            {
+                syncDelay = 0.5f;
+            }
+
+            lastSynchronizationTime = Time.time;
+
             if (noInterpolation)
             {
                 playerInfo.updateInfo = newInfo;
                 return;
             }
-            
-            _syncStartInfo = playerInfo.updateInfo;
+            else
+            {
+                playerInfo.updateInfo.playerNameColor = newInfo.playerNameColor;
+                playerInfo.updateInfo.playerState = newInfo.playerState;
+
+                playerInfo.updateInfo.fullBodyTracking = newInfo.fullBodyTracking;
+                playerInfo.updateInfo.playerScore = newInfo.playerScore;
+                playerInfo.updateInfo.playerCutBlocks = newInfo.playerCutBlocks;
+                playerInfo.updateInfo.playerComboBlocks = newInfo.playerComboBlocks;
+                playerInfo.updateInfo.playerTotalBlocks = newInfo.playerTotalBlocks;
+                playerInfo.updateInfo.playerEnergy = newInfo.playerEnergy;
+                playerInfo.updateInfo.playerLevelOptions = newInfo.playerLevelOptions;
+                playerInfo.updateInfo.playerFlags = newInfo.playerFlags;
+            }
+
+            _syncStartInfo = _syncEndInfo;
             if (_syncStartInfo.IsRotNaN())
             {
                 _syncStartInfo.headRot = Quaternion.identity;
@@ -288,36 +312,6 @@ namespace BeatSaberMultiplayer
                 _syncEndInfo.rightLegRot = Quaternion.identity;
                 _syncEndInfo.pelvisRot = Quaternion.identity;
                 Plugin.log.Warn("Target rotation is NaN!");
-            }
-            
-            syncTime = 0;
-            syncDelay = Time.time - lastSynchronizationTime;
-
-            if(syncDelay > 0.5f)
-            {
-                syncDelay = 0.5f;
-            }
-
-            lastSynchronizationTime = Time.time;
-        }
-
-        public void NewUpdateReceived(PlayerUpdate value)
-        {
-            UpdateInfo(value);
-            if (playerInfo != null)
-            {
-                playerInfo.updateInfo.playerNameColor = value.playerNameColor;
-                playerInfo.updateInfo.playerState = value.playerState;
-
-                playerInfo.updateInfo.fullBodyTracking = value.fullBodyTracking;
-                playerInfo.updateInfo.playerScore = value.playerScore;
-                playerInfo.updateInfo.playerCutBlocks = value.playerCutBlocks;
-                playerInfo.updateInfo.playerComboBlocks = value.playerComboBlocks;
-                playerInfo.updateInfo.playerTotalBlocks = value.playerTotalBlocks;
-                playerInfo.updateInfo.playerEnergy = value.playerEnergy;
-                playerInfo.updateInfo.playerLevelOptions = value.playerLevelOptions;
-                playerInfo.updateInfo.playerFlags = value.playerFlags;
-
             }
         }
 

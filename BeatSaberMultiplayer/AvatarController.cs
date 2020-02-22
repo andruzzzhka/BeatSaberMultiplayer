@@ -200,9 +200,9 @@ namespace BeatSaberMultiplayer
                         playerNameText.gameObject.SetActive(false);
                         playerSpeakerIcon.gameObject.SetActive(false);
 #if !DEBUG
-                        if (avatar != null)
+                        if (avatar != null && avatar.behaviour != null)
                         {
-                            Destroy(avatar.GameObject);
+                            avatar.Destroy();
                         }
 #endif
                     }

@@ -343,13 +343,16 @@ namespace BeatSaberMultiplayer
                                 if (fullUpdate)
                                 {
                                     PlayerInfo playerInfo = new PlayerInfo(msg);
+                                    player.noInterpolation = true;
                                     player.playerInfo = playerInfo;
+                                    player.UpdateInfo(playerInfo.updateInfo);
                                     _spectatorInRoom |= playerInfo.updateInfo.playerState == PlayerState.Spectating;
                                 }
                                 else
                                 {
                                     PlayerUpdate update = new PlayerUpdate(msg);
-                                    player.NewUpdateReceived(update);
+                                    player.noInterpolation = false;
+                                    player.UpdateInfo(update);
 
                                     byte hitCount = msg.ReadByte();
 
