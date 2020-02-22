@@ -45,19 +45,19 @@ namespace BeatSaberMultiplayer.Misc
 
         public static async Task<string> GetHashForAvatar(CustomAvatar.CustomAvatar info, bool save = true)
         {
-            if (_hashes.TryGetValue(GetRelativePath(info), out var data))
+            if (_hashes.TryGetValue(info.fullPath, out var data))
             {
-                FileInfo file = new FileInfo(info.FullPath);
+                FileInfo file = new FileInfo(Path.Combine(Path.GetFullPath("CustomAvatars"), info.fullPath));
 
                 if (file.LastWriteTimeUtc != data.lastWriteTime)
                 {
-                    Plugin.log.Info($"Calculating hash for avatar \"{info.Name}\"...");
+                    Plugin.log.Info($"Calculating hash for avatar \"{info.descriptor.name}\"...");
 
-                    var newHash = await CalculateHash(info.FullPath);
+                    var newHash = await CalculateHash(Path.Combine(Path.GetFullPath("CustomAvatars"), info.fullPath));
 
                     data.lastWriteTime = file.LastWriteTimeUtc;
                     data.hash = newHash;
-                    _hashes[GetRelativePath(info)] = data;
+                    _hashes[info.fullPath] = data;
 
                     if (save)
                         Save();
@@ -71,15 +71,15 @@ namespace BeatSaberMultiplayer.Misc
             }
             else
             {
-                FileInfo file = new FileInfo(info.FullPath);
+                FileInfo file = new FileInfo(Path.Combine(Path.GetFullPath("CustomAvatars"), info.fullPath));
 
-                Plugin.log.Info($"Calculating hash for avatar \"{info.Name}\"...");
+                Plugin.log.Info($"Calculating hash for avatar \"{info.descriptor.name}\"...");
 
-                var newHash = await CalculateHash(info.FullPath);
+                var newHash = await CalculateHash(Path.Combine(Path.GetFullPath("CustomAvatars"), info.fullPath));
 
                 data.lastWriteTime = file.LastWriteTimeUtc;
                 data.hash = newHash;
-                _hashes[GetRelativePath(info)] = data;
+                _hashes[info.fullPath] = data;
 
                 if (save)
                     Save();
@@ -90,17 +90,17 @@ namespace BeatSaberMultiplayer.Misc
 
         public static async Task<string> RecalculateHashForAvatar(CustomAvatar.CustomAvatar info)
         {
-            FileInfo file = new FileInfo(info.FullPath);
+            FileInfo file = new FileInfo(Path.Combine(Path.GetFullPath("CustomAvatars"), info.fullPath));
 
-            Plugin.log.Info($"Calculating hash for avatar \"{info.Name}\"...");
+            Plugin.log.Info($"Calculating hash for avatar \"{info.descriptor.name}\"...");
 
-            var newHash = await CalculateHash(info.FullPath);
+            var newHash = await CalculateHash(Path.Combine(Path.GetFullPath("CustomAvatars"), info.fullPath));
             HashData data = new HashData() { lastWriteTime = file.LastWriteTimeUtc, hash = newHash };
 
-            if (_hashes.ContainsKey(GetRelativePath(info)))
-                _hashes[GetRelativePath(info)] = data;
+            if (_hashes.ContainsKey(info.fullPath))
+                _hashes[info.fullPath] = data;
             else
-                _hashes.Add(GetRelativePath(info), data);
+                _hashes.Add(info.fullPath, data);
 
             Save();
 
@@ -112,22 +112,6 @@ namespace BeatSaberMultiplayer.Misc
             return Task.Run(() => {
                 return BitConverter.ToString(MD5.Create().ComputeHash(File.ReadAllBytes(path))).Replace("-", "");
             });
-        }
-
-        public static string GetRelativePath(CustomAvatar.CustomAvatar info)
-        {
-            var toFile = info.FullPath;
-
-            Uri pathUri = new Uri(toFile);
-
-            var avatarsFolder = Path.Combine(Application.dataPath, "..", "CustomAvatars");
-
-            if (!avatarsFolder.EndsWith(Path.DirectorySeparatorChar.ToString()))
-            {
-                avatarsFolder += Path.DirectorySeparatorChar;
-            }
-            Uri folderUri = new Uri(avatarsFolder);
-            return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString().Replace('/', Path.DirectorySeparatorChar));
         }
     }
 }

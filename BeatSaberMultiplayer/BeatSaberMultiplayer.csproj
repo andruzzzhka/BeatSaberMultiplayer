@@ -65,6 +65,7 @@
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
     <Compile Include="Interop\ScoreSaberInterop.cs" />
+    <Compile Include="MultiplayerAvatarInput.cs" />
     <Compile Include="OverriddenClasses\CustomMoreSongsFlowCoordinator.cs" />
     <Compile Include="OverriddenClasses\HarmonyPatches.cs" />
     <Compile Include="OverriddenClasses\OnlineAudioTimeController.cs" />
@@ -210,10 +211,9 @@
       <HintPath>..\Refs\BS_Utils.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="CustomAvatar, Version=4.7.5.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="CustomAvatar, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\CustomAvatar.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="DiscordCore, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

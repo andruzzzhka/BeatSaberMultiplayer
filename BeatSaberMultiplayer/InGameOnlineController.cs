@@ -5,6 +5,7 @@ using BeatSaberMultiplayer.UI;
 using BeatSaberMultiplayer.VOIP;
 using BS_Utils.Gameplay;
 using CustomAvatar;
+using CustomAvatar.Tracking;
 using Lidgren.Network;
 using SongCore.Utilities;
 using System;
@@ -53,7 +54,7 @@ namespace BeatSaberMultiplayer
         private VRPlatformHelper _vrPlatformHelper;
         private VRControllersInputManager _vrInputManager;
 
-        private PlayerAvatarInput _avatarInput;
+        private VRAvatarInput _avatarInput;
 
         public Dictionary<ulong, OnlinePlayerController> players = new Dictionary<ulong, OnlinePlayerController>();
         public List<PlayerScore> playerScores;
@@ -102,7 +103,7 @@ namespace BeatSaberMultiplayer
                 _messageDisplayText.enableWordWrapping = false;
                 _messageDisplayText.alignment = TextAlignmentOptions.Center;
                 DontDestroyOnLoad(_messageDisplayText.gameObject);
-                CustomAvatar.Plugin.Instance.PlayerAvatarManager.AvatarChanged += PlayerAvatarManager_AvatarChanged;
+                AvatarManager.instance.avatarChanged += PlayerAvatarManager_AvatarChanged;
 
                 if (Config.Instance.EnableVoiceChat)
                 {
@@ -220,7 +221,10 @@ namespace BeatSaberMultiplayer
                 }
                 else
                 {
-                    Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+                    Client.Instance.playerInfo.avatarHash = null;
+
+                    if(AvatarManager.instance.currentlySpawnedAvatar != null)
+                        Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == AvatarManager.instance.currentlySpawnedAvatar.customAvatar).Key;
 
                     if (Client.Instance.playerInfo.avatarHash == null)
                     {
@@ -772,11 +776,11 @@ namespace BeatSaberMultiplayer
             }
         }
 
-        private void PlayerAvatarManager_AvatarChanged(CustomAvatar.CustomAvatar obj)
+        private void PlayerAvatarManager_AvatarChanged(SpawnedAvatar obj)
         {
             if (!Config.Instance.SeparateAvatarForMultiplayer && Client.Instance.connected)
             {
-                Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+                Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == obj.customAvatar).Key;
                 sendFullUpdate = true;
 
                 if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash))
@@ -798,7 +802,15 @@ namespace BeatSaberMultiplayer
                 }
                 else
                 {
-                    Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == CustomAvatar.Plugin.Instance.PlayerAvatarManager.GetCurrentAvatar()).Key;
+                    Client.Instance.playerInfo.avatarHash = null;
+
+                    if (AvatarManager.instance.currentlySpawnedAvatar != null)
+                        Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == AvatarManager.instance.currentlySpawnedAvatar.customAvatar).Key;
+
+                    if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash))
+                    {
+                        Client.Instance.playerInfo.avatarHash = PlayerInfo.avatarHashPlaceholder;
+                    }
                     sendFullUpdate = true;
                 }
 #if DEBUG
@@ -811,38 +823,34 @@ namespace BeatSaberMultiplayer
 
             if(_avatarInput == null)
             {
-                _avatarInput = CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput;
+                _avatarInput = new VRAvatarInput();
             }
 
-            var head = _avatarInput.HeadPosRot;
-            var leftHand = _avatarInput.LeftPosRot;
-            var rightHand = _avatarInput.RightPosRot;
+            _avatarInput.TryGetHeadPose(out var head);
+            _avatarInput.TryGetLeftHandPose(out var leftHand);
+            _avatarInput.TryGetRightHandPose(out var rightHand);
 
-            Client.Instance.playerInfo.updateInfo.headPos = head.Position;
-            Client.Instance.playerInfo.updateInfo.headRot = head.Rotation;
+            Client.Instance.playerInfo.updateInfo.headPos = head.position;
+            Client.Instance.playerInfo.updateInfo.headRot = head.rotation;
 
-            Client.Instance.playerInfo.updateInfo.leftHandPos = leftHand.Position;
-            Client.Instance.playerInfo.updateInfo.leftHandRot = leftHand.Rotation;
+            Client.Instance.playerInfo.updateInfo.leftHandPos = leftHand.position;
+            Client.Instance.playerInfo.updateInfo.leftHandRot = leftHand.rotation;
 
-            Client.Instance.playerInfo.updateInfo.rightHandPos = rightHand.Position;
-            Client.Instance.playerInfo.updateInfo.rightHandRot = rightHand.Rotation;
+            Client.Instance.playerInfo.updateInfo.rightHandPos = rightHand.position;
+            Client.Instance.playerInfo.updateInfo.rightHandRot = rightHand.rotation;
 
-            if (CustomAvatar.Plugin.IsFullBodyTracking)
+            if (_avatarInput.TryGetLeftFootPose(out var leftLeg) && _avatarInput.TryGetRightFootPose(out var rightLeg) && _avatarInput.TryGetWaistPose(out var pelvis))
             {
                 Client.Instance.playerInfo.updateInfo.fullBodyTracking = true;
 
-                var pelvis = _avatarInput.PelvisPosRot;
-                var leftLeg = _avatarInput.LeftLegPosRot;
-                var rightLeg = _avatarInput.RightLegPosRot;
+                Client.Instance.playerInfo.updateInfo.pelvisPos = pelvis.position;
+                Client.Instance.playerInfo.updateInfo.pelvisRot = pelvis.rotation;
 
-                Client.Instance.playerInfo.updateInfo.pelvisPos = pelvis.Position;
-                Client.Instance.playerInfo.updateInfo.pelvisRot = pelvis.Rotation;
+                Client.Instance.playerInfo.updateInfo.leftLegPos = leftLeg.position;
+                Client.Instance.playerInfo.updateInfo.leftLegRot = leftLeg.rotation;
 
-                Client.Instance.playerInfo.updateInfo.leftLegPos = leftLeg.Position;
-                Client.Instance.playerInfo.updateInfo.leftLegRot = leftLeg.Rotation;
-
-                Client.Instance.playerInfo.updateInfo.rightLegPos = rightLeg.Position;
-                Client.Instance.playerInfo.updateInfo.rightLegRot = rightLeg.Rotation;
+                Client.Instance.playerInfo.updateInfo.rightLegPos = rightLeg.position;
+                Client.Instance.playerInfo.updateInfo.rightLegRot = rightLeg.rotation;
             }
             else
             {

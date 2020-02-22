@@ -1,4 +1,5 @@
-﻿using SimpleJSON;
+﻿using CustomAvatar;
+using SimpleJSON;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,14 +29,14 @@ namespace BeatSaberMultiplayer.Misc
             string downloadUrl = "";
             string avatarName = "";
             UnityWebRequest www = UnityWebRequest.Get("https://modelsaber.com/api/v1/avatar/get.php?filter=hash:" + hash);
-            
+
             www.timeout = 10;
 
             yield return www.SendWebRequest();
-            
+
             if (www.isNetworkError || www.isHttpError)
             {
-                Plugin.log.Error($"Unable to download avatar! {(www.isNetworkError ? $"Network error: " + www.error : (www.isHttpError ? $"HTTP error: "+www.error : "Unknown error"))}");
+                Plugin.log.Error($"Unable to download avatar! {(www.isNetworkError ? $"Network error: " + www.error : (www.isHttpError ? $"HTTP error: " + www.error : "Unknown error"))}");
                 queuedAvatars.Remove(hash);
                 yield break;
             }
@@ -53,10 +54,10 @@ namespace BeatSaberMultiplayer.Misc
                 }
 
                 downloadUrl = node[0]["download"].Value;
-                avatarName = downloadUrl.Substring(downloadUrl.LastIndexOf("/")+1);
+                avatarName = downloadUrl.Substring(downloadUrl.LastIndexOf("/") + 1);
             }
 
-            if(string.IsNullOrEmpty(downloadUrl))
+            if (string.IsNullOrEmpty(downloadUrl))
             {
                 queuedAvatars.Remove(hash);
                 yield break;
@@ -108,7 +109,7 @@ namespace BeatSaberMultiplayer.Misc
                 string customAvatarPath = "";
 
                 byte[] data = www.downloadHandler.data;
-                
+
                 try
                 {
                     docPath = Application.dataPath;
@@ -116,29 +117,26 @@ namespace BeatSaberMultiplayer.Misc
                     docPath = docPath.Substring(0, docPath.LastIndexOf("/"));
                     customAvatarPath = docPath + "/CustomAvatars/" + avatarName;
 
-                    File.WriteAllBytes(customAvatarPath, data);
                     Plugin.log.Debug($"Saving avatar to \"{customAvatarPath}\"...");
 
-                    CustomAvatar.CustomAvatar downloadedAvatar = CustomExtensions.CreateInstance<CustomAvatar.CustomAvatar>(customAvatarPath);
+                    File.WriteAllBytes(customAvatarPath, data);
 
                     Plugin.log.Debug("Downloaded avatar!");
                     Plugin.log.Debug($"Loading avatar...");
 
-                    downloadedAvatar.Load(
-                        (CustomAvatar.CustomAvatar avatar, CustomAvatar.AvatarLoadResult result) => 
+                    SharedCoroutineStarter.instance.StartCoroutine(CustomAvatar.CustomAvatar.FromFileCoroutine(avatarName,
+                        (CustomAvatar.CustomAvatar avatar) =>
                         {
-                            if (result == CustomAvatar.AvatarLoadResult.Completed)
-                            {
-                                queuedAvatars.Remove(hash);
-                                cachedAvatars.Add(hash, downloadedAvatar);
-                                avatarDownloaded?.Invoke(hash);
-                            }
-                            else
-                            {
-                                Plugin.log.Error("Unable to load avatar! " + result.ToString());
-                            }
-                        });
-                    
+                            queuedAvatars.Remove(hash);
+                            cachedAvatars.Add(hash, avatar);
+                            avatarDownloaded?.Invoke(hash);
+                        }, (Exception ex) =>
+                        {
+                            Plugin.log.Error($"Unable to load avatar! Exception: {ex}");
+                            queuedAvatars.Remove(hash);
+                        }));
+
+
                 }
                 catch (Exception e)
                 {
@@ -151,22 +149,51 @@ namespace BeatSaberMultiplayer.Misc
 
         public static async void HashAllAvatars()
         {
-            if (cachedAvatars.Count != CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count && !isCalculatingHashes)
+            int totalAvatarsCount = Directory.GetFiles("CustomAvatars").Length;
+
+            if (totalAvatarsCount != cachedAvatars.Count && !isCalculatingHashes)
             {
                 isCalculatingHashes = true;
-                Plugin.log.Debug($"Hashing avatars... {CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count} avatars found");
+                Plugin.log.Debug($"Hashing avatars... {totalAvatarsCount} avatars found");
                 try
                 {
                     cachedAvatars.Clear();
-                    totalAvatarsCount = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.Count;
                     calculatedHashesCount = 0;
+
+                    AvatarManager.instance.GetAvatarsAsync(
+                        async (CustomAvatar.CustomAvatar avatar) =>
+                        {
+                            try
+                            {
+                                string calculatedHash = await AvatarsHashCache.GetHashForAvatar(avatar).ConfigureAwait(false);
+                                cachedAvatars.Add(calculatedHash, avatar);
+                                Plugin.log.Debug($"Hashed avatar \"{avatar.descriptor.name}\"! Hash: {calculatedHash}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Plugin.log.Error($"Unable to hash avatar \"{avatar.descriptor.name}\"! Exception: {ex}");
+                            }
+                            calculatedHashesCount++;
+                        }, (Exception ex) =>
+                        {
+                            Plugin.log.Error($"Unable to load avatar! Exception: {ex}");
+                            calculatedHashesCount++;
+                        });
+
+                    while (totalAvatarsCount != calculatedHashesCount)
+                    {
+                        await Task.Delay(11);
+                    }
+
+                    /*
                     foreach (CustomAvatar.CustomAvatar avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
                     {
                         if (!avatar.IsLoaded)
                         {
                             AutoResetEvent wh = new AutoResetEvent(false);
 
-                            HMMainThreadDispatcher.instance.Enqueue(() => {
+                            HMMainThreadDispatcher.instance.Enqueue(() =>
+                            {
                                 avatar.Load(async (loadedAvatar, result) =>
                                 {
                                     if (result == CustomAvatar.AvatarLoadResult.Completed)
@@ -176,7 +203,7 @@ namespace BeatSaberMultiplayer.Misc
                                     }
                                     wh.Set();
                                 });
-                            });                            
+                            });
 
                             await Task.Run(() => wh.WaitOne()).ConfigureAwait(false);
                             calculatedHashesCount++;
@@ -189,9 +216,12 @@ namespace BeatSaberMultiplayer.Misc
                         }
 
                     }
+                    */
+
                     Plugin.log.Debug("All avatars hashed and loaded!");
 
-                    HMMainThreadDispatcher.instance.Enqueue(() => {
+                    HMMainThreadDispatcher.instance.Enqueue(() =>
+                    {
                         hashesCalculated?.Invoke();
                     });
                 }
