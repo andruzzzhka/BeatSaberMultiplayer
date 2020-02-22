@@ -196,9 +196,11 @@
     </Reference>
     <Reference Include="BeatSaverDownloader">
       <HintPath>..\Refs\BeatSaverDownloader.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="BeatSaverVoting">
       <HintPath>..\Refs\BeatSaverVoting.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="BSML, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -213,6 +215,7 @@
     <Reference Include="CustomAvatar, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\CustomAvatar.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="DiscordCore, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -277,9 +280,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\SongCore.dll</HintPath>
       <Private>False</Private>
-    </Reference>
-    <Reference Include="SongRequestManager">
-      <HintPath>..\Refs\SongRequestManager.dll</HintPath>
     </Reference>
     <Reference Include="SteamVR, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
