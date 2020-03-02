@@ -2,6 +2,7 @@
 using BeatSaberMarkupLanguage.FloatingScreen;
 using BeatSaberMarkupLanguage.Settings;
 using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.ViewControllers.DiscordScreens;
 using BS_Utils.Gameplay;
@@ -241,10 +242,10 @@ namespace BeatSaberMultiplayer.UI
 
         IEnumerator CheckVersion()
         {
-
+             
             Plugin.log.Info("Checking for updates...");
 
-            UnityWebRequest www = UnityWebRequest.Get($"https://api.github.com/repos/andruzzzhka/BeatSaberMultiplayer/releases");
+            UnityWebRequest www = SongDownloader.GetRequestForUrl($"https://api.github.com/repos/andruzzzhka/BeatSaberMultiplayer/releases");
             www.timeout = 10;
 
             yield return www.SendWebRequest();

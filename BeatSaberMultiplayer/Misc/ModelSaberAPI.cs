@@ -69,7 +69,7 @@ namespace BeatSaberMultiplayer.Misc
 
             try
             {
-                www = UnityWebRequest.Get(downloadUrl);
+                www = SongDownloader.GetRequestForUrl(downloadUrl);
                 www.timeout = 0;
 
                 asyncRequest = www.SendWebRequest();
