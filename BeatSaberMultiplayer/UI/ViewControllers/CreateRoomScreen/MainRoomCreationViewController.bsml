@@ -1,7 +1,7 @@
 ﻿<stack vertical-fit='Unconstrained'>
   <vertical vertical-fit='Unconstrained'>
-    <string-setting text='Room name' value='room-name' on-change='room-name-changed'/>
-    <string-setting text='Password' value ='room-password' on-change='room-password-changed'/>
+    <string-setting id='room-name-keyboard' text='Room name' value='room-name' on-change='room-name-changed' />
+    <string-setting id='password-keyboard' text='Password' value ='room-password' on-change='room-password-changed'/>
     <checkbox text='Use password' value='use-password' apply-on-change='true'/>
     <dropdown-list-setting text='Song selection' options='song-selection-options' value='song-selection-type' apply-on-change='true'/>
     <slider-setting text='Max players' min='0' max='16' increment='1' integer-only='true' value='max-players' formatter='max-players-format' apply-on-change='true'/>
@@ -9,7 +9,7 @@
     <checkbox text='Per-player difficulty' value='per-player-difficulty' apply-on-change='true'/>
     <horizontal>
       <button text='Save preset' on-click='save-preset-btn-pressed'/>
-      <modal-keyboard id='preset-name-keyboard' on-enter='preset-name-entered'/>
+      <modal-keyboard id='preset-name-keyboard' on-enter='preset-name-entered' hide-event='closeAllMPModals'/>
       <button text='Create room' id='create-room-btn' on-click='create-room-btn-pressed'/>
       <button text='Load preset' on-click='load-preset-btn-pressed'/>
     </horizontal>

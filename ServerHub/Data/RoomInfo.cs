@@ -55,16 +55,15 @@ namespace ServerHub.Data
 
             players = msg.ReadInt32();
             maxPlayers = msg.ReadInt32();
+            startLevelInfo = new LevelOptionsInfo(msg);
             try
             {
                 if (songSelected)
                 {
-                    startLevelInfo = new LevelOptionsInfo(msg);
                     selectedSong = new SongInfo(msg);
                 }
                 else
                 {
-                    startLevelInfo = default;
                     selectedSong = null;
                 }
             }
@@ -94,12 +93,13 @@ namespace ServerHub.Data
             msg.Write(players);
             msg.Write(maxPlayers);
 
+            if (startLevelInfo == null)
+                startLevelInfo = new LevelOptionsInfo(BeatmapDifficulty.Hard, new GameplayModifiers(), "Standard");
+
+            startLevelInfo.AddToMessage(msg);
+
             if (songSelected)
             {
-                if (startLevelInfo == null)
-                    startLevelInfo = new LevelOptionsInfo(BeatmapDifficulty.Hard, new GameplayModifiers(), "Standard");
-
-                startLevelInfo.AddToMessage(msg);
                 selectedSong.AddToMessage(msg);
             }
         }

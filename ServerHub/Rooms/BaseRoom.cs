@@ -59,6 +59,8 @@ namespace ServerHub.Rooms
 
         private List<PlayerInfo> _readyPlayers = new List<PlayerInfo>();
 
+        private List<SongInfo> _requestedSongs = new List<SongInfo>();
+
         public RoomSettings roomSettings;
         public RoomState roomState;
 
@@ -529,12 +531,15 @@ namespace ServerHub.Rooms
         {
             roomHost = newHost;
 
-            NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
+            if (roomClients.Count > 0)
+            {
+                NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
 
-            outMsg.Write((byte)CommandType.TransferHost);
-            roomHost.AddToMessage(outMsg);
+                outMsg.Write((byte)CommandType.TransferHost);
+                roomHost.AddToMessage(outMsg);
 
-            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+            }
         }
 
         public virtual void ReadyStateChanged(PlayerInfo sender, bool ready)
@@ -564,6 +569,45 @@ namespace ServerHub.Rooms
 
             BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
             BroadcastWebSocket(CommandType.PlayerReady, new ReadyPlayers(_readyPlayers.Count, roomClients.Count));
+        }
+
+        public virtual void RequestSong(PlayerInfo client, SongInfo song)
+        {
+            if (!_requestedSongs.Any(x => x.levelId == song.levelId))
+            {
+                _requestedSongs.Add(song);
+                UpdateRequestedSongsList();
+            }
+        }
+
+        public virtual void RemoveRequestedSong(PlayerInfo sender, SongInfo song)
+        {
+            if (sender.Equals(roomHost))
+            {
+                if (_requestedSongs.Any(x => x.levelId == song.levelId))
+                {
+                    _requestedSongs.Remove(song);
+                    UpdateRequestedSongsList();
+                }
+            }            
+        }
+
+        public virtual void UpdateRequestedSongsList()
+        {
+            NetOutgoingMessage outMsg = HubListener.ListenerServer.CreateMessage();
+
+            outMsg.Write((byte)CommandType.GetRequestedSongs);
+
+            int songsCount = _requestedSongs.Count;
+
+            outMsg.Write(songsCount);
+
+            for(int i = 0; i < songsCount; i++)
+                if(i < _requestedSongs.Count)
+                    _requestedSongs[i].AddToMessage(outMsg);
+
+            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+            BroadcastWebSocket(CommandType.GetRequestedSongs, _requestedSongs);
         }
 
         public virtual void DestroyRoom(PlayerInfo sender)

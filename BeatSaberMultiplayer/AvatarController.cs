@@ -1,23 +1,22 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using CustomAvatar;
+using CustomAvatar.Tracking;
 using SongCore.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using TMPro;
 using UnityEngine;
 using Image = UnityEngine.UI.Image;
 
 namespace BeatSaberMultiplayer
 {
-    public class AvatarController : MonoBehaviour, IAvatarFullBodyInput
+    public class AvatarController : MonoBehaviour
     {
         static CustomAvatar.CustomAvatar defaultAvatarInstance;
-
-        static List<CustomAvatar.CustomAvatar> pendingAvatars = new List<CustomAvatar.CustomAvatar>();
-        static event Action<string> AvatarLoaded;
 
         PlayerUpdate playerInfo;
         ulong playerId;
@@ -25,45 +24,20 @@ namespace BeatSaberMultiplayer
         string playerName;
 
         SpawnedAvatar avatar;
-        AvatarScriptPack.FirstPersonExclusion exclusionScript;
 
         string currentAvatarHash;
 
         TextMeshPro playerNameText;
         Image playerSpeakerIcon;
 
-        Vector3 HeadPos;
-        Vector3 LeftHandPos;
-        Vector3 RightHandPos;
-        Vector3 LeftLegPos;
-        Vector3 RightLegPos;
-        Vector3 PelvisPos;
-
-        Quaternion HeadRot;
-        Quaternion LeftHandRot;
-        Quaternion RightHandRot;
-        Quaternion LeftLegRot;
-        Quaternion RightLegRot;
-        Quaternion PelvisRot;
+        MultiplayerAvatarInput avatarInput;
 
         HSBColor nameColor;
         bool rainbowName;
 
-        Camera camera;
+        Camera playerCamera;
 
         VRCenterAdjust centerAdjust;
-
-        public PosRot HeadPosRot => new PosRot(HeadPos, HeadRot);
-
-        public PosRot LeftPosRot => new PosRot(LeftHandPos, LeftHandRot);
-
-        public PosRot RightPosRot => new PosRot(RightHandPos, RightHandRot);
-
-        public PosRot LeftLegPosRot => new PosRot(LeftLegPos, LeftLegRot);
-
-        public PosRot RightLegPosRot => new PosRot(RightLegPos, RightLegRot);
-
-        public PosRot PelvisPosRot => new PosRot(PelvisPos, PelvisRot);
 
         public static void LoadAvatars()
         {
@@ -71,77 +45,63 @@ namespace BeatSaberMultiplayer
             {
                 if (Config.Instance.DownloadAvatars)
                 {
-                    defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("loading.avatar"));
+                    defaultAvatarInstance = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value.fullPath.ToLower().Contains("loading.avatar")).Value;
 
                     if (defaultAvatarInstance == null)//fallback to multiplayer avatar
                     {
-                        defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("multiplayer.avatar"));
+                        defaultAvatarInstance = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value.fullPath.ToLower().Contains("multiplayer.avatar")).Value;
                     }
 
                     if (defaultAvatarInstance == null)//fallback to default avatar
                     {
-                        defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("templatefullbody.avatar"));
+                        defaultAvatarInstance = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value.fullPath.ToLower().Contains("templatefullbody.avatar")).Value;
                     }
 
                     if (defaultAvatarInstance == null)//fallback to ANY avatar
                     {
-                        defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault();
+                        defaultAvatarInstance = ModelSaberAPI.cachedAvatars.FirstOrDefault().Value;
                     }
                 }
                 else
                 {
-                    defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("multiplayer.avatar"));
+                    defaultAvatarInstance = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value.fullPath.ToLower().Contains("multiplayer.avatar")).Value;
 
                     if (defaultAvatarInstance == null)//fallback to default avatar
                     {
-                        defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault(x => x.FullPath.ToLower().Contains("templatefullbody.avatar"));
+                        defaultAvatarInstance = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value.fullPath.ToLower().Contains("templatefullbody.avatar")).Value;
                     }
 
                     if (defaultAvatarInstance == null)//fallback to ANY avatar
                     {
-                        defaultAvatarInstance = CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault();
+                        defaultAvatarInstance = ModelSaberAPI.cachedAvatars.FirstOrDefault().Value;
                     }
                 }
 
-            }
-#if DEBUG
-            Plugin.log.Info($"Found avatar, isLoaded={defaultAvatarInstance.IsLoaded}");
-#endif
-            if (defaultAvatarInstance != null && !defaultAvatarInstance.IsLoaded)
-            {
-                defaultAvatarInstance.Load(null);
             }
         }
 
         public void Awake()
         {
-            StartCoroutine(InitializeAvatarController());
+            InitializeAvatarController();
         }
 
-        IEnumerator InitializeAvatarController()
+        void InitializeAvatarController()
         {
-            if (!defaultAvatarInstance.IsLoaded)
-            {
-#if DEBUG
-                Plugin.log.Info("Waiting for avatar to load");
-#endif
-                yield return new WaitWhile(delegate () { return !defaultAvatarInstance.IsLoaded; });
-            }
-            else
-            {
-                yield return null;
-            }
-
 #if DEBUG
             Plugin.log.Info("Spawning avatar");
 #endif
-            centerAdjust = FindObjectOfType<VRCenterAdjust>();
+            centerAdjust = GameObject.FindObjectOfType<VRCenterAdjust>();
 
-            avatar = AvatarSpawner.SpawnAvatar(defaultAvatarInstance, this);
+            avatarInput = new MultiplayerAvatarInput();
+
+            avatar = AvatarManager.SpawnAvatar(defaultAvatarInstance, avatarInput);
+
+            /*
             exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
             if (exclusionScript != null)
                 exclusionScript.SetVisible();
-            
+            */
+
             playerNameText = CustomExtensions.CreateWorldText(transform, "INVALID");
             playerNameText.rectTransform.anchoredPosition3D = new Vector3(0f, 0.25f, 0f);
             playerNameText.alignment = TextAlignmentOptions.Center;
@@ -154,13 +114,13 @@ namespace BeatSaberMultiplayer
             playerSpeakerIcon.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             playerSpeakerIcon.rectTransform.anchoredPosition3D = new Vector3(0f, 0.65f, 0f);
             playerSpeakerIcon.sprite = Sprites.speakerIcon;
-            
-            avatar.GameObject.transform.SetParent(centerAdjust.transform, false);
+
+            avatar.behaviour.gameObject.transform.SetParent(centerAdjust.transform, false);
             transform.SetParent(centerAdjust.transform, false);
 
-            if (ModelSaberAPI.cachedAvatars.Any(x => x.Value == avatar.CustomAvatar))
+            if (ModelSaberAPI.cachedAvatars.Any(x => x.Value == avatar.customAvatar))
             {
-                currentAvatarHash = ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key;
+                currentAvatarHash = ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.customAvatar).Key;
             }
             else
             {
@@ -174,31 +134,14 @@ namespace BeatSaberMultiplayer
             {
                 if (playerNameText != null)
                 {
-                    if (Config.Instance.SpectatorMode)
-                    {
-                        if (IPA.Loader.PluginManager.AllPlugins.Select(x => x.Metadata.Name) //BSIPA Plugins
-                            .Concat(IPA.Loader.PluginManager.Plugins.Select(x => x.Name))    //Old IPA Plugins 
-                            .Any(x => x == "CameraPlus") && (camera == null || !camera.isActiveAndEnabled))
-                        {
-                            camera = FindObjectsOfType<Camera>().FirstOrDefault(x => (x.name.StartsWith("CamPlus_") || x.name.Contains("cameraplus")) && x.isActiveAndEnabled);
-                        }
 
-                        if (camera != null)
-                        {
-                            playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - camera.transform.position);
-                            playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - camera.transform.position);
-                        }
-                        else
-                        {
-                            playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput.HeadPosRot.Position);
-                            playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput.HeadPosRot.Position);
-                        }
-                    }
-                    else
+                    if (playerCamera == null)
                     {
-                        playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput.HeadPosRot.Position);
-                        playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - CustomAvatar.Plugin.Instance.PlayerAvatarManager._playerAvatarInput.HeadPosRot.Position);
+                        playerCamera = Camera.main;
                     }
+
+                    playerNameText.rectTransform.rotation = Quaternion.LookRotation(playerNameText.rectTransform.position - playerCamera.transform.position);
+                    playerSpeakerIcon.rectTransform.rotation = Quaternion.LookRotation(playerSpeakerIcon.rectTransform.position - playerCamera.transform.position);
 
                     if (rainbowName)
                     {
@@ -211,7 +154,7 @@ namespace BeatSaberMultiplayer
                     }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Plugin.log.Warn($"Unable to rotate text to the camera! Exception: {e}");
             }
@@ -221,8 +164,11 @@ namespace BeatSaberMultiplayer
         void OnDestroy()
         {
             Plugin.log.Debug("Destroying avatar");
-            if(avatar != null && avatar.GameObject != null)
-                Destroy(avatar.GameObject);
+            if (avatar != null && avatar.behaviour != null)
+            {
+                avatar.Destroy();
+                avatar = null;
+            }
         }
 
         public void SetPlayerInfo(PlayerInfo _playerInfo, float offset, bool isLocal)
@@ -231,7 +177,11 @@ namespace BeatSaberMultiplayer
             {
                 if (playerNameText != null) playerNameText.gameObject.SetActive(false);
                 if (playerSpeakerIcon != null) playerSpeakerIcon.gameObject.SetActive(false);
-                if (avatar != null && avatar.GameObject != null) Destroy(avatar.GameObject);
+                if (avatar != null && avatar.behaviour != null)
+                {
+                    avatar.Destroy();
+                    avatar = null;
+                }
                 return;
             }
 
@@ -250,9 +200,9 @@ namespace BeatSaberMultiplayer
                         playerNameText.gameObject.SetActive(false);
                         playerSpeakerIcon.gameObject.SetActive(false);
 #if !DEBUG
-                        if (avatar != null)
+                        if (avatar != null && avatar.behaviour != null)
                         {
-                            Destroy(avatar.GameObject);
+                            avatar.Destroy();
                         }
 #endif
                     }
@@ -272,82 +222,43 @@ namespace BeatSaberMultiplayer
 #else
                 if ((avatar == null || currentAvatarHash != playerAvatarHash))
 #endif
-                    {
+                {
                     if (ModelSaberAPI.cachedAvatars.ContainsKey(playerAvatarHash))
                     {
                         CustomAvatar.CustomAvatar cachedAvatar = ModelSaberAPI.cachedAvatars[playerAvatarHash];
-                        
+
                         if (cachedAvatar != null)
                         {
-                            if (pendingAvatars.Contains(cachedAvatar))
+                            if (avatar != null && avatar.behaviour != null)
                             {
-                                AvatarLoaded -= AvatarController_AvatarLoaded;
-                                AvatarLoaded += AvatarController_AvatarLoaded;
+                                avatar.Destroy();
+                                avatar = null;
                             }
-                            else if (!pendingAvatars.Contains(cachedAvatar) && !cachedAvatar.IsLoaded)
-                            {
-                                if (avatar != null)
-                                {
-                                    Destroy(avatar.GameObject);
-                                }
 
-                                avatar = AvatarSpawner.SpawnAvatar(defaultAvatarInstance, this);
-                                exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
-                                if (exclusionScript != null)
-                                    exclusionScript.SetVisible();
-                                
-                                pendingAvatars.Add(cachedAvatar);
-                                AvatarLoaded -= AvatarController_AvatarLoaded;
-                                AvatarLoaded += AvatarController_AvatarLoaded;
-                                cachedAvatar.Load((CustomAvatar.CustomAvatar loadedAvatar, AvatarLoadResult result) =>
-                               {
-                                   if (result == AvatarLoadResult.Completed)
-                                   {
-                                       pendingAvatars.Remove(ModelSaberAPI.cachedAvatars[playerAvatarHash]);
-                                       AvatarLoaded?.Invoke(ModelSaberAPI.cachedAvatars.First(x => x.Value == loadedAvatar).Key);
-                                   }
-                               });
-                            }
-                            else
-                            {
-                                if (avatar != null)
-                                {
-                                    Destroy(avatar.GameObject);
-                                }
-                                
-                                avatar = AvatarSpawner.SpawnAvatar(cachedAvatar, this);
-                                exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
-                                if (exclusionScript != null)
-                                    exclusionScript.SetVisible();
-                                
-                                currentAvatarHash = playerAvatarHash;
-                            }
+                            avatar = AvatarManager.SpawnAvatar(cachedAvatar, avatarInput);
+                            avatar.SetChildrenToLayer(10);
+
+                            currentAvatarHash = playerAvatarHash;
                         }
                     }
                     else
                     {
                         if (Config.Instance.DownloadAvatars)
                         {
-                            if (ModelSaberAPI.queuedAvatars.Contains(playerAvatarHash))
+                            ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
+                            ModelSaberAPI.avatarDownloaded += AvatarDownloaded;
+
+                            if (!ModelSaberAPI.queuedAvatars.Contains(playerAvatarHash))
                             {
-                                ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
-                                ModelSaberAPI.avatarDownloaded += AvatarDownloaded;
-                            }
-                            else
-                            {
-                                ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
-                                ModelSaberAPI.avatarDownloaded += AvatarDownloaded;
                                 SharedCoroutineStarter.instance.StartCoroutine(ModelSaberAPI.DownloadAvatarCoroutine(playerAvatarHash));
 
-                                if (avatar != null)
+                                if (avatar != null && avatar.behaviour != null)
                                 {
-                                    Destroy(avatar.GameObject);
+                                    avatar.Destroy();
                                 }
 
-                                avatar = AvatarSpawner.SpawnAvatar(defaultAvatarInstance, this);
-                                exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
-                                if (exclusionScript != null)
-                                    exclusionScript.SetVisible();
+                                avatar = AvatarManager.SpawnAvatar(defaultAvatarInstance, avatarInput);
+                                avatar.SetChildrenToLayer(10);
                             }
                         }
                     }
@@ -355,34 +266,29 @@ namespace BeatSaberMultiplayer
 
                 Vector3 offsetVector = new Vector3(offset, 0f, 0f);
 
-                HeadPos = playerInfo.headPos + offsetVector;
-                RightHandPos = playerInfo.rightHandPos + offsetVector;
-                LeftHandPos = playerInfo.leftHandPos + offsetVector;
-                
-                HeadRot = playerInfo.headRot;
-                RightHandRot = playerInfo.rightHandRot;
-                LeftHandRot = playerInfo.leftHandRot;
+                avatarInput.headPos = playerInfo.headPos + offsetVector;
+                avatarInput.rightHandPos = playerInfo.rightHandPos + offsetVector;
+                avatarInput.leftHandPos = playerInfo.leftHandPos + offsetVector;
 
+                avatarInput.headRot = playerInfo.headRot;
+                avatarInput.rightHandRot = playerInfo.rightHandRot;
+                avatarInput.leftHandRot = playerInfo.leftHandRot;
+
+                avatarInput.poseValid = true;
+
+                avatarInput.fullBodyTracking = playerInfo.fullBodyTracking;
                 if (playerInfo.fullBodyTracking)
                 {
-                    RightLegPos = playerInfo.rightLegPos + offsetVector;
-                    LeftLegPos = playerInfo.leftLegPos + offsetVector;
-                    PelvisPos = playerInfo.pelvisPos + offsetVector;
-                    RightLegRot = playerInfo.rightLegRot;
-                    LeftLegRot = playerInfo.leftLegRot;
-                    PelvisRot = playerInfo.pelvisRot;
-                }
-                else
-                {
-                    RightLegPos = new Vector3();
-                    LeftLegPos = new Vector3();
-                    PelvisPos = new Vector3();
-                    RightLegRot = new Quaternion();
-                    LeftLegRot = new Quaternion();
-                    PelvisRot = new Quaternion();
+                    avatarInput.rightLegPos = playerInfo.rightLegPos + offsetVector;
+                    avatarInput.leftLegPos = playerInfo.leftLegPos + offsetVector;
+                    avatarInput.pelvisPos = playerInfo.pelvisPos + offsetVector;
+                    avatarInput.rightLegRot = playerInfo.rightLegRot;
+                    avatarInput.leftLegRot = playerInfo.leftLegRot;
+                    avatarInput.pelvisRot = playerInfo.pelvisRot;
+
                 }
 
-                transform.position = HeadPos;
+                transform.position = avatarInput.headPos;
 
                 playerNameText.text = playerName;
 
@@ -391,7 +297,7 @@ namespace BeatSaberMultiplayer
                     playerNameText.color = playerInfo.playerNameColor;
                     nameColor = HSBColor.FromColor(playerInfo.playerNameColor);
                 }
-                else if(!playerInfo.playerFlags.rainbowName && playerNameText.color != playerInfo.playerNameColor)
+                else if (!playerInfo.playerFlags.rainbowName && playerNameText.color != playerInfo.playerNameColor)
                 {
                     playerNameText.color = playerInfo.playerNameColor;
                 }
@@ -405,52 +311,23 @@ namespace BeatSaberMultiplayer
 
         }
 
-        private void AvatarController_AvatarLoaded(string hash)
-        {
-            if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerAvatarHash) && playerAvatarHash == hash)
-            {
-                Plugin.log.Debug($"Avatar with hash \"{hash}\" loaded! (1)");
-                AvatarLoaded -= AvatarController_AvatarLoaded;
-
-                if (avatar != null)
-                {
-                    Destroy(avatar.GameObject);
-                }
-
-                avatar = AvatarSpawner.SpawnAvatar(ModelSaberAPI.cachedAvatars[hash], this);
-                exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
-                if (exclusionScript != null)
-                    exclusionScript.SetVisible();
-                currentAvatarHash = hash;
-            }
-        }
-
         private void AvatarDownloaded(string hash)
         {
-            if (this != null && (!ModelSaberAPI.cachedAvatars.ContainsValue(avatar.CustomAvatar) || ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.CustomAvatar).Key != playerAvatarHash) && playerAvatarHash == hash)
+            ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
+
+            if (this != null && playerAvatarHash == hash)
             {
                 Plugin.log.Debug($"Avatar with hash \"{hash}\" loaded! (2)");
-                ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
 
-                if (avatar != null)
+                if (avatar != null & avatar.behaviour != null)
                 {
-                    Destroy(avatar.GameObject);
+                    avatar.Destroy();
                 }
-                
-                avatar = AvatarSpawner.SpawnAvatar(ModelSaberAPI.cachedAvatars[hash], this);
-                exclusionScript = avatar.GameObject.GetComponentsInChildren<AvatarScriptPack.FirstPersonExclusion>().FirstOrDefault();
-                if (exclusionScript != null)
-                    exclusionScript.SetVisible();
-                currentAvatarHash = hash;
-            }
-        }
 
-        private void SetRendererInChilds(Transform origin, bool enabled)
-        {
-            Renderer[] rends = origin.gameObject.GetComponentsInChildren<Renderer>();
-            foreach (Renderer rend in rends)
-            {
-                rend.enabled = enabled;
+                avatar = AvatarManager.SpawnAvatar(ModelSaberAPI.cachedAvatars[hash], avatarInput);
+                avatar.SetChildrenToLayer(10);
+
+                currentAvatarHash = hash;
             }
         }
 

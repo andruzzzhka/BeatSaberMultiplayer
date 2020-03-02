@@ -6,9 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace BeatSaberMultiplayer.Misc
+namespace BeatSaberMultiplayer.Interop
 {
-    static class ScoreSaberInteraction
+    internal static class ScoreSaberInterop
     {
         public static void InitAndSignIn()
         {

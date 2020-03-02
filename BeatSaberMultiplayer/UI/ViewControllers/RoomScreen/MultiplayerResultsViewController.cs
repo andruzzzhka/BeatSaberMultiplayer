@@ -1,10 +1,12 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Interop;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI;
 using BS_Utils.Utilities;
 using HMUI;
+using IPA.Loader;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -19,7 +21,10 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
     {
         public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
-        public IPreviewBeatmapLevel _selectedLevel;
+        public IPreviewBeatmapLevel selectedLevel;
+
+        [UIComponent("results-tab")]
+        public RectTransform resultsTab;
 
         [UIComponent("level-details-rect")]
         public RectTransform levelDetailsRect;
@@ -76,8 +81,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             leaderboardTableView.GetComponent<TableView>().RemoveReusableCells("Cell");
 
-            if (_selectedLevel != null)
-                SetContent(_selectedLevel);
+            if (selectedLevel != null)
+                SetContent(selectedLevel);
         }
 
         public void UpdateLeaderboard()
@@ -115,11 +120,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetSong(SongInfo info)
         {
-            _selectedLevel = _beatmapLevelsModel.allLoadedBeatmapLevelPackCollection.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(info.levelId));
+            selectedLevel = _beatmapLevelsModel.allLoadedBeatmapLevelPackCollection.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(info.levelId));
 
-            if (_selectedLevel != null)
+            if (selectedLevel != null)
             {
-                SetContent(_selectedLevel);
+                SetContent(selectedLevel);
             }
             else
             {
@@ -141,13 +146,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     songNameText.text = info.songName;
 
                     StartCoroutine(LoadScripts.LoadSpriteCoroutine(song.coverURL, (cover) => { levelCoverImage.texture = cover; }));
-                });
+                }); 
+                
+                if (PluginManager.GetPluginFromId("BeatSaverVoting") != null)
+                    BeatSaverVotingInterop.Hide();
             }
         }
 
         public async void SetContent(IPreviewBeatmapLevel level)
         {
-            songNameText.text = _selectedLevel.songName;
+            songNameText.text = selectedLevel.songName;
 
             Plugin.log.Debug("Set content called!");
             if (PluginUI.instance.roomFlowCoordinator.levelDifficultyBeatmap != null)
@@ -186,9 +194,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                         scoreChangeIcon.color = new Color32(55, 235, 43, 255);
                     }
                 }
-            }
 
-            levelCoverImage.texture = await _selectedLevel.GetCoverImageTexture2DAsync(new CancellationTokenSource().Token);
+
+                if (PluginManager.GetPluginFromId("BeatSaverVoting") != null)
+                    BeatSaverVotingInterop.Setup(this, PluginUI.instance.roomFlowCoordinator.levelDifficultyBeatmap.level);
+            }
+            else if (PluginManager.GetPluginFromId("BeatSaverVoting") != null)
+                    BeatSaverVotingInterop.Hide();
+
+            levelCoverImage.texture = await selectedLevel.GetCoverImageTexture2DAsync(new CancellationTokenSource().Token);
+
         }
 
         public void SetTimer(int time)

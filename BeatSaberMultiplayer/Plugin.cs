@@ -1,4 +1,5 @@
 ﻿using BeatSaberMultiplayer.Misc;
+using BeatSaberMultiplayer.OverriddenClasses;
 using BeatSaberMultiplayer.UI;
 using BS_Utils.Gameplay;
 using Discord;
@@ -22,6 +23,7 @@ namespace BeatSaberMultiplayer
 
         private static bool joinAfterRestart;
         private static string joinSecret;
+        public static bool DownloaderExists { get; private set; }
 
         public void Init(IPA.Logging.Logger logger)
         {
@@ -51,19 +53,30 @@ namespace BeatSaberMultiplayer
                 log.Warn("Unable to load presets! Exception: " + e);
             }
 
+            try
+            {
+                AvatarsHashCache.Load();
+            }
+            catch (Exception e)
+            {
+                log.Warn("Unable to load avatar hashes! Exception: " + e);
+            }
+
             Sprites.ConvertSprites();
 
             ScrappedData.Instance.DownloadScrappedData(null);
 
             try
             {
-                var harmony = HarmonyInstance.Create("com.andruzzzhka.BeatSaberMultiplayer");
-                harmony.PatchAll(Assembly.GetExecutingAssembly());
+                HarmonyPatcher.Patch();
             }
             catch (Exception e)
             {
                 Plugin.log.Error("Unable to patch assembly! Exception: " + e);
             }
+
+            if (IPA.Loader.PluginManager.GetPluginFromId("BeatSaverDownloader") != null)
+                DownloaderExists = true;
 
             discord = DiscordManager.Instance.CreateInstance(new DiscordSettings() { modId = "BeatSaberMultiplayer", modName = "Beat Saber Multiplayer", modIcon = Sprites.onlineIcon, handleInvites = true, appId = 661577830919962645 });
 

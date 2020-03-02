@@ -16,7 +16,7 @@ using UnityEngine;
 namespace BeatSaberMultiplayer
 {
 
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions, GetPlayerUpdates }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions, GetPlayerUpdates, RequestSong, RemoveRequestedSong, GetRequestedSongs }
 
     public class Client : MonoBehaviour
     {
@@ -788,7 +788,32 @@ namespace BeatSaberMultiplayer
                 info.AddToMessage(outMsg);
 
                 networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
-                Plugin.log.Debug("Requested ChannelInfo...");
+            }
+        }
+
+        public void RequestSong(SongInfo info)
+        {
+            if (connected && networkClient != null)
+            {
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.RequestSong);
+                info.AddToMessage(outMsg);
+
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                Plugin.log.Debug($"Sent request for song \"{info.songName}\"!");
+            }
+        }
+
+        public void RemoveRequestedSong(SongInfo info)
+        {
+            if (connected && networkClient != null)
+            {
+                NetOutgoingMessage outMsg = networkClient.CreateMessage();
+                outMsg.Write((byte)CommandType.RemoveRequestedSong);
+                info.AddToMessage(outMsg);
+
+                networkClient.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                Plugin.log.Debug($"Sent remove request for song \"{info.songName}\"!");
             }
         }
     }

@@ -41,18 +41,6 @@ namespace BeatSaberMultiplayer
 
         private static FileInfo FileLocation { get; } = new FileInfo($"./UserData/{Assembly.GetExecutingAssembly().GetName().Name}.json");
 
-        private static readonly Dictionary<string, string[]> newServerHubs = new Dictionary<string, string[]>()
-        {
-            {
-                "0.6.4.3",
-                new string[] { "127.0.0.1", "hub.assistant.moe", "hub.auros.red", "treasurehunters.nz", "beatsaber.networkauditor.org", "hub.just-skill.ru", "hub.tgcfabian.tk", "hub.traber-info.de" }
-            },
-            {
-                "0.7.0.0",
-                new string[] { "bs.tigersserver.xyz", "bbbear-wgzeyu.gtxcn.com", "bs-zhm.tk", "pantie.xicp.net" }
-            }
-        };
-
         private static readonly List<string> newServerRepositories = new List<string>()
         {
             "https://raw.githubusercontent.com/Zingabopp/BeatSaberMultiplayerServerRepo/master/CompatibleServers.json"
@@ -67,7 +55,7 @@ namespace BeatSaberMultiplayer
                 Plugin.log.Debug($"Attempting to load JSON @ {FileLocation.FullName}");
                 _instance = JsonUtility.FromJson<Config>(File.ReadAllText(FileLocation.FullName));
 
-                UpdateServerHubs(_instance);
+                UpdateModVersion(_instance);
 
                 _instance.MarkDirty();
                 _instance.Save();
@@ -97,47 +85,9 @@ namespace BeatSaberMultiplayer
             return true;
         }
 
-        public static void UpdateServerHubs(Config _instance)
+        public static void UpdateModVersion(Config _instance)
         {
-            if (string.IsNullOrEmpty(_instance.ModVersion) || new SemVer.Range($">{_instance.ModVersion}", true).IsSatisfied(IPA.Loader.PluginManager.GetPluginFromId("BeatSaberMultiplayer").Metadata.Version))
-            {
-                List<string> newVersions = null;
-                if (string.IsNullOrEmpty(_instance.ModVersion))
-                {
-                    newVersions = newServerHubs.Keys.ToList();
-                }
-                else
-                {
-                    newVersions = new SemVer.Range($">{_instance.ModVersion}").Satisfying(newServerHubs.Keys, true).ToList();
-                }
-
-                if (newVersions.Count > 0)
-                {
-                    List<string> hubs = new List<string>();
-
-                    foreach (string version in newVersions)
-                    {
-                        hubs.AddRange(newServerHubs[version].Where(x => !_instance.ServerHubIPs.Contains(x)));
-                    }
-
-                    _instance.ServerHubIPs = _instance.ServerHubIPs.Concat(hubs).ToArray();
-                    _instance.ServerHubPorts = _instance.ServerHubPorts.Concat(Enumerable.Repeat(3700, hubs.Count)).ToArray();
-
-                    Plugin.log.Info($"Added {hubs.Count} new ServerHubs to config!");
-
-                    List<string> repos = new List<string>();
-                    if (_instance._serverRepositories.Length != 0)
-                    {
-                        repos.AddRange(_instance._serverRepositories);
-                    }
-                    foreach (var newRepo in newServerRepositories)
-                    {
-                        Plugin.log.Warn($"Adding repo: {newRepo}");
-                        repos.Add(newRepo);
-                    }
-                    _instance.ServerRepositories = repos.ToArray();
-                }
-            }
+            
             _instance.ModVersion = IPA.Loader.PluginManager.GetPluginFromId("BeatSaberMultiplayer").Metadata.Version.ToString();
         }
 
@@ -146,7 +96,7 @@ namespace BeatSaberMultiplayer
                 if (_instance == null)
                 {
                     _instance = new Config();
-                    UpdateServerHubs(_instance);
+                    UpdateModVersion(_instance);
                 }
                 return _instance;
             }

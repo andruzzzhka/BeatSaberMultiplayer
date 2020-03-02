@@ -34,8 +34,12 @@
     <Compile Include="AvatarController.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Data\BeatSaverAPIResult.cs" />
-    <Compile Include="Data\ChannelInfo.cs" />
     <Compile Include="Data\ExtraPlayerFlags.cs" />
+    <Compile Include="Interop\BeatSaverVotingInterop.cs" />
+    <Compile Include="Interop\IDismissable.cs" />
+    <Compile Include="IPAUtilities\Accessor.cs" />
+    <Compile Include="IPAUtilities\ReflectionUtil.cs" />
+    <Compile Include="Misc\AvatarsHashCache.cs" />
     <Compile Include="Misc\ModelSaberAPI.cs" />
     <Compile Include="Data\PlayerInfo.cs" />
     <Compile Include="Data\RoomInfo.cs" />
@@ -47,8 +51,9 @@
     <Compile Include="InGameOnlineController.cs" />
     <Compile Include="Misc\ControllersHelper.cs" />
     <Compile Include="Misc\ScrappedData.cs" />
-    <Compile Include="Misc\ScrappedSong.cs" />
+    <Compile Include="Data\ScrappedSong.cs" />
     <Compile Include="Misc\SimpleJSON.cs" />
+    <Compile Include="Interop\BeatSaverDownloaderInterop.cs" />
     <Compile Include="Misc\Sprites.cs" />
     <Compile Include="Misc\Config.cs" />
     <Compile Include="Misc\CustomExtensions.cs" />
@@ -59,7 +64,9 @@
     <Compile Include="Misc\SongDownloader.cs" />
     <Compile Include="Misc\SongSeekBeatmapHandler.cs" />
     <Compile Include="Misc\TableViewHelper.cs" />
-    <Compile Include="Misc\ScoreSaberInteraction.cs" />
+    <Compile Include="Interop\ScoreSaberInterop.cs" />
+    <Compile Include="MultiplayerAvatarInput.cs" />
+    <Compile Include="OverriddenClasses\CustomMoreSongsFlowCoordinator.cs" />
     <Compile Include="OverriddenClasses\HarmonyPatches.cs" />
     <Compile Include="OverriddenClasses\OnlineAudioTimeController.cs" />
     <Compile Include="OverriddenClasses\OnlineBeatmapCallbackController.cs" />
@@ -76,7 +83,6 @@
     <Compile Include="UI\FlowCoordinators\ServerHubFlowCoordinator.cs" />
     <Compile Include="UI\PluginUI.cs" />
     <Compile Include="UI\Settings.cs" />
-    <Compile Include="Misc\CustomSettingsHelper.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\PresetsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\RoomCreationServerHubsListViewController.cs" />
     <Compile Include="UI\ViewControllers\CreateRoomScreen\MainRoomCreationViewController.cs" />
@@ -89,6 +95,7 @@
     <Compile Include="UI\ViewControllers\RoomScreen\LevelPacksUIViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\QuickSettingsViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\PlayerManagementViewController.cs" />
+    <Compile Include="UI\ViewControllers\RoomScreen\RequestsViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.cs" />
     <Compile Include="UI\ViewControllers\RoomScreen\RoomNavigationController.cs" />
     <Compile Include="UI\ViewControllers\ServerHubScreen\RoomListViewController.cs" />
@@ -119,6 +126,9 @@
     <EmbeddedResource Include="UI\ViewControllers\RoomScreen\MultiplayerResultsViewController.bsml">
       <DependentUpon>MultiplayerResultsViewController.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\RequestsViewController.bsml">
+      <DependentUpon>RequestsViewController.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewControllers\RoomScreen\SongSelectionViewController.bsml">
       <DependentUpon>SongSelectionViewController.cs</DependentUpon>
     </EmbeddedResource>
@@ -148,7 +158,6 @@
     <EmbeddedResource Include="UI\ViewControllers\RoomScreen\PlayerManagementViewController.bsml">
       <DependentUpon>PlayerManagementViewController.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\ViewControllers\RoomScreen\RoomSettingsView.bsml" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\LockedRoom.png" />
@@ -185,6 +194,14 @@
       <HintPath>..\Refs\0Harmony.1.2.0.1.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="BeatSaverDownloader">
+      <HintPath>..\Refs\BeatSaverDownloader.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BeatSaverVoting">
+      <HintPath>..\Refs\BeatSaverVoting.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="BSML, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\BSML.dll</HintPath>
@@ -195,7 +212,7 @@
       <HintPath>..\Refs\BS_Utils.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="CustomAvatar, Version=4.7.5.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="CustomAvatar, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\CustomAvatar.dll</HintPath>
       <Private>False</Private>

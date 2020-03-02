@@ -26,7 +26,7 @@ namespace BeatSaberMultiplayer.UI
     {
         public static PluginUI instance;
 
-        private MainMenuViewController _mainMenuViewController;
+        internal MainMenuViewController _mainMenuViewController;
         private RectTransform _mainMenuRectTransform;
         private SimpleDialogPromptViewController _noUserInfoWarning;
 

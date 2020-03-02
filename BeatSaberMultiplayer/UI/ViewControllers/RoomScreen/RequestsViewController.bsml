@@ -1,0 +1,20 @@
+﻿<stack vertical-fit='Unconstrained' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xsi:schemaLocation='https://monkeymanboy.github.io/BSML-Docs/ https://raw.githubusercontent.com/monkeymanboy/BSML-Docs/gh-pages/BSMLSchema.xsd'>
+  <horizontal horizontal-fit='PreferredSize' spacing='12' pad-left='42'>
+    <vertical id='song-list-rect' vertical-fit='Unconstrained' horizontal-fit='PreferredSize' pref-width='60' >
+        <horizontal spacing='-6'>
+            <pg-button dir='Up' pref-width='8' icon='BeatSaberMultiplayer.Assets.DoubleArrowIcon.png' on-click='fast-scroll-up-pressed' />
+            <pg-button dir='Up' click-event='song-list#PageUp'/>
+        </horizontal>
+        <list id='song-list' list-style='List' visible-cells='7' />
+        <horizontal spacing='-6'>
+            <pg-button dir='Down' pref-width='8' icon='BeatSaberMultiplayer.Assets.DoubleArrowIcon.png' on-click='fast-scroll-down-pressed' />
+            <pg-button dir='Down' click-event='song-list#PageDown'/>
+        </horizontal>
+    </vertical>
+    <vertical vertical-fit='PreferredSize' spacing='2' >
+      <button id='play-btn' text='Play' on-click='play-pressed' pref-width='35'/>
+      <button id='remove-btn' text='Remove' on-click='remove-pressed' pref-width='35' word-wrapping='false'/>
+      <button text='Song list' on-click='back-pressed' pref-width='35'/>
+    </vertical>
+  </horizontal>
+</stack>

@@ -53,6 +53,31 @@ namespace BeatSaberMultiplayer
 
         private bool _paused = false;
 
+        private PauseMenuManager _pauseMenuManager;
+        private PauseMenuManager PauseMenuManager
+        {
+            get
+            {
+                if (_pauseMenuManager == null)
+                    _pauseMenuManager = Resources.FindObjectsOfTypeAll<PauseMenuManager>().FirstOrDefault();
+                return _pauseMenuManager;
+            }
+            set { _pauseMenuManager = value; }
+        }
+
+        private GamePause _gamePause;
+        private GamePause GamePause
+        {
+            get
+            {
+                if (_gamePause == null)
+                    _gamePause = Resources.FindObjectsOfTypeAll<GamePause>().FirstOrDefault();
+                return _gamePause;
+            }
+            set { _gamePause = value; }
+        }
+
+
 #if DEBUG && VERBOSE
         private int _prevFrameIndex = 0;
         private float _prevFrameLerp = 0f;
@@ -106,7 +131,7 @@ namespace BeatSaberMultiplayer
                 active = false;
                 return;
             }
-
+            BS_Utils.Gameplay.ScoreSubmission.DisableSubmission("Beat Saber Multiplayer");
             StartCoroutine(Delay(5, () => {
                 active = true;
             }));
@@ -205,6 +230,11 @@ namespace BeatSaberMultiplayer
 
             Plugin.log.Info("Loaded "+ playerInfos[76561198047255565].Count + " packets!");
 #endif
+        }
+        public void ExitSong()
+        {
+            GamePause?.Pause();
+            PauseMenuManager?.MenuButtonPressed();
         }
 
         IEnumerator Delay(int frames, Action callback)
@@ -448,9 +478,10 @@ namespace BeatSaberMultiplayer
                     PlayerUpdate lerpFrom;
                     PlayerUpdate lerpTo;
                     float lerpProgress;
+                    if (currentSongTime > (audioTimeSync.songLength - 0.5f))
+                            ExitSong();
 
-
-                    if (playerProgressMinMax.Item2 < currentSongTime + 2f && audioTimeSync.songLength > currentSongTime + 5f && !_paused)
+                        if (playerProgressMinMax.Item2 < currentSongTime + 2f && audioTimeSync.songLength > currentSongTime + 5f && !_paused)
                     {
                         Plugin.log.Info($"Pausing...");
                         if (playerProgressMinMax.Item2 > 2.5f)
