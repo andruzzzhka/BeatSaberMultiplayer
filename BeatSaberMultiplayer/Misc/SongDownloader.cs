@@ -40,7 +40,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public static UnityWebRequest GetRequestForUrl(string url)
         {
-            UnityWebRequest www = GetRequestForUrl(url);
+            UnityWebRequest www = UnityWebRequest.Get(url);
             www.SetRequestHeader("User-Agent", UserAgent);
             return www;
         }
