@@ -1,19 +1,12 @@
-# Latest version: 0.6.4.4
-# [Plugin Releases](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/)
-# [WebRCON](https://andruzzzhka.github.io/BeatSaberMultiplayer/)
-## Client 0.6.4.4:
-[Guide](https://bs.assistant.moe/Multiplayer/#Install) by Assistant#8431
+# Latest version: 0.7.2.0a (Unstable)
 
-[Universal](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.6.4.4/BeatSaberMultiplayer.zip)
+## [Downloads](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/) for Beat Saber 1.7.0
 
+### Dependencies:
+* SongCore v2.7.5+
+* BeatSaberMarkupLanguage v1.1.5+
+* BS Utils v1.4.1+
+* [Custom Avatars v5.0.0+](https://discordapp.com/channels/441805394323439646/654962309923340288/673677358527545384)
+* [DiscordCore v1.0.0+](https://github.com/andruzzzhka/DiscordCore/releases/tag/1.0.0)
 
-
-## ServerHub 0.6.4.4:
-[Guide](https://bs.assistant.moe/Multiplayer/#Hub) by Assistant#8431
-
-[Windows](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.6.4.4/ServerHub_win-64.zip)
-
-[Linux-64bit](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.6.4.4/ServerHub_linux-64.zip)
-
-[Linux-Arm](https://github.com/andruzzzhka/BeatSaberMultiplayer/releases/download/0.6.4.4/ServerHub_linux-arm.zip)
-
+### [WebRCON](https://andruzzzhka.github.io/BeatSaberMultiplayer/)
