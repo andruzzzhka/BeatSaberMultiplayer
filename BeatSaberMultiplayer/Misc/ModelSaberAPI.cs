@@ -149,7 +149,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public static async void HashAllAvatars()
         {
-            int totalAvatarsCount = Directory.GetFiles("CustomAvatars").Length;
+            int totalAvatarsCount = Directory.GetFiles("CustomAvatars", "*.avatar").Length;
 
             if (totalAvatarsCount != cachedAvatars.Count && !isCalculatingHashes)
             {
@@ -184,39 +184,6 @@ namespace BeatSaberMultiplayer.Misc
                     {
                         await Task.Delay(11);
                     }
-
-                    /*
-                    foreach (CustomAvatar.CustomAvatar avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
-                    {
-                        if (!avatar.IsLoaded)
-                        {
-                            AutoResetEvent wh = new AutoResetEvent(false);
-
-                            HMMainThreadDispatcher.instance.Enqueue(() =>
-                            {
-                                avatar.Load(async (loadedAvatar, result) =>
-                                {
-                                    if (result == CustomAvatar.AvatarLoadResult.Completed)
-                                    {
-                                        string hash = await AvatarsHashCache.GetHashForAvatar(avatar).ConfigureAwait(false);
-                                        cachedAvatars.Add(hash, avatar);
-                                    }
-                                    wh.Set();
-                                });
-                            });
-
-                            await Task.Run(() => wh.WaitOne()).ConfigureAwait(false);
-                            calculatedHashesCount++;
-                        }
-                        else
-                        {
-                            string hash = await AvatarsHashCache.GetHashForAvatar(avatar).ConfigureAwait(false);
-                            cachedAvatars.Add(hash, avatar);
-                            calculatedHashesCount++;
-                        }
-
-                    }
-                    */
 
                     Plugin.log.Debug("All avatars hashed and loaded!");
 

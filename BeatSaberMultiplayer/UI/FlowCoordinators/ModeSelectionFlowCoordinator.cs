@@ -17,8 +17,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 title = "Select Mode";
 
-                AvatarController.LoadAvatars();
-
                 _selectionViewController = BeatSaberUI.CreateViewController<ViewControllers.ModeSelectionScreen.ModeSelectionViewController>();
                 _selectionViewController.didSelectRooms += () =>
                 {

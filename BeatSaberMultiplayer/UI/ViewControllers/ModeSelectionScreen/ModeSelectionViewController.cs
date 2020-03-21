@@ -85,7 +85,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
 
                 }
                 else
+                {
                     _avatarsLoadingRect.gameObject.SetActive(false);
+
+                    AvatarController.LoadAvatars();
+                }
 
                 var pluginVersion = IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Metadata.Version.ToString();
                 var pluginBuild = pluginVersion.Substring(pluginVersion.LastIndexOf('.') + 1);
@@ -107,6 +111,8 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
         {
             _buttonsRect.gameObject.SetActive(true); 
             _avatarsLoadingRect.gameObject.SetActive(false);
+            
+            AvatarController.LoadAvatars();
         }
 
         [UIAction("rooms-btn-pressed")]
