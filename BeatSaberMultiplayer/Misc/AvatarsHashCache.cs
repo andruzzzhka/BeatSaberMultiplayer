@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using CustomAvatar.Avatar;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -43,7 +44,7 @@ namespace BeatSaberMultiplayer.Misc
             }
         }
 
-        public static async Task<string> GetHashForAvatar(CustomAvatar.CustomAvatar info, bool save = true)
+        public static async Task<string> GetHashForAvatar(LoadedAvatar info, bool save = true)
         {
             if (_hashes.TryGetValue(info.fullPath, out var data))
             {
@@ -88,7 +89,7 @@ namespace BeatSaberMultiplayer.Misc
             }
         }
 
-        public static async Task<string> RecalculateHashForAvatar(CustomAvatar.CustomAvatar info)
+        public static async Task<string> RecalculateHashForAvatar(LoadedAvatar info)
         {
             FileInfo file = new FileInfo(Path.Combine(Path.GetFullPath("CustomAvatars"), info.fullPath));
 

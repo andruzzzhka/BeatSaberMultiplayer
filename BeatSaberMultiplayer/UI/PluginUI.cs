@@ -5,12 +5,12 @@ using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.ViewControllers.DiscordScreens;
+using BeatSaberMultiplayer.SimpleJSON;
 using BS_Utils.Gameplay;
 using BS_Utils.Utilities;
 using Discord;
 using HMUI;
 using Polyglot;
-using SimpleJSON;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -256,7 +256,7 @@ namespace BeatSaberMultiplayer.UI
 
                 JSONNode latestRelease = releases[0];
 
-                SemVer.Version currentVer = IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Metadata.Version;
+                SemVer.Version currentVer = IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Version;
                 SemVer.Version githubVer = new SemVer.Version(latestRelease["tag_name"], true);
 
                 bool newTag = new SemVer.Range($">{currentVer}").IsSatisfied(githubVer);

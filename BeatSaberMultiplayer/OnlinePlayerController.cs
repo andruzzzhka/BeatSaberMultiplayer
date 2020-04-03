@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using Xft;
 
 namespace BeatSaberMultiplayer
 {
@@ -20,6 +21,7 @@ namespace BeatSaberMultiplayer
 
         public OnlineBeatmapCallbackController beatmapCallbackController;
         public OnlineBeatmapSpawnController beatmapSpawnController;
+        public OnlineBeatmapObjectManager beatmapObjectManager;
         public OnlineAudioTimeController audioTimeController;
 
         public float avatarOffset;
@@ -75,9 +77,14 @@ namespace BeatSaberMultiplayer
             audioTimeController.Init(this);
             Plugin.log.Debug("Initialized audio time controller!");
 
+            beatmapObjectManager = new GameObject("OnlineBeatmapObjectManager").AddComponent<OnlineBeatmapObjectManager>();
+            Plugin.log.Debug("Created beatmap object manager!");
+            beatmapObjectManager.Init(this, audioTimeController);
+            Plugin.log.Debug("Initialized beatmap object manager!");
+
             beatmapSpawnController = new GameObject("OnlineBeatmapSpawnController").AddComponent<OnlineBeatmapSpawnController>();
             Plugin.log.Debug("Created beatmap spawn controller!");
-            beatmapSpawnController.Init(this, beatmapCallbackController, audioTimeController);
+            beatmapSpawnController.Init(this, beatmapCallbackController, beatmapObjectManager, audioTimeController);
             Plugin.log.Debug("Initialized beatmap spawn controller!");
         }
 
@@ -98,10 +105,14 @@ namespace BeatSaberMultiplayer
             leftController.owner = this;
             _leftSaber.SetPrivateField("_vrController", leftController);
 
-            var leftTrail = leftController.GetComponentInChildren<SaberWeaponTrail>();
+            //TODO: Check trails later
+
+            /*
+            var leftTrail = leftController.GetComponentInChildren<XWeaponTrail>();
             var colorManager = Resources.FindObjectsOfTypeAll<ColorManager>().First();
             leftTrail.SetPrivateField("_colorManager", colorManager);
             leftTrail.SetPrivateField("_saberTypeObject", leftController.GetComponentInChildren<SaberTypeObject>());
+            */
 
             Plugin.log.Debug("Spawning right saber...");
             try
@@ -118,10 +129,12 @@ namespace BeatSaberMultiplayer
             rightController.owner = this;
             _rightSaber.SetPrivateField("_vrController", rightController);
 
-            var rightTrail = rightController.GetComponentInChildren<SaberWeaponTrail>();
+            /*
+            var rightTrail = rightController.GetComponentInChildren<XWeaponTrail>();
             rightTrail.SetPrivateField("_colorManager", colorManager);
             rightTrail.SetPrivateField("_saberTypeObject", rightController.GetComponentInChildren<SaberTypeObject>());
-            
+            */
+
             Plugin.log.Debug("Sabers spawned!");
         }
 
@@ -133,7 +146,7 @@ namespace BeatSaberMultiplayer
 
         public void SetBlocksState(bool active)
         {
-            if(active && !playerInfo.updateInfo.playerLevelOptions.characteristicName.ToLower().Contains("degree") && beatmapCallbackController == null && audioTimeController == null && beatmapSpawnController == null && _leftSaber == null && _rightSaber == null)
+            if(active && !playerInfo.updateInfo.playerLevelOptions.characteristicName.ToLower().Contains("degree") && beatmapCallbackController == null && audioTimeController == null && beatmapSpawnController == null && beatmapObjectManager == null && _leftSaber == null && _rightSaber == null)
             {
                 SpawnBeatmapControllers();
                 SpawnSabers();
@@ -144,8 +157,9 @@ namespace BeatSaberMultiplayer
                 Destroy(audioTimeController.gameObject);
                 Destroy(_leftSaber.gameObject);
                 Destroy(_rightSaber.gameObject);
-                beatmapSpawnController.PrepareForDestroy();
-                Destroy(beatmapSpawnController.gameObject, 1.4f);
+                Destroy(beatmapSpawnController);
+                beatmapObjectManager.PrepareForDestroy();
+                Destroy(beatmapObjectManager.gameObject, 1.4f);
             }
         }
 
@@ -246,7 +260,8 @@ namespace BeatSaberMultiplayer
                 Destroy(beatmapCallbackController.gameObject, 2f);
                 Destroy(audioTimeController.gameObject, 2f);
                 Destroy(beatmapSpawnController.gameObject, 2f);
-                beatmapSpawnController.PrepareForDestroy();
+                Destroy(beatmapObjectManager.gameObject, 2f);
+                beatmapObjectManager.PrepareForDestroy();
             }
         }
 

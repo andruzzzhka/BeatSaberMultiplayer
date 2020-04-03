@@ -88,7 +88,7 @@ namespace BeatSaberMultiplayer
         public static void UpdateModVersion(Config _instance)
         {
             
-            _instance.ModVersion = IPA.Loader.PluginManager.GetPluginFromId("BeatSaberMultiplayer").Metadata.Version.ToString();
+            _instance.ModVersion = IPA.Loader.PluginManager.GetPluginFromId("BeatSaberMultiplayer").Version.ToString();
         }
 
         public static Config Instance {

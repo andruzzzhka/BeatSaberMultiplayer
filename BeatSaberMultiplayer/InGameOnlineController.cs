@@ -6,6 +6,7 @@ using BeatSaberMultiplayer.VOIP;
 using BS_Utils.Gameplay;
 using CustomAvatar;
 using CustomAvatar.Tracking;
+using CustomAvatar.Avatar;
 using Lidgren.Network;
 using SongCore.Utilities;
 using System;
@@ -103,6 +104,7 @@ namespace BeatSaberMultiplayer
                 _messageDisplayText.enableWordWrapping = false;
                 _messageDisplayText.alignment = TextAlignmentOptions.Center;
                 DontDestroyOnLoad(_messageDisplayText.gameObject);
+
                 AvatarManager.instance.avatarChanged += PlayerAvatarManager_AvatarChanged;
 
                 if (Config.Instance.EnableVoiceChat)
@@ -960,7 +962,7 @@ namespace BeatSaberMultiplayer
 
             SoloFreePlayFlowCoordinator freePlayCoordinator = Resources.FindObjectsOfTypeAll<SoloFreePlayFlowCoordinator>().First();
 
-            PlayerDataModelSO dataModel = freePlayCoordinator.GetPrivateField<PlayerDataModelSO>("_playerDataModel");
+            PlayerDataModel dataModel = freePlayCoordinator.GetPrivateField<PlayerDataModel>("_playerDataModel");
 
             var playerLevelStats = dataModel.playerData.GetPlayerLevelStatsData(difficultyBeatmap);
 

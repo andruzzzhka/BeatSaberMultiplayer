@@ -15,7 +15,9 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         {
             BeatmapObjectCallbackController original = FindObjectsOfType<BeatmapObjectCallbackController>().First(x => !(x is OnlineBeatmapCallbackController));
 
-            foreach (FieldInfo info in original.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic).Where(x => !x.Name.ToLower().Contains("event")))
+			transform.position = original.transform.position;
+
+			foreach (FieldInfo info in original.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic).Where(x => !x.Name.ToLower().Contains("event")))
             {
                 info.SetValue(this, info.GetValue(original));
             }
@@ -41,16 +43,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
         public override void LateUpdate()
         {
-            if (_beatmapData == null || owner == null || owner.playerInfo == null)
-            {
-                return;
-            }
-			if (_firstLateUpdate)
-			{
-				_firstLateUpdate = false;
-				return;
-			}
-			if (_beatmapData == null)
+			if (_beatmapData == null || owner == null || owner.playerInfo == null)
 			{
 				return;
 			}

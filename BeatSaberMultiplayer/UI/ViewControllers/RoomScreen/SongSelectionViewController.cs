@@ -112,7 +112,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public bool requestMode;
 
         private LevelListTableCell songListTableCellInstance;
-        private PlayerDataModelSO _playerDataModel;
+        private PlayerDataModel _playerDataModel;
         private AdditionalContentModel _additionalContentModel;
         private Action _moreSongsAction;
 
@@ -147,7 +147,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _songsTableView.tableView.didSelectCellWithIdxEvent += SongsTableView_DidSelectRow;
                 _songsTableView.tableView.dataSource = this;
 
-                _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+                _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModel>().First();
                 _additionalContentModel = Resources.FindObjectsOfTypeAll<AdditionalContentModel>().First();
             }
 

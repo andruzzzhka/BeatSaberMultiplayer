@@ -1,6 +1,7 @@
 ﻿using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using CustomAvatar;
+using CustomAvatar.Avatar;
 using CustomAvatar.Tracking;
 using SongCore.Utilities;
 using System;
@@ -16,7 +17,7 @@ namespace BeatSaberMultiplayer
 {
     public class AvatarController : MonoBehaviour
     {
-        static CustomAvatar.CustomAvatar defaultAvatarInstance;
+        static LoadedAvatar defaultAvatarInstance;
 
         PlayerUpdate playerInfo;
         ulong playerId;
@@ -115,7 +116,7 @@ namespace BeatSaberMultiplayer
             playerSpeakerIcon.rectTransform.anchoredPosition3D = new Vector3(0f, 0.65f, 0f);
             playerSpeakerIcon.sprite = Sprites.speakerIcon;
 
-            avatar.behaviour.gameObject.transform.SetParent(centerAdjust.transform, false);
+            avatar.eventsPlayer.gameObject.transform.SetParent(centerAdjust.transform, false);
             transform.SetParent(centerAdjust.transform, false);
 
             if (ModelSaberAPI.cachedAvatars.Any(x => x.Value == avatar.customAvatar))
@@ -164,7 +165,7 @@ namespace BeatSaberMultiplayer
         void OnDestroy()
         {
             Plugin.log.Debug("Destroying avatar");
-            if (avatar != null && avatar.behaviour != null)
+            if (avatar != null && avatar.eventsPlayer != null)
             {
                 avatar.Destroy();
                 avatar = null;
@@ -177,7 +178,7 @@ namespace BeatSaberMultiplayer
             {
                 if (playerNameText != null) playerNameText.gameObject.SetActive(false);
                 if (playerSpeakerIcon != null) playerSpeakerIcon.gameObject.SetActive(false);
-                if (avatar != null && avatar.behaviour != null)
+                if (avatar != null && avatar.eventsPlayer != null)
                 {
                     avatar.Destroy();
                     avatar = null;
@@ -200,7 +201,7 @@ namespace BeatSaberMultiplayer
                         playerNameText.gameObject.SetActive(false);
                         playerSpeakerIcon.gameObject.SetActive(false);
 #if !DEBUG
-                        if (avatar != null && avatar.behaviour != null)
+                        if (avatar != null && avatar.eventsPlayer != null)
                         {
                             avatar.Destroy();
                         }
@@ -225,11 +226,11 @@ namespace BeatSaberMultiplayer
                 {
                     if (ModelSaberAPI.cachedAvatars.ContainsKey(playerAvatarHash))
                     {
-                        CustomAvatar.CustomAvatar cachedAvatar = ModelSaberAPI.cachedAvatars[playerAvatarHash];
+                        LoadedAvatar cachedAvatar = ModelSaberAPI.cachedAvatars[playerAvatarHash];
 
                         if (cachedAvatar != null)
                         {
-                            if (avatar != null && avatar.behaviour != null)
+                            if (avatar != null && avatar.eventsPlayer != null)
                             {
                                 avatar.Destroy();
                                 avatar = null;
@@ -252,7 +253,7 @@ namespace BeatSaberMultiplayer
                             {
                                 SharedCoroutineStarter.instance.StartCoroutine(ModelSaberAPI.DownloadAvatarCoroutine(playerAvatarHash));
 
-                                if (avatar != null && avatar.behaviour != null)
+                                if (avatar != null && avatar.eventsPlayer != null)
                                 {
                                     avatar.Destroy();
                                 }
@@ -319,7 +320,7 @@ namespace BeatSaberMultiplayer
             {
                 Plugin.log.Debug($"Avatar with hash \"{hash}\" loaded! (2)");
 
-                if (avatar != null & avatar.behaviour != null)
+                if (avatar != null & avatar.eventsPlayer != null)
                 {
                     avatar.Destroy();
                 }

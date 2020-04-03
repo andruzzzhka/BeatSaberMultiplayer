@@ -727,7 +727,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 Client.Instance.playerInfo.updateInfo.playerState = Config.Instance.SpectatorMode ? PlayerState.Spectating : PlayerState.Game;
 
-                PlayerData playerData = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().playerData;
+                PlayerData playerData = Resources.FindObjectsOfTypeAll<PlayerDataModel>().FirstOrDefault().playerData;
 
                 PlayerSpecificSettings playerSettings = playerData.playerSpecificSettings;
                 OverrideEnvironmentSettings environmentOverrideSettings = playerData.overrideEnvironmentSettings;
@@ -845,7 +845,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (_roomNavigationController.viewControllers.IndexOf(_songSelectionViewController) < 0)
             {
                 float scrollPosition = LastScrollPosition;
-                SetViewControllerToNavigationConctroller(_roomNavigationController, _songSelectionViewController);
+                SetViewControllerToNavigationController(_roomNavigationController, _songSelectionViewController);
                 SetSongs(LastSelectedCollection, LastSortMode, LastSearchRequest);
                 if (_songSelectionViewController.ScrollToPosition(scrollPosition))
                 {
@@ -995,7 +995,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _requestsViewController.RemovePressed += (SongInfo info) => { Client.Instance.RemoveRequestedSong(info); };
             }
 
-            SetViewControllerToNavigationConctroller(_roomNavigationController, _requestsViewController);
+            SetViewControllerToNavigationController(_roomNavigationController, _requestsViewController);
             _requestsViewController.SetSongs(_requestedSongs);
 
         }
@@ -1020,7 +1020,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             if (!_roomNavigationController.viewControllers.Contains(_difficultySelectionViewController) && childFlowCoordinator == null)
             {
-                SetViewControllerToNavigationConctroller(_roomNavigationController, _difficultySelectionViewController);
+                SetViewControllerToNavigationController(_roomNavigationController, _difficultySelectionViewController);
             }
 
             _difficultySelectionViewController.UpdateViewController(Client.Instance.isHost, roomInfo.perPlayerDifficulty);
@@ -1192,7 +1192,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             if (_roomNavigationController.viewControllers.IndexOf(_resultsViewController) < 0)
             {
-                SetViewControllerToNavigationConctroller(_roomNavigationController, _resultsViewController);
+                SetViewControllerToNavigationController(_roomNavigationController, _resultsViewController);
             }
 
             IPreviewBeatmapLevel level = _beatmapLevelsModel.allLoadedBeatmapLevelPackCollection.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(song.levelId));
@@ -1240,7 +1240,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             if (_roomNavigationController.viewControllers.IndexOf(_playingNowViewController) < 0)
             {
-                SetViewControllerToNavigationConctroller(_roomNavigationController, _playingNowViewController);
+                SetViewControllerToNavigationController(_roomNavigationController, _playingNowViewController);
             }
 
             _playingNowViewController.perPlayerDifficulty = roomInfo.perPlayerDifficulty;
@@ -1273,7 +1273,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         else if (success)
                         {
                             BeatmapCharacteristicSO characteristic = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>().FirstOrDefault(x => x.serializedName == roomInfo.startLevelInfo.characteristicName);
-                            PlayerDataModelSO playerData = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+                            PlayerDataModel playerData = Resources.FindObjectsOfTypeAll<PlayerDataModel>().First();
 
                             _playingNowViewController.SetSong(level, characteristic, (roomInfo.perPlayerDifficulty ? playerData.playerData.lastSelectedBeatmapDifficulty : roomInfo.startLevelInfo.difficulty));
 
@@ -1380,7 +1380,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             _playingNowViewController.playNowButton.interactable = true;
                             _playingNowViewController.SetProgressBarState(false, 0f);
                             BeatmapCharacteristicSO characteristic = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>().FirstOrDefault(x => x.serializedName == roomInfo.startLevelInfo.characteristicName);
-                            PlayerDataModelSO playerData = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+                            PlayerDataModel playerData = Resources.FindObjectsOfTypeAll<PlayerDataModel>().First();
 
                             _playingNowViewController.SetSong(beatmapLevel, characteristic, (roomInfo.perPlayerDifficulty ? playerData.playerData.lastSelectedBeatmapDifficulty : roomInfo.startLevelInfo.difficulty));
                         }

@@ -42,7 +42,7 @@ namespace BeatSaberMultiplayer.Interop
 
                 Plugin.log.Debug("Got accessors");
 
-                Assembly votingAssembly = modInfo.Metadata.Assembly;
+                Assembly votingAssembly = modInfo.Assembly;
 
                 instance = VotingUI.instance;
 

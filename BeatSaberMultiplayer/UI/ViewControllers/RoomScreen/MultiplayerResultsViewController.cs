@@ -208,7 +208,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetTimer(int time)
         {
-            timerText.text = EssentialHelpers.MinSecDurationText(time);
+            timerText.text = ((float)time).MinSecDurationText();
         }
     }
 }

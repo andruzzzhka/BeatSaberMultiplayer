@@ -1,5 +1,5 @@
 ﻿using Lidgren.Network;
-using SimpleJSON;
+using BeatSaberMultiplayer.SimpleJSON;
 using System;
 using System.Collections.Generic;
 

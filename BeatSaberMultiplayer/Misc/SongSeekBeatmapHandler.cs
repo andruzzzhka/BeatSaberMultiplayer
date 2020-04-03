@@ -28,18 +28,16 @@ namespace BeatSaberMultiplayer.Misc
                             .GetPrivateField<BeatmapData>("_beatmapData");
                     }
 
-                    if (_beatmapObjectSpawnController == null)
+                    if (_beatmapObjectManager == null)
                     {
-                        _beatmapObjectSpawnController = Resources.FindObjectsOfTypeAll<BeatmapObjectSpawnController>()
+                        _beatmapObjectManager = Resources.FindObjectsOfTypeAll<BeatmapObjectManager>()
                             .FirstOrDefault();
-                        if (_beatmapObjectSpawnController != null)
+                        if (_beatmapObjectManager != null)
                         {
-                            _noteAPool = _beatmapObjectSpawnController.GetPrivateField<NoteController.Pool>("_noteAPool");
-                            _noteBPool = _beatmapObjectSpawnController.GetPrivateField<NoteController.Pool>("_noteBPool");
-                            _bombNotePool = _beatmapObjectSpawnController.GetPrivateField<NoteController.Pool>("_bombNotePool");
-                            _fullHeightObstaclePool =
-                                _beatmapObjectSpawnController.GetPrivateField<ObstacleController.Pool>("_fullHeightObstaclePool");
-                            _topObstaclePool = _beatmapObjectSpawnController.GetPrivateField<ObstacleController.Pool>("_topObstaclePool");
+                            _noteAPool = _beatmapObjectManager.GetPrivateField<NoteController.Pool>("_noteAPool");
+                            _noteBPool = _beatmapObjectManager.GetPrivateField<NoteController.Pool>("_noteBPool");
+                            _bombNotePool = _beatmapObjectManager.GetPrivateField<NoteController.Pool>("_bombNotePool");
+                            _obstaclePool = _beatmapObjectManager.GetPrivateField<ObstacleController.Pool>("_obstaclePool");
                         }
                     }
 
@@ -56,14 +54,13 @@ namespace BeatSaberMultiplayer.Misc
 
         private static List<BeatmapObjectCallbackController.BeatmapObjectCallbackData> _callbackList;
         private static BeatmapObjectCallbackController _beatmapObjectCallbackController;
-        private static BeatmapObjectSpawnController _beatmapObjectSpawnController;
+        private static BeatmapObjectManager _beatmapObjectManager;
         private static NoteCutSoundEffectManager _noteCutSoundEffectManager;
 
         private static NoteController.Pool _noteAPool;
         private static NoteController.Pool _noteBPool;
         private static NoteController.Pool _bombNotePool;
-        private static ObstacleController.Pool _fullHeightObstaclePool;
-        private static ObstacleController.Pool _topObstaclePool;
+        private static ObstacleController.Pool _obstaclePool;
 
         private static BeatmapData _beatmapData;
 
@@ -105,31 +102,25 @@ namespace BeatSaberMultiplayer.Misc
             var notesA = _noteAPool.activeItems.ToList();
             foreach (var noteA in notesA)
             {
-                _beatmapObjectSpawnController.Despawn(noteA);
+                _beatmapObjectManager.Despawn(noteA);
             }
 
             var notesB = _noteBPool.activeItems.ToList();
             foreach (var noteB in notesB)
             {
-                _beatmapObjectSpawnController.Despawn(noteB);
+                _beatmapObjectManager.Despawn(noteB);
             }
 
             var bombs = _bombNotePool.activeItems.ToList();
             foreach (var bomb in bombs)
             {
-                _beatmapObjectSpawnController.Despawn(bomb);
+                _beatmapObjectManager.Despawn(bomb);
             }
 
-            var fullHeights = _fullHeightObstaclePool.activeItems.ToList();
-            foreach (var fullHeight in fullHeights)
+            var obstacles = _obstaclePool.activeItems.ToList();
+            foreach (var obstacle in obstacles)
             {
-                _beatmapObjectSpawnController.Despawn(fullHeight);
-            }
-
-            var tops = _topObstaclePool.activeItems.ToList();
-            foreach (var top in tops)
-            {
-                _beatmapObjectSpawnController.Despawn(top);
+                _beatmapObjectManager.Despawn(obstacle);
             }
 
             InGameOnlineController.Instance.audioTimeSync.SetPrivateField("_prevAudioSamplePos", -1);

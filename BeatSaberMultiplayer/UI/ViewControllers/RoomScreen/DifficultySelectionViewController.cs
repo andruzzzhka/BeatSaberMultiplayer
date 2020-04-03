@@ -108,7 +108,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         private Texture2D _defaultArtworkTexture;
 
-        private PlayerDataModelSO _playerDataModel;
+        private PlayerDataModel _playerDataModel;
 
         private bool isHost;
         private bool perPlayerDifficulty;
@@ -144,7 +144,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             _defaultArtworkTexture = Resources.FindObjectsOfTypeAll<Texture2D>().First(x => x.name == "DefaultSongArtwork");
 
-            _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+            _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModel>().First();
         }
 
         public void SetBeatmapCharacteristic(BeatmapCharacteristicSO beatmapCharacteristicSO)

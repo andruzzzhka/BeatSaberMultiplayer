@@ -4,7 +4,7 @@ using BeatSaberMultiplayer.UI;
 using BS_Utils.Gameplay;
 using Discord;
 using DiscordCore;
-using Harmony;
+using HarmonyLib;
 using IPA;
 using System;
 using System.Linq;
@@ -14,7 +14,8 @@ using UnityEngine.SceneManagement;
 
 namespace BeatSaberMultiplayer
 {
-    public class Plugin : IBeatSaberPlugin
+    [Plugin(RuntimeOptions.SingleStartInit)]
+    public class Plugin
     {
         public static Plugin instance;
         public static IPA.Logging.Logger log;
@@ -25,12 +26,14 @@ namespace BeatSaberMultiplayer
         private static string joinSecret;
         public static bool DownloaderExists { get; private set; }
 
+        [Init]
         public void Init(IPA.Logging.Logger logger)
         {
             log = logger;
         }
 
-        public void OnApplicationStart()
+        [OnEnable]
+        public void Enable()
         {
             instance = this;
 
@@ -139,30 +142,6 @@ namespace BeatSaberMultiplayer
             InGameOnlineController.Instance?.GameSceneLoaded();
             if (Config.Instance.SpectatorMode)
                 SpectatingController.Instance?.GameSceneLoaded();
-        }
-
-        public void OnApplicationQuit()
-        {
-        }
-
-        public void OnUpdate()
-        {
-        }
-
-        public void OnFixedUpdate()
-        {
-        }
-
-        public void OnSceneLoaded(Scene scene, LoadSceneMode sceneMode)
-        {
-        }
-
-        public void OnSceneUnloaded(Scene scene)
-        {
-        }
-
-        public void OnActiveSceneChanged(Scene prevScene, Scene nextScene)
-        {
         }
 
         private void DiscordLogCallback(LogLevel level, string message)
