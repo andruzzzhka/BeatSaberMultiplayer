@@ -50,8 +50,6 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                         movementSpeed = diffBeatmap.difficulty.NoteJumpMovementSpeed();
                     }
 
-                    Plugin.log.Debug("Movement speed: "+ movementSpeed);
-
                     //TODO: Implement Fast Notes modifier in level options
                     /*
                     if (levelInfo.modifiers.ToGameplayModifiers().fastNotes)

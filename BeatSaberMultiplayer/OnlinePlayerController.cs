@@ -257,11 +257,11 @@ namespace BeatSaberMultiplayer
 
             if (beatmapCallbackController != null && beatmapSpawnController != null && audioTimeController != null)
             {
-                Destroy(beatmapCallbackController.gameObject, 2f);
-                Destroy(audioTimeController.gameObject, 2f);
-                Destroy(beatmapSpawnController.gameObject, 2f);
-                Destroy(beatmapObjectManager.gameObject, 2f);
+                Destroy(beatmapCallbackController.gameObject);
+                Destroy(audioTimeController.gameObject);
+                Destroy(beatmapSpawnController.gameObject);
                 beatmapObjectManager.PrepareForDestroy();
+                Destroy(beatmapObjectManager.gameObject, 1.4f);
                 Destroy(_leftSaber.gameObject);
                 Destroy(_rightSaber.gameObject);
             }
@@ -314,9 +314,10 @@ namespace BeatSaberMultiplayer
                 Plugin.log.Warn("Start rotation is NaN!");
             }
 
-            if (Mathf.Abs(playerInfo.updateInfo.playerProgress - newInfo.playerProgress) > 0.1f)
+            if (Mathf.Abs(playerInfo.updateInfo.playerProgress - newInfo.playerProgress) > 0.25f)
             {
                 playerInfo.updateInfo.playerProgress = newInfo.playerProgress;
+                Plugin.log.Debug("Reset player progress to "+ newInfo.playerProgress);
             }
 
             _syncEndInfo = newInfo;
