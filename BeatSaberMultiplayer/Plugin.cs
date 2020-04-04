@@ -133,15 +133,13 @@ namespace BeatSaberMultiplayer
         private void MenuSceneLoaded()
         {
             InGameOnlineController.Instance?.MenuSceneLoaded();
-            if (Config.Instance.SpectatorMode)
-                SpectatingController.Instance?.MenuSceneLoaded();
+            SpectatingController.Instance?.MenuSceneLoaded();
         }
 
         private void GameSceneLoaded()
         {
             InGameOnlineController.Instance?.GameSceneLoaded();
-            if (Config.Instance.SpectatorMode)
-                SpectatingController.Instance?.GameSceneLoaded();
+            SpectatingController.Instance?.GameSceneLoaded();
         }
 
         private void DiscordLogCallback(LogLevel level, string message)
