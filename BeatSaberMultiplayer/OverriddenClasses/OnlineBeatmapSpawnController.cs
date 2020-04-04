@@ -13,9 +13,7 @@ namespace BeatSaberMultiplayer.OverriddenClasses
     {
         public OnlinePlayerController owner;
         public OnlineAudioTimeController onlineSyncController;
-
-        private PlayerController _localPlayer;
-        private AudioTimeSyncController _localSyncController;
+        public OnlineBeatmapObjectManager onlineObjectManager;
 
         public void Init(OnlinePlayerController newOwner, OnlineBeatmapCallbackController callbackController, OnlineBeatmapObjectManager objectManager, OnlineAudioTimeController syncController)
         {
@@ -23,19 +21,14 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 
             transform.position = original.transform.position;
 
-            foreach (FieldInfo info in original.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic).Where(x => !x.Name.ToLower().Contains("event")))
-            {
-                info.SetValue(this, info.GetValue(original));
-            }
+            _initData = original.GetPrivateField<InitData>("_initData");
+            _beatmapObjectCallbackController = original.GetPrivateField<BeatmapObjectCallbackController>("_beatmapObjectCallbackController");
 
             owner = newOwner;
 
-            _beatmapObjectSpawner = objectManager;
+            onlineObjectManager = objectManager;
             _beatmapObjectCallbackController = callbackController;
             onlineSyncController = syncController;
-
-            _localPlayer = FindObjectsOfType<PlayerController>().First(x => !(x is OnlinePlayerController));
-            _localSyncController = FindObjectsOfType<AudioTimeSyncController>().First(x => !(x is OnlineAudioTimeController));
         }
 
         public override void Start()
@@ -50,12 +43,28 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                     _disappearingArrows = levelInfo.modifiers.disappearingArrows;
                     _ghostNotes = levelInfo.modifiers.ghostNotes;
 
-                    _initData = new InitData(diffBeatmap.level.beatsPerMinute, diffBeatmap.beatmapData.beatmapLinesData.Length, diffBeatmap.noteJumpMovementSpeed, diffBeatmap.noteJumpStartBeatOffset, _disappearingArrows, _ghostNotes, _initData.jumpOffsetY);
+                    var movementSpeed = diffBeatmap.noteJumpMovementSpeed;
+
+                    if (movementSpeed <= 0f)
+                    {
+                        movementSpeed = diffBeatmap.difficulty.NoteJumpMovementSpeed();
+                    }
+
+                    Plugin.log.Debug("Movement speed: "+ movementSpeed);
+
+                    //TODO: Implement Fast Notes modifier in level options
+                    /*
+                    if (levelInfo.modifiers.ToGameplayModifiers().fastNotes)
+                    {
+                        movementSpeed = 20f;
+                    }
+                    */
+                    _initData = new InitData(diffBeatmap.level.beatsPerMinute, diffBeatmap.beatmapData.beatmapLinesData.Length, movementSpeed, diffBeatmap.noteJumpStartBeatOffset, _disappearingArrows, _ghostNotes, _initData.jumpOffsetY);
                 }
             }
             catch (Exception e)
             {
-                Plugin.log.Warn("Unable to update beatmap data! Exception: " + e);
+                Plugin.log.Warn("Unable to update beatmap data! Exception: " + e); 
             }
 
             _variableBPMProcessor.SetBPM(_initData.beatsPerMinute);
@@ -76,6 +85,46 @@ namespace BeatSaberMultiplayer.OverriddenClasses
             _beatmapEventCallbackData = _beatmapObjectCallbackController.AddBeatmapEventCallback(new BeatmapObjectCallbackController.BeatmapEventCallback(HandleBeatmapEventCallback), _beatmapObjectSpawnMovementData.spawnAheadTime);
             _beatmapObjectCallbackController.callbacksForThisFrameWereProcessedEvent += HandleCallbacksForThisFrameWereProcessed;
         }
-        
+
+        public override void SpawnNote(NoteData noteData, float cutDirectionAngleOffset)
+        {
+            if (_disableSpawning || owner == null)
+            {
+                return;
+            }
+            _beatmapObjectSpawnMovementData.GetNoteSpawnMovementData(noteData, out var moveStartPos, out var moveEndPos, out var jumpEndPos, out var jumpGravity);
+            float moveDuration = _beatmapObjectSpawnMovementData.moveDuration;
+            float jumpDuration = _beatmapObjectSpawnMovementData.jumpDuration;
+            float rotation = _spawnRotationProcesser.rotation;
+            if (noteData.noteType == NoteType.Bomb)
+            {
+                onlineObjectManager.SpawnBombNote(noteData, moveStartPos, moveEndPos, jumpEndPos, moveDuration, jumpDuration, jumpGravity, rotation);
+                return;
+            }
+            if (noteData.noteType.IsBasicNote())
+            {
+                if (_firstBasicNoteTime == null)
+                {
+                    _firstBasicNoteTime = new float?(noteData.time);
+                }
+                float? firstBasicNoteTime = _firstBasicNoteTime;
+                float time = noteData.time;
+                onlineObjectManager.SpawnBasicNote(noteData, moveStartPos, moveEndPos, jumpEndPos, moveDuration, jumpDuration, jumpGravity, rotation, _disappearingArrows, _ghostNotes && !(firstBasicNoteTime.GetValueOrDefault() == time & firstBasicNoteTime != null), cutDirectionAngleOffset);
+            }
+        }
+
+        public override void SpawnObstacle(ObstacleData obstacleData)
+        {
+            if (_disableSpawning)
+            {
+                return;
+            }
+            _beatmapObjectSpawnMovementData.GetObstacleSpawnMovementData(obstacleData, out var moveStartPos, out var moveEndPos, out var jumpEndPos, out var obstacleHeight);
+            float moveDuration = _beatmapObjectSpawnMovementData.moveDuration;
+            float jumpDuration = _beatmapObjectSpawnMovementData.jumpDuration;
+            float noteLinesDistance = _beatmapObjectSpawnMovementData.noteLinesDistance;
+            float rotation = _spawnRotationProcesser.rotation;
+            onlineObjectManager.SpawnObstacle(obstacleData, moveStartPos, moveEndPos, jumpEndPos, moveDuration, jumpDuration, rotation, noteLinesDistance, obstacleHeight);
+        }
     }
 }

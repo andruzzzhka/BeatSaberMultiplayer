@@ -67,15 +67,15 @@ namespace BeatSaberMultiplayer
         {
             Plugin.log.Debug("Creating beatmap controllers...");
 
-            beatmapCallbackController = new GameObject("OnlineBeatmapCallbackController").AddComponent<OnlineBeatmapCallbackController>();
-            Plugin.log.Debug("Created beatmap callback controller!");
-            beatmapCallbackController.Init(this);
-            Plugin.log.Debug("Initialized beatmap callback controller!");
-
             audioTimeController = new GameObject("OnlineAudioTimeController").AddComponent<OnlineAudioTimeController>();
             Plugin.log.Debug("Created audio time controller!");
             audioTimeController.Init(this);
             Plugin.log.Debug("Initialized audio time controller!");
+
+            beatmapCallbackController = new GameObject("OnlineBeatmapCallbackController").AddComponent<OnlineBeatmapCallbackController>();
+            Plugin.log.Debug("Created beatmap callback controller!");
+            beatmapCallbackController.Init(this, audioTimeController);
+            Plugin.log.Debug("Initialized beatmap callback controller!");
 
             beatmapObjectManager = new GameObject("OnlineBeatmapObjectManager").AddComponent<OnlineBeatmapObjectManager>();
             Plugin.log.Debug("Created beatmap object manager!");
@@ -155,11 +155,11 @@ namespace BeatSaberMultiplayer
             {
                 Destroy(beatmapCallbackController.gameObject);
                 Destroy(audioTimeController.gameObject);
-                Destroy(_leftSaber.gameObject);
-                Destroy(_rightSaber.gameObject);
                 Destroy(beatmapSpawnController);
                 beatmapObjectManager.PrepareForDestroy();
                 Destroy(beatmapObjectManager.gameObject, 1.4f);
+                Destroy(_leftSaber.gameObject);
+                Destroy(_rightSaber.gameObject);
             }
         }
 
@@ -262,6 +262,8 @@ namespace BeatSaberMultiplayer
                 Destroy(beatmapSpawnController.gameObject, 2f);
                 Destroy(beatmapObjectManager.gameObject, 2f);
                 beatmapObjectManager.PrepareForDestroy();
+                Destroy(_leftSaber.gameObject);
+                Destroy(_rightSaber.gameObject);
             }
         }
 

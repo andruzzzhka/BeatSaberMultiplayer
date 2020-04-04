@@ -42,6 +42,7 @@ namespace ServerHub.Misc
         {
             using (WebClient w = new WebClient())
             {
+                w.Headers.Add("user-agent", $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}/{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
                 try
                 {
                     string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/detail/{id}");
@@ -100,6 +101,8 @@ namespace ServerHub.Misc
         {
             using (WebClient w = new WebClient())
             {
+                w.Headers.Add("user-agent", $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}/{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
+
                 Random rand = new Random();
                 int maxId = 11000;
                 try
@@ -144,6 +147,8 @@ namespace ServerHub.Misc
         {
             using (WebClient w = new WebClient())
             {
+                w.Headers.Add("user-agent", $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}/{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
+
                 try
                 {
                     string response = await w.DownloadStringTaskAsync($"{BeatSaverAPI}/by-hash/{hash.ToLower()}");
