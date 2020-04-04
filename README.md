@@ -7,7 +7,7 @@
 * SongCore v2.7.5+
 * BeatSaberMarkupLanguage v1.1.5+
 * BS Utils v1.4.1+
-* [Custom Avatars v5.0.0+](https://discordapp.com/channels/441805394323439646/692757693701685273/692974265703596063)
+* [Custom Avatars v5.0.0+](https://discordapp.com/channels/441805394323439646/692757693701685273/692974265703596063) (You will need to use this DLL for now: [Link](https://github.com/andruzzzhka/BeatSaberMultiplayer/raw/master/Refs/CustomAvatar.dll))
 * [DiscordCore v1.0.0+](https://github.com/andruzzzhka/DiscordCore/releases/tag/1.0.0)
 
 <br/>
