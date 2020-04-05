@@ -8,6 +8,7 @@
 * BeatSaberMarkupLanguage v1.1.5+
 * BS Utils v1.4.1+
 * [Custom Avatars v5.0.0+](https://github.com/nicoco007/BeatSaberCustomAvatars/releases/tag/v5.0.0-beta.7) (You will need to use this DLL for now: [Link](https://github.com/andruzzzhka/BeatSaberMultiplayer/raw/master/Refs/CustomAvatar.dll))
+* [DynamicOpenVR 0.2.0+](https://github.com/nicoco007/DynamicOpenVR/releases/tag/v0.2.0) (DynamicOpenVR.BeatSaber is **NOT** required)
 * [DiscordCore v1.0.1+](https://github.com/andruzzzhka/DiscordCore/releases/tag/1.0.1)
 
 <br/>
