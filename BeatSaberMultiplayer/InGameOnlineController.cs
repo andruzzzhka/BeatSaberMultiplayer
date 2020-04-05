@@ -226,7 +226,7 @@ namespace BeatSaberMultiplayer
                     Client.Instance.playerInfo.avatarHash = null;
 
                     if(AvatarManager.instance.currentlySpawnedAvatar != null)
-                        Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == AvatarManager.instance.currentlySpawnedAvatar.customAvatar).Key;
+                        Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value.fullPath == AvatarManager.instance.currentlySpawnedAvatar.customAvatar.fullPath).Key;
 
                     if (Client.Instance.playerInfo.avatarHash == null)
                     {
@@ -458,7 +458,7 @@ namespace BeatSaberMultiplayer
                                     _scoreScreen.transform.rotation = Quaternion.Euler(Config.Instance.ScoreScreenRotOffset);
                                     _scoreScreen.transform.localScale = Config.Instance.ScoreScreenScale;
 
-                                    var rotator = GameObject.FindObjectOfType<FlyingGameHUDRotation>();
+                                    var rotator = FindObjectOfType<FlyingGameHUDRotation>();
 
                                     if(rotator != null)
                                     {
@@ -785,7 +785,7 @@ namespace BeatSaberMultiplayer
         {
             if (!Config.Instance.SeparateAvatarForMultiplayer && Client.Instance.connected)
             {
-                Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == obj.customAvatar).Key;
+                Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value.fullPath == obj.customAvatar.fullPath).Key;
                 sendFullUpdate = true;
 
                 if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash))
@@ -797,7 +797,6 @@ namespace BeatSaberMultiplayer
 
         public void UpdatePlayerInfo()
         {
-
             if (Client.Instance.playerInfo.avatarHash == null || Client.Instance.playerInfo.avatarHash.Length == 0 || Client.Instance.playerInfo.avatarHash == PlayerInfo.avatarHashPlaceholder)
             {
                 if (Config.Instance.SeparateAvatarForMultiplayer)
@@ -810,12 +809,13 @@ namespace BeatSaberMultiplayer
                     Client.Instance.playerInfo.avatarHash = null;
 
                     if (AvatarManager.instance.currentlySpawnedAvatar != null)
-                        Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == AvatarManager.instance.currentlySpawnedAvatar.customAvatar).Key;
+                        Client.Instance.playerInfo.avatarHash = ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value.fullPath == AvatarManager.instance.currentlySpawnedAvatar.customAvatar.fullPath).Key;
 
                     if (string.IsNullOrEmpty(Client.Instance.playerInfo.avatarHash))
                     {
                         Client.Instance.playerInfo.avatarHash = PlayerInfo.avatarHashPlaceholder;
                     }
+
                     sendFullUpdate = true;
                 }
 #if DEBUG
@@ -1078,7 +1078,7 @@ namespace BeatSaberMultiplayer
 
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault(x => !(x is OnlineAudioTimeController));
 
-            _pauseMenuManager = FindObjectsOfType<PauseMenuManager>().First();
+            _pauseMenuManager = FindObjectOfType<PauseMenuManager>();
             
             if (_pauseMenuManager != null)
             {
@@ -1086,6 +1086,8 @@ namespace BeatSaberMultiplayer
             }
 
             Plugin.log.Debug("Found pause manager");
+
+            _gameManager = FindObjectOfType<StandardLevelGameplayManager>();
 
             _loaded = true;
         }

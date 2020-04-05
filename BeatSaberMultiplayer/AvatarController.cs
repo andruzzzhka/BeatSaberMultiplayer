@@ -119,9 +119,9 @@ namespace BeatSaberMultiplayer
             avatar.eventsPlayer.gameObject.transform.SetParent(centerAdjust.transform, false);
             transform.SetParent(centerAdjust.transform, false);
 
-            if (ModelSaberAPI.cachedAvatars.Any(x => x.Value == avatar.customAvatar))
+            if (ModelSaberAPI.cachedAvatars.Any(x => x.Value.fullPath == avatar.customAvatar.fullPath))
             {
-                currentAvatarHash = ModelSaberAPI.cachedAvatars.First(x => x.Value == avatar.customAvatar).Key;
+                currentAvatarHash = ModelSaberAPI.cachedAvatars.First(x => x.Value.fullPath == avatar.customAvatar.fullPath).Key;
             }
             else
             {

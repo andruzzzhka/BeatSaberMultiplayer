@@ -6,7 +6,7 @@
     "icon": "BeatSaberMultiplayer.Assets.OnlineIcon.png",
     "id": "BeatSaberMultiplayer",
     "name": "Beat Saber Multiplayer",
-    "version": "0.7.2.1a",
+    "version": "0.7.2.1b",
     "dependsOn": {
         "CustomAvatars": "^5.0.0-beta.6",
         "BS Utils": "^1.4.0",
@@ -18,6 +18,5 @@
     "links": {
         "project-source": "https://github.com/andruzzzhka/BeatSaberMultiplayer",
         "donate": "https://ko-fi.com/andruzzzhka"
-    },
-    "features": []
+    }
 }
