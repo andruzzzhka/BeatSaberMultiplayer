@@ -158,7 +158,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
             else
             {
-                Plugin.log.Error("Unable to set beatmap characteristic! Not found");
+                Plugin.log.Error($"Unable to set beatmap characteristic \"{beatmapCharacteristicSO?.serializedName}\"! Not found");
             }
         }
 
@@ -172,7 +172,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
             else
             {
-                Plugin.log.Error("Unable to set beatmap difficulty! Not found");
+                Plugin.log.Error($"Unable to set beatmap difficulty \"{difficulty}\"! Not found");
             }
         }
 
@@ -224,6 +224,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetSelectedSong(SongInfo song)
         {
+            Plugin.log.Debug("Downloading song info!");
 
             controlsRect.gameObject.SetActive(false);
             buttonsRect.gameObject.SetActive(false);
@@ -447,7 +448,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 {
                     var customDiff = extraDifficulties.FirstOrDefault(x => x._difficulty == diffBeatmaps[i].difficulty);
 
-                    if (customDiff != null)
+                    if (customDiff != null && !string.IsNullOrEmpty(customDiff._difficultyLabel))
                         difficultyLabels[i]= customDiff._difficultyLabel;
                     else
                         difficultyLabels[i]= diffBeatmaps[i].difficulty.ToString().Replace("Plus", "+");

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -22,6 +23,8 @@ namespace BeatSaberMultiplayer.Misc
 
             using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(spritePath))
             {
+                www.SetRequestHeader("User-Agent", SongDownloader.UserAgent);
+
                 yield return www.SendWebRequest();
 
                 if (www.isHttpError || www.isNetworkError)

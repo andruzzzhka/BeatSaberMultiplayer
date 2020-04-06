@@ -29,7 +29,7 @@ namespace BeatSaberMultiplayer.Misc
             queuedAvatars.Add(hash);
             string downloadUrl = "";
             string avatarName = "";
-            UnityWebRequest www = UnityWebRequest.Get("https://modelsaber.com/api/v1/avatar/get.php?filter=hash:" + hash);
+            UnityWebRequest www = SongDownloader.GetRequestForUrl("https://modelsaber.com/api/v1/avatar/get.php?filter=hash:" + hash);
 
             www.timeout = 10;
 

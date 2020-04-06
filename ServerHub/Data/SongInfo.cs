@@ -35,7 +35,8 @@ namespace ServerHub.Data
                 Task.Run(async () =>
                 {
                     var song = await BeatSaver.FetchByHash(levelId);
-                    key = song.Key;
+                    if(song != null && song.Key != null)
+                        key = song.Key;
                 });
             }
         }

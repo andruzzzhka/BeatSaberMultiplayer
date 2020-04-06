@@ -320,7 +320,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         private void SongsTableView_DidSelectRow(TableView sender, int row)
         {
-            if (requestMode)
+            if (requestMode && !isHost)
             {
                 selectedSong = availableSongs[row];
                 _requestSongButton.interactable = selectedSong != null;

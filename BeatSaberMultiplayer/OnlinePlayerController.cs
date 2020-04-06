@@ -314,10 +314,9 @@ namespace BeatSaberMultiplayer
                 Plugin.log.Warn("Start rotation is NaN!");
             }
 
-            if (Mathf.Abs(playerInfo.updateInfo.playerProgress - newInfo.playerProgress) > 0.25f)
+            if (Mathf.Abs(playerInfo.updateInfo.playerProgress - newInfo.playerProgress) > 0.1f)
             {
                 playerInfo.updateInfo.playerProgress = newInfo.playerProgress;
-                Plugin.log.Debug("Reset player progress to "+ newInfo.playerProgress);
             }
 
             _syncEndInfo = newInfo;
