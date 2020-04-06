@@ -1,4 +1,4 @@
-# Latest version: 0.7.2.1b (Experimental)
+# Latest version: 0.7.2.1c (Experimental)
 
 ## [Download](https://ci.appveyor.com/api/projects/andruzzzhka/beatsabermultiplayer/artifacts/Output/BeatSaberMultiplayer.zip?job=Configuration%3A%20ClientRelease) for Beat Saber 1.8.0
 ## [Download](https://ci.appveyor.com/api/buildjobs/3ctxv5hqq664939i/artifacts/Output%2FBeatSaberMultiplayer.zip) (v0.7.2.0a) for Beat Saber 1.7.0
