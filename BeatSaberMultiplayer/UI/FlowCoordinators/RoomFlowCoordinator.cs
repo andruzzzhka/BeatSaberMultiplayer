@@ -137,9 +137,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 if (_lastScrollPosition == value)
                     return;
                 _lastScrollPosition = value;
-#if DEBUG
-                Plugin.log.Debug($"{nameof(LastScrollPosition)} set to {value}");
-#endif
             }
         }
 
@@ -577,8 +574,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             break;
                         case CommandType.GetRequestedSongs:
                             {
-                                //TODO: Look into this
                                 int songsCount = msg.ReadInt32();
+
                                 _requestedSongs.Clear();
 
                                 for (int i = 0; i < songsCount; i++)
@@ -586,9 +583,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     _requestedSongs.Add(new SongInfo(msg));
                                 }
 
-                                if (_requestsViewController.isInViewControllerHierarchy && !_requestsViewController.GetPrivateField<bool>("_isInTransition"))
+                                if (_requestsViewController != null && _requestsViewController.isInViewControllerHierarchy && !_requestsViewController.GetPrivateField<bool>("_isInTransition"))
                                 {
                                     _requestsViewController.SetSongs(_requestedSongs);
+                                }
+
+                                if(_songSelectionViewController != null && _songSelectionViewController.isInViewControllerHierarchy && !_songSelectionViewController.GetPrivateField<bool>("_isInTransition"))
+                                {
+                                    _songSelectionViewController.UpdateViewController(Client.Instance.isHost, _requestedSongs?.Count ?? 0);
                                 }
                             }
                             break;
@@ -877,7 +879,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
 
-            _songSelectionViewController.UpdateViewController(Client.Instance.isHost, _requestedSongs.Count);
+            _songSelectionViewController.UpdateViewController(Client.Instance.isHost, _requestedSongs?.Count ?? 0);
         }
 
         private void RequestModePressed()

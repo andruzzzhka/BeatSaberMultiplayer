@@ -165,7 +165,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         bool repositoryUsed = false;
                         foreach (var server in repo.Servers)
                         {
-                            Plugin.log.Critical($"Server: {server.ToString()}");
+                            Plugin.log.Debug($"Server: {server.ToString()}");
                             if (server.IsValid)
                             {
                                 repoServers.Add(server);

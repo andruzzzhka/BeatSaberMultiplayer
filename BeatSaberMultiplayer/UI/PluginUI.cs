@@ -218,6 +218,7 @@ namespace BeatSaberMultiplayer.UI
         public IEnumerator JoinGameWithSecret(string secret)
         {
             yield return null;
+            yield return null;
 
             MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
             mainFlow.InvokeMethod("PresentFlowCoordinator", modeSelectionFlowCoordinator, null, true, false);

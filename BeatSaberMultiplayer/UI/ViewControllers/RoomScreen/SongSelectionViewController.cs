@@ -152,6 +152,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
 
             SelectTopButtons(TopButtonsState.Select);
+            requestMode = false;
         }
 
         protected override void DidDeactivate(DeactivationType deactivationType)

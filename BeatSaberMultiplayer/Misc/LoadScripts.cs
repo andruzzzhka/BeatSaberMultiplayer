@@ -13,16 +13,17 @@ namespace BeatSaberMultiplayer.Misc
 
         static public IEnumerator LoadSpriteCoroutine(string spritePath, Action<Texture2D> done)
         {
-            Texture2D tex;
 
             if (_cachedTextures.ContainsKey(spritePath))
             {
+
                 done?.Invoke(_cachedTextures[spritePath]);
                 yield break;
             }
 
             using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(spritePath))
             {
+
                 www.SetRequestHeader("User-Agent", SongDownloader.UserAgent);
 
                 yield return www.SendWebRequest();
@@ -33,9 +34,9 @@ namespace BeatSaberMultiplayer.Misc
                 }
                 else
                 {
-                    tex = DownloadHandlerTexture.GetContent(www);
+                    Texture2D tex = DownloadHandlerTexture.GetContent(www);
                     _cachedTextures.Add(spritePath, tex);
-                    done?.Invoke(tex);
+                    done?.Invoke(tex); 
                 }
             }
         }
