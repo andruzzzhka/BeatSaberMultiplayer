@@ -167,20 +167,31 @@ namespace BeatSaberMultiplayer.UI
                         _noUserInfoWarning = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
                     }
 
-                    if (GetUserInfo.GetUserID() == 0 && string.IsNullOrWhiteSpace(GetUserInfo.GetUserName()) || GetUserInfo.GetUserID() == 0)
+                    if (DateTime.Now.Month == 4 && DateTime.Now.Day == 1)
                     {
-                        _noUserInfoWarning.Init("Invalid username and ID", $"Your username and ID are invalid\nMake sure you are logged in", "Go back", "Continue anyway",
+                        _noUserInfoWarning.Init("No access to multiplayer", $"You need \"Multiplayer Pro Elite Pack\" to continue\nWould you like to buy it now?", "Buy access", "Go back",
                            (selectedButton) =>
                            {
-                               mainFlow.InvokeMethod("DismissViewController", _noUserInfoWarning, null, selectedButton == 1);
-                               if (selectedButton == 1)
+                               mainFlow.InvokeMethod("DismissViewController", _noUserInfoWarning, null, selectedButton == 0);
+                               if (selectedButton == 0)
                                {
                                    mainFlow.InvokeMethod("PresentFlowCoordinator", modeSelectionFlowCoordinator, null, true, false);
                                }
                            });
-
                         mainFlow.InvokeMethod("PresentViewController", _noUserInfoWarning, null, false);
-
+                    }
+                    else if (GetUserInfo.GetUserID() == 0)
+                    {
+                        _noUserInfoWarning.Init("Invalid username and ID", $"Your username and ID are invalid\nMake sure you are logged in", "Go back", "Continue anyway",
+                              (selectedButton) =>
+                              {
+                                  mainFlow.InvokeMethod("DismissViewController", _noUserInfoWarning, null, selectedButton == 1);
+                                  if (selectedButton == 1)
+                                  {
+                                      mainFlow.InvokeMethod("PresentFlowCoordinator", modeSelectionFlowCoordinator, null, true, false);
+                                  }
+                              });
+                        mainFlow.InvokeMethod("PresentViewController", _noUserInfoWarning, null, false);
                     }
                     else
                     {
