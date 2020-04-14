@@ -62,18 +62,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _presetsListViewController_didFinishEvent(null);
         }
 
-        /*
-        public void PresentKeyboard(KeyboardViewController keyboardViewController)
-        {
-            PresentViewController(keyboardViewController, null, false);
-        }
-        
-        private void _mainRoomCreationViewController_keyboardDidFinishEvent(KeyboardViewController keyboardViewController)
-        {
-            DismissViewController(keyboardViewController, null, false);
-        }
-        */
-
         public void SetServerHubsList(List<ServerHubClient> serverHubs)
         {
             _serverHubsViewController.SetServerHubs(serverHubs);
