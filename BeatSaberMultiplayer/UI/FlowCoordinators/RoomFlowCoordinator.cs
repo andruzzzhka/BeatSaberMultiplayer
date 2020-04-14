@@ -157,7 +157,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         bool joined = false;
         private SimpleDialogPromptViewController _passHostDialog;
-        private SimpleDialogPromptViewController _hostLeaveDialog;
+        private SimpleDialogPromptViewController _roomLeaveDialog;
 
         private List<SongInfo> _requestedSongs = new List<SongInfo>();
 
@@ -175,7 +175,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 var dialogOrig = ReflectionUtil.GetPrivateField<SimpleDialogPromptViewController>(FindObjectOfType<MainFlowCoordinator>(), "_simpleDialogPromptViewController");
                 _passHostDialog = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
-                _hostLeaveDialog = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
+                _roomLeaveDialog = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
 
                 _quickSettingsViewController = BeatSaberUI.CreateViewController<QuickSettingsViewController>();
 
@@ -239,18 +239,23 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void LeaveRoom(bool force = false)
         {
-            if (Client.Instance != null && Client.Instance.connected && Client.Instance.isHost && !force)
+            if (Client.Instance != null && Client.Instance.connected && !force)
             {
-                _hostLeaveDialog.Init("Leave room?", $"You're the host, are you sure you want to leave the room?", "Leave", "Cancel",
-                (selectedButton) =>
+                string leaveMsg = (
+                    Client.Instance.isHost ?
+                    "You're the host; are you sure you want to leave the room?" :
+                    "Are you sure you want to leave this room?"
+                );
+
+                _roomLeaveDialog.Init("Leave room?", leaveMsg, "Leave", "Cancel", (selectedButton) =>
                 {
-                    DismissViewController(_hostLeaveDialog);
+                    DismissViewController(_roomLeaveDialog);
                     if (selectedButton == 0)
                     {
                         LeaveRoom(true);
                     }
                 });
-                PresentViewController(_hostLeaveDialog);
+                PresentViewController(_roomLeaveDialog);
                 return;
             }
 
@@ -787,8 +792,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 else
                     DismissFlowCoordinator(childFlowCoordinator, null, true);
             }
-            if (_hostLeaveDialog.isInViewControllerHierarchy && !_hostLeaveDialog.GetPrivateField<bool>("_isInTransition"))
-                DismissViewController(_hostLeaveDialog, null, true);
+            if (_roomLeaveDialog.isInViewControllerHierarchy && !_roomLeaveDialog.GetPrivateField<bool>("_isInTransition"))
+                DismissViewController(_roomLeaveDialog, null, true);
             if (_passHostDialog.isInViewControllerHierarchy && !_passHostDialog.GetPrivateField<bool>("_isInTransition"))
                 DismissViewController(_passHostDialog, null, true);
 
