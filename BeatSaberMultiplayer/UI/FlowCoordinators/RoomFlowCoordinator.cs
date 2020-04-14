@@ -243,7 +243,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 string leaveMsg = (
                     Client.Instance.isHost ?
-                    "You're the host; are you sure you want to leave the room?" :
+                    "<size=120%><b>You're the host!</b></size>\nAre you sure you want to leave the room?" :
                     "Are you sure you want to leave this room?"
                 );
 
