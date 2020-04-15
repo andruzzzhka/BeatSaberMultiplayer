@@ -98,7 +98,6 @@ namespace BeatSaberMultiplayer
 
         private void OnSteamGameJoinRequest(GameRichPresenceJoinRequested_t callback)
         {
-            Plugin.log.Debug($"OnSteamGameJoinRequest: m_rgchConnect: {callback.m_rgchConnect}, m_steamIDFriend: {callback.m_steamIDFriend}");
             if (SceneManager.GetActiveScene().name.Contains("Menu") && !Client.Instance.inRoom && !Client.Instance.inRadioMode)
             {
                 joinAfterRestart = true;
@@ -125,7 +124,6 @@ namespace BeatSaberMultiplayer
 
         public void OnActivityJoin(string secret)
         {
-            Plugin.log.Debug($"OnActivityJoin: secret: {secret}");
             if (SceneManager.GetActiveScene().name.Contains("Menu") && !Client.Instance.inRoom && !Client.Instance.inRadioMode)
             {
                 joinAfterRestart = true;
