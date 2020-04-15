@@ -6,6 +6,7 @@ using Discord;
 using DiscordCore;
 using HarmonyLib;
 using IPA;
+using Steamworks;
 using System;
 using System.Linq;
 using System.Reflection;
