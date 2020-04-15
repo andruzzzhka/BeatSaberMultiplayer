@@ -8,6 +8,7 @@ using BS_Utils.Utilities;
 using Discord;
 using HMUI;
 using Lidgren.Network;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -301,6 +302,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             PopAllViewControllers();
             SetLeftScreenViewController(_playerManagementViewController);
             PluginUI.instance.SetLobbyDiscordActivity();
+            PluginUI.instance.ClearSteamRichPresence();
             didFinishEvent?.Invoke();
         }
 
@@ -650,7 +652,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             _playerManagementViewController.UpdateViewController(Client.Instance.isHost, (int)state <= 1);
 
-            UpdateDiscordActivity(roomInfo);
+            UpdateRichPresence(roomInfo);
         }
 
         private void UpdateLevelOptions()
@@ -688,7 +690,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         }
                     }
 
-                    UpdateDiscordActivity(roomInfo);
+                    UpdateRichPresence(roomInfo);
                 }
             }
             catch (Exception e)
@@ -775,7 +777,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
 
                 menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, practiceSettings: practiceSettings, "Lobby", false, () => { }, InGameOnlineController.Instance.SongFinished);
-                UpdateDiscordActivity(roomInfo);
+                UpdateRichPresence(roomInfo);
             }
             else
             {
@@ -1409,8 +1411,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        #region Discord rich presence stuff
-        public void UpdateDiscordActivity(RoomInfo roomInfo)
+        #region Rich presence stuff (Discord/Steam)
+        public void UpdateRichPresence(RoomInfo roomInfo)
         {
             ActivityParty partyInfo = new ActivityParty()
             {
@@ -1428,9 +1430,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 End = (roomInfo.roomState == RoomState.InGame) ? (DateTimeOffset.UtcNow.ToUnixTimeSeconds() + Mathf.RoundToInt(roomInfo.selectedSong.songDuration)) : 0
             };
 
+            string joinSecret = usePassword ? $"{ip}:{port}?{roomId}#{password}" : $"{ip}:{port}?{roomId}#";
+
             ActivitySecrets secrets = new ActivitySecrets()
             {
-                Join = usePassword ? $"{ip}:{port}?{roomId}#{password}" : $"{ip}:{port}?{roomId}#"
+                Join = joinSecret
             };
 
             ActivityAssets assets = new ActivityAssets()
@@ -1453,6 +1457,13 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             };
 
             Plugin.discord?.UpdateActivity(Plugin.discordActivity);
+
+            if(SteamManager.Initialized)
+            {
+                SteamFriends.SetRichPresence("steam_player_group", partyInfo.Id);
+                SteamFriends.SetRichPresence("steam_player_group_size", roomInfo.players.ToString());
+                SteamFriends.SetRichPresence("connect", joinSecret);
+            }
         }
 
         private string GetActivityDetails(bool includeAuthorName)

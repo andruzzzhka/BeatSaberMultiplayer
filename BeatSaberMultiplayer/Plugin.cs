@@ -6,6 +6,7 @@ using Discord;
 using DiscordCore;
 using HarmonyLib;
 using IPA;
+using Steamworks;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -17,6 +18,8 @@ namespace BeatSaberMultiplayer
     [Plugin(RuntimeOptions.SingleStartInit)]
     public class Plugin
     {
+        protected Callback<GameRichPresenceJoinRequested_t> steamRichPresenceJoinRequested;
+
         public static Plugin instance;
         public static IPA.Logging.Logger log;
         public static DiscordInstance discord;
@@ -86,6 +89,21 @@ namespace BeatSaberMultiplayer
             discord.OnActivityJoin += OnActivityJoin;
             discord.OnActivityJoinRequest += ActivityManager_OnActivityJoinRequest;
             discord.OnActivityInvite += ActivityManager_OnActivityInvite;
+
+            if(SteamManager.Initialized)
+            {
+                steamRichPresenceJoinRequested = Callback<GameRichPresenceJoinRequested_t>.Create(OnSteamGameJoinRequest);
+            }
+        }
+
+        private void OnSteamGameJoinRequest(GameRichPresenceJoinRequested_t callback)
+        {
+            if (SceneManager.GetActiveScene().name.Contains("Menu") && !Client.Instance.inRoom && !Client.Instance.inRadioMode)
+            {
+                joinAfterRestart = true;
+                joinSecret = callback.m_rgchConnect;
+                Resources.FindObjectsOfTypeAll<MenuTransitionsHelper>().First().RestartGame();
+            }
         }
 
         private void ActivityManager_OnActivityInvite(ActivityActionType type, ref User user, ref Activity activity)
