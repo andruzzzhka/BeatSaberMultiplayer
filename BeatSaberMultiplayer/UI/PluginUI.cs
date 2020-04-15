@@ -19,7 +19,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
-using Steamworks;
+using BeatSaberMultiplayer.Interop;
 
 namespace BeatSaberMultiplayer.UI
 {
@@ -102,7 +102,8 @@ namespace BeatSaberMultiplayer.UI
 
                         Plugin.discordActivity = default;
                         Plugin.discord?.ClearActivity();
-                        ClearSteamRichPresence();
+                        if(SteamManager.Initialized)
+                            SteamRichPresence.ClearSteamRichPresence();
                     };
 
                 }
@@ -253,19 +254,6 @@ namespace BeatSaberMultiplayer.UI
                 Instance = false,
             };
             Plugin.discord.UpdateActivity(Plugin.discordActivity);
-        }
-
-        public void ClearSteamRichPresence()
-        {
-            if (SteamManager.Initialized)
-            {
-                // We can't use ClearRichPresence here because Beat Saber
-                // has rich presence data as well and will probably show
-                // "Browsing Menus" or something.
-                SteamFriends.SetRichPresence("steam_player_group", "");
-                SteamFriends.SetRichPresence("steam_player_group_size", "");
-                SteamFriends.SetRichPresence("connect", "");
-            }
         }
 
         IEnumerator CheckVersion()

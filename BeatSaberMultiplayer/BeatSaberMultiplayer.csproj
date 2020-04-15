@@ -37,6 +37,7 @@
     <Compile Include="Data\ExtraPlayerFlags.cs" />
     <Compile Include="Interop\BeatSaverVotingInterop.cs" />
     <Compile Include="Interop\IDismissable.cs" />
+    <Compile Include="Interop\SteamRichPresence.cs" />
     <Compile Include="IPAUtilities\Accessor.cs" />
     <Compile Include="IPAUtilities\ReflectionUtil.cs" />
     <Compile Include="Misc\AvatarsHashCache.cs" />

@@ -8,7 +8,6 @@ using BS_Utils.Utilities;
 using Discord;
 using HMUI;
 using Lidgren.Network;
-using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -302,7 +301,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             PopAllViewControllers();
             SetLeftScreenViewController(_playerManagementViewController);
             PluginUI.instance.SetLobbyDiscordActivity();
-            PluginUI.instance.ClearSteamRichPresence();
+            if(SteamManager.Initialized)
+                SteamRichPresence.ClearSteamRichPresence();
             didFinishEvent?.Invoke();
         }
 
@@ -1459,11 +1459,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             Plugin.discord?.UpdateActivity(Plugin.discordActivity);
 
             if(SteamManager.Initialized)
-            {
-                SteamFriends.SetRichPresence("steam_player_group", partyInfo.Id);
-                SteamFriends.SetRichPresence("steam_player_group_size", roomInfo.players.ToString());
-                SteamFriends.SetRichPresence("connect", joinSecret);
-            }
+                SteamRichPresence.UpdateSteamRichPresence(Plugin.discordActivity);
         }
 
         private string GetActivityDetails(bool includeAuthorName)
