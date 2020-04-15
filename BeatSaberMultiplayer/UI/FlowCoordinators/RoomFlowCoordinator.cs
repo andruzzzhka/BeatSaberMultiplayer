@@ -1430,9 +1430,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 End = (roomInfo.roomState == RoomState.InGame) ? (DateTimeOffset.UtcNow.ToUnixTimeSeconds() + Mathf.RoundToInt(roomInfo.selectedSong.songDuration)) : 0
             };
 
+            string joinSecret = usePassword ? $"{ip}:{port}?{roomId}#{password}" : $"{ip}:{port}?{roomId}#";
+
             ActivitySecrets secrets = new ActivitySecrets()
             {
-                Join = usePassword ? $"{ip}:{port}?{roomId}#{password}" : $"{ip}:{port}?{roomId}#"
+                Join = joinSecret
             };
 
             ActivityAssets assets = new ActivityAssets()
@@ -1460,6 +1462,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 SteamFriends.SetRichPresence("steam_player_group", partyInfo.Id);
                 SteamFriends.SetRichPresence("steam_player_group_size", roomInfo.players.ToString());
+                SteamFriends.SetRichPresence("connect", joinSecret);
             }
         }
 

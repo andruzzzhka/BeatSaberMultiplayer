@@ -264,6 +264,7 @@ namespace BeatSaberMultiplayer.UI
                 // "Browsing Menus" or something.
                 SteamFriends.SetRichPresence("steam_player_group", "");
                 SteamFriends.SetRichPresence("steam_player_group_size", "");
+                SteamFriends.SetRichPresence("connect", "");
             }
         }
 
