@@ -345,7 +345,7 @@ namespace BeatSaberMultiplayer
         Config()
         {
             _modVersion = string.Empty;
-            _serverRepositories = new string[1] { "https://raw.githubusercontent.com/Zingabopp/BeatSaberMultiplayerServerRepo/master/CompatibleServers.json" };
+            _serverRepositories = new string[1] { "https://zingabopp.github.io/BeatSaberMultiplayerServerRepo/CompatibleServers.json" };
             _serverHubIPs = new string[0];
             _serverHubPorts = new int[0];
             _showAvatarsInGame = false;
