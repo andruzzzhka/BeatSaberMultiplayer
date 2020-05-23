@@ -256,7 +256,7 @@ paket-files/
 __pycache__/
 *.pyc
 
-/Refs/*.dll
+/Refs/BeatSaber/*.dll
 /Output
 /BeatSaberMultiplayer.plog
 /BeatSaberMultiplayer/bin
