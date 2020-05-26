@@ -186,5 +186,13 @@ namespace BeatSaberMultiplayer.Misc
                 output[i] = input[i] / (float)short.MaxValue;
             }
         }
+
+        public static void SetPrivateProperty<T>(this object obj, string propName, T val)
+        {
+            Type t = obj.GetType();
+            if (t.GetProperty(propName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) == null)
+                throw new ArgumentOutOfRangeException("propName", string.Format("Property {0} was not found in Type {1}", propName, obj.GetType().FullName));
+            t.InvokeMember(propName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty | BindingFlags.Instance, null, obj, new object[] { val });
+        }
     }
 }

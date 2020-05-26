@@ -2,6 +2,7 @@
 using BeatSaberMultiplayer.IPAUtilities;
 using BeatSaberMultiplayer.UI.ViewControllers.RoomScreen;
 using BeatSaverVoting.UI;
+using SongCore.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
