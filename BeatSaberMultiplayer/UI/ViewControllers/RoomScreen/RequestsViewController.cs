@@ -4,6 +4,7 @@ using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using HMUI;
+using IPA.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,14 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 {
     public class RequestsViewController : HotReloadableViewController, TableView.IDataSource
     {
+        #region Accessors
+        static FieldAccessor<LevelListTableCell, TextMeshProUGUI>.Accessor LevelListTableCell_SongNameText = FieldAccessor<LevelListTableCell, TextMeshProUGUI>.GetAccessor("_songNameText");
+        static FieldAccessor<LevelListTableCell, TextMeshProUGUI>.Accessor LevelListTableCell_AuthorText = FieldAccessor<LevelListTableCell, TextMeshProUGUI>.GetAccessor("_authorText");
+        static FieldAccessor<LevelListTableCell, RawImage>.Accessor LevelListTableCell_CoverImage = FieldAccessor<LevelListTableCell, RawImage>.GetAccessor("_coverRawImage");
+        static FieldAccessor<LevelListTableCell, RawImage>.Accessor LevelListTableCell_BadgeImage = FieldAccessor<LevelListTableCell, RawImage>.GetAccessor("_favoritesBadgeImage");
+        static FieldAccessor<LevelListTableCell, Image[]>.Accessor LevelListTableCell_CharImages = FieldAccessor<LevelListTableCell, Image[]>.GetAccessor("_beatmapCharacteristicImages");
+        #endregion
+
         public override string ResourceName => string.Join(".", GetType().Namespace, GetType().Name);
 
         public override string ContentFilePath => @"C:\Users\andru_000\Source\Repos\BeatSaberMultiplayer\BeatSaberMultiplayer\UI\ViewControllers\RoomScreen\RequestsViewController.bsml";
@@ -153,26 +162,28 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
             }
             else
             {
-                tableCell.GetPrivateField<TextMeshProUGUI>("_songNameText").text = string.Format("{0} <size=80%>{1}</size>", requestedSongs[idx].songName, requestedSongs[idx].songSubName);
-                tableCell.GetPrivateField<TextMeshProUGUI>("_authorText").text = "Loading info...";
+                TextMeshProUGUI songNameText = LevelListTableCell_SongNameText(ref tableCell);
+                TextMeshProUGUI authorNameText = LevelListTableCell_AuthorText(ref tableCell);
+                songNameText.text = string.Format("{0} <size=80%>{1}</size>", requestedSongs[idx].songName, requestedSongs[idx].songSubName);
+                authorNameText.text = "Loading info...";
 
-                var coverImage = tableCell.GetPrivateField<RawImage>("_coverRawImage");
+                RawImage coverImage = LevelListTableCell_CoverImage(ref tableCell);
                 coverImage.texture = null;
                 coverImage.color = Color.clear;
 
-                tableCell.GetPrivateField<RawImage>("_favoritesBadgeImage").enabled = false;
+                LevelListTableCell_BadgeImage(ref tableCell).enabled = false;
 
-                Image[] chars = tableCell.GetPrivateField<Image[]>("_beatmapCharacteristicImages");
+                Image[] chars = LevelListTableCell_CharImages(ref tableCell);
 
-                foreach(var img in chars)
+                foreach (Image img in chars)
                 {
                     img.enabled = false;
                 }
 
                 SongDownloader.Instance.RequestSongByLevelID(requestedSongs[idx].hash, (info) =>
                 {
-                    tableCell.GetPrivateField<TextMeshProUGUI>("_songNameText").text = string.Format("{0} <size=80%>{1}</size>", info.songName, info.songSubName);
-                    tableCell.GetPrivateField<TextMeshProUGUI>("_authorText").text = info.songAuthorName;
+                    songNameText.text = string.Format("{0} <size=80%>{1}</size>", info.songName, info.songSubName);
+                    authorNameText.text = info.songAuthorName;
 
                     StartCoroutine(LoadScripts.LoadSpriteCoroutine(info.coverURL, (cover) =>
                     { 

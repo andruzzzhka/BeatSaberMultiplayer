@@ -71,10 +71,10 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                                 Plugin.log.Warn("We cut the note, but the player cut it wrong");
 #endif
 
-                                    noteCutInfo.SetPrivateProperty("wasCutTooSoon", hit.wasCutTooSoon);
-                                    noteCutInfo.SetPrivateProperty("directionOK", hit.directionOK);
-                                    noteCutInfo.SetPrivateProperty("saberTypeOK", hit.saberTypeOK);
-                                    noteCutInfo.SetPrivateProperty("speedOK", hit.speedOK);
+                                    noteCutInfo.SetProperty("wasCutTooSoon", hit.wasCutTooSoon);
+                                    noteCutInfo.SetProperty("directionOK", hit.directionOK);
+                                    noteCutInfo.SetProperty("saberTypeOK", hit.saberTypeOK);
+                                    noteCutInfo.SetProperty("speedOK", hit.speedOK);
 
                                     return true;
                                 }
