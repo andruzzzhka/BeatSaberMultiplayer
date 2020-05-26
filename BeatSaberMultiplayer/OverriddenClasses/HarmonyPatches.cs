@@ -1,4 +1,5 @@
 ﻿using BeatSaberMultiplayer.Data;
+using BeatSaberMultiplayer.Misc;
 using HarmonyLib;
 using IPA.Utilities;
 using System;

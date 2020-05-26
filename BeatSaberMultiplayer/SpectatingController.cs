@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
+using BS_Utils.Utilities;
 using IPA.Utilities;
 using Lidgren.Network;
 using TMPro;

@@ -3,6 +3,7 @@ using BeatSaberMarkupLanguage.Components;
 using BeatSaberMarkupLanguage.ViewControllers;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
+using BS_Utils.Utilities;
 using HMUI;
 using IPA.Utilities;
 using System;
