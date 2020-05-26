@@ -715,6 +715,7 @@ namespace ServerHub.Hub
                         {
                             Settings.Instance.Misc.PlayerColors.Add(playerId, new Color32(r, g, b));
                         }
+                        Settings.Instance.Save();
 
                         return $"Set {playerId} to R: {r}, G: {g}, B: {b}";
                     }
@@ -1529,7 +1530,10 @@ namespace ServerHub.Hub
         }
 
         public static string GetPublicIPv4() {
-            using (var client = new WebClient()) {
+            using (var client = new WebClient())
+            {
+                client.Headers.Add("user-agent", $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}/{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
+
                 try
                 {
                     return client.DownloadString("https://api.ipify.org");

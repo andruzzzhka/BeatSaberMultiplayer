@@ -1,6 +1,7 @@
 ﻿using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components.Settings;
 using BeatSaberMultiplayer.Misc;
+using CustomAvatar.Avatar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,12 +33,9 @@ namespace BeatSaberMultiplayer.UI
         {
             ModelSaberAPI.hashesCalculated -= ListAllAvatars;
             publicAvatars.Clear();
-            foreach (var avatar in CustomAvatar.Plugin.Instance.AvatarLoader.Avatars)
+            foreach (var avatar in ModelSaberAPI.cachedAvatars)
             {
-                if (avatar.IsLoaded)
-                {
-                    publicAvatars.Add(avatar);
-                }
+                publicAvatars.Add(avatar.Value);
             }
 
             if (publicAvatarSetting)
@@ -47,15 +45,15 @@ namespace BeatSaberMultiplayer.UI
             }
         }
 
-        CustomAvatar.CustomAvatar GetSelectedAvatar()
+        LoadedAvatar GetSelectedAvatar()
         {
-            if (ModelSaberAPI.cachedAvatars.TryGetValue(Config.Instance.PublicAvatarHash, out CustomAvatar.CustomAvatar avatar))
+            if (ModelSaberAPI.cachedAvatars.TryGetValue(Config.Instance.PublicAvatarHash, out LoadedAvatar avatar))
             {
                 return avatar;
             }
             else
             {
-                return CustomAvatar.Plugin.Instance.AvatarLoader.Avatars.FirstOrDefault();
+                return ModelSaberAPI.cachedAvatars.Values.FirstOrDefault();
             }
         }
 
@@ -65,7 +63,7 @@ namespace BeatSaberMultiplayer.UI
         [UIAction("public-avatar-formatter")]
         public string PublicAvatarFormatter(object avatar)
         {
-            string name = (avatar as CustomAvatar.CustomAvatar)?.Name;
+            string name = (avatar as LoadedAvatar)?.descriptor?.name;
             return (avatar == null) ? "LOADING AVATARS..." : (string.IsNullOrEmpty(name) ? "NO NAME" : name);
         }
 
@@ -108,7 +106,7 @@ namespace BeatSaberMultiplayer.UI
         public object publicAvater
         {
             get { return GetSelectedAvatar(); }
-            set { InGameOnlineController.Instance.SetSeparatePublicAvatarHash(ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == (value as CustomAvatar.CustomAvatar)).Key); }
+            set { InGameOnlineController.Instance.SetSeparatePublicAvatarHash(ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == (value as LoadedAvatar)).Key); }
         }
 
         [UIValue("public-avatar-options")]

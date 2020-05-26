@@ -23,6 +23,9 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public IPreviewBeatmapLevel selectedLevel;
 
+        [UIComponent("results-tab")]
+        public RectTransform resultsTab;
+
         [UIComponent("level-details-rect")]
         public RectTransform levelDetailsRect;
 
@@ -174,7 +177,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 }
                 else
                 {
-                    if(PluginUI.instance.roomFlowCoordinator.lastHighscoreForLevel > levelResults.modifiedScore)
+                    if (PluginUI.instance.roomFlowCoordinator.lastHighscoreForLevel > levelResults.modifiedScore)
                     {
                         scoreChangeValue.text = (levelResults.modifiedScore - PluginUI.instance.roomFlowCoordinator.lastHighscoreForLevel).ToString();
                         scoreChangeValue.color = new Color32(240, 38, 31, 255);
@@ -184,7 +187,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                     }
                     else
                     {
-                        scoreChangeValue.text = "+"+(levelResults.modifiedScore - PluginUI.instance.roomFlowCoordinator.lastHighscoreForLevel).ToString();
+                        scoreChangeValue.text = "+" + (levelResults.modifiedScore - PluginUI.instance.roomFlowCoordinator.lastHighscoreForLevel).ToString();
                         scoreChangeValue.color = new Color32(55, 235, 43, 255);
                         scoreChangeIcon.gameObject.SetActive(true);
                         scoreChangeIcon.rectTransform.localRotation = Quaternion.Euler(180f, 0f, 0f);
@@ -196,8 +199,13 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 if (PluginManager.GetPluginFromId("BeatSaverVoting") != null)
                     BeatSaverVotingInterop.Setup(this, PluginUI.instance.roomFlowCoordinator.levelDifficultyBeatmap.level);
             }
-            else if (PluginManager.GetPluginFromId("BeatSaverVoting") != null)
+            else
+            {
+                Plugin.log.Warn("Difficulty beatmap is null, unable to set level stats!");
+
+                if (PluginManager.GetPluginFromId("BeatSaverVoting") != null)
                     BeatSaverVotingInterop.Hide();
+            }
 
             levelCoverImage.texture = await selectedLevel.GetCoverImageTexture2DAsync(new CancellationTokenSource().Token);
 
@@ -205,7 +213,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetTimer(int time)
         {
-            timerText.text = EssentialHelpers.MinSecDurationText(time);
+            timerText.text = ((float)time).MinSecDurationText();
         }
     }
 }

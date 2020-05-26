@@ -40,7 +40,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace SimpleJSON
+namespace BeatSaberMultiplayer.SimpleJSON
 {
     public enum JSONNodeType
     {

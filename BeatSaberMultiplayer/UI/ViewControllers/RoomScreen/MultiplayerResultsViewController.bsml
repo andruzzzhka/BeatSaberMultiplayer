@@ -2,7 +2,7 @@
   <img src="#ClockIcon" preserve-aspect="true" anchor-pos-y="33.25" anchor-pos-x="-50" size-delta-x="8"/>
   <text id="timer-text" text="0:15" font-size="6.5" align="Left" anchor-pos-y="33" anchor-pos-x="-35" size-delta-x="20"/>
   <tab-selector tab-tag='leaderboard-tags' anchor-pos-y="-3"/>
-  <tab tags='leaderboard-tags' tab-name='Your results' anchor-max-y='0.875' anchor-min-y='0.05'>
+  <tab id="results-tab" tags='leaderboard-tags' tab-name='Your results' anchor-max-y='0.875' anchor-min-y='0.05'>
     <vertical vertical-fit='Unconstrained' horizontal-fit='PreferredSize' spacing='-10' pad-top='2'>
       <stack id="level-details-rect" pref-height="10" pref-width="110">
         <raw-image id="level-cover-image" ignore-layout="true" size-delta-x="110" size-delta-y="90" anchor-pos-y="-4"/>

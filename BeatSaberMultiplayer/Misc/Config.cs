@@ -41,11 +41,6 @@ namespace BeatSaberMultiplayer
 
         private static FileInfo FileLocation { get; } = new FileInfo($"./UserData/{Assembly.GetExecutingAssembly().GetName().Name}.json");
 
-        private static readonly List<string> newServerRepositories = new List<string>()
-        {
-            "https://raw.githubusercontent.com/Zingabopp/BeatSaberMultiplayerServerRepo/master/CompatibleServers.json"
-        };
-
         public static bool Load()
         {
             if (_instance != null) return false;
@@ -88,7 +83,7 @@ namespace BeatSaberMultiplayer
         public static void UpdateModVersion(Config _instance)
         {
             
-            _instance.ModVersion = IPA.Loader.PluginManager.GetPluginFromId("BeatSaberMultiplayer").Metadata.Version.ToString();
+            _instance.ModVersion = IPA.Loader.PluginManager.GetPluginFromId("BeatSaberMultiplayer").Version.ToString();
         }
 
         public static Config Instance {
@@ -350,7 +345,7 @@ namespace BeatSaberMultiplayer
         Config()
         {
             _modVersion = string.Empty;
-            _serverRepositories = new string[0];
+            _serverRepositories = new string[1] { "https://zingabopp.github.io/BeatSaberMultiplayerServerRepo/CompatibleServers.json" };
             _serverHubIPs = new string[0];
             _serverHubPorts = new int[0];
             _showAvatarsInGame = false;

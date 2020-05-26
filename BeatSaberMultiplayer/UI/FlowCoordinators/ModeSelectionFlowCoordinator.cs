@@ -2,6 +2,8 @@
 using BeatSaberMultiplayer.Misc;
 using HMUI;
 using System;
+using UnityEngine;
+using UnityEngine.XR;
 
 namespace BeatSaberMultiplayer.UI.FlowCoordinators
 {
@@ -13,11 +15,21 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         protected override void DidActivate(bool firstActivation, ActivationType activationType)
         {
+            if(XRDevice.refreshRate < float.Epsilon)
+            {
+                Plugin.log.Info("XRDevice.refreshRate returned 0! Using 90Hz target"); 
+                Time.fixedDeltaTime = 1f / 90f;
+            }
+            else
+            {
+                Plugin.log.Info($"XRDevice.refreshRate returned {XRDevice.refreshRate}! Using {XRDevice.refreshRate}Hz target"); 
+                Time.fixedDeltaTime = 1f / XRDevice.refreshRate;
+            }
+
+
             if (firstActivation)
             {
                 title = "Select Mode";
-
-                AvatarController.LoadAvatars();
 
                 _selectionViewController = BeatSaberUI.CreateViewController<ViewControllers.ModeSelectionScreen.ModeSelectionViewController>();
                 _selectionViewController.didSelectRooms += () =>
@@ -62,6 +74,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             if(topViewController == _selectionViewController)
             {
+                Time.fixedDeltaTime = 1f / 30f;
                 didFinishEvent?.Invoke();
             }
         }

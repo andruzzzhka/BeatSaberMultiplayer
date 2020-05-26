@@ -245,7 +245,7 @@ namespace ServerHub.Data
         {
             if (obj is PlayerInfo)
             {
-                return (playerId == (obj as PlayerInfo).playerId) && (playerName == (obj as PlayerInfo).playerName);
+                return playerId == (obj as PlayerInfo).playerId;
             }
             else
             {
@@ -256,7 +256,6 @@ namespace ServerHub.Data
         public override int GetHashCode()
         {
             var hashCode = -2041759944;
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(playerName);
             hashCode = hashCode * -1521134295 + playerId.GetHashCode();
             return hashCode;
         }

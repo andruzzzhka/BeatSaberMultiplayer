@@ -96,7 +96,7 @@ namespace BeatSaberMultiplayer.Data
 
             if (noteWasCut)
             {
-                isSaberA = info.saberType == Saber.SaberType.SaberA;
+                isSaberA = info.saberType == SaberType.SaberA;
                 speedOK = info.speedOK;
                 directionOK = info.directionOK;
                 saberTypeOK = info.saberTypeOK;
@@ -160,7 +160,7 @@ namespace BeatSaberMultiplayer.Data
         {
             if (noteWasCut)
             {
-                return new NoteCutInfo(speedOK, directionOK, saberTypeOK, wasCutTooSoon, 3f, Vector3.down, isSaberA ? Saber.SaberType.SaberA : Saber.SaberType.SaberB, 0, 0, Vector3.zero, Vector3.down, null, 0f);
+                return new NoteCutInfo(speedOK, directionOK, saberTypeOK, wasCutTooSoon, 3f, Vector3.down, isSaberA ? SaberType.SaberA : SaberType.SaberB, 0, 0, Vector3.zero, Vector3.down, null, 0f);
             }
             else
             {

@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using Xft;
 
 namespace BeatSaberMultiplayer
 {
@@ -20,6 +21,7 @@ namespace BeatSaberMultiplayer
 
         public OnlineBeatmapCallbackController beatmapCallbackController;
         public OnlineBeatmapSpawnController beatmapSpawnController;
+        public OnlineBeatmapObjectManager beatmapObjectManager;
         public OnlineAudioTimeController audioTimeController;
 
         public float avatarOffset;
@@ -57,7 +59,7 @@ namespace BeatSaberMultiplayer
                 Plugin.log.Debug($"Starting player controller for {playerInfo.playerName}:{playerInfo.playerId}...");
 
                 _syncStartInfo = playerInfo.updateInfo;
-                _syncStartInfo = playerInfo.updateInfo;
+                _syncEndInfo = playerInfo.updateInfo;
             }
         }
 
@@ -65,19 +67,24 @@ namespace BeatSaberMultiplayer
         {
             Plugin.log.Debug("Creating beatmap controllers...");
 
-            beatmapCallbackController = new GameObject("OnlineBeatmapCallbackController").AddComponent<OnlineBeatmapCallbackController>();
-            Plugin.log.Debug("Created beatmap callback controller!");
-            beatmapCallbackController.Init(this);
-            Plugin.log.Debug("Initialized beatmap callback controller!");
-
             audioTimeController = new GameObject("OnlineAudioTimeController").AddComponent<OnlineAudioTimeController>();
             Plugin.log.Debug("Created audio time controller!");
             audioTimeController.Init(this);
             Plugin.log.Debug("Initialized audio time controller!");
 
+            beatmapCallbackController = new GameObject("OnlineBeatmapCallbackController").AddComponent<OnlineBeatmapCallbackController>();
+            Plugin.log.Debug("Created beatmap callback controller!");
+            beatmapCallbackController.Init(this, audioTimeController);
+            Plugin.log.Debug("Initialized beatmap callback controller!");
+
+            beatmapObjectManager = new GameObject("OnlineBeatmapObjectManager").AddComponent<OnlineBeatmapObjectManager>();
+            Plugin.log.Debug("Created beatmap object manager!");
+            beatmapObjectManager.Init(this, audioTimeController);
+            Plugin.log.Debug("Initialized beatmap object manager!");
+
             beatmapSpawnController = new GameObject("OnlineBeatmapSpawnController").AddComponent<OnlineBeatmapSpawnController>();
             Plugin.log.Debug("Created beatmap spawn controller!");
-            beatmapSpawnController.Init(this, beatmapCallbackController, audioTimeController);
+            beatmapSpawnController.Init(this, beatmapCallbackController, beatmapObjectManager, audioTimeController);
             Plugin.log.Debug("Initialized beatmap spawn controller!");
         }
 
@@ -98,10 +105,14 @@ namespace BeatSaberMultiplayer
             leftController.owner = this;
             _leftSaber.SetPrivateField("_vrController", leftController);
 
-            var leftTrail = leftController.GetComponentInChildren<SaberWeaponTrail>();
+            //TODO: Check trails later
+
+            /*
+            var leftTrail = leftController.GetComponentInChildren<XWeaponTrail>();
             var colorManager = Resources.FindObjectsOfTypeAll<ColorManager>().First();
             leftTrail.SetPrivateField("_colorManager", colorManager);
             leftTrail.SetPrivateField("_saberTypeObject", leftController.GetComponentInChildren<SaberTypeObject>());
+            */
 
             Plugin.log.Debug("Spawning right saber...");
             try
@@ -118,10 +129,12 @@ namespace BeatSaberMultiplayer
             rightController.owner = this;
             _rightSaber.SetPrivateField("_vrController", rightController);
 
-            var rightTrail = rightController.GetComponentInChildren<SaberWeaponTrail>();
+            /*
+            var rightTrail = rightController.GetComponentInChildren<XWeaponTrail>();
             rightTrail.SetPrivateField("_colorManager", colorManager);
             rightTrail.SetPrivateField("_saberTypeObject", rightController.GetComponentInChildren<SaberTypeObject>());
-            
+            */
+
             Plugin.log.Debug("Sabers spawned!");
         }
 
@@ -133,7 +146,7 @@ namespace BeatSaberMultiplayer
 
         public void SetBlocksState(bool active)
         {
-            if(active && !playerInfo.updateInfo.playerLevelOptions.characteristicName.ToLower().Contains("degree") && beatmapCallbackController == null && audioTimeController == null && beatmapSpawnController == null && _leftSaber == null && _rightSaber == null)
+            if(active && !playerInfo.updateInfo.playerLevelOptions.characteristicName.ToLower().Contains("degree") && beatmapCallbackController == null && audioTimeController == null && beatmapSpawnController == null && beatmapObjectManager == null && _leftSaber == null && _rightSaber == null)
             {
                 SpawnBeatmapControllers();
                 SpawnSabers();
@@ -142,10 +155,11 @@ namespace BeatSaberMultiplayer
             {
                 Destroy(beatmapCallbackController.gameObject);
                 Destroy(audioTimeController.gameObject);
+                Destroy(beatmapSpawnController);
+                beatmapObjectManager.PrepareForDestroy();
+                Destroy(beatmapObjectManager.gameObject, 1.4f);
                 Destroy(_leftSaber.gameObject);
                 Destroy(_rightSaber.gameObject);
-                beatmapSpawnController.PrepareForDestroy();
-                Destroy(beatmapSpawnController.gameObject, 1.4f);
             }
         }
 
@@ -243,10 +257,13 @@ namespace BeatSaberMultiplayer
 
             if (beatmapCallbackController != null && beatmapSpawnController != null && audioTimeController != null)
             {
-                Destroy(beatmapCallbackController.gameObject, 2f);
-                Destroy(audioTimeController.gameObject, 2f);
-                Destroy(beatmapSpawnController.gameObject, 2f);
-                beatmapSpawnController.PrepareForDestroy();
+                Destroy(beatmapCallbackController.gameObject);
+                Destroy(audioTimeController.gameObject);
+                Destroy(beatmapSpawnController.gameObject);
+                beatmapObjectManager.PrepareForDestroy();
+                Destroy(beatmapObjectManager.gameObject, 1.4f);
+                Destroy(_leftSaber.gameObject);
+                Destroy(_rightSaber.gameObject);
             }
         }
 
@@ -255,13 +272,37 @@ namespace BeatSaberMultiplayer
             if (playerInfo == null)
                 return;
 
+            syncTime = 0;
+            syncDelay = Time.time - lastSynchronizationTime;
+
+            if (syncDelay > 0.5f)
+            {
+                syncDelay = 0.5f;
+            }
+
+            lastSynchronizationTime = Time.time;
+
             if (noInterpolation)
             {
                 playerInfo.updateInfo = newInfo;
                 return;
             }
-            
-            _syncStartInfo = playerInfo.updateInfo;
+            else
+            {
+                playerInfo.updateInfo.playerNameColor = newInfo.playerNameColor;
+                playerInfo.updateInfo.playerState = newInfo.playerState;
+
+                playerInfo.updateInfo.fullBodyTracking = newInfo.fullBodyTracking;
+                playerInfo.updateInfo.playerScore = newInfo.playerScore;
+                playerInfo.updateInfo.playerCutBlocks = newInfo.playerCutBlocks;
+                playerInfo.updateInfo.playerComboBlocks = newInfo.playerComboBlocks;
+                playerInfo.updateInfo.playerTotalBlocks = newInfo.playerTotalBlocks;
+                playerInfo.updateInfo.playerEnergy = newInfo.playerEnergy;
+                playerInfo.updateInfo.playerLevelOptions = newInfo.playerLevelOptions;
+                playerInfo.updateInfo.playerFlags = newInfo.playerFlags;
+            }
+
+            _syncStartInfo = _syncEndInfo;
             if (_syncStartInfo.IsRotNaN())
             {
                 _syncStartInfo.headRot = Quaternion.identity;
@@ -288,36 +329,6 @@ namespace BeatSaberMultiplayer
                 _syncEndInfo.rightLegRot = Quaternion.identity;
                 _syncEndInfo.pelvisRot = Quaternion.identity;
                 Plugin.log.Warn("Target rotation is NaN!");
-            }
-            
-            syncTime = 0;
-            syncDelay = Time.time - lastSynchronizationTime;
-
-            if(syncDelay > 0.5f)
-            {
-                syncDelay = 0.5f;
-            }
-
-            lastSynchronizationTime = Time.time;
-        }
-
-        public void NewUpdateReceived(PlayerUpdate value)
-        {
-            UpdateInfo(value);
-            if (playerInfo != null)
-            {
-                playerInfo.updateInfo.playerNameColor = value.playerNameColor;
-                playerInfo.updateInfo.playerState = value.playerState;
-
-                playerInfo.updateInfo.fullBodyTracking = value.fullBodyTracking;
-                playerInfo.updateInfo.playerScore = value.playerScore;
-                playerInfo.updateInfo.playerCutBlocks = value.playerCutBlocks;
-                playerInfo.updateInfo.playerComboBlocks = value.playerComboBlocks;
-                playerInfo.updateInfo.playerTotalBlocks = value.playerTotalBlocks;
-                playerInfo.updateInfo.playerEnergy = value.playerEnergy;
-                playerInfo.updateInfo.playerLevelOptions = value.playerLevelOptions;
-                playerInfo.updateInfo.playerFlags = value.playerFlags;
-
             }
         }
 

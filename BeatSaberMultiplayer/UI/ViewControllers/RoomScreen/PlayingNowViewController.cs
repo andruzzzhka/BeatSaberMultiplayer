@@ -64,7 +64,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         private bool _progressBarEnabled;
 
-        private PlayerDataModelSO _playerDataModel;
+        private PlayerDataModel _playerDataModel;
 
         [UIAction("#post-parse")]
         public void SetupViewController()
@@ -89,7 +89,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
             _defaultArtworkTexture = Resources.FindObjectsOfTypeAll<Texture2D>().First(x => x.name == "DefaultSongArtwork");
 
-            _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+            _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModel>().First();
 
             leaderboardTableView.GetComponent<TableView>().RemoveReusableCells("Cell");
 
@@ -215,7 +215,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         public void SetTimer(float currentTime, float totalTime)
         {
-            timerText.text = EssentialHelpers.MinSecDurationText((int)(totalTime - currentTime));
+            timerText.text = (totalTime - currentTime).MinSecDurationText();
 
             if (!_progressBarEnabled)
             {

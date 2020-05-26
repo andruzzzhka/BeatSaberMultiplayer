@@ -42,7 +42,7 @@ namespace BeatSaberMultiplayer.Interop
 
                 Plugin.log.Debug("Got accessors");
 
-                Assembly votingAssembly = modInfo.Metadata.Assembly;
+                Assembly votingAssembly = modInfo.Assembly;
 
                 instance = VotingUI.instance;
 
@@ -52,6 +52,7 @@ namespace BeatSaberMultiplayer.Interop
                 votingUIHost.anchorMax = Vector2.one;
                 votingUIHost.sizeDelta = Vector2.zero;
                 votingUIHost.anchoredPosition = new Vector2(2.25f, -6f);
+                votingUIHost.SetParent(resultsView.resultsTab, true);
 
                 BSMLParser.instance.Parse(Utilities.GetResourceContent(votingAssembly, "BeatSaverVoting.UI.votingUI.bsml"), votingUIHost.gameObject, instance);
 

@@ -1,11 +1,6 @@
 ﻿extern alias ScoreSaberGlobal;
 using ScoreSaberGlobal.ScoreSaber;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
 
 namespace BeatSaberMultiplayer.Interop
 {
@@ -13,8 +8,15 @@ namespace BeatSaberMultiplayer.Interop
     {
         public static void InitAndSignIn()
         {
-            Handler.instance.Initialize();
-            Handler.instance.SignIn();
+            try
+            {
+                Handler.instance.Initialize();
+                Handler.instance.SignIn();
+            }
+            catch(Exception e)
+            {
+                Plugin.log.Warn($"Unable to sign in to ScoreSaber! Score submission may not work properly.\nException: {e}");
+            }
         }
     }
 }

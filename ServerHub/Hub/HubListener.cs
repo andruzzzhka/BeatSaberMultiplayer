@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace ServerHub.Hub
 {
-    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions, GetPlayerUpdates }
+    public enum CommandType : byte { Connect, Disconnect, GetRooms, CreateRoom, JoinRoom, GetRoomInfo, LeaveRoom, DestroyRoom, TransferHost, SetSelectedSong, StartLevel, UpdatePlayerInfo, PlayerReady, SetGameState, DisplayMessage, SendEventMessage, GetChannelInfo, JoinChannel, LeaveChannel, GetSongDuration, UpdateVoIPData, GetRandomSongInfo, SetLevelOptions, GetPlayerUpdates, RequestSong, RemoveRequestedSong, GetRequestedSongs }
 
     public static class HubListener
     {
@@ -109,20 +109,23 @@ namespace ServerHub.Hub
             }
             _ticksLength.Add(DateTime.UtcNow.Subtract(_lastTick).Ticks/(float)TimeSpan.TicksPerMillisecond);
             _lastTick = DateTime.UtcNow;
-            List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
 
-            string titleBuffer = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total {(Settings.Instance.Server.ShowTickrateInTitle ? $", {Tickrate.ToString("0.0")} tickrate" : "")}";
-
-            if (_currentTitle != titleBuffer)
+            if (Settings.Instance.Server.ShowWindowTitle)
             {
-                _currentTitle = titleBuffer;
-                Console.Title = _currentTitle;
+                List<RoomInfo> roomsList = RoomsController.GetRoomInfosList();
+
+                string titleBuffer = $"ServerHub v{Assembly.GetEntryAssembly().GetName().Version}: {roomsList.Count} rooms, {hubClients.Count} clients in lobby, {roomsList.Select(x => x.players).Sum() + hubClients.Count} clients total {(Settings.Instance.Server.ShowTickrateInTitle ? $", {Tickrate.ToString("0.0")} tickrate" : "")}";
+
+                if (_currentTitle != titleBuffer)
+                {
+                    _currentTitle = titleBuffer;
+                    Console.Title = _currentTitle;
+                }
             }
 
             List<Client> allClients = hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioChannels.SelectMany(x => x.radioClients)).ToList();
-            
-            NetIncomingMessage msg;
-            while (ListenerServer.ReadMessage(out msg))
+
+            while (ListenerServer != null && ListenerServer.ReadMessage(out NetIncomingMessage msg))
             {
                 try
                 {
@@ -319,7 +322,7 @@ namespace ServerHub.Hub
                                                         NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
 
                                                         outMsg.Write((byte)CommandType.GetRoomInfo);
-                                                        
+
                                                         joinedRoom.GetRoomInfo().AddToMessage(outMsg);
 
                                                         msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
@@ -344,6 +347,36 @@ namespace ServerHub.Hub
                                                     else
                                                     {
                                                         joinedRoom.SetSelectedSong(client.playerInfo, new SongInfo(msg));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    case CommandType.RequestSong:
+                                        {
+                                            if (client != null && client.joinedRoomID != 0)
+                                            {
+                                                BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                                if (joinedRoom != null)
+                                                {
+                                                    if (msg.LengthBytes > 16)
+                                                    {
+                                                        joinedRoom.RequestSong(client.playerInfo, new SongInfo(msg));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    case CommandType.RemoveRequestedSong:
+                                        {
+                                            if (client != null && client.joinedRoomID != 0)
+                                            {
+                                                BaseRoom joinedRoom = RoomsController.GetRoomsList().FirstOrDefault(x => x.roomId == client.joinedRoomID);
+                                                if (joinedRoom != null)
+                                                {
+                                                    if (msg.LengthBytes > 16)
+                                                    {
+                                                        joinedRoom.RemoveRequestedSong(client.playerInfo, new SongInfo(msg));
                                                     }
                                                 }
                                             }
@@ -452,7 +485,7 @@ namespace ServerHub.Hub
                                                 }
                                                 else
                                                 {
-                                                    new ChannelInfo() { channelId = -1, currentSong = new SongInfo(){ levelId = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" } }.AddToMessage(outMsg);
+                                                    new ChannelInfo() { channelId = -1, currentSong = new SongInfo() { levelId = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" } }.AddToMessage(outMsg);
                                                 }
 
                                                 msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
@@ -463,7 +496,7 @@ namespace ServerHub.Hub
                                     case CommandType.JoinChannel:
                                         {
                                             int channelId = msg.ReadInt32();
-                                            
+
                                             NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
                                             outMsg.Write((byte)CommandType.JoinChannel);
 
@@ -496,7 +529,7 @@ namespace ServerHub.Hub
                                         break;
                                     case CommandType.LeaveChannel:
                                         {
-                                            if(RadioController.radioStarted && client !=  null)
+                                            if (RadioController.radioStarted && client != null)
                                                 RadioController.ClientLeftChannel(client);
                                         }; break;
                                 }
@@ -537,7 +570,8 @@ namespace ServerHub.Hub
                             break;
 #endif
                     }
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     Logger.Instance.Log($"Exception on message received: {ex}");
                 }

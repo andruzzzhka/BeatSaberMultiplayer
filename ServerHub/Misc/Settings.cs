@@ -25,6 +25,7 @@ namespace ServerHub.Misc {
             private bool _secureWebSocket;
             private string _certPath;
             private string _certPass;
+            private bool _showWindowTitle;
             private bool _showTickrateInTitle;
             private bool _allowEventMessages;
             private bool _allowVoiceChat;
@@ -170,6 +171,17 @@ namespace ServerHub.Misc {
                 set
                 {
                     _certPass = value;
+                    MarkDirty?.Invoke();
+                }
+            }
+
+            [JsonProperty]
+            public bool ShowWindowTitle
+            {
+                get => _showWindowTitle;
+                set
+                {
+                    _showWindowTitle = value;
                     MarkDirty?.Invoke();
                 }
             }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,6 +37,14 @@ namespace BeatSaberMultiplayer.Misc
         private static bool _extractingZip;
 
         private static BeatmapLevelsModel _beatmapLevelsModel;
+
+        public static UnityWebRequest GetRequestForUrl(string url)
+        {
+            UnityWebRequest www = UnityWebRequest.Get(url);
+            www.SetRequestHeader("User-Agent", UserAgent);
+            return www;
+        }
+        public static string UserAgent { get; } = $"{Assembly.GetExecutingAssembly().GetName().Name}/{Assembly.GetExecutingAssembly().GetName().Version}";
 
         public void Awake()
         {
@@ -82,7 +91,7 @@ namespace BeatSaberMultiplayer.Misc
 
             try
             {
-                www = UnityWebRequest.Get(songInfo.downloadURL);
+                www = GetRequestForUrl(songInfo.downloadURL);
 
                 asyncRequest = www.SendWebRequest();
             }
@@ -245,7 +254,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public IEnumerator RequestSongByLevelIDCoroutine(string levelId, Action<Song> callback)
         {
-            UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/maps/by-hash/" + levelId.ToLower());
+            UnityWebRequest wwwId = GetRequestForUrl($"{Config.Instance.BeatSaverURL}/api/maps/by-hash/" + levelId.ToLower());
             wwwId.timeout = 10;
 
             yield return wwwId.SendWebRequest();
@@ -265,7 +274,7 @@ namespace BeatSaberMultiplayer.Misc
                     yield break;
                 }
 
-                Song _tempSong = Song.FromSearchNode((JObject)jNode);
+                Song _tempSong = Song.FromSearchNode(jNode);
                 callback?.Invoke(_tempSong);
             }
         }
@@ -277,7 +286,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public IEnumerator RequestSongByKeyCoroutine(string key, Action<Song> callback)
         {
-            UnityWebRequest wwwId = UnityWebRequest.Get($"{Config.Instance.BeatSaverURL}/api/maps/detail/" + key.ToLower());
+            UnityWebRequest wwwId = GetRequestForUrl($"{Config.Instance.BeatSaverURL}/api/maps/detail/" + key.ToLower());
             wwwId.timeout = 10;
 
             yield return wwwId.SendWebRequest();

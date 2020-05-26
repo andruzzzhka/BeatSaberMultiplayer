@@ -17,7 +17,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
         public event Action didSelectRadio;
         public event Action didFinishEvent;
 
-        private string[] _dllPaths = new[] { @"Libs\Lidgren.Network.2012.1.7.0.dll", @"Libs\NSpeex.1.1.1.0.dll" };
+        private string[] _dllPaths = new[] { @"Libs\Lidgren.Network.dll", @"Libs\NSpeex.dll" };
         private bool _filesMising;
         private string _missingFilesString = "Missing DLL files:";
 
@@ -62,6 +62,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
                 }
 
                 _missingFilesText.color = Color.red;
+                _missingFilesText.text = _missingFilesString;
 
                 if (_filesMising)
                 {
@@ -76,6 +77,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
 
                 if (ModelSaberAPI.isCalculatingHashes)
                 {
+                    _missingFilesRect.gameObject.SetActive(false);
                     _buttonsRect.gameObject.SetActive(false);
                     _avatarsLoadingRect.gameObject.SetActive(true);
                     ModelSaberAPI.hashesCalculated += ModelSaberAPI_hashesCalculated;
@@ -85,12 +87,16 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
 
                 }
                 else
+                {
                     _avatarsLoadingRect.gameObject.SetActive(false);
 
-                var pluginVersion = IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Metadata.Version.ToString();
+                    AvatarController.LoadAvatars();
+                }
+
+                var pluginVersion = IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Version.ToString();
                 var pluginBuild = pluginVersion.Substring(pluginVersion.LastIndexOf('.') + 1);
 
-                _versionText.text = $"v{pluginVersion}{(!int.TryParse(pluginBuild, out var buildNumber) ? " <color=red>(UNSTABLE)</color>" : "")}";
+                _versionText.text = $"v{pluginVersion}{(!int.TryParse(pluginBuild, out var buildNumber) ? " <color=red>(EXPERIMENTAL)</color>" : "")}";
             }
         }
 
@@ -105,8 +111,11 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.ModeSelectionScreen
 
         private void ModelSaberAPI_hashesCalculated()
         {
-            _buttonsRect.gameObject.SetActive(true); 
+            _missingFilesRect.gameObject.SetActive(_filesMising);
+            _buttonsRect.gameObject.SetActive(!_filesMising);
             _avatarsLoadingRect.gameObject.SetActive(false);
+            
+            AvatarController.LoadAvatars();
         }
 
         [UIAction("rooms-btn-pressed")]

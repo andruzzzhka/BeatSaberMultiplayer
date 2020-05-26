@@ -15,6 +15,10 @@ namespace BeatSaberMultiplayer
         VRPlatformHelper _platformHelper;
         VRControllerTransformOffset _transformOffset;
 
+        Vector3 _localPos;
+        Quaternion _localRot;
+        InputDevice _saberInput;
+
         public OnlineVRController()
         {
             VRController original = GetComponent<VRController>();
@@ -58,8 +62,14 @@ namespace BeatSaberMultiplayer
 
         private void DefaultUpdate()
         {
-            transform.localPosition = InputTracking.GetLocalPosition(node);
-            transform.localRotation = InputTracking.GetLocalRotation(node);
+            if (_saberInput == null)
+                _saberInput = InputDevices.GetDeviceAtXRNode(node);
+
+            _saberInput.TryGetFeatureValue(CommonUsages.devicePosition, out _localPos);
+            transform.localPosition = _localPos;
+            _saberInput.TryGetFeatureValue(CommonUsages.deviceRotation, out _localRot);
+            transform.localRotation = _localRot;
+
             if(_transformOffset != null)
                 _platformHelper.AdjustPlatformSpecificControllerTransform(node, transform, _transformOffset.positionOffset, _transformOffset.rotationOffset);
             else
