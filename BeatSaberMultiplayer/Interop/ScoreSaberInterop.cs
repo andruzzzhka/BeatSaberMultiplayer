@@ -1,4 +1,5 @@
-﻿using ScoreSaber;
+﻿extern alias ScoreSaberGlobal;
+using ScoreSaberGlobal.ScoreSaber;
 using System;
 
 namespace BeatSaberMultiplayer.Interop

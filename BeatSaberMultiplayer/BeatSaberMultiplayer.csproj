@@ -260,9 +260,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\BeatSaber\Polyglot.dll</HintPath>
     </Reference>
-    <Reference Include="ScoreSaber, Version=2.3.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="ScoreSaber">
       <HintPath>..\Refs\Mods\ScoreSaber.dll</HintPath>
+      <Private>False</Private>
+      <Aliases>ScoreSaberGlobal</Aliases>
     </Reference>
     <Reference Include="SemVer, Version=1.2.2.0, Culture=neutral, PublicKeyToken=a89bb7dc6f7a145c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
