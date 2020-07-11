@@ -654,22 +654,22 @@ namespace BeatSaberMultiplayer
                                 break;
                             case 2:
 
-                                isRecording = _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = ControllersHelper.LeftTriggerActive;
                                 break;
                             case 3:
-                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f;
+                                isRecording = ControllersHelper.RightTriggerActive;
                                 break;
                             case 4:
                                 isRecording = ControllersHelper.LeftGripActive && ControllersHelper.RightGripActive;
                                 break;
                             case 5:
-                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = ControllersHelper.RightTriggerActive && ControllersHelper.LeftTriggerActive;
                                 break;
                             case 6:
                                 isRecording = ControllersHelper.LeftGripActive || ControllersHelper.RightGripActive;
                                 break;
                             case 7:
-                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f || _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = ControllersHelper.RightTriggerActive || ControllersHelper.LeftTriggerActive;
                                 break;
                             default:
                                 isRecording = Input.anyKey;
@@ -679,10 +679,10 @@ namespace BeatSaberMultiplayer
                     isRecording = false;
 
 #if DEBUG
-                if ((_vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.RightGripActive && _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.LeftGripActive) || Input.GetKey(KeyCode.P))
+                if ((ControllersHelper.LeftTriggerActive && ControllersHelper.RightGripActive && ControllersHelper.RightTriggerActive && ControllersHelper.LeftGripActive) || Input.GetKey(KeyCode.P))
 
 #else
-                if (_vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.RightGripActive && _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.LeftGripActive)
+                if (ControllersHelper.LeftTriggerActive && ControllersHelper.RightGripActive && ControllersHelper.RightTriggerActive && ControllersHelper.LeftGripActive)
 #endif
                 {
                     _colorCounter += Time.deltaTime;
