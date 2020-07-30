@@ -329,7 +329,7 @@ namespace ServerHub.Rooms
                 }
             }
 
-            BroadcastPacket(outMsg, NetDeliveryMethod.ReliableSequenced, 2);
+            BroadcastPacket(outMsg, NetDeliveryMethod.UnreliableSequenced, 2);
         }
 
         public virtual void BroadcastPacket(NetOutgoingMessage msg, NetDeliveryMethod deliveryMethod, int seqChannel, List<Client> excludeClients = null)

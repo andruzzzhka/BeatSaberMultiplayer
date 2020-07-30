@@ -45,6 +45,18 @@ namespace ServerHub.Hub
                 WebSocketListener.Start();
             }
 
+            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer")
+            {
+                Port = Settings.Instance.Server.Port,
+                EnableUPnP = Settings.Instance.Server.TryUPnP,
+                AutoFlushSendQueue = false,
+                MaximumConnections = 512
+            };
+            Config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
+            
+            ListenerServer = new NetServer(Config);
+            ListenerServer.Start();
+
             pingTimer = new Timer(PingTimerCallback, null, 7500, 10000);
             HighResolutionTimer.LoopTimer.Elapsed += HubLoop;
 
@@ -64,18 +76,6 @@ namespace ServerHub.Hub
             };
 
             _lastTick = DateTime.Now;
-
-            NetPeerConfiguration Config = new NetPeerConfiguration("BeatSaberMultiplayer")
-            {
-                Port = Settings.Instance.Server.Port,
-                EnableUPnP = Settings.Instance.Server.TryUPnP,
-                AutoFlushSendQueue = false,
-                MaximumConnections = 512
-            };
-            Config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
-            
-            ListenerServer = new NetServer(Config);
-            ListenerServer.Start();
 
             if (Settings.Instance.Radio.EnableRadio)
             {
