@@ -2,6 +2,7 @@
 using BeatSaberMultiplayer.IPAUtilities;
 using BeatSaberMultiplayer.UI.ViewControllers.RoomScreen;
 using BeatSaverVoting.UI;
+using SongCore.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,7 +43,7 @@ namespace BeatSaberMultiplayer.Interop
 
                 Plugin.log.Debug("Got accessors");
 
-                Assembly votingAssembly = modInfo.Metadata.Assembly;
+                Assembly votingAssembly = modInfo.Assembly;
 
                 instance = VotingUI.instance;
 
@@ -75,7 +76,7 @@ namespace BeatSaberMultiplayer.Interop
 
             Plugin.log.Debug("Calling GetVotesForMap...");
 
-            instance.InvokePrivateMethod("GetVotesForMap", new object[0]);
+            instance.InvokeMethod<object, VotingUI>("GetVotesForMap", new object[0]);
 
             Plugin.log.Debug("Called GetVotesForMap!");
         }

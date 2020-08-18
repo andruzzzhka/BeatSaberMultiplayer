@@ -274,7 +274,7 @@ namespace BeatSaberMultiplayer.Misc
                     yield break;
                 }
 
-                Song _tempSong = Song.FromSearchNode((JObject)jNode);
+                Song _tempSong = Song.FromSearchNode(jNode);
                 callback?.Invoke(_tempSong);
             }
         }

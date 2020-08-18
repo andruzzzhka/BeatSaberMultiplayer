@@ -1,5 +1,6 @@
 ﻿using CustomAvatar;
-using SimpleJSON;
+using CustomAvatar.Avatar;
+using BeatSaberMultiplayer.SimpleJSON;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace BeatSaberMultiplayer.Misc
         public static event Action<string> avatarDownloaded;
         public static event Action hashesCalculated;
 
-        public static Dictionary<string, CustomAvatar.CustomAvatar> cachedAvatars = new Dictionary<string, CustomAvatar.CustomAvatar>();
+        public static Dictionary<string, LoadedAvatar> cachedAvatars = new Dictionary<string, LoadedAvatar>();
         public static List<string> queuedAvatars = new List<string>();
 
         public static bool isCalculatingHashes;
@@ -28,7 +29,7 @@ namespace BeatSaberMultiplayer.Misc
             queuedAvatars.Add(hash);
             string downloadUrl = "";
             string avatarName = "";
-            UnityWebRequest www = UnityWebRequest.Get("https://modelsaber.com/api/v1/avatar/get.php?filter=hash:" + hash);
+            UnityWebRequest www = SongDownloader.GetRequestForUrl("https://modelsaber.com/api/v1/avatar/get.php?filter=hash:" + hash);
 
             www.timeout = 10;
 
@@ -124,8 +125,8 @@ namespace BeatSaberMultiplayer.Misc
                     Plugin.log.Debug("Downloaded avatar!");
                     Plugin.log.Debug($"Loading avatar...");
 
-                    SharedCoroutineStarter.instance.StartCoroutine(CustomAvatar.CustomAvatar.FromFileCoroutine(avatarName,
-                        (CustomAvatar.CustomAvatar avatar) =>
+                    SharedCoroutineStarter.instance.StartCoroutine(LoadedAvatar.FromFileCoroutine(avatarName,
+                        (LoadedAvatar avatar) =>
                         {
                             queuedAvatars.Remove(hash);
                             cachedAvatars.Add(hash, avatar);
@@ -149,7 +150,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public static async void HashAllAvatars()
         {
-            int totalAvatarsCount = Directory.GetFiles("CustomAvatars", "*.avatar").Length;
+            totalAvatarsCount = Directory.GetFiles("CustomAvatars", "*.avatar").Length;
 
             if (totalAvatarsCount != cachedAvatars.Count && !isCalculatingHashes)
             {
@@ -161,7 +162,7 @@ namespace BeatSaberMultiplayer.Misc
                     calculatedHashesCount = 0;
 
                     AvatarManager.instance.GetAvatarsAsync(
-                        async (CustomAvatar.CustomAvatar avatar) =>
+                        async (LoadedAvatar avatar) =>
                         {
                             try
                             {

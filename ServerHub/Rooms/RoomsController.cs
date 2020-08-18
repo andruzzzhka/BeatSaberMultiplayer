@@ -99,12 +99,13 @@ namespace ServerHub.Rooms
                             Program.networkBytesOutNow += outMsg.LengthBytes;
 
                             client.joinedRoomID = room.roomId;
-                            if (room.roomClients.Any(x => x.playerInfo == client.playerInfo))
+                            if (room.roomClients.Any(x => x.playerInfo.Equals(client.playerInfo)))
                             {
-                                Client loggedIn = room.roomClients.Find(x => x.playerInfo == client.playerInfo);
+                                Client loggedIn = room.roomClients.Find(x => x.playerInfo.Equals(client.playerInfo));
                                 if (loggedIn.playerConnection != client.playerConnection)
                                 {
-                                    loggedIn.KickClient("You logged in from another location");
+                                    loggedIn.KickClient("You're logged in from another location");
+                                    Logger.Instance.Warning($"{client.playerInfo.playerName}({client.playerInfo.playerId}) logged in from another location!");
                                 }
                                 else
                                 {
@@ -134,12 +135,14 @@ namespace ServerHub.Rooms
                         Program.networkBytesOutNow += outMsg.LengthBytes;
 
                         client.joinedRoomID = room.roomId;
-                        if (room.roomClients.Any(x => x.playerInfo == client.playerInfo))
+                        if (room.roomClients.Any(x => x.playerInfo.Equals(client.playerInfo)))
                         {
                             Client loggedIn = room.roomClients.Find(x => x.playerInfo.Equals(client.playerInfo));
                             if (!loggedIn.playerConnection.Equals(client.playerConnection))
                             {
-                                loggedIn.KickClient("You logged in from another location");
+                                loggedIn.KickClient("You're logged in from another location");
+                                Logger.Instance.Warning($"{client.playerInfo.playerName}({client.playerInfo.playerId}) logged in from another location!");
+
                             }
                             else
                             {

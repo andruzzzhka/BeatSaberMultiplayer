@@ -1,5 +1,6 @@
 ﻿using BeatSaberMultiplayer.Data;
-using Harmony;
+using BeatSaberMultiplayer.Misc;
+using HarmonyLib;
 using IPA.Utilities;
 using System;
 using System.Collections.Generic;
@@ -10,35 +11,33 @@ namespace BeatSaberMultiplayer.OverriddenClasses
 {
     public static class HarmonyPatcher
     {
-        public static HarmonyInstance instance;
+        public static Harmony instance;
 
         public static void Patch()
         {   
             if(instance == null)
-                instance = HarmonyInstance.Create("com.andruzzzhka.BeatSaberMultiplayer");
+                instance = new Harmony("com.andruzzzhka.BeatSaberMultiplayer");
 
             Plugin.log.Debug("Patching...");
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(x => x.IsClass && x.Namespace == "BeatSaberMultiplayer.OverriddenClasses"))
             {
-                List<HarmonyMethod> harmonyMethods = type.GetHarmonyMethods();
+                List<MethodInfo> harmonyMethods = instance.CreateClassProcessor(type).Patch();
                 if (harmonyMethods != null && harmonyMethods.Count > 0)
                 {
-                    HarmonyMethod attributes = HarmonyMethod.Merge(harmonyMethods);
-                    PatchProcessor patchProcessor = new PatchProcessor(instance, type, attributes);
-                    patchProcessor.Patch();
-                    Plugin.log.Debug($"Patched {attributes.declaringType}.{attributes.methodName}!");
+                    foreach(var method in harmonyMethods)
+                        Plugin.log.Debug($"Patched {method.DeclaringType}.{method.Name}!");
                 }
             }
             Plugin.log.Info("Applied Harmony patches!");
         }
     }
 
-    [HarmonyPatch(typeof(BeatmapObjectSpawnController))]
+    [HarmonyPatch(typeof(BeatmapObjectManager))]
     [HarmonyPatch("HandleNoteWasCut")]
     [HarmonyPatch(new Type[] { typeof(NoteController), typeof(NoteCutInfo) })]
     class SpectatorNoteWasCutEventPatch
     {
-        static bool Prefix(BeatmapObjectSpawnController __instance, NoteController noteController, NoteCutInfo noteCutInfo)
+        static bool Prefix(BeatmapObjectManager __instance, NoteController noteController, NoteCutInfo noteCutInfo)
         {
             try
             {
@@ -73,10 +72,10 @@ namespace BeatSaberMultiplayer.OverriddenClasses
                                 Plugin.log.Warn("We cut the note, but the player cut it wrong");
 #endif
 
-                                    noteCutInfo.SetPrivateProperty("wasCutTooSoon", hit.wasCutTooSoon);
-                                    noteCutInfo.SetPrivateProperty("directionOK", hit.directionOK);
-                                    noteCutInfo.SetPrivateProperty("saberTypeOK", hit.saberTypeOK);
-                                    noteCutInfo.SetPrivateProperty("speedOK", hit.speedOK);
+                                    noteCutInfo.SetProperty("wasCutTooSoon", hit.wasCutTooSoon);
+                                    noteCutInfo.SetProperty("directionOK", hit.directionOK);
+                                    noteCutInfo.SetProperty("saberTypeOK", hit.saberTypeOK);
+                                    noteCutInfo.SetProperty("speedOK", hit.speedOK);
 
                                     return true;
                                 }
@@ -107,12 +106,12 @@ namespace BeatSaberMultiplayer.OverriddenClasses
         }
     }
 
-    [HarmonyPatch(typeof(BeatmapObjectSpawnController))]
+    [HarmonyPatch(typeof(BeatmapObjectManager))]
     [HarmonyPatch("HandleNoteWasMissed")]
     [HarmonyPatch(new Type[] { typeof(NoteController) })]
     class SpectatorNoteWasMissedEventPatch
     {
-        static bool Prefix(BeatmapObjectSpawnController __instance, NoteController noteController)
+        static bool Prefix(BeatmapObjectManager __instance, NoteController noteController)
         {
             try
             {

@@ -137,9 +137,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 if (_lastScrollPosition == value)
                     return;
                 _lastScrollPosition = value;
-#if DEBUG
-                Plugin.log.Debug($"{nameof(LastScrollPosition)} set to {value}");
-#endif
             }
         }
 
@@ -160,7 +157,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         bool joined = false;
         private SimpleDialogPromptViewController _passHostDialog;
-        private SimpleDialogPromptViewController _hostLeaveDialog;
+        private SimpleDialogPromptViewController _roomLeaveDialog;
 
         private List<SongInfo> _requestedSongs = new List<SongInfo>();
 
@@ -178,7 +175,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
                 var dialogOrig = ReflectionUtil.GetPrivateField<SimpleDialogPromptViewController>(FindObjectOfType<MainFlowCoordinator>(), "_simpleDialogPromptViewController");
                 _passHostDialog = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
-                _hostLeaveDialog = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
+                _roomLeaveDialog = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
 
                 _quickSettingsViewController = BeatSaberUI.CreateViewController<QuickSettingsViewController>();
 
@@ -242,18 +239,23 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
         public void LeaveRoom(bool force = false)
         {
-            if (Client.Instance != null && Client.Instance.connected && Client.Instance.isHost && !force)
+            if (Client.Instance != null && Client.Instance.connected && !force)
             {
-                _hostLeaveDialog.Init("Leave room?", $"You're the host, are you sure you want to leave the room?", "Leave", "Cancel",
-                (selectedButton) =>
+                string leaveMsg = (
+                    Client.Instance.isHost ?
+                    "<size=120%><b>You're the host!</b></size>\nAre you sure you want to leave the room?" :
+                    "Are you sure you want to leave this room?"
+                );
+
+                _roomLeaveDialog.Init("Leave room?", leaveMsg, "Leave", "Cancel", (selectedButton) =>
                 {
-                    DismissViewController(_hostLeaveDialog);
+                    DismissViewController(_roomLeaveDialog);
                     if (selectedButton == 0)
                     {
                         LeaveRoom(true);
                     }
                 });
-                PresentViewController(_hostLeaveDialog);
+                PresentViewController(_roomLeaveDialog);
                 return;
             }
 
@@ -299,6 +301,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             PopAllViewControllers();
             SetLeftScreenViewController(_playerManagementViewController);
             PluginUI.instance.SetLobbyDiscordActivity();
+            if(SteamManager.Initialized)
+                SteamRichPresence.ClearSteamRichPresence();
             didFinishEvent?.Invoke();
         }
 
@@ -578,6 +582,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         case CommandType.GetRequestedSongs:
                             {
                                 int songsCount = msg.ReadInt32();
+
                                 _requestedSongs.Clear();
 
                                 for (int i = 0; i < songsCount; i++)
@@ -585,9 +590,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                     _requestedSongs.Add(new SongInfo(msg));
                                 }
 
-                                if (_requestsViewController.isInViewControllerHierarchy && !_requestsViewController.GetPrivateField<bool>("_isInTransition"))
+                                if (_requestsViewController != null && _requestsViewController.isInViewControllerHierarchy && !_requestsViewController.GetPrivateField<bool>("_isInTransition"))
                                 {
                                     _requestsViewController.SetSongs(_requestedSongs);
+                                }
+
+                                if(_songSelectionViewController != null && _songSelectionViewController.isInViewControllerHierarchy && !_songSelectionViewController.GetPrivateField<bool>("_isInTransition"))
+                                {
+                                    _songSelectionViewController.UpdateViewController(Client.Instance.isHost, _requestedSongs?.Count ?? 0);
                                 }
                             }
                             break;
@@ -612,14 +622,14 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 case RoomState.SelectingSong:
                     {
                         PopAllViewControllers();
+
                         if (roomInfo.songSelectionType == SongSelectionType.Manual)
                             ShowSongsList();
                     }
                     break;
                 case RoomState.Preparing:
                     {
-                        if (!_roomNavigationController.viewControllers.Contains(_difficultySelectionViewController))
-                            PopAllViewControllers();
+                        PopAllViewControllers();
 
                         if (roomInfo.selectedSong != null)
                         {
@@ -629,24 +639,20 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                     break;
                 case RoomState.InGame:
                     {
-                        if (_roomNavigationController.viewControllers.IndexOf(_resultsViewController) == -1)
-                            PopAllViewControllers();
-
+                        PopAllViewControllers();
                         ShowInGameLeaderboard(roomInfo.selectedSong);
                     }
                     break;
                 case RoomState.Results:
                     {
-                        if (_roomNavigationController.viewControllers.IndexOf(_resultsViewController) == -1)
-                            PopAllViewControllers();
-
+                        PopAllViewControllers();
                         ShowResultsLeaderboard(roomInfo.selectedSong);
                     }
                     break;
             }
             _playerManagementViewController.UpdateViewController(Client.Instance.isHost, (int)state <= 1);
 
-            UpdateDiscordActivity(roomInfo);
+            UpdateRichPresence(roomInfo);
         }
 
         private void UpdateLevelOptions()
@@ -684,7 +690,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         }
                     }
 
-                    UpdateDiscordActivity(roomInfo);
+                    UpdateRichPresence(roomInfo);
                 }
             }
             catch (Exception e)
@@ -727,7 +733,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             {
                 Client.Instance.playerInfo.updateInfo.playerState = Config.Instance.SpectatorMode ? PlayerState.Spectating : PlayerState.Game;
 
-                PlayerData playerData = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().FirstOrDefault().playerData;
+                PlayerData playerData = Resources.FindObjectsOfTypeAll<PlayerDataModel>().FirstOrDefault().playerData;
 
                 PlayerSpecificSettings playerSettings = playerData.playerSpecificSettings;
                 OverrideEnvironmentSettings environmentOverrideSettings = playerData.overrideEnvironmentSettings;
@@ -771,7 +777,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 }
 
                 menuSceneSetupData.StartStandardLevel(difficultyBeatmap, environmentOverrideSettings, colorSchemesSettings, modifiers, playerSettings, practiceSettings: practiceSettings, "Lobby", false, () => { }, InGameOnlineController.Instance.SongFinished);
-                UpdateDiscordActivity(roomInfo);
+                UpdateRichPresence(roomInfo);
             }
             else
             {
@@ -788,15 +794,21 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 else
                     DismissFlowCoordinator(childFlowCoordinator, null, true);
             }
-            if (_hostLeaveDialog.isInViewControllerHierarchy && !_hostLeaveDialog.GetPrivateField<bool>("_isInTransition"))
-                DismissViewController(_hostLeaveDialog, null, true);
+            if (_roomLeaveDialog.isInViewControllerHierarchy && !_roomLeaveDialog.GetPrivateField<bool>("_isInTransition"))
+                DismissViewController(_roomLeaveDialog, null, true);
             if (_passHostDialog.isInViewControllerHierarchy && !_passHostDialog.GetPrivateField<bool>("_isInTransition"))
                 DismissViewController(_passHostDialog, null, true);
-            HideResultsLeaderboard();
-            HideInGameLeaderboard();
-            HideDifficultySelection();
-            HideRequestsList();
-            HideSongsList();
+
+            if (_roomNavigationController.viewControllers.Contains(_resultsViewController))
+                HideResultsLeaderboard();
+            if (_roomNavigationController.viewControllers.Contains(_playingNowViewController))
+                HideInGameLeaderboard();
+            if (_roomNavigationController.viewControllers.Contains(_difficultySelectionViewController))
+                HideDifficultySelection();
+            if (_roomNavigationController.viewControllers.Contains(_requestsViewController))
+                HideRequestsList();
+            if (_roomNavigationController.viewControllers.Contains(_songSelectionViewController))
+                HideSongsList();
         }
 
         public void ShowSongsList()
@@ -845,7 +857,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             if (_roomNavigationController.viewControllers.IndexOf(_songSelectionViewController) < 0)
             {
                 float scrollPosition = LastScrollPosition;
-                SetViewControllerToNavigationConctroller(_roomNavigationController, _songSelectionViewController);
+                SetViewControllerToNavigationController(_roomNavigationController, _songSelectionViewController);
                 SetSongs(LastSelectedCollection, LastSortMode, LastSearchRequest);
                 if (_songSelectionViewController.ScrollToPosition(scrollPosition))
                 {
@@ -874,7 +886,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
 
-            _songSelectionViewController.UpdateViewController(Client.Instance.isHost, _requestedSongs.Count);
+            _songSelectionViewController.UpdateViewController(Client.Instance.isHost, _requestedSongs?.Count ?? 0);
         }
 
         private void RequestModePressed()
@@ -995,7 +1007,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 _requestsViewController.RemovePressed += (SongInfo info) => { Client.Instance.RemoveRequestedSong(info); };
             }
 
-            SetViewControllerToNavigationConctroller(_roomNavigationController, _requestsViewController);
+            SetViewControllerToNavigationController(_roomNavigationController, _requestsViewController);
             _requestsViewController.SetSongs(_requestedSongs);
 
         }
@@ -1020,7 +1032,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
 
             if (!_roomNavigationController.viewControllers.Contains(_difficultySelectionViewController) && childFlowCoordinator == null)
             {
-                SetViewControllerToNavigationConctroller(_roomNavigationController, _difficultySelectionViewController);
+                SetViewControllerToNavigationController(_roomNavigationController, _difficultySelectionViewController);
             }
 
             _difficultySelectionViewController.UpdateViewController(Client.Instance.isHost, roomInfo.perPlayerDifficulty);
@@ -1079,7 +1091,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         }
                     });
             }
-            else if (songToDownload != null && songToDownload.songQueueState != SongQueueState.Downloading)
+            else
             {
                 _difficultySelectionViewController.SetSelectedSong(song);
                 Client.Instance.playerInfo.updateInfo.playerState = PlayerState.DownloadingSongs;
@@ -1192,7 +1204,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             if (_roomNavigationController.viewControllers.IndexOf(_resultsViewController) < 0)
             {
-                SetViewControllerToNavigationConctroller(_roomNavigationController, _resultsViewController);
+                SetViewControllerToNavigationController(_roomNavigationController, _resultsViewController);
             }
 
             IPreviewBeatmapLevel level = _beatmapLevelsModel.allLoadedBeatmapLevelPackCollection.beatmapLevelPacks.SelectMany(x => x.beatmapLevelCollection.beatmapLevels).FirstOrDefault(x => x.levelID.StartsWith(song.levelId));
@@ -1214,6 +1226,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
         {
             _roomNavigationController.ClearChildViewControllers();
 
+            Plugin.log.Debug("Resetting last level results");
             levelDifficultyBeatmap = null;
             levelResults = null;
             lastHighscoreForLevel = 0;
@@ -1240,7 +1253,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
             if (_roomNavigationController.viewControllers.IndexOf(_playingNowViewController) < 0)
             {
-                SetViewControllerToNavigationConctroller(_roomNavigationController, _playingNowViewController);
+                SetViewControllerToNavigationController(_roomNavigationController, _playingNowViewController);
             }
 
             _playingNowViewController.perPlayerDifficulty = roomInfo.perPlayerDifficulty;
@@ -1273,7 +1286,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         else if (success)
                         {
                             BeatmapCharacteristicSO characteristic = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>().FirstOrDefault(x => x.serializedName == roomInfo.startLevelInfo.characteristicName);
-                            PlayerDataModelSO playerData = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+                            PlayerDataModel playerData = Resources.FindObjectsOfTypeAll<PlayerDataModel>().First();
 
                             _playingNowViewController.SetSong(level, characteristic, (roomInfo.perPlayerDifficulty ? playerData.playerData.lastSelectedBeatmapDifficulty : roomInfo.startLevelInfo.difficulty));
 
@@ -1380,7 +1393,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                             _playingNowViewController.playNowButton.interactable = true;
                             _playingNowViewController.SetProgressBarState(false, 0f);
                             BeatmapCharacteristicSO characteristic = Resources.FindObjectsOfTypeAll<BeatmapCharacteristicSO>().FirstOrDefault(x => x.serializedName == roomInfo.startLevelInfo.characteristicName);
-                            PlayerDataModelSO playerData = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+                            PlayerDataModel playerData = Resources.FindObjectsOfTypeAll<PlayerDataModel>().First();
 
                             _playingNowViewController.SetSong(beatmapLevel, characteristic, (roomInfo.perPlayerDifficulty ? playerData.playerData.lastSelectedBeatmapDifficulty : roomInfo.startLevelInfo.difficulty));
                         }
@@ -1398,8 +1411,8 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
         }
 
-        #region Discord rich presence stuff
-        public void UpdateDiscordActivity(RoomInfo roomInfo)
+        #region Rich presence stuff (Discord/Steam)
+        public void UpdateRichPresence(RoomInfo roomInfo)
         {
             ActivityParty partyInfo = new ActivityParty()
             {
@@ -1417,9 +1430,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 End = (roomInfo.roomState == RoomState.InGame) ? (DateTimeOffset.UtcNow.ToUnixTimeSeconds() + Mathf.RoundToInt(roomInfo.selectedSong.songDuration)) : 0
             };
 
+            string joinSecret = usePassword ? $"{ip}:{port}?{roomId}#{password}" : $"{ip}:{port}?{roomId}#";
+
             ActivitySecrets secrets = new ActivitySecrets()
             {
-                Join = usePassword ? $"{ip}:{port}?{roomId}#{password}" : $"{ip}:{port}?{roomId}#"
+                Join = joinSecret
             };
 
             ActivityAssets assets = new ActivityAssets()
@@ -1442,6 +1457,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             };
 
             Plugin.discord?.UpdateActivity(Plugin.discordActivity);
+
+            if(SteamManager.Initialized)
+                SteamRichPresence.UpdateSteamRichPresence(Plugin.discordActivity);
         }
 
         private string GetActivityDetails(bool includeAuthorName)

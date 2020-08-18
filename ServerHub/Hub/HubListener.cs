@@ -124,9 +124,8 @@ namespace ServerHub.Hub
             }
 
             List<Client> allClients = hubClients.Concat(RoomsController.GetRoomsList().SelectMany(x => x.roomClients)).Concat(RadioController.radioChannels.SelectMany(x => x.radioClients)).ToList();
-            
-            NetIncomingMessage msg;
-            while (ListenerServer.ReadMessage(out msg))
+
+            while (ListenerServer != null && ListenerServer.ReadMessage(out NetIncomingMessage msg))
             {
                 try
                 {
@@ -323,7 +322,7 @@ namespace ServerHub.Hub
                                                         NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
 
                                                         outMsg.Write((byte)CommandType.GetRoomInfo);
-                                                        
+
                                                         joinedRoom.GetRoomInfo().AddToMessage(outMsg);
 
                                                         msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
@@ -486,7 +485,7 @@ namespace ServerHub.Hub
                                                 }
                                                 else
                                                 {
-                                                    new ChannelInfo() { channelId = -1, currentSong = new SongInfo(){ levelId = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" } }.AddToMessage(outMsg);
+                                                    new ChannelInfo() { channelId = -1, currentSong = new SongInfo() { levelId = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" } }.AddToMessage(outMsg);
                                                 }
 
                                                 msg.SenderConnection.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered, 0);
@@ -497,7 +496,7 @@ namespace ServerHub.Hub
                                     case CommandType.JoinChannel:
                                         {
                                             int channelId = msg.ReadInt32();
-                                            
+
                                             NetOutgoingMessage outMsg = ListenerServer.CreateMessage();
                                             outMsg.Write((byte)CommandType.JoinChannel);
 
@@ -530,7 +529,7 @@ namespace ServerHub.Hub
                                         break;
                                     case CommandType.LeaveChannel:
                                         {
-                                            if(RadioController.radioStarted && client !=  null)
+                                            if (RadioController.radioStarted && client != null)
                                                 RadioController.ClientLeftChannel(client);
                                         }; break;
                                 }
@@ -571,7 +570,8 @@ namespace ServerHub.Hub
                             break;
 #endif
                     }
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     Logger.Instance.Log($"Exception on message received: {ex}");
                 }

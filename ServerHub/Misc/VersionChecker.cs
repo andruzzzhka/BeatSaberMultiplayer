@@ -17,8 +17,8 @@ namespace ServerHub.Misc
             {
                 using (var client = new WebClient())
                 {
-                    client.Headers.Add("user-agent",
-                        $"BeatSaberMultiplayerServer-{Assembly.GetEntryAssembly().GetName().Version}");
+                    client.Headers.Add("user-agent", $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}/{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
+
                     client.DownloadStringCompleted += Client_DownloadStringCompleted;
                     client.DownloadStringAsync(new Uri(releasesURL));
                 }

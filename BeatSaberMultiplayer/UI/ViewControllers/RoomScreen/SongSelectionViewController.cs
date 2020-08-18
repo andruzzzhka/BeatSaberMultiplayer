@@ -112,7 +112,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
         public bool requestMode;
 
         private LevelListTableCell songListTableCellInstance;
-        private PlayerDataModelSO _playerDataModel;
+        private PlayerDataModel _playerDataModel;
         private AdditionalContentModel _additionalContentModel;
         private Action _moreSongsAction;
 
@@ -147,11 +147,12 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
                 _songsTableView.tableView.didSelectCellWithIdxEvent += SongsTableView_DidSelectRow;
                 _songsTableView.tableView.dataSource = this;
 
-                _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModelSO>().First();
+                _playerDataModel = Resources.FindObjectsOfTypeAll<PlayerDataModel>().First();
                 _additionalContentModel = Resources.FindObjectsOfTypeAll<AdditionalContentModel>().First();
             }
 
             SelectTopButtons(TopButtonsState.Select);
+            requestMode = false;
         }
 
         protected override void DidDeactivate(DeactivationType deactivationType)
@@ -320,7 +321,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 
         private void SongsTableView_DidSelectRow(TableView sender, int row)
         {
-            if (requestMode)
+            if (requestMode && !isHost)
             {
                 selectedSong = availableSongs[row];
                 _requestSongButton.interactable = selectedSong != null;

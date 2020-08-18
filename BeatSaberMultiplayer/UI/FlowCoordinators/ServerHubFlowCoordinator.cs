@@ -165,7 +165,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                         bool repositoryUsed = false;
                         foreach (var server in repo.Servers)
                         {
-                            Plugin.log.Critical($"Server: {server.ToString()}");
+                            Plugin.log.Debug($"Server: {server.ToString()}");
                             if (server.IsValid)
                             {
                                 repoServers.Add(server);
@@ -255,6 +255,7 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             }
 
             _roomListViewController.SetRooms(null);
+            _roomListViewController.SetServerHubsCount(0, _serverHubClients.Count);
             _roomListViewController.SetRefreshButtonState(false);
             _serverHubClients.ForEach(x => x.GetRooms());
 
@@ -272,7 +273,11 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                 else
                     Plugin.log.Info($"Received {roomsCount} rooms from {sender.ip}:{sender.port}! Total rooms count: {_roomsList.Count}");
                 _roomListViewController.SetRooms(_roomsList);
+                _roomListViewController.SetServerHubsCount(_serverHubClients.Count(x => x.serverHubCompatible), _serverHubClients.Count);
                 _roomListViewController.SetRefreshButtonState(true);
+
+                if (PluginUI.instance.roomCreationFlowCoordinator.isActivated)
+                    PluginUI.instance.roomCreationFlowCoordinator.SetServerHubsList(_serverHubClients);
             });
         }
 
@@ -384,7 +389,9 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
                                         try
                                         {
                                             byte[] serverVer = hailMsg.ReadBytes(4);
-                                            serverHubName = hailMsg.ReadString();
+                                            string serverNameResponse = hailMsg.ReadString();
+                                            if (!string.IsNullOrEmpty(serverNameResponse))
+                                                serverHubName = serverNameResponse;
                                         }
                                         catch (Exception e)
                                         {

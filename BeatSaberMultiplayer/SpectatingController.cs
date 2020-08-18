@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
+using BS_Utils.Utilities;
 using IPA.Utilities;
 using Lidgren.Network;
 using TMPro;
@@ -40,7 +41,7 @@ namespace BeatSaberMultiplayer
         private ScoreController _scoreController;
         private GameEnergyCounter _energyCounter;
 
-        private string _currentScene;
+        private int _currentScene;
 
         private OnlineVRController _leftController;
         private OnlineVRController _rightController;
@@ -100,13 +101,13 @@ namespace BeatSaberMultiplayer
 
                 Client.Instance.PlayerInfoUpdateReceived -= PacketReceived;
                 Client.Instance.PlayerInfoUpdateReceived += PacketReceived;
-                _currentScene = SceneManager.GetActiveScene().name;
+                _currentScene = SceneManager.GetActiveScene().name.Contains("Menu") ? 0 : 1;
             }
         }
 
         public void MenuSceneLoaded()
         {
-            _currentScene = "MenuCore";
+            _currentScene = 0;
             active = false;
             if (!Config.Instance.SpectatorMode)
                 return;
@@ -123,8 +124,7 @@ namespace BeatSaberMultiplayer
 
         public void GameSceneLoaded()
         {
-            Plugin.log.Info("Game scene loaded");
-            _currentScene = "GameCore";
+            _currentScene = 1;
 
             if (!Config.Instance.SpectatorMode || !Client.Instance.connected)
             {
@@ -145,11 +145,10 @@ namespace BeatSaberMultiplayer
                 Destroy(_spectatingText);
             }
 
-            _spectatingText = CustomExtensions.CreateWorldText(transform, "Spectating PLAYER");
+            _spectatingText = CustomExtensions.CreateWorldText(transform, "Spectator mode enabled");
             _spectatingText.alignment = TextAlignmentOptions.Center;
             _spectatingText.fontSize = 6f;
             _spectatingText.transform.position = new Vector3(0f, 3.75f, 12f);
-            _spectatingText.gameObject.SetActive(false);
 
             if (_bufferingText != null)
             {
@@ -251,13 +250,13 @@ namespace BeatSaberMultiplayer
             
             audioTimeSync = Resources.FindObjectsOfTypeAll<AudioTimeSyncController>().FirstOrDefault();
 
-            _leftSaber = Resources.FindObjectsOfTypeAll<Saber>().First(x => x.saberType == Saber.SaberType.SaberB);
-            _leftController = _leftSaber.GetPrivateField<VRController>("_vrController").gameObject.AddComponent<OnlineVRController>();
-            _leftSaber.SetPrivateField("_vrController", _leftController);
+            _leftSaber = Resources.FindObjectsOfTypeAll<Saber>().First(x => x.saberType == SaberType.SaberB);
+            _leftController = _leftSaber.GetField<VRController, Saber>("_vrController").gameObject.AddComponent<OnlineVRController>();
+            _leftSaber.SetField<Saber, VRController>("_vrController", _leftController);
 
-            _rightSaber = Resources.FindObjectsOfTypeAll<Saber>().First(x => x.saberType == Saber.SaberType.SaberA);
-            _rightController = _rightSaber.GetPrivateField<VRController>("_vrController").gameObject.AddComponent<OnlineVRController>();
-            _rightSaber.SetPrivateField("_vrController", _rightController);
+            _rightSaber = Resources.FindObjectsOfTypeAll<Saber>().First(x => x.saberType == SaberType.SaberA);
+            _rightController = _rightSaber.GetField<VRController, Saber>("_vrController").gameObject.AddComponent<OnlineVRController>();
+            _rightSaber.SetField<Saber, VRController>("_vrController", _rightController);
 
             Plugin.log.Info("Controllers replaced!");
 
@@ -306,7 +305,7 @@ namespace BeatSaberMultiplayer
 
         private void PacketReceived(NetIncomingMessage msg)
         {
-            if (Config.Instance.SpectatorMode && !Client.Instance.inRadioMode && _currentScene == "GameCore")
+            if (Config.Instance.SpectatorMode && !Client.Instance.inRadioMode && _currentScene == 1)
             {
                 msg.Position = 0;
                 CommandType commandType = (CommandType)msg.ReadByte();
@@ -409,7 +408,7 @@ namespace BeatSaberMultiplayer
 
         public void Update()
         {
-            if (Config.Instance.SpectatorMode && _currentScene == "GameCore" && active)
+            if (Config.Instance.SpectatorMode && _currentScene == 1 && active)
             {
                 if (spectatedPlayer == null && _leftSaber != null && _rightSaber != null)
                 {
@@ -426,6 +425,8 @@ namespace BeatSaberMultiplayer
                         _leftController.owner = spectatedPlayer;
                         _rightController.owner = spectatedPlayer;
                     }
+
+                    Plugin.log.Info("Created player controller for spectated player!");
                 }
 
                 if (Input.GetKeyDown(KeyCode.KeypadMultiply) && spectatedPlayer != null && spectatedPlayer.playerInfo != null)
@@ -456,16 +457,28 @@ namespace BeatSaberMultiplayer
                     _spectatingText.text = "Spectating " + spectatedPlayer.playerInfo.playerName;
                 }
 
-
-                if (playerUpdates.Count > 0 && spectatedPlayer != null && spectatedPlayer.playerInfo == null)
+                if (spectatedPlayer != null && spectatedPlayer.playerInfo == null)
                 {
-                    spectatedPlayer.playerInfo = playerUpdates.FirstOrDefault(x => x.Key != Client.Instance.playerInfo.playerId).Value?.playerInfo;
-                    Plugin.log.Info("Set spectated player...");
-                    if (spectatedPlayer.playerInfo != null)
+                    if (playerUpdates.Count > 0)
                     {
-                        Plugin.log.Info("Spectating player: " + spectatedPlayer.playerInfo.playerName);
+                        spectatedPlayer.playerInfo = playerUpdates.FirstOrDefault(x => x.Key != Client.Instance.playerInfo.playerId).Value?.playerInfo;
+                        Plugin.log.Info("Set spectated player...");
+                        if (spectatedPlayer.playerInfo != null)
+                        {
+                            Plugin.log.Info("Spectating player: " + spectatedPlayer.playerInfo.playerName);
+                            _spectatingText.gameObject.SetActive(true);
+                            _spectatingText.text = "Spectating " + spectatedPlayer.playerInfo.playerName;
+                        }
+                        else
+                        {
+                            _spectatingText.gameObject.SetActive(true);
+                            _spectatingText.text = "No players to spectate!";
+                        }
+                    }
+                    else
+                    {
                         _spectatingText.gameObject.SetActive(true);
-                        _spectatingText.text = "Spectating " + spectatedPlayer.playerInfo.playerName;
+                        _spectatingText.text = "No players to spectate!";
                     }
                 }
 
@@ -567,14 +580,14 @@ namespace BeatSaberMultiplayer
 
                     if (_scoreController != null)
                     {
-                        _scoreController.SetPrivateField("_prevFrameRawScore", (int)lerpFrom.playerScore);
-                        _scoreController.SetPrivateField("_baseRawScore", (int)lerpTo.playerScore);
-                        _scoreController.SetPrivateField("_combo", (int)lerpTo.playerComboBlocks);
+                        _scoreController.SetField("_prevFrameRawScore", (int)lerpFrom.playerScore);
+                        _scoreController.SetField("_baseRawScore", (int)lerpTo.playerScore);
+                        _scoreController.SetField("_combo", (int)lerpTo.playerComboBlocks);
                     }
 
                     if(_energyCounter != null)
                     {
-                        _energyCounter.SetPrivateProperty("energy", lerpTo.playerEnergy / 100f);
+                        _energyCounter.SetProperty("energy", lerpTo.playerEnergy / 100f);
                     }
 
                 }
@@ -587,7 +600,10 @@ namespace BeatSaberMultiplayer
 
             foreach(Type type in typesToReplace)
             {
-                Resources.FindObjectsOfTypeAll(type).ToList().ForEach(x => x.SetPrivateField("_playerController", newPlayerController));
+                Resources.FindObjectsOfTypeAll(type).ToList().ForEach(x =>
+                { // Can't use BSIPA's ReflectionUtil without knowing the type.
+                    BS_Utils.Utilities.ReflectionUtil.SetField(x, "_playerController", newPlayerController);
+                });
             }
         }
 

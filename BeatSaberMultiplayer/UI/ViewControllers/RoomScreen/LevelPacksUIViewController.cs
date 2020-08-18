@@ -51,7 +51,7 @@ namespace BeatSaberMultiplayer.UI.ViewControllers.RoomScreen
 			if(_visiblePacks.Length > 0)
 				packSelected?.Invoke(_visiblePacks[0]);
 
-			this._initialized = true;
+			_initialized = true;
 		}
 
 		public void SetPacks(IAnnotatedBeatmapLevelCollection[] packs)

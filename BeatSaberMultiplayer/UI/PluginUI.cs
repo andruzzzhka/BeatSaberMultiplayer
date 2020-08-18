@@ -5,12 +5,12 @@ using BeatSaberMultiplayer.Data;
 using BeatSaberMultiplayer.Misc;
 using BeatSaberMultiplayer.UI.FlowCoordinators;
 using BeatSaberMultiplayer.UI.ViewControllers.DiscordScreens;
+using BeatSaberMultiplayer.SimpleJSON;
 using BS_Utils.Gameplay;
 using BS_Utils.Utilities;
 using Discord;
 using HMUI;
 using Polyglot;
-using SimpleJSON;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,6 +19,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
+using BeatSaberMultiplayer.Interop;
 
 namespace BeatSaberMultiplayer.UI
 {
@@ -98,8 +99,11 @@ namespace BeatSaberMultiplayer.UI
                     modeSelectionFlowCoordinator.didFinishEvent += () =>
                     {
                         Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First().InvokeMethod("DismissFlowCoordinator", modeSelectionFlowCoordinator, null, false);
+
                         Plugin.discordActivity = default;
                         Plugin.discord?.ClearActivity();
+                        if(SteamManager.Initialized)
+                            SteamRichPresence.ClearSteamRichPresence();
                     };
 
                 }
@@ -167,20 +171,31 @@ namespace BeatSaberMultiplayer.UI
                         _noUserInfoWarning = Instantiate(dialogOrig.gameObject).GetComponent<SimpleDialogPromptViewController>();
                     }
 
-                    if (GetUserInfo.GetUserID() == 0 && string.IsNullOrWhiteSpace(GetUserInfo.GetUserName()) || GetUserInfo.GetUserID() == 0)
+                    if (DateTime.Now.Month == 4 && DateTime.Now.Day == 1)
                     {
-                        _noUserInfoWarning.Init("Invalid username and ID", $"Your username and ID are invalid\nMake sure you are logged in", "Go back", "Continue anyway",
+                        _noUserInfoWarning.Init("No access to multiplayer", $"You need \"Multiplayer Pro Elite Pack\" to continue\nWould you like to buy it now?", "Buy access", "Go back",
                            (selectedButton) =>
                            {
-                               mainFlow.InvokeMethod("DismissViewController", _noUserInfoWarning, null, selectedButton == 1);
-                               if (selectedButton == 1)
+                               mainFlow.InvokeMethod("DismissViewController", _noUserInfoWarning, null, selectedButton == 0);
+                               if (selectedButton == 0)
                                {
                                    mainFlow.InvokeMethod("PresentFlowCoordinator", modeSelectionFlowCoordinator, null, true, false);
                                }
                            });
-
                         mainFlow.InvokeMethod("PresentViewController", _noUserInfoWarning, null, false);
-
+                    }
+                    else if (GetUserInfo.GetUserID() == 0)
+                    {
+                        _noUserInfoWarning.Init("Invalid username and ID", $"Your username and ID are invalid\nMake sure you are logged in", "Go back", "Continue anyway",
+                              (selectedButton) =>
+                              {
+                                  mainFlow.InvokeMethod("DismissViewController", _noUserInfoWarning, null, selectedButton == 1);
+                                  if (selectedButton == 1)
+                                  {
+                                      mainFlow.InvokeMethod("PresentFlowCoordinator", modeSelectionFlowCoordinator, null, true, false);
+                                  }
+                              });
+                        mainFlow.InvokeMethod("PresentViewController", _noUserInfoWarning, null, false);
                     }
                     else
                     {
@@ -217,6 +232,7 @@ namespace BeatSaberMultiplayer.UI
 
         public IEnumerator JoinGameWithSecret(string secret)
         {
+            yield return null;
             yield return null;
 
             MainFlowCoordinator mainFlow = Resources.FindObjectsOfTypeAll<MainFlowCoordinator>().First();
@@ -256,7 +272,7 @@ namespace BeatSaberMultiplayer.UI
 
                 JSONNode latestRelease = releases[0];
 
-                SemVer.Version currentVer = IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Metadata.Version;
+                SemVer.Version currentVer = IPA.Loader.PluginManager.GetPlugin("Beat Saber Multiplayer").Version;
                 SemVer.Version githubVer = new SemVer.Version(latestRelease["tag_name"], true);
 
                 bool newTag = new SemVer.Range($">{currentVer}").IsSatisfied(githubVer);
