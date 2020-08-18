@@ -28,6 +28,9 @@ namespace BeatSaberMultiplayer
 
         string currentAvatarHash;
 
+        bool unableToSpawnAvatar;
+        float retryTimeCounter;
+
         TextMeshPro playerNameText;
         Image playerSpeakerIcon;
 
@@ -224,42 +227,66 @@ namespace BeatSaberMultiplayer
                 if ((avatar == null || currentAvatarHash != playerAvatarHash))
 #endif
                 {
-                    if (ModelSaberAPI.cachedAvatars.ContainsKey(playerAvatarHash))
+                    if (unableToSpawnAvatar)
                     {
-                        LoadedAvatar cachedAvatar = ModelSaberAPI.cachedAvatars[playerAvatarHash];
-
-                        if (cachedAvatar != null)
+                        if (retryTimeCounter + 5f > Time.realtimeSinceStartup)
                         {
-                            if (avatar != null && avatar.eventsPlayer != null)
-                            {
-                                avatar.Destroy();
-                                avatar = null;
-                            }
-
-                            avatar = AvatarManager.SpawnAvatar(cachedAvatar, avatarInput);
-                            avatar.SetChildrenToLayer(10);
-
-                            currentAvatarHash = playerAvatarHash;
+                            retryTimeCounter = -1f;
+                            unableToSpawnAvatar = false;
                         }
                     }
                     else
                     {
-                        if (Config.Instance.DownloadAvatars)
+                        if (ModelSaberAPI.cachedAvatars.ContainsKey(playerAvatarHash))
                         {
-                            ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
-                            ModelSaberAPI.avatarDownloaded += AvatarDownloaded;
+                            LoadedAvatar cachedAvatar = ModelSaberAPI.cachedAvatars[playerAvatarHash];
 
-                            if (!ModelSaberAPI.queuedAvatars.Contains(playerAvatarHash))
+                            if (cachedAvatar != null)
                             {
-                                SharedCoroutineStarter.instance.StartCoroutine(ModelSaberAPI.DownloadAvatarCoroutine(playerAvatarHash));
-
                                 if (avatar != null && avatar.eventsPlayer != null)
                                 {
                                     avatar.Destroy();
+                                    avatar = null;
                                 }
 
-                                avatar = AvatarManager.SpawnAvatar(defaultAvatarInstance, avatarInput);
+                                avatar = AvatarManager.SpawnAvatar(cachedAvatar, avatarInput);
                                 avatar.SetChildrenToLayer(10);
+
+                                currentAvatarHash = playerAvatarHash;
+                            }
+                            else
+                            {
+                                unableToSpawnAvatar = true;
+                                retryTimeCounter = Time.realtimeSinceStartup;
+                            }
+                        }
+                        else
+                        {
+                            if (Config.Instance.DownloadAvatars)
+                            {
+                                if (!Config.Instance.DownloadNSFWAvatars && ModelSaberAPI.nsfwAvatars.Contains(playerAvatarHash))
+                                {
+                                    unableToSpawnAvatar = true;
+                                    retryTimeCounter = Time.realtimeSinceStartup;
+                                }
+                                else
+                                {
+                                    ModelSaberAPI.avatarDownloaded -= AvatarDownloaded;
+                                    ModelSaberAPI.avatarDownloaded += AvatarDownloaded;
+
+                                    if (!ModelSaberAPI.queuedAvatars.Contains(playerAvatarHash))
+                                    {
+                                        SharedCoroutineStarter.instance.StartCoroutine(ModelSaberAPI.DownloadAvatarCoroutine(playerAvatarHash));
+
+                                        if (avatar != null && avatar.eventsPlayer != null)
+                                        {
+                                            avatar.Destroy();
+                                        }
+
+                                        avatar = AvatarManager.SpawnAvatar(defaultAvatarInstance, avatarInput);
+                                        avatar.SetChildrenToLayer(10);
+                                    }
+                                }
                             }
                         }
                     }

@@ -18,6 +18,7 @@ namespace BeatSaberMultiplayer
         [SerializeField] private bool _showOtherPlayersBlocks;
         [SerializeField] private bool _showAvatarsInRoom;
         [SerializeField] private bool _downloadAvatars;
+        [SerializeField] private bool _downloadNSFWAvatars;
         [SerializeField] private bool _separateAvatarForMultiplayer;
         [SerializeField] private string _publicAvatarHash;
         [SerializeField] private bool _spectatorMode;
@@ -181,6 +182,16 @@ namespace BeatSaberMultiplayer
             set
             {
                 _downloadAvatars = value;
+                MarkDirty();
+            }
+        }
+
+        public bool DownloadNSFWAvatars
+        {
+            get { return _downloadNSFWAvatars; }
+            set
+            {
+                _downloadNSFWAvatars = value;
                 MarkDirty();
             }
         }

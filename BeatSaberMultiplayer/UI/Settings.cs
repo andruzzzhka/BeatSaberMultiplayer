@@ -11,6 +11,8 @@ namespace BeatSaberMultiplayer.UI
 {
     class Settings : MonoBehaviour
     {
+        public enum AvatarDownloadFilter { None, All, SafeForWork }
+
         public static event Action<string> voiceChatMicrophoneChanged;
 
         public void Awake()
@@ -88,12 +90,18 @@ namespace BeatSaberMultiplayer.UI
             set { Config.Instance.ShowAvatarsInRoom = value; }
         }
 
-        [UIValue("download-avatars")]
-        public bool downloadAvatars
+        [UIValue("download-avatars-value")]
+        public object downloadAvatars
         {
-            get { return Config.Instance.DownloadAvatars; }
-            set { Config.Instance.DownloadAvatars = value; }
+            get { return Config.Instance.DownloadAvatars ? (Config.Instance.DownloadNSFWAvatars ? downloadAvatarsOptions[2] : downloadAvatarsOptions[1]) : downloadAvatarsOptions[0]; }
+            set {
+                Config.Instance.DownloadAvatars = downloadAvatarsOptions.IndexOf(value) >= 1;
+                Config.Instance.DownloadNSFWAvatars = downloadAvatarsOptions.IndexOf(value) == 2;
+            }
         }
+
+        [UIValue("download-avatars-options")]
+        public List<object> downloadAvatarsOptions = new List<object>() { "None", "All, except NSFW", "All" };
 
         [UIValue("separate-avatar")]
         public bool separateAvatar
@@ -103,7 +111,7 @@ namespace BeatSaberMultiplayer.UI
         }
 
         [UIValue("public-avatar-value")]
-        public object publicAvater
+        public object publicAvatar
         {
             get { return GetSelectedAvatar(); }
             set { InGameOnlineController.Instance.SetSeparatePublicAvatarHash(ModelSaberAPI.cachedAvatars.FirstOrDefault(x => x.Value == (value as LoadedAvatar)).Key); }

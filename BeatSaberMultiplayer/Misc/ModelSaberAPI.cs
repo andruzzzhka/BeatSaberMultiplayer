@@ -19,6 +19,7 @@ namespace BeatSaberMultiplayer.Misc
 
         public static Dictionary<string, LoadedAvatar> cachedAvatars = new Dictionary<string, LoadedAvatar>();
         public static List<string> queuedAvatars = new List<string>();
+        public static List<string> nsfwAvatars = new List<string>();
 
         public static bool isCalculatingHashes;
         public static int calculatedHashesCount;
@@ -51,6 +52,26 @@ namespace BeatSaberMultiplayer.Misc
                     Plugin.log.Error($"Avatar with hash {hash} doesn't exist on ModelSaber!");
                     cachedAvatars.Add(hash, null);
                     queuedAvatars.Remove(hash);
+                    yield break;
+                }
+
+                var tags = node[0]["tags"].AsArray;
+                bool isNSFW = false;
+
+
+                foreach(var child in tags.Values)
+                {
+                    if(child.Value == "NSFW")
+                    {
+                        isNSFW = true;
+                    }
+                }
+
+                if (isNSFW && !Config.Instance.DownloadNSFWAvatars)
+                {
+                    Plugin.log.Error($"The avatar is NSFW!");
+                    queuedAvatars.Remove(hash);
+                    nsfwAvatars.Add(hash);
                     yield break;
                 }
 
