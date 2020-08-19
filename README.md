@@ -1,7 +1,7 @@
-# Latest stable version: 0.7.2.1
+# Latest stable version: 0.7.2.2
 
-## [Download](https://ci.appveyor.com/api/projects/andruzzzhka/beatsabermultiplayer/artifacts/Output/BeatSaberMultiplayer.zip?job=Configuration%3A%20ClientRelease) (Experimental) for Beat Saber 1.8.0/1.9.1
-## [Download](https://ci.appveyor.com/api/buildjobs/6fnbg3y7saup2d8v/artifacts/Output%2FBeatSaberMultiplayer.zip) (Stable 0.7.2.1) for Beat Saber 1.8.0/1.9.1
+## [Download](https://ci.appveyor.com/api/projects/andruzzzhka/beatsabermultiplayer/artifacts/Output/BeatSaberMultiplayer.zip?job=Configuration%3A%20ClientRelease) (Experimental) for Beat Saber 1.8.0-1.11.0
+## [Download](https://ci.appveyor.com/api/buildjobs/qysb981rurlhtlea/artifacts/Output%2FBeatSaberMultiplayer.zip) (Stable 0.7.2.2) for Beat Saber 1.8.0-1.11.0
 ### [Installer](https://github.com/200Tigersbloxed/BSMulti-Installer/releases) by 200Tigersbloxed#1942
 ### [Guide](https://bs.assistant.moe/Multiplayer/#Install) by Assistant#8431
 ### Dependencies:
