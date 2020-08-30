@@ -8,6 +8,7 @@ using DiscordCore;
 using HarmonyLib;
 using IPA;
 using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -88,8 +89,15 @@ namespace BeatSaberMultiplayer
             discord.OnActivityJoinRequest += ActivityManager_OnActivityJoinRequest;
             discord.OnActivityInvite += ActivityManager_OnActivityInvite;
 
-            if(SteamManager.Initialized)
+            if(SteamExists())
                 SteamRichPresence.Init();
+        }
+
+        private bool SteamExists()
+        {
+            string filePath = Path.GetFullPath(Path.Combine(CustomLevelPathHelper.baseProjectPath, "Plugins", "steam_api64.dll"));
+            Plugin.log.Debug($"Checking '{filePath}' for Steam.");
+            return File.Exists(filePath);
         }
 
         private void ActivityManager_OnActivityInvite(ActivityActionType type, ref User user, ref Activity activity)

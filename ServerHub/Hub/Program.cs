@@ -938,7 +938,7 @@ namespace ServerHub.Hub
                                 string message = string.Join(" ", comArgs.Skip(3).ToArray()).Replace("\\n", Environment.NewLine);
                                 if (float.TryParse(comArgs[1], out displayTime) && float.TryParse(comArgs[2], out fontSize))
                                 {
-                                    string output = $"Sending message \"{string.Join(" ", comArgs.Skip(3).ToArray())}\" to all rooms...";
+                                    string output = $"Sending message \"{message}\" to all rooms...";
 
                                     List<BaseRoom> rooms = RoomsController.GetRoomsList();
                                     rooms.ForEach((x) =>

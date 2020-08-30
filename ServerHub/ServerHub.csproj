@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Version>0.7.2.2</Version>
-    <AssemblyVersion>0.7.2.2</AssemblyVersion>
-    <FileVersion>0.7.2.2</FileVersion>
+    <Version>0.7.2.3</Version>
+    <AssemblyVersion>0.7.2.3</AssemblyVersion>
+    <FileVersion>0.7.2.3</FileVersion>
     <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
     <Configurations>Debug;Release</Configurations>
     <StartupObject>ServerHub.Hub.Program</StartupObject>
