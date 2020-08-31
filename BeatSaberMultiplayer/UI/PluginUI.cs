@@ -102,8 +102,6 @@ namespace BeatSaberMultiplayer.UI
 
                         Plugin.discordActivity = default;
                         Plugin.discord?.ClearActivity();
-                        if(SteamManager.Initialized)
-                            SteamRichPresence.ClearSteamRichPresence();
                     };
 
                 }

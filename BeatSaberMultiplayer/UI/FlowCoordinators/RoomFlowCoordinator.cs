@@ -301,8 +301,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             PopAllViewControllers();
             SetLeftScreenViewController(_playerManagementViewController);
             PluginUI.instance.SetLobbyDiscordActivity();
-            if(SteamManager.Initialized)
-                SteamRichPresence.ClearSteamRichPresence();
             didFinishEvent?.Invoke();
         }
 
@@ -1457,9 +1455,6 @@ namespace BeatSaberMultiplayer.UI.FlowCoordinators
             };
 
             Plugin.discord?.UpdateActivity(Plugin.discordActivity);
-
-            if(SteamManager.Initialized)
-                SteamRichPresence.UpdateSteamRichPresence(Plugin.discordActivity);
         }
 
         private string GetActivityDetails(bool includeAuthorName)
