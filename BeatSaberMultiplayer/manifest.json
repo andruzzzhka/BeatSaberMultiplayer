@@ -6,7 +6,7 @@
     "icon": "BeatSaberMultiplayer.Assets.OnlineIcon.png",
     "id": "BeatSaberMultiplayer",
     "name": "Beat Saber Multiplayer",
-    "version": "0.7.2.3",
+    "version": "0.7.2.4",
     "dependsOn": {
         "CustomAvatars": "^5.0.0-beta.6",
         "BS Utils": "^1.4.0",

@@ -37,7 +37,6 @@
     <Compile Include="Data\ExtraPlayerFlags.cs" />
     <Compile Include="Interop\BeatSaverVotingInterop.cs" />
     <Compile Include="Interop\IDismissable.cs" />
-    <Compile Include="Interop\SteamRichPresence.cs" />
     <Compile Include="IPAUtilities\Accessor.cs" />
     <Compile Include="IPAUtilities\ReflectionUtil.cs" />
     <Compile Include="Misc\AvatarsHashCache.cs" />
@@ -276,10 +275,6 @@
     <Reference Include="SteamVR, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Refs\BeatSaber\SteamVR.dll</HintPath>
-    </Reference>
-    <Reference Include="Steamworks.NET">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Refs\BeatSaber\Steamworks.NET.dll</HintPath>
     </Reference>
     <Reference Include="System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL" />
     <Reference Include="System.IO.Compression, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL" />
