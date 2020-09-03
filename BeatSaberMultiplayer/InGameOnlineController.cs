@@ -647,29 +647,29 @@ namespace BeatSaberMultiplayer
                         switch (Config.Instance.PushToTalkButton)
                         {
                             case 0:
-                                isRecording = ControllersHelper.GetLeftGrip();
+                                isRecording = ControllersHelper.LeftGripActive;
                                 break;
                             case 1:
-                                isRecording = ControllersHelper.GetRightGrip();
+                                isRecording = ControllersHelper.RightGripActive;
                                 break;
                             case 2:
 
-                                isRecording = _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = ControllersHelper.LeftTriggerActive;
                                 break;
                             case 3:
-                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f;
+                                isRecording = ControllersHelper.RightTriggerActive;
                                 break;
                             case 4:
-                                isRecording = ControllersHelper.GetLeftGrip() && ControllersHelper.GetRightGrip();
+                                isRecording = ControllersHelper.LeftGripActive && ControllersHelper.RightGripActive;
                                 break;
                             case 5:
-                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = ControllersHelper.RightTriggerActive && ControllersHelper.LeftTriggerActive;
                                 break;
                             case 6:
-                                isRecording = ControllersHelper.GetLeftGrip() || ControllersHelper.GetRightGrip();
+                                isRecording = ControllersHelper.LeftGripActive || ControllersHelper.RightGripActive;
                                 break;
                             case 7:
-                                isRecording = _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f || _vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f;
+                                isRecording = ControllersHelper.RightTriggerActive || ControllersHelper.LeftTriggerActive;
                                 break;
                             default:
                                 isRecording = Input.anyKey;
@@ -679,10 +679,10 @@ namespace BeatSaberMultiplayer
                     isRecording = false;
 
 #if DEBUG
-                if ((_vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.GetRightGrip() && _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.GetLeftGrip()) || Input.GetKey(KeyCode.P))
+                if ((ControllersHelper.LeftTriggerActive && ControllersHelper.RightGripActive && ControllersHelper.RightTriggerActive && ControllersHelper.LeftGripActive) || Input.GetKey(KeyCode.P))
 
 #else
-                if (_vrInputManager.TriggerValue(XRNode.LeftHand) > 0.85f && ControllersHelper.GetRightGrip() && _vrInputManager.TriggerValue(XRNode.RightHand) > 0.85f && ControllersHelper.GetLeftGrip())
+                if (ControllersHelper.LeftTriggerActive && ControllersHelper.RightGripActive && ControllersHelper.RightTriggerActive && ControllersHelper.LeftGripActive)
 #endif
                 {
                     _colorCounter += Time.deltaTime;
